@@ -38,6 +38,19 @@ s3_compatible:
   endpoint: <%= ENV.fetch('STORAGE_ENDPOINT', '') %>
   force_path_style: <%= ENV.fetch('STORAGE_FORCE_PATH_STYLE', false) %>
 
+# UniverZAP default: Cloudflare R2 (S3-compatible, zero egress).
+# Uses the same STORAGE_* envs as `s3_compatible` but with R2-specific defaults.
+cloudflare:
+  service: S3
+  access_key_id: <%= ENV.fetch('STORAGE_ACCESS_KEY_ID', '') %>
+  secret_access_key: <%= ENV.fetch('STORAGE_SECRET_ACCESS_KEY', '') %>
+  region: <%= ENV.fetch('STORAGE_REGION', 'auto') %>
+  bucket: <%= ENV.fetch('STORAGE_BUCKET_NAME', '') %>
+  endpoint: <%= ENV.fetch('STORAGE_ENDPOINT', '') %>
+  force_path_style: false
+  request_checksum_calculation: 'when_required'
+  response_checksum_validation: 'when_required'
+
 # mirror:
 #   service: Mirror
 #   primary: local
