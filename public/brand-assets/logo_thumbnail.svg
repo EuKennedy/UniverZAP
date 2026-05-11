@@ -1,25 +1,8 @@
-<svg
-  width="16"
-  height="16"
-  viewBox="0 0 16 16"
-  fill="none"
-  xmlns="http://www.w3.org/2000/svg"
->
-  <g clip-path="url(#woot-logo-clip-2342424e23u32098)">
-    <path
-      d="M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16Z"
-      fill="#2781F6"
-    />
-    <path
-      d="M11.4172 11.4172H7.70831C5.66383 11.4172 4 9.75328 4 7.70828C4 5.66394 5.66383 4 7.70835 4C9.75339 4 11.4172 5.66394 11.4172 7.70828V11.4172Z"
-      fill="white"
-      stroke="white"
-      stroke-width="0.1875"
-    />
-  </g>
-  <defs>
-    <clipPath id="woot-logo-clip-2342424e23u32098">
-      <rect width="16" height="16" fill="white" />
-    </clipPath>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <title>UniverZAP</title>
+  <rect width="512" height="512" rx="112" fill="#22C55E"/>
+  <path d="M256 130c-80.6 0-146 60.3-146 134.7 0 26.4 8.4 50.9 22.6 71.9L110 426l98-21c14.7 5.4 30.6 8.4 47 8.4 80.6 0 146-60.3 146-134.7S336.6 130 256 130z" fill="#FFFFFF"/>
+  <ellipse cx="202" cy="258" rx="17.5" ry="17.5" fill="#22C55E"/>
+  <path d="M249 250c-1.4 2.8-2 6.5-1.4 10 1.4 8.5 8.5 14.2 17 12.8 7-1.2 12.8-7 14.2-14" stroke="#22C55E" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <path d="M186 304c15.5 19.8 38 32.5 62 32.5s46.5-12.7 62-32.5" stroke="#22C55E" stroke-width="15.5" stroke-linecap="round" fill="none"/>
 </svg>
