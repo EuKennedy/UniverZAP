@@ -40,17 +40,22 @@ module Chatwoot
     config.rails_i18n.enabled_modules = [:pluralization]
 
     config.eager_load_paths << Rails.root.join('lib')
-    config.eager_load_paths << Rails.root.join('enterprise/lib')
-    config.eager_load_paths << Rails.root.join('enterprise/listeners')
-    # rubocop:disable Rails/FilePath
-    config.eager_load_paths += Dir["#{Rails.root}/enterprise/app/**"]
-    # rubocop:enable Rails/FilePath
-    # Add enterprise views to the view paths
-    config.paths['app/views'].unshift('enterprise/app/views')
 
-    # Load enterprise initializers alongside standard initializers
-    enterprise_initializers = Rails.root.join('enterprise/config/initializers')
-    Dir[enterprise_initializers.join('**/*.rb')].each { |f| require f } if enterprise_initializers.exist?
+    # UniverZAP: enterprise overlay is loaded only when DISABLE_ENTERPRISE is unset.
+    # This keeps the upstream Chatwoot enterprise modules dormant by default, so the
+    # OSS-only build can boot cleanly while we reimplement parity features in core.
+    enterprise_disabled = ENV['DISABLE_ENTERPRISE'].present? && ENV['DISABLE_ENTERPRISE'] != 'false'
+    unless enterprise_disabled
+      config.eager_load_paths << Rails.root.join('enterprise/lib')
+      config.eager_load_paths << Rails.root.join('enterprise/listeners')
+      # rubocop:disable Rails/FilePath
+      config.eager_load_paths += Dir["#{Rails.root}/enterprise/app/**"]
+      # rubocop:enable Rails/FilePath
+      config.paths['app/views'].unshift('enterprise/app/views')
+
+      enterprise_initializers = Rails.root.join('enterprise/config/initializers')
+      Dir[enterprise_initializers.join('**/*.rb')].each { |f| require f } if enterprise_initializers.exist?
+    end
 
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration can go into files in config/initializers
