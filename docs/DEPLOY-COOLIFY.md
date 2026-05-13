@@ -10,7 +10,7 @@ Guia passo-a-passo para colocar o UniverZAP rodando em `staging.univerzap.cloud`
 - GitHub do Coolify conectado ao repositório `EuKennedy/UniverZAP`.
 - Domínio `univerzap.cloud` gerenciado no Cloudflare.
 - Conta Mailgun configurada para o domínio `mg.univerzap.cloud`.
-- Bucket Cloudflare R2 criado para anexos (sugestão: `univerzap-staging-attachments`).
+- **Opcional**: Bucket Cloudflare R2 para anexos. Sem ele, o storage cai pro disco da VPS via volume `storage_data` (default). Migrar pra R2 depois é um script de ~1h.
 
 ---
 
@@ -66,14 +66,25 @@ SMTP_PASSWORD=<mailgun smtp password>
 MAILGUN_INGRESS_SIGNING_KEY=<mailgun webhook signing key>
 ```
 
-### Cloudflare R2
-```
-STORAGE_BUCKET_NAME=univerzap-staging-attachments
-STORAGE_ACCESS_KEY_ID=<R2 access key id>
-STORAGE_SECRET_ACCESS_KEY=<R2 secret>
-STORAGE_ENDPOINT=https://<r2_account_id>.r2.cloudflarestorage.com
-STORAGE_REGION=auto
-```
+### Storage (default: disco local da VPS)
+Não precisa configurar nada — o `.env.example` ships com `ACTIVE_STORAGE_SERVICE=local` e o compose monta o volume `storage_data` em `/app/storage`.
+
+#### Migrando pra Cloudflare R2 depois
+Quando uso de anexos passar de ~50GB ou escalar pra múltiplas instâncias:
+
+1. Criar bucket R2 + API token + CORS (ver seção Troubleshooting).
+2. Trocar/adicionar no Coolify Environment Variables:
+   ```
+   ACTIVE_STORAGE_SERVICE=cloudflare
+   STORAGE_BUCKET_NAME=univerzap-staging-attachments
+   STORAGE_ACCESS_KEY_ID=<R2 access key id>
+   STORAGE_SECRET_ACCESS_KEY=<R2 secret>
+   STORAGE_ENDPOINT=https://<r2_account_id>.r2.cloudflarestorage.com
+   STORAGE_REGION=auto
+   DIRECT_UPLOADS_ENABLED=true
+   ```
+3. Copiar arquivos existentes do volume `storage_data` pro bucket (`rclone` resolve em ~1h).
+4. Redeploy.
 
 > Onde achar o `<r2_account_id>`: Cloudflare Dashboard → R2 → no canto superior direito do menu de buckets.
 
