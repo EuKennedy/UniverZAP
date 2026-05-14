@@ -257,6 +257,21 @@ Rails.application.routes.draw do
           end
           resources :labels, only: [:index, :show, :create, :update, :destroy]
 
+          resources :funnels do
+            resources :funnel_stages, only: [:index, :show, :create, :update, :destroy] do
+              collection do
+                post :reorder
+              end
+            end
+            resources :kanban_tasks, only: [:index, :create]
+          end
+
+          resources :kanban_tasks, only: [:show, :update, :destroy] do
+            member do
+              post :move
+            end
+          end
+
           resources :notifications, only: [:index, :update, :destroy] do
             collection do
               post :read_all

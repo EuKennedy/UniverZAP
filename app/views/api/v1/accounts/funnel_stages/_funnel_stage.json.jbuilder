@@ -1,0 +1,10 @@
+json.id stage.id
+json.funnel_id stage.funnel_id
+json.name stage.name
+json.description stage.description
+json.color stage.color
+json.position stage.position
+json.status_type stage.status_type
+json.tasks_count stage.kanban_tasks.count
+json.created_at stage.created_at.to_i
+json.updated_at stage.updated_at.to_i
