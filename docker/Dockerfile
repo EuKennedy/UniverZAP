@@ -86,8 +86,18 @@ RUN if [ "$RAILS_ENV" = "production" ]; then \
   && rm -rf spec node_modules tmp/cache; \
   fi
 
-# Generate .git_sha file with current commit hash
-RUN git rev-parse HEAD > /app/.git_sha
+# Generate .git_sha file with current commit hash.
+# Use SOURCE_COMMIT build arg when available (set by Coolify / CI). Fall back
+# to `git rev-parse HEAD` if a real .git directory was copied into the build
+# context, and finally to "unknown" so the build never fails on metadata.
+ARG SOURCE_COMMIT=""
+RUN if [ -n "$SOURCE_COMMIT" ]; then \
+      echo "$SOURCE_COMMIT" > /app/.git_sha; \
+    elif [ -d .git ]; then \
+      git rev-parse HEAD > /app/.git_sha; \
+    else \
+      echo "unknown" > /app/.git_sha; \
+    fi
 
 # Remove unnecessary files
 RUN rm -rf /gems/ruby/3.4.0/cache/*.gem \

@@ -18,6 +18,10 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      args:
+        # Populated by Coolify (or CI) so the Dockerfile can stamp the build
+        # without requiring a `.git` directory inside the build context.
+        SOURCE_COMMIT: ${SOURCE_COMMIT:-${COOLIFY_RESOURCE_UUID:-unknown}}
     image: univerzap/univerzap:latest
     env_file: .env
     environment:
