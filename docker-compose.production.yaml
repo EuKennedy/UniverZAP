@@ -44,10 +44,19 @@ services:
       - coolify.managed=true
       - coolify.type=application
     healthcheck:
-      # Alpine base image only ships with busybox wget; curl is not installed.
-      # Use 127.0.0.1 explicitly because `localhost` resolves to ::1 (IPv6)
-      # inside Alpine, but Puma is bound on 0.0.0.0:3000 (IPv4-only).
-      test: ['CMD-SHELL', "wget -qO- http://127.0.0.1:3000/api >/dev/null 2>&1 || exit 1"]
+      # Healthcheck constraints in this image:
+      #   - curl is not installed (alpine + busybox only)
+      #   - `localhost` resolves to ::1 inside the container, but Puma binds
+      #     IPv4 only — so we hit 127.0.0.1 explicitly.
+      #   - FORCE_SSL=true makes Rails redirect any plaintext HTTP request
+      #     to https://, which makes a naive `wget http://...` follow the
+      #     redirect and fail with an SSL error. Sending the
+      #     `X-Forwarded-Proto: https` header tells Rails the request is
+      #     already over TLS (Traefik does TLS termination upstream), so
+      #     Rails responds 200 instead of redirecting.
+      test:
+        - CMD-SHELL
+        - wget -q --tries=1 --timeout=5 --header='X-Forwarded-Proto: https' -O- http://127.0.0.1:3000/api >/dev/null 2>&1 || exit 1
       interval: 30s
       timeout: 10s
       retries: 5
