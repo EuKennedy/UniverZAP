@@ -54,9 +54,7 @@ services:
       #     `X-Forwarded-Proto: https` header tells Rails the request is
       #     already over TLS (Traefik does TLS termination upstream), so
       #     Rails responds 200 instead of redirecting.
-      test:
-        - CMD-SHELL
-        - wget -q --tries=1 --timeout=5 --header='X-Forwarded-Proto: https' -O- http://127.0.0.1:3000/api >/dev/null 2>&1 || exit 1
+      test: ["CMD-SHELL", "wget -q --tries=1 --timeout=5 --header=\"X-Forwarded-Proto: https\" -O- http://127.0.0.1:3000/api >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
