@@ -1,11 +1,7 @@
 services:
   rails:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-      args:
-        SOURCE_COMMIT: ${SOURCE_COMMIT:-unknown}
-    image: univerzap/univerzap:latest
+    image: ghcr.io/eukennedy/univerzap:staging
+    pull_policy: always
     env_file: .env
     environment:
       NODE_ENV: production
@@ -23,7 +19,8 @@ services:
     restart: unless-stopped
 
   sidekiq:
-    image: univerzap/univerzap:latest
+    image: ghcr.io/eukennedy/univerzap:staging
+    pull_policy: always
     env_file: .env
     environment:
       NODE_ENV: production
