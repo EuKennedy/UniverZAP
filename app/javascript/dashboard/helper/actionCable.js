@@ -35,8 +35,41 @@ class ActionCableConnector extends BaseActionCableConnector {
       'account.cache_invalidated': this.onCacheInvalidate,
       'account.enrichment_completed': this.onEnrichmentCompleted,
       'copilot.message.created': this.onCopilotMessageCreated,
+      'funnel.created': this.onFunnelUpsert,
+      'funnel.updated': this.onFunnelUpsert,
+      'funnel.deleted': this.onFunnelDeleted,
+      'funnel_stage.created': this.onFunnelStageUpsert,
+      'funnel_stage.updated': this.onFunnelStageUpsert,
+      'funnel_stage.deleted': this.onFunnelStageDeleted,
+      'kanban_task.created': this.onKanbanTaskUpsert,
+      'kanban_task.updated': this.onKanbanTaskUpsert,
+      'kanban_task.deleted': this.onKanbanTaskDeleted,
     };
   }
+
+  onFunnelUpsert = data => {
+    this.app.$store.dispatch('funnels/handleRealtimeUpsert', data);
+  };
+
+  onFunnelDeleted = data => {
+    this.app.$store.dispatch('funnels/handleRealtimeDelete', data);
+  };
+
+  onFunnelStageUpsert = data => {
+    this.app.$store.dispatch('funnels/handleStageRealtimeUpsert', data);
+  };
+
+  onFunnelStageDeleted = data => {
+    this.app.$store.dispatch('funnels/handleStageRealtimeDelete', data);
+  };
+
+  onKanbanTaskUpsert = data => {
+    this.app.$store.dispatch('kanbanTasks/handleRealtimeUpsert', data);
+  };
+
+  onKanbanTaskDeleted = data => {
+    this.app.$store.dispatch('kanbanTasks/handleRealtimeDelete', data);
+  };
 
   // eslint-disable-next-line class-methods-use-this
   onReconnect = () => {

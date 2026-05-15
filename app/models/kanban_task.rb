@@ -17,6 +17,8 @@
 #  updated_at      :datetime         not null
 #
 class KanbanTask < ApplicationRecord
+  include KanbanRealtime
+
   belongs_to :account
   belongs_to :funnel
   belongs_to :funnel_stage
@@ -50,7 +52,33 @@ class KanbanTask < ApplicationRecord
     funnel_stage&.status_type
   end
 
+  def push_event_data
+    {
+      id: id,
+      display_id: display_id,
+      account_id: account_id,
+      funnel_id: funnel_id,
+      funnel_stage_id: funnel_stage_id,
+      title: title,
+      description: description,
+      priority: priority,
+      position: position,
+      start_date: start_date&.to_i,
+      due_date: due_date&.to_i,
+      assignees: assignees.map { |u| { id: u.id, name: u.name, avatar_url: u.avatar_url } },
+      labels: task_labels.map { |l| { id: l.id, title: l.title, color: l.color } },
+      conversations: conversations.map { |c| { id: c.id, display_id: c.display_id, status: c.status, inbox_id: c.inbox_id } },
+      contacts: contacts.map { |c| { id: c.id, name: c.name, email: c.email, phone_number: c.phone_number, thumbnail: c.avatar_url } },
+      created_at: created_at.to_i,
+      updated_at: updated_at.to_i
+    }
+  end
+
   private
+
+  def kanban_event_payload
+    push_event_data
+  end
 
   def assign_position
     return if position.present? && position.positive?

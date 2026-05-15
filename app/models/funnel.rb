@@ -12,6 +12,8 @@
 #  updated_at          :datetime         not null
 #
 class Funnel < ApplicationRecord
+  include KanbanRealtime
+
   AUTOMATION_KEYS = %w[
     auto_create_task_for_new_conversation
     auto_assign_task_to_agent
@@ -41,7 +43,28 @@ class Funnel < ApplicationRecord
     ActiveModel::Type::Boolean.new.cast(automation_settings[key.to_s])
   end
 
+  def push_event_data
+    {
+      id: id,
+      account_id: account_id,
+      name: name,
+      description: description,
+      position: position,
+      automation_settings: automation_settings,
+      inbox_ids: inbox_ids,
+      agent_ids: agent_ids,
+      tasks_count: kanban_tasks.count,
+      stages: funnel_stages.ordered.map(&:push_event_data),
+      created_at: created_at.to_i,
+      updated_at: updated_at.to_i
+    }
+  end
+
   private
+
+  def kanban_event_payload
+    push_event_data
+  end
 
   def assign_position
     return if position.present? && position.positive?

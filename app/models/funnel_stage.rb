@@ -13,6 +13,8 @@
 #  updated_at  :datetime         not null
 #
 class FunnelStage < ApplicationRecord
+  include KanbanRealtime
+
   HEX_COLOR_REGEX = /\A#(?:[0-9a-fA-F]{3}){1,2}\z/
 
   belongs_to :funnel, inverse_of: :funnel_stages
@@ -30,7 +32,30 @@ class FunnelStage < ApplicationRecord
 
   delegate :account, to: :funnel
 
+  def push_event_data
+    {
+      id: id,
+      funnel_id: funnel_id,
+      name: name,
+      description: description,
+      color: color,
+      position: position,
+      status_type: status_type,
+      tasks_count: kanban_tasks.count,
+      created_at: created_at.to_i,
+      updated_at: updated_at.to_i
+    }
+  end
+
   private
+
+  def kanban_event_payload
+    push_event_data
+  end
+
+  def kanban_destroyed_payload
+    { id: id, funnel_id: funnel_id }
+  end
 
   def assign_position
     return if position.present? && position.positive?

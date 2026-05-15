@@ -1,0 +1,166 @@
+{
+  "KANBAN": {
+    "OVERVIEW": {
+      "TITLE": "Kanban",
+      "SUBTITLE": "Visualize and manage work across funnels, stages, and tasks.",
+      "NEW_FUNNEL": "New funnel",
+      "EMPTY_TITLE": "No funnels yet",
+      "EMPTY_DESCRIPTION": "Funnels organize your team's work into stages. Create your first one to start tracking tasks and conversations on the board.",
+      "CREATE_FIRST": "Create funnel",
+      "STAGE_COUNT": "{n} stages",
+      "TASK_COUNT": "{n} tasks"
+    },
+    "BOARD": {
+      "BACK": "Back to overview",
+      "LOADING": "Loading funnel…",
+      "NOT_FOUND": "Funnel not found.",
+      "NEW_TASK": "New task",
+      "SETTINGS": "Settings",
+      "NO_STAGES_TITLE": "No stages configured",
+      "NO_STAGES_DESCRIPTION": "Add stages from settings to start placing tasks on the board.",
+      "OPEN_SETTINGS": "Open settings"
+    },
+    "SETTINGS": {
+      "BACK": "Back to board",
+      "TITLE": "{name} — Settings",
+      "SUBTITLE": "Configure stages, audience, automations and danger zone.",
+      "DETAILS_TITLE": "Funnel details",
+      "DETAILS_SUBTITLE": "Name, description, audience and automations.",
+      "EDIT_FUNNEL": "Edit",
+      "INBOXES_COUNT": "Inboxes",
+      "STAGES_TITLE": "Stages",
+      "STAGES_SUBTITLE": "Drag to reorder. Each stage can be active, won, or lost.",
+      "STAGES_EMPTY": "No stages yet. Add the first one to start.",
+      "NEW_STAGE": "New stage",
+      "EDIT_STAGE": "Edit stage",
+      "DELETE_STAGE": "Delete stage",
+      "DANGER_TITLE": "Danger zone",
+      "DANGER_SUBTITLE": "Deleting a funnel removes all of its stages and tasks. This cannot be undone.",
+      "DELETE_FUNNEL": "Delete funnel"
+    },
+    "FUNNEL": {
+      "NEW_TITLE": "Create funnel",
+      "EDIT_TITLE": "Edit funnel",
+      "DESCRIPTION": "Funnels organize tasks by stages and apply automations to conversations.",
+      "CREATE": "Create",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "DELETE": "Delete",
+      "CREATE_SUCCESS": "Funnel created.",
+      "UPDATE_SUCCESS": "Funnel updated.",
+      "DELETE_SUCCESS": "Funnel deleted.",
+      "DELETE_ERROR": "Could not delete funnel.",
+      "LOAD_ERROR": "Could not load funnel.",
+      "SAVE_ERROR": "Could not save funnel.",
+      "DELETE_CONFIRM_TITLE": "Delete funnel?",
+      "DELETE_CONFIRM_MESSAGE": "This will permanently remove the funnel, its stages and tasks. Confirm by typing the funnel name:",
+      "FORM": {
+        "NAME_LABEL": "Name",
+        "NAME_PLACEHOLDER": "Sales pipeline",
+        "DESCRIPTION_LABEL": "Description",
+        "DESCRIPTION_PLACEHOLDER": "What is this funnel for?",
+        "INBOXES_LABEL": "Inboxes",
+        "NO_INBOXES": "No inboxes available.",
+        "AGENTS_LABEL": "Agents",
+        "NO_AGENTS": "No agents available.",
+        "AUTOMATIONS_LABEL": "Automations"
+      },
+      "AUTOMATIONS": {
+        "AUTO_CREATE_TASK_FOR_NEW_CONVERSATION": {
+          "LABEL": "Auto-create task for new conversations",
+          "HINT": "When a conversation arrives in a linked inbox, create a task in the first stage."
+        },
+        "AUTO_ASSIGN_TASK_TO_AGENT": {
+          "LABEL": "Auto-assign task to conversation agent",
+          "HINT": "Tasks inherit the agent assigned to the linked conversation."
+        },
+        "SYNC_TASK_CONVERSATION_ASSIGNEES": {
+          "LABEL": "Keep task and conversation assignees in sync",
+          "HINT": "Assignee changes on either side propagate automatically."
+        },
+        "AUTO_RESOLVE_CONVERSATION_ON_TASK_CLOSE": {
+          "LABEL": "Resolve conversation when task moves to won/lost",
+          "HINT": "Closing a task closes its linked conversations."
+        },
+        "AUTO_WIN_TASK_ON_CONVERSATION_RESOLVE": {
+          "LABEL": "Move task to first won stage on conversation resolve",
+          "HINT": "Resolving a conversation moves its task to the first won stage."
+        }
+      }
+    },
+    "STAGE": {
+      "NEW_TITLE": "Create stage",
+      "EDIT_TITLE": "Edit stage",
+      "DESCRIPTION": "Stages segment tasks by status. Mark a stage as won or lost to close tasks.",
+      "CREATE": "Create",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "DELETE": "Delete",
+      "CREATE_SUCCESS": "Stage created.",
+      "UPDATE_SUCCESS": "Stage updated.",
+      "DELETE_SUCCESS": "Stage deleted.",
+      "DELETE_ERROR": "Could not delete stage.",
+      "SAVE_ERROR": "Could not save stage.",
+      "REORDER_ERROR": "Could not reorder stages.",
+      "DELETE_CONFIRM_TITLE": "Delete stage?",
+      "DELETE_CONFIRM_MESSAGE": "All tasks must be moved before deleting. Confirm the stage to remove:",
+      "STATUS_ACTIVE": "Active",
+      "STATUS_WON": "Won",
+      "STATUS_LOST": "Lost",
+      "FORM": {
+        "NAME_LABEL": "Name",
+        "NAME_PLACEHOLDER": "Discovery",
+        "DESCRIPTION_LABEL": "Description",
+        "COLOR_LABEL": "Color",
+        "STATUS_LABEL": "Status"
+      }
+    },
+    "TASK": {
+      "NEW_TITLE": "Create task",
+      "EDIT_TITLE": "Edit task",
+      "DESCRIPTION": "Tasks track work through your funnel. Assign, label and link to conversations.",
+      "CREATE": "Create",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "DELETE": "Delete",
+      "CREATE_SUCCESS": "Task created.",
+      "UPDATE_SUCCESS": "Task updated.",
+      "DELETE_SUCCESS": "Task deleted.",
+      "DELETE_ERROR": "Could not delete task.",
+      "SAVE_ERROR": "Could not save task.",
+      "MOVE_ERROR": "Could not move task.",
+      "LOAD_ERROR": "Could not load tasks.",
+      "DELETE_CONFIRM_TITLE": "Delete task?",
+      "DELETE_CONFIRM_MESSAGE": "This action cannot be undone.",
+      "FORM": {
+        "TITLE_LABEL": "Title",
+        "TITLE_PLACEHOLDER": "Follow up with prospect",
+        "DESCRIPTION_LABEL": "Description",
+        "STAGE_LABEL": "Stage",
+        "PRIORITY_LABEL": "Priority",
+        "START_LABEL": "Start date",
+        "DUE_LABEL": "Due date",
+        "ASSIGNEES_LABEL": "Assignees",
+        "LABELS_LABEL": "Labels"
+      }
+    },
+    "PRIORITY": {
+      "URGENT": "Urgent",
+      "HIGH": "High",
+      "MEDIUM": "Medium",
+      "LOW": "Low",
+      "NONE": "No priority"
+    },
+    "COLUMN": {
+      "EMPTY": "Drag tasks here or add a new one.",
+      "ADD_TASK": "Add task"
+    },
+    "CARD": {
+      "DUE_TODAY": "Due today",
+      "DUE_TOMORROW": "Due tomorrow",
+      "DUE_YESTERDAY": "Due yesterday",
+      "DUE_IN_DAYS": "Due in {n} days",
+      "DUE_OVERDUE_DAYS": "Overdue {n} days"
+    }
+  }
+}
