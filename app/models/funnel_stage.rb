@@ -24,7 +24,7 @@ class FunnelStage < ApplicationRecord
 
   validates :name, presence: true, length: { maximum: 120 }
   validates :description, length: { maximum: 2000 }, allow_blank: true
-  validates :color, format: { with: HEX_COLOR_REGEX, message: 'must be a hex color' }
+  validates :color, format: { with: HEX_COLOR_REGEX, message: :invalid_hex_color }
 
   before_validation :assign_position, on: :create
 

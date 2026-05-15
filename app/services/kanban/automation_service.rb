@@ -80,8 +80,7 @@ class Kanban::AutomationService
     def task_for_conversation_exists?(funnel, conversation)
       funnel.kanban_tasks
             .joins(:kanban_task_conversations)
-            .where(kanban_task_conversations: { conversation_id: conversation.id })
-            .exists?
+            .exists?(kanban_task_conversations: { conversation_id: conversation.id })
     end
 
     def create_task_for_conversation(funnel, stage, conversation)
@@ -95,9 +94,7 @@ class Kanban::AutomationService
         task.conversations << conversation
         task.contacts << conversation.contact if conversation.contact && task.contact_ids.exclude?(conversation.contact_id)
 
-        if funnel.automation_enabled?('auto_assign_task_to_agent') && conversation.assignee_id.present?
-          task.assignee_ids = [conversation.assignee_id]
-        end
+        task.assignee_ids = [conversation.assignee_id] if funnel.automation_enabled?('auto_assign_task_to_agent') && conversation.assignee_id.present?
       end
     end
 

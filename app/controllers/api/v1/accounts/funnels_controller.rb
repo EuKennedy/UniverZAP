@@ -36,10 +36,18 @@ class Api::V1::Accounts::FunnelsController < Api::V1::Accounts::BaseController
   end
 
   def apply_associations(funnel)
-    if params[:funnel].key?(:inbox_ids)
-      ids = Array(params[:funnel][:inbox_ids]).map(&:to_i)
-      funnel.inbox_ids = Current.account.inboxes.where(id: ids).ids
-    end
+    apply_inbox_ids(funnel)
+    apply_agent_ids(funnel)
+  end
+
+  def apply_inbox_ids(funnel)
+    return unless params[:funnel].key?(:inbox_ids)
+
+    ids = Array(params[:funnel][:inbox_ids]).map(&:to_i)
+    funnel.inbox_ids = Current.account.inboxes.where(id: ids).ids
+  end
+
+  def apply_agent_ids(funnel)
     return unless params[:funnel].key?(:agent_ids)
 
     ids = Array(params[:funnel][:agent_ids]).map(&:to_i)

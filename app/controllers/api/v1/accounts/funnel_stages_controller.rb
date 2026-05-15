@@ -28,7 +28,7 @@ class Api::V1::Accounts::FunnelStagesController < Api::V1::Accounts::BaseControl
     return head :unprocessable_entity if ids.empty?
 
     FunnelStage.transaction do
-      @funnel.funnel_stages.where(id: ids).each do |stage|
+      @funnel.funnel_stages.where(id: ids).find_each do |stage|
         stage.update!(position: ids.index(stage.id) + 1)
       end
     end

@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Thumbnail from 'dashboard/components/widgets/Thumbnail.vue';
+import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 
 const props = defineProps({
   task: { type: Object, required: true },
@@ -116,13 +116,14 @@ const extraAssignees = computed(() =>
         v-if="visibleAssignees.length"
         class="flex items-center -space-x-1.5"
       >
-        <Thumbnail
+        <Avatar
           v-for="user in visibleAssignees"
           :key="user.id"
           :src="user.avatar_url"
-          :username="user.name"
-          size="20px"
-          class="border-2 border-n-solid-1 rounded-full"
+          :name="user.name"
+          :size="20"
+          rounded-full
+          class="border-2 border-n-solid-1"
         />
         <span
           v-if="extraAssignees"
