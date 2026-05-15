@@ -43,6 +43,18 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
     render :show
   end
 
+  def attach_conversation
+    conversation = find_conversation(params[:conversation_id])
+    @task.conversations << conversation unless @task.conversation_ids.include?(conversation.id)
+    render :show
+  end
+
+  def detach_conversation
+    conversation = find_conversation(params[:conversation_id])
+    @task.conversations.destroy(conversation)
+    render :show
+  end
+
   private
 
   def fetch_funnel
@@ -52,6 +64,10 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
 
   def fetch_task
     @task = Current.account.kanban_tasks.find(params[:id])
+  end
+
+  def find_conversation(identifier)
+    Current.account.conversations.find_by!(display_id: identifier)
   end
 
   def permitted_params

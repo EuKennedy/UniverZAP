@@ -16,6 +16,24 @@ class KanbanTasksAPI extends ApiClient {
       position,
     });
   }
+
+  attachConversation(id, conversationId) {
+    return axios.post(`${this.url}/${id}/attach_conversation`, {
+      conversation_id: conversationId,
+    });
+  }
+
+  detachConversation(id, conversationId) {
+    return axios.delete(`${this.url}/${id}/detach_conversation`, {
+      data: { conversation_id: conversationId },
+    });
+  }
+
+  fetchByConversation(conversationId) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/kanban_tasks`
+    );
+  }
 }
 
 export default new KanbanTasksAPI();

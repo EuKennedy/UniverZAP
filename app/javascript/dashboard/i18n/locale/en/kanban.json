@@ -141,8 +141,23 @@
         "START_LABEL": "Start date",
         "DUE_LABEL": "Due date",
         "ASSIGNEES_LABEL": "Assignees",
-        "LABELS_LABEL": "Labels"
-      }
+        "LABELS_LABEL": "Labels",
+        "FUNNEL_LABEL": "Funnel"
+      },
+      "LINK_TITLE": "Link existing task",
+      "LINK_DESCRIPTION": "Pick a task to attach to this conversation.",
+      "LINK_EXISTING": "Link",
+      "LINK_PICK_TASK": "Task",
+      "LINK_PICK_TASK_PLACEHOLDER": "Select a task…",
+      "LINK_NO_TASKS": "No tasks available in this funnel.",
+      "LINK_CONFIRM": "Link task",
+      "LINK_SUCCESS": "Task linked to conversation.",
+      "LINK_ERROR": "Could not link task.",
+      "UNLINK": "Unlink from conversation",
+      "UNLINK_SUCCESS": "Task unlinked.",
+      "UNLINK_ERROR": "Could not unlink task.",
+      "CONVERSATION_EMPTY": "No tasks linked to this conversation yet.",
+      "NO_FUNNELS": "Create a funnel first to add tasks."
     },
     "PRIORITY": {
       "URGENT": "Urgent",

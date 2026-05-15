@@ -4,11 +4,14 @@ import KanbanTasksAPI from '../../api/kanbanTasks';
 
 export const state = {
   recordsByFunnel: {},
+  recordsByConversation: {},
   uiFlags: {
     isFetching: false,
     isCreating: false,
     isUpdating: false,
     isMoving: false,
+    isFetchingForConversation: false,
+    isLinking: false,
   },
 };
 
@@ -31,6 +34,8 @@ export const getters = {
     }
     return null;
   },
+  getTasksByConversation: _state => conversationId =>
+    sortByPosition(_state.recordsByConversation[Number(conversationId)] || []),
   getUIFlags: _state => _state.uiFlags,
 };
 
@@ -78,12 +83,97 @@ export const actions = {
   handleRealtimeUpsert: ({ commit, state: s }, task) => {
     const funnelId = Number(task.funnel_id);
     const list = s.recordsByFunnel[funnelId];
-    if (!list) return;
-    commit(types.EDIT_KANBAN_TASK, task);
+    if (list) commit(types.EDIT_KANBAN_TASK, task);
+
+    const conversationIds = (task.conversations || []).map(c =>
+      Number(c.display_id ?? c.id)
+    );
+    Object.keys(s.recordsByConversation).forEach(cidKey => {
+      const cid = Number(cidKey);
+      const existing = s.recordsByConversation[cid] || [];
+      const wasLinked = existing.some(t => t.id === task.id);
+      const isLinked = conversationIds.includes(cid);
+      if (isLinked) {
+        commit(types.SET_CONVERSATION_KANBAN_TASKS, {
+          conversationId: cid,
+          tasks: [task],
+          merge: true,
+        });
+      } else if (wasLinked) {
+        commit(types.REMOVE_CONVERSATION_KANBAN_TASK, {
+          conversationId: cid,
+          taskId: task.id,
+        });
+      }
+    });
   },
 
-  handleRealtimeDelete: ({ commit }, { id, funnel_id: funnelId }) => {
+  handleRealtimeDelete: ({ commit, state: s }, { id, funnel_id: funnelId }) => {
     commit(types.DELETE_KANBAN_TASK, { id, funnelId });
+    Object.keys(s.recordsByConversation).forEach(cidKey => {
+      commit(types.REMOVE_CONVERSATION_KANBAN_TASK, {
+        conversationId: Number(cidKey),
+        taskId: id,
+      });
+    });
+  },
+
+  getByConversation: async ({ commit }, conversationId) => {
+    commit(types.SET_KANBAN_TASK_UI_FLAG, { isFetchingForConversation: true });
+    try {
+      const response = await KanbanTasksAPI.fetchByConversation(conversationId);
+      commit(types.SET_CONVERSATION_KANBAN_TASKS, {
+        conversationId,
+        tasks: response.data.payload || response.data,
+      });
+    } finally {
+      commit(types.SET_KANBAN_TASK_UI_FLAG, {
+        isFetchingForConversation: false,
+      });
+    }
+  },
+
+  attachConversation: async (
+    { commit },
+    { taskId, conversationId }
+  ) => {
+    commit(types.SET_KANBAN_TASK_UI_FLAG, { isLinking: true });
+    try {
+      const response = await KanbanTasksAPI.attachConversation(
+        taskId,
+        conversationId
+      );
+      commit(types.EDIT_KANBAN_TASK, response.data);
+      commit(types.SET_CONVERSATION_KANBAN_TASKS, {
+        conversationId,
+        tasks: [response.data],
+        merge: true,
+      });
+      return response.data;
+    } finally {
+      commit(types.SET_KANBAN_TASK_UI_FLAG, { isLinking: false });
+    }
+  },
+
+  detachConversation: async (
+    { commit },
+    { taskId, conversationId }
+  ) => {
+    commit(types.SET_KANBAN_TASK_UI_FLAG, { isLinking: true });
+    try {
+      const response = await KanbanTasksAPI.detachConversation(
+        taskId,
+        conversationId
+      );
+      commit(types.EDIT_KANBAN_TASK, response.data);
+      commit(types.REMOVE_CONVERSATION_KANBAN_TASK, {
+        conversationId,
+        taskId,
+      });
+      return response.data;
+    } finally {
+      commit(types.SET_KANBAN_TASK_UI_FLAG, { isLinking: false });
+    }
   },
 
   move: async (
@@ -150,6 +240,36 @@ export const mutations = {
     _state.recordsByFunnel = {
       ..._state.recordsByFunnel,
       [fid]: list.filter(t => t.id !== Number(id)),
+    };
+  },
+
+  [types.SET_CONVERSATION_KANBAN_TASKS](
+    _state,
+    { conversationId, tasks, merge = false }
+  ) {
+    const cid = Number(conversationId);
+    if (!merge) {
+      _state.recordsByConversation = {
+        ..._state.recordsByConversation,
+        [cid]: tasks,
+      };
+      return;
+    }
+    const existing = _state.recordsByConversation[cid] || [];
+    const byId = new Map(existing.map(t => [t.id, t]));
+    tasks.forEach(t => byId.set(t.id, t));
+    _state.recordsByConversation = {
+      ..._state.recordsByConversation,
+      [cid]: Array.from(byId.values()),
+    };
+  },
+
+  [types.REMOVE_CONVERSATION_KANBAN_TASK](_state, { conversationId, taskId }) {
+    const cid = Number(conversationId);
+    const list = _state.recordsByConversation[cid] || [];
+    _state.recordsByConversation = {
+      ..._state.recordsByConversation,
+      [cid]: list.filter(t => t.id !== Number(taskId)),
     };
   },
 
