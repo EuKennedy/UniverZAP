@@ -1,0 +1,181 @@
+{
+  "KANBAN": {
+    "OVERVIEW": {
+      "TITLE": "Kanban",
+      "SUBTITLE": "Visualize e gerencie o trabalho entre funis, etapas e tarefas.",
+      "NEW_FUNNEL": "Novo funil",
+      "EMPTY_TITLE": "Nenhum funil ainda",
+      "EMPTY_DESCRIPTION": "Funis organizam o trabalho do time em etapas. Crie o primeiro para começar a acompanhar tarefas e conversas no quadro.",
+      "CREATE_FIRST": "Criar funil",
+      "STAGE_COUNT": "{n} etapas",
+      "TASK_COUNT": "{n} tarefas"
+    },
+    "BOARD": {
+      "BACK": "Voltar para visão geral",
+      "LOADING": "Carregando funil…",
+      "NOT_FOUND": "Funil não encontrado.",
+      "NEW_TASK": "Nova tarefa",
+      "SETTINGS": "Configurações",
+      "NO_STAGES_TITLE": "Sem etapas configuradas",
+      "NO_STAGES_DESCRIPTION": "Adicione etapas nas configurações para começar a posicionar tarefas no quadro.",
+      "OPEN_SETTINGS": "Abrir configurações"
+    },
+    "SETTINGS": {
+      "BACK": "Voltar para o quadro",
+      "TITLE": "{name} — Configurações",
+      "SUBTITLE": "Configure etapas, audiência, automações e zona de perigo.",
+      "DETAILS_TITLE": "Detalhes do funil",
+      "DETAILS_SUBTITLE": "Nome, descrição, audiência e automações.",
+      "EDIT_FUNNEL": "Editar",
+      "INBOXES_COUNT": "Caixas de entrada",
+      "STAGES_TITLE": "Etapas",
+      "STAGES_SUBTITLE": "Arraste para reordenar. Cada etapa pode ser ativa, ganha ou perdida.",
+      "STAGES_EMPTY": "Nenhuma etapa ainda. Adicione a primeira para começar.",
+      "NEW_STAGE": "Nova etapa",
+      "EDIT_STAGE": "Editar etapa",
+      "DELETE_STAGE": "Excluir etapa",
+      "DANGER_TITLE": "Zona de perigo",
+      "DANGER_SUBTITLE": "Excluir um funil remove todas as suas etapas e tarefas. Esta ação não pode ser desfeita.",
+      "DELETE_FUNNEL": "Excluir funil"
+    },
+    "FUNNEL": {
+      "NEW_TITLE": "Criar funil",
+      "EDIT_TITLE": "Editar funil",
+      "DESCRIPTION": "Funis organizam tarefas por etapas e aplicam automações às conversas.",
+      "CREATE": "Criar",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "DELETE": "Excluir",
+      "CREATE_SUCCESS": "Funil criado.",
+      "UPDATE_SUCCESS": "Funil atualizado.",
+      "DELETE_SUCCESS": "Funil excluído.",
+      "DELETE_ERROR": "Não foi possível excluir o funil.",
+      "LOAD_ERROR": "Não foi possível carregar o funil.",
+      "SAVE_ERROR": "Não foi possível salvar o funil.",
+      "DELETE_CONFIRM_TITLE": "Excluir funil?",
+      "DELETE_CONFIRM_MESSAGE": "Isto removerá permanentemente o funil, suas etapas e tarefas. Confirme digitando o nome do funil:",
+      "FORM": {
+        "NAME_LABEL": "Nome",
+        "NAME_PLACEHOLDER": "Pipeline de vendas",
+        "DESCRIPTION_LABEL": "Descrição",
+        "DESCRIPTION_PLACEHOLDER": "Para que serve este funil?",
+        "INBOXES_LABEL": "Caixas de entrada",
+        "NO_INBOXES": "Nenhuma caixa de entrada disponível.",
+        "AGENTS_LABEL": "Atendentes",
+        "NO_AGENTS": "Nenhum atendente disponível.",
+        "AUTOMATIONS_LABEL": "Automações"
+      },
+      "AUTOMATIONS": {
+        "AUTO_CREATE_TASK_FOR_NEW_CONVERSATION": {
+          "LABEL": "Criar tarefa automaticamente para novas conversas",
+          "HINT": "Quando uma conversa chega em uma caixa vinculada, cria uma tarefa na primeira etapa."
+        },
+        "AUTO_ASSIGN_TASK_TO_AGENT": {
+          "LABEL": "Atribuir tarefa ao atendente da conversa",
+          "HINT": "Tarefas herdam o atendente atribuído à conversa vinculada."
+        },
+        "SYNC_TASK_CONVERSATION_ASSIGNEES": {
+          "LABEL": "Manter atendentes da tarefa e da conversa sincronizados",
+          "HINT": "Mudanças de atendente em qualquer lado se propagam automaticamente."
+        },
+        "AUTO_RESOLVE_CONVERSATION_ON_TASK_CLOSE": {
+          "LABEL": "Resolver conversa quando tarefa for para ganha/perdida",
+          "HINT": "Fechar uma tarefa fecha as conversas vinculadas."
+        },
+        "AUTO_WIN_TASK_ON_CONVERSATION_RESOLVE": {
+          "LABEL": "Mover tarefa para primeira etapa de ganho ao resolver conversa",
+          "HINT": "Resolver uma conversa move a tarefa para a primeira etapa de ganho."
+        }
+      }
+    },
+    "STAGE": {
+      "NEW_TITLE": "Criar etapa",
+      "EDIT_TITLE": "Editar etapa",
+      "DESCRIPTION": "Etapas segmentam tarefas por status. Marque como ganha ou perdida para fechar tarefas.",
+      "CREATE": "Criar",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "DELETE": "Excluir",
+      "CREATE_SUCCESS": "Etapa criada.",
+      "UPDATE_SUCCESS": "Etapa atualizada.",
+      "DELETE_SUCCESS": "Etapa excluída.",
+      "DELETE_ERROR": "Não foi possível excluir a etapa.",
+      "SAVE_ERROR": "Não foi possível salvar a etapa.",
+      "REORDER_ERROR": "Não foi possível reordenar as etapas.",
+      "DELETE_CONFIRM_TITLE": "Excluir etapa?",
+      "DELETE_CONFIRM_MESSAGE": "Todas as tarefas devem ser movidas antes de excluir. Confirme a etapa a remover:",
+      "STATUS_ACTIVE": "Ativa",
+      "STATUS_WON": "Ganha",
+      "STATUS_LOST": "Perdida",
+      "FORM": {
+        "NAME_LABEL": "Nome",
+        "NAME_PLACEHOLDER": "Descoberta",
+        "DESCRIPTION_LABEL": "Descrição",
+        "COLOR_LABEL": "Cor",
+        "STATUS_LABEL": "Status"
+      }
+    },
+    "TASK": {
+      "NEW_TITLE": "Criar tarefa",
+      "EDIT_TITLE": "Editar tarefa",
+      "DESCRIPTION": "Tarefas acompanham o trabalho pelo funil. Atribua, etiquete e vincule a conversas.",
+      "CREATE": "Criar",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "DELETE": "Excluir",
+      "CREATE_SUCCESS": "Tarefa criada.",
+      "UPDATE_SUCCESS": "Tarefa atualizada.",
+      "DELETE_SUCCESS": "Tarefa excluída.",
+      "DELETE_ERROR": "Não foi possível excluir a tarefa.",
+      "SAVE_ERROR": "Não foi possível salvar a tarefa.",
+      "MOVE_ERROR": "Não foi possível mover a tarefa.",
+      "LOAD_ERROR": "Não foi possível carregar as tarefas.",
+      "DELETE_CONFIRM_TITLE": "Excluir tarefa?",
+      "DELETE_CONFIRM_MESSAGE": "Esta ação não pode ser desfeita.",
+      "FORM": {
+        "TITLE_LABEL": "Título",
+        "TITLE_PLACEHOLDER": "Fazer follow-up com prospect",
+        "DESCRIPTION_LABEL": "Descrição",
+        "STAGE_LABEL": "Etapa",
+        "PRIORITY_LABEL": "Prioridade",
+        "START_LABEL": "Data de início",
+        "DUE_LABEL": "Data de vencimento",
+        "ASSIGNEES_LABEL": "Responsáveis",
+        "LABELS_LABEL": "Etiquetas",
+        "FUNNEL_LABEL": "Funil"
+      },
+      "LINK_TITLE": "Vincular tarefa existente",
+      "LINK_DESCRIPTION": "Escolha uma tarefa para anexar a esta conversa.",
+      "LINK_EXISTING": "Vincular",
+      "LINK_PICK_TASK": "Tarefa",
+      "LINK_PICK_TASK_PLACEHOLDER": "Selecione uma tarefa…",
+      "LINK_NO_TASKS": "Nenhuma tarefa disponível neste funil.",
+      "LINK_CONFIRM": "Vincular tarefa",
+      "LINK_SUCCESS": "Tarefa vinculada à conversa.",
+      "LINK_ERROR": "Não foi possível vincular a tarefa.",
+      "UNLINK": "Desvincular da conversa",
+      "UNLINK_SUCCESS": "Tarefa desvinculada.",
+      "UNLINK_ERROR": "Não foi possível desvincular a tarefa.",
+      "CONVERSATION_EMPTY": "Nenhuma tarefa vinculada a esta conversa ainda.",
+      "NO_FUNNELS": "Crie um funil primeiro para adicionar tarefas."
+    },
+    "PRIORITY": {
+      "URGENT": "Urgente",
+      "HIGH": "Alta",
+      "MEDIUM": "Média",
+      "LOW": "Baixa",
+      "NONE": "Sem prioridade"
+    },
+    "COLUMN": {
+      "EMPTY": "Arraste tarefas aqui ou adicione uma nova.",
+      "ADD_TASK": "Adicionar tarefa"
+    },
+    "CARD": {
+      "DUE_TODAY": "Vence hoje",
+      "DUE_TOMORROW": "Vence amanhã",
+      "DUE_YESTERDAY": "Venceu ontem",
+      "DUE_IN_DAYS": "Vence em {n} dias",
+      "DUE_OVERDUE_DAYS": "Atrasada {n} dias"
+    }
+  }
+}

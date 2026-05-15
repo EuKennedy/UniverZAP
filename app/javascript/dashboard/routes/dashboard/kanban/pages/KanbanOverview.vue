@@ -69,18 +69,20 @@ const handleSubmit = async payload => {
 const totalTasks = funnel =>
   funnel.tasks_count ??
   (funnel.stages || []).reduce((acc, s) => acc + (s.tasks_count || 0), 0);
+
+const stagePreview = funnel => (funnel.stages || []).slice(0, 6);
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full overflow-y-auto">
+  <div class="flex flex-col h-full w-full overflow-y-auto bg-n-background">
     <header
-      class="flex items-center justify-between flex-shrink-0 px-8 py-6 border-b border-n-weak"
+      class="flex items-center justify-between flex-shrink-0 px-10 py-8 border-b border-n-weak"
     >
-      <div class="flex flex-col gap-1">
-        <h1 class="text-xl font-medium text-n-slate-12">
+      <div class="flex flex-col gap-1.5">
+        <h1 class="text-2xl font-semibold text-n-slate-12 tracking-tight">
           {{ t('KANBAN.OVERVIEW.TITLE') }}
         </h1>
-        <p class="text-sm text-n-slate-11">
+        <p class="text-sm text-n-slate-11 max-w-2xl leading-relaxed">
           {{ t('KANBAN.OVERVIEW.SUBTITLE') }}
         </p>
       </div>
@@ -104,18 +106,18 @@ const totalTasks = funnel =>
 
     <section
       v-else-if="!funnels.length"
-      class="flex-1 flex flex-col items-center justify-center gap-4 px-8 text-center"
+      class="flex-1 flex flex-col items-center justify-center gap-5 px-8 text-center"
     >
       <div
-        class="size-16 rounded-2xl bg-n-alpha-1 flex items-center justify-center"
+        class="size-20 rounded-3xl bg-gradient-to-br from-n-brand/20 to-n-brand/[0.04] ring-1 ring-n-weak flex items-center justify-center"
       >
-        <span class="i-lucide-kanban-square size-8 text-n-slate-10" />
+        <span class="i-lucide-kanban-square size-9 text-n-brand" />
       </div>
-      <div class="flex flex-col gap-1 max-w-md">
-        <h2 class="text-lg font-medium text-n-slate-12">
+      <div class="flex flex-col gap-2 max-w-md">
+        <h2 class="text-xl font-semibold text-n-slate-12 tracking-tight">
           {{ t('KANBAN.OVERVIEW.EMPTY_TITLE') }}
         </h2>
-        <p class="text-sm text-n-slate-11">
+        <p class="text-sm text-n-slate-11 leading-relaxed">
           {{ t('KANBAN.OVERVIEW.EMPTY_DESCRIPTION') }}
         </p>
       </div>
@@ -128,54 +130,92 @@ const totalTasks = funnel =>
       />
     </section>
 
-    <section v-else class="px-8 py-6">
+    <section v-else class="px-10 py-8">
       <div
-        class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]"
+        class="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]"
       >
         <button
           v-for="funnel in funnels"
           :key="funnel.id"
           type="button"
-          class="group flex flex-col gap-3 p-5 rounded-xl bg-n-solid-1 border border-n-weak text-left transition-all hover:border-n-brand hover:-translate-y-0.5 hover:shadow-lg"
+          class="funnel-card group relative flex flex-col gap-4 p-5 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak text-left overflow-hidden transition-[transform,box-shadow,ring-color] duration-200 ease-out hover:ring-n-slate-7 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)]"
           @click="goToBoard(funnel)"
         >
-          <div class="flex items-start justify-between gap-2">
-            <h3
-              class="text-base font-medium text-n-slate-12 line-clamp-2 leading-snug"
-            >
-              {{ funnel.name }}
-            </h3>
+          <span
+            class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-n-slate-7 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+          />
+
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex flex-col gap-1 min-w-0 flex-1">
+              <h3
+                class="text-base font-semibold text-n-slate-12 line-clamp-2 leading-snug tracking-tight"
+              >
+                {{ funnel.name }}
+              </h3>
+              <p
+                v-if="funnel.description"
+                class="text-[13px] text-n-slate-11 line-clamp-2 leading-relaxed"
+              >
+                {{ funnel.description }}
+              </p>
+            </div>
             <span
               v-if="isAdmin"
-              class="size-7 rounded-md grid place-content-center text-n-slate-10 opacity-0 group-hover:opacity-100 hover:bg-n-alpha-2 transition-all"
+              role="button"
+              tabindex="0"
+              class="size-7 rounded-lg grid place-content-center text-n-slate-11 opacity-0 group-hover:opacity-100 hover:bg-n-alpha-2 transition-all flex-shrink-0"
               @click="goToSettings(funnel, $event)"
+              @keydown.enter="goToSettings(funnel, $event)"
             >
               <span class="i-lucide-settings-2 size-4" />
             </span>
           </div>
-          <p
-            v-if="funnel.description"
-            class="text-sm text-n-slate-11 line-clamp-2"
+
+          <div
+            v-if="stagePreview(funnel).length"
+            class="flex items-center gap-1"
           >
-            {{ funnel.description }}
-          </p>
-          <div class="flex items-center gap-4 mt-auto pt-2">
-            <div class="flex items-center gap-1.5 text-xs text-n-slate-11">
-              <span class="i-lucide-layers size-3.5" />
-              <span>
-                {{
+            <span
+              v-for="stage in stagePreview(funnel)"
+              :key="stage.id"
+              class="flex-1 h-1 rounded-full opacity-90"
+              :style="{ backgroundColor: stage.color }"
+              :title="stage.name"
+            />
+          </div>
+
+          <div
+            class="flex items-center justify-between gap-4 mt-auto pt-3 border-t border-n-weak"
+          >
+            <div class="flex items-center gap-3 text-[12px] text-n-slate-11">
+              <span class="inline-flex items-center gap-1.5">
+                <span class="i-lucide-layers size-3.5 text-n-slate-10" />
+                <span class="tabular-nums font-medium text-n-slate-12">
+                  {{ (funnel.stages || []).length }}
+                </span>
+                <span class="text-n-slate-11">{{
                   t('KANBAN.OVERVIEW.STAGE_COUNT', {
                     n: (funnel.stages || []).length,
-                  })
-                }}
+                  }).replace(/^\d+\s*/, '')
+                }}</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5">
+                <span
+                  class="i-lucide-square-check-big size-3.5 text-n-slate-10"
+                />
+                <span class="tabular-nums font-medium text-n-slate-12">
+                  {{ totalTasks(funnel) }}
+                </span>
+                <span class="text-n-slate-11">{{
+                  t('KANBAN.OVERVIEW.TASK_COUNT', {
+                    n: totalTasks(funnel),
+                  }).replace(/^\d+\s*/, '')
+                }}</span>
               </span>
             </div>
-            <div class="flex items-center gap-1.5 text-xs text-n-slate-11">
-              <span class="i-lucide-square-check-big size-3.5" />
-              <span>
-                {{ t('KANBAN.OVERVIEW.TASK_COUNT', { n: totalTasks(funnel) }) }}
-              </span>
-            </div>
+            <span
+              class="i-lucide-arrow-right size-4 text-n-slate-10 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all"
+            />
           </div>
         </button>
       </div>

@@ -224,11 +224,11 @@ const goToSettings = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full">
+  <div class="flex flex-col h-full w-full bg-n-background">
     <header
       class="flex items-center justify-between flex-shrink-0 gap-4 px-6 py-4 border-b border-n-weak"
     >
-      <div class="flex items-center gap-3 min-w-0">
+      <div class="flex items-center gap-2.5 min-w-0">
         <Button
           icon="i-lucide-arrow-left"
           size="xs"
@@ -237,16 +237,28 @@ const goToSettings = () => {
           :aria-label="t('KANBAN.BOARD.BACK')"
           @click="goBack"
         />
+        <nav
+          class="flex items-center gap-1.5 text-[12px] text-n-slate-11 flex-shrink-0"
+        >
+          <button
+            type="button"
+            class="hover:text-n-slate-12 transition-colors"
+            @click="goBack"
+          >
+            {{ t('KANBAN.OVERVIEW.TITLE') }}
+          </button>
+          <span class="i-lucide-chevron-right size-3 text-n-slate-9" />
+        </nav>
         <div class="flex flex-col gap-0.5 min-w-0">
           <h1
-            class="text-lg font-medium text-n-slate-12 truncate"
+            class="text-base font-semibold text-n-slate-12 truncate tracking-tight"
             :title="funnel?.name"
           >
             {{ funnel?.name || t('KANBAN.BOARD.LOADING') }}
           </h1>
           <p
             v-if="funnel?.description"
-            class="text-xs text-n-slate-11 truncate"
+            class="text-[11px] text-n-slate-11 truncate"
           >
             {{ funnel.description }}
           </p>
@@ -315,7 +327,7 @@ const goToSettings = () => {
     </section>
 
     <section v-else class="flex-1 overflow-x-auto overflow-y-hidden">
-      <div class="flex items-stretch gap-3 px-6 py-4 h-full min-w-min">
+      <div class="flex items-stretch gap-4 px-6 py-5 h-full min-w-min">
         <KanbanColumn
           v-for="stage in stages"
           :key="stage.id"
