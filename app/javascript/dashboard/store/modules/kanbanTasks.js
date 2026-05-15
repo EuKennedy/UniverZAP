@@ -28,11 +28,12 @@ export const getters = {
       )
     ),
   getTask: _state => id => {
-    for (const list of Object.values(_state.recordsByFunnel)) {
-      const found = list.find(t => t.id === Number(id));
-      if (found) return found;
-    }
-    return null;
+    const numericId = Number(id);
+    return (
+      Object.values(_state.recordsByFunnel)
+        .flat()
+        .find(t => t.id === numericId) || null
+    );
   },
   getTasksByConversation: _state => conversationId =>
     sortByPosition(_state.recordsByConversation[Number(conversationId)] || []),
@@ -133,10 +134,7 @@ export const actions = {
     }
   },
 
-  attachConversation: async (
-    { commit },
-    { taskId, conversationId }
-  ) => {
+  attachConversation: async ({ commit }, { taskId, conversationId }) => {
     commit(types.SET_KANBAN_TASK_UI_FLAG, { isLinking: true });
     try {
       const response = await KanbanTasksAPI.attachConversation(
@@ -155,10 +153,7 @@ export const actions = {
     }
   },
 
-  detachConversation: async (
-    { commit },
-    { taskId, conversationId }
-  ) => {
+  detachConversation: async ({ commit }, { taskId, conversationId }) => {
     commit(types.SET_KANBAN_TASK_UI_FLAG, { isLinking: true });
     try {
       const response = await KanbanTasksAPI.detachConversation(

@@ -20,7 +20,9 @@ const PRIORITY_STYLES = {
   none: null,
 };
 
-const priorityMeta = computed(() => PRIORITY_STYLES[props.task.priority] || null);
+const priorityMeta = computed(
+  () => PRIORITY_STYLES[props.task.priority] || null
+);
 
 const dueLabel = computed(() => {
   if (!props.task.due_date) return null;
@@ -37,7 +39,9 @@ const dueLabel = computed(() => {
   return { text, overdue: diffDays < 0 };
 });
 
-const visibleAssignees = computed(() => (props.task.assignees || []).slice(0, 3));
+const visibleAssignees = computed(() =>
+  (props.task.assignees || []).slice(0, 3)
+);
 const extraAssignees = computed(() =>
   Math.max(0, (props.task.assignees || []).length - 3)
 );
@@ -53,7 +57,9 @@ const extraAssignees = computed(() =>
     @dragend="emit('dragend', $event)"
   >
     <header class="flex items-start justify-between gap-2">
-      <span class="text-xs font-mono text-n-slate-10">#{{ task.display_id }}</span>
+      <span class="text-xs font-mono text-n-slate-10"
+        >#{{ task.display_id }}</span
+      >
       <span
         v-if="priorityMeta"
         class="flex items-center gap-1 text-xs text-n-slate-11"
@@ -67,10 +73,7 @@ const extraAssignees = computed(() =>
       {{ task.title }}
     </p>
 
-    <div
-      v-if="(task.labels || []).length"
-      class="flex flex-wrap gap-1"
-    >
+    <div v-if="(task.labels || []).length" class="flex flex-wrap gap-1">
       <span
         v-for="label in task.labels.slice(0, 3)"
         :key="label.id"

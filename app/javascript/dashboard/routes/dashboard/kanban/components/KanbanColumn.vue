@@ -13,11 +13,11 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
-  'card-click',
-  'task-dragstart',
-  'task-dragend',
-  'task-drop',
-  'add-task',
+  'cardClick',
+  'taskDragstart',
+  'taskDragend',
+  'taskDrop',
+  'addTask',
 ]);
 
 const { t } = useI18n();
@@ -68,7 +68,7 @@ const onDrop = event => {
   if (props.draggingTaskId == null) return;
   event.preventDefault();
   const position = computeDropPosition(event);
-  emit('task-drop', {
+  emit('taskDrop', {
     stageId: props.stage.id,
     taskId: props.draggingTaskId,
     position,
@@ -118,9 +118,9 @@ const onDrop = event => {
         :task="task"
         :data-card-id="task.id"
         :is-dragging="task.id === draggingTaskId"
-        @click="emit('card-click', task)"
-        @dragstart="(t2, e) => emit('task-dragstart', t2, e)"
-        @dragend="e => emit('task-dragend', e)"
+        @click="emit('cardClick', task)"
+        @dragstart="(t2, e) => emit('taskDragstart', t2, e)"
+        @dragend="e => emit('taskDragend', e)"
       />
       <p
         v-if="!tasks.length"
@@ -138,7 +138,7 @@ const onDrop = event => {
         ghost
         slate
         class="w-full justify-start"
-        @click="emit('add-task', stage)"
+        @click="emit('addTask', stage)"
       />
     </footer>
   </section>

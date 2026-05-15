@@ -200,9 +200,15 @@ const goBack = () => {
 };
 
 const STATUS_BADGE = {
-  active: { label: 'KANBAN.STAGE.STATUS_ACTIVE', cls: 'text-n-slate-11 bg-n-alpha-2' },
+  active: {
+    label: 'KANBAN.STAGE.STATUS_ACTIVE',
+    cls: 'text-n-slate-11 bg-n-alpha-2',
+  },
   won: { label: 'KANBAN.STAGE.STATUS_WON', cls: 'text-n-teal-11 bg-n-teal-2' },
-  lost: { label: 'KANBAN.STAGE.STATUS_LOST', cls: 'text-n-ruby-11 bg-n-ruby-2' },
+  lost: {
+    label: 'KANBAN.STAGE.STATUS_LOST',
+    cls: 'text-n-ruby-11 bg-n-ruby-2',
+  },
 };
 </script>
 
@@ -235,7 +241,9 @@ const STATUS_BADGE = {
       v-if="funnelUiFlags.isFetching && !funnel"
       class="flex-1 flex items-center justify-center"
     >
-      <span class="i-lucide-loader-circle size-6 animate-spin text-n-slate-10" />
+      <span
+        class="i-lucide-loader-circle size-6 animate-spin text-n-slate-10"
+      />
     </section>
 
     <section
@@ -278,7 +286,9 @@ const STATUS_BADGE = {
             <dt class="text-xs text-n-slate-11 uppercase tracking-wide">
               {{ t('KANBAN.SETTINGS.INBOXES_COUNT') }}
             </dt>
-            <dd class="text-n-slate-12">{{ (funnel.inbox_ids || []).length }}</dd>
+            <dd class="text-n-slate-12">
+              {{ (funnel.inbox_ids || []).length }}
+            </dd>
           </div>
           <div class="flex flex-col gap-0.5 col-span-2">
             <dt class="text-xs text-n-slate-11 uppercase tracking-wide">
@@ -310,7 +320,10 @@ const STATUS_BADGE = {
             @click="openCreateStage"
           />
         </header>
-        <p v-if="!stages.length" class="text-sm text-n-slate-11 py-4 text-center">
+        <p
+          v-if="!stages.length"
+          class="text-sm text-n-slate-11 py-4 text-center"
+        >
           {{ t('KANBAN.SETTINGS.STAGES_EMPTY') }}
         </p>
         <ul v-else class="flex flex-col gap-1.5">

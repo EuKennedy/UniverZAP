@@ -5,6 +5,12 @@ import { useI18n } from 'vue-i18n';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 
+const props = defineProps({
+  stage: { type: Object, default: null },
+});
+
+const emit = defineEmits(['submit', 'close']);
+
 const COLOR_SWATCHES = [
   '#64748B',
   '#0EA5E9',
@@ -17,12 +23,6 @@ const COLOR_SWATCHES = [
 ];
 
 const STATUS_TYPES = ['active', 'won', 'lost'];
-
-const props = defineProps({
-  stage: { type: Object, default: null },
-});
-
-const emit = defineEmits(['submit', 'close']);
 
 const { t } = useI18n();
 

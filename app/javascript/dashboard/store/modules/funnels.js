@@ -23,7 +23,8 @@ const upsertStageInFunnel = (funnel, stage) => {
 };
 
 export const getters = {
-  getFunnels: _state => _state.records.slice().sort((a, b) => a.position - b.position),
+  getFunnels: _state =>
+    _state.records.slice().sort((a, b) => a.position - b.position),
   getFunnel: _state => id =>
     _state.records.find(f => f.id === Number(id)) || null,
   getUIFlags: _state => _state.uiFlags,

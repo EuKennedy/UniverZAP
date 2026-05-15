@@ -6,6 +6,14 @@ import { useMapGetter } from 'dashboard/composables/store';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 
+const props = defineProps({
+  task: { type: Object, default: null },
+  funnel: { type: Object, required: true },
+  defaultStageId: { type: [Number, null], default: null },
+});
+
+const emit = defineEmits(['submit', 'close', 'delete']);
+
 const PRIORITIES = ['none', 'low', 'medium', 'high', 'urgent'];
 
 const PRIORITY_DOT = {
@@ -15,14 +23,6 @@ const PRIORITY_DOT = {
   high: 'bg-n-amber-9',
   urgent: 'bg-n-ruby-9',
 };
-
-const props = defineProps({
-  task: { type: Object, default: null },
-  funnel: { type: Object, required: true },
-  defaultStageId: { type: [Number, null], default: null },
-});
-
-const emit = defineEmits(['submit', 'close', 'delete']);
 
 const { t } = useI18n();
 
@@ -267,9 +267,7 @@ const onSubmit = () => {
           />
           <Button
             type="submit"
-            :label="
-              isEdit ? t('KANBAN.TASK.SAVE') : t('KANBAN.TASK.CREATE')
-            "
+            :label="isEdit ? t('KANBAN.TASK.SAVE') : t('KANBAN.TASK.CREATE')"
             :disabled="!isValid || isBusy"
             :is-loading="isBusy"
           />

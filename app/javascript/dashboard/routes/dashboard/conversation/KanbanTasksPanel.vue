@@ -9,6 +9,13 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Spinner from 'shared/components/Spinner.vue';
 import TaskFormModal from 'dashboard/routes/dashboard/kanban/components/TaskFormModal.vue';
 
+const props = defineProps({
+  conversationId: {
+    type: [Number, String],
+    required: true,
+  },
+});
+
 const PRIORITY_DOT = {
   urgent: 'bg-n-ruby-9',
   high: 'bg-n-amber-9',
@@ -23,21 +30,12 @@ const STATUS_BADGE = {
   lost: 'bg-n-ruby-9/15 text-n-ruby-11',
 };
 
-const props = defineProps({
-  conversationId: {
-    type: [Number, String],
-    required: true,
-  },
-});
-
 const { t } = useI18n();
 const store = useStore();
 const router = useRouter();
 const { accountScopedRoute } = useAccount();
 
-const tasksByConversation = useMapGetter(
-  'kanbanTasks/getTasksByConversation'
-);
+const tasksByConversation = useMapGetter('kanbanTasks/getTasksByConversation');
 const tasks = computed(
   () => tasksByConversation.value(props.conversationId) || []
 );
@@ -189,11 +187,21 @@ const formatDue = ts => {
   const diffDays = Math.round(
     (date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
   );
-  if (diffDays === 0) return { text: t('KANBAN.CARD.DUE_TODAY'), overdue: false };
-  if (diffDays === 1) return { text: t('KANBAN.CARD.DUE_TOMORROW'), overdue: false };
-  if (diffDays === -1) return { text: t('KANBAN.CARD.DUE_YESTERDAY'), overdue: true };
-  if (diffDays > 1) return { text: t('KANBAN.CARD.DUE_IN_DAYS', { n: diffDays }), overdue: false };
-  return { text: t('KANBAN.CARD.DUE_OVERDUE_DAYS', { n: -diffDays }), overdue: true };
+  if (diffDays === 0)
+    return { text: t('KANBAN.CARD.DUE_TODAY'), overdue: false };
+  if (diffDays === 1)
+    return { text: t('KANBAN.CARD.DUE_TOMORROW'), overdue: false };
+  if (diffDays === -1)
+    return { text: t('KANBAN.CARD.DUE_YESTERDAY'), overdue: true };
+  if (diffDays > 1)
+    return {
+      text: t('KANBAN.CARD.DUE_IN_DAYS', { n: diffDays }),
+      overdue: false,
+    };
+  return {
+    text: t('KANBAN.CARD.DUE_OVERDUE_DAYS', { n: -diffDays }),
+    overdue: true,
+  };
 };
 
 const goToTask = task => {
@@ -262,14 +270,18 @@ const goToTask = task => {
             <span class="i-lucide-link-2-off size-3.5" />
           </button>
         </div>
-        <p class="text-sm font-medium text-n-slate-12 leading-snug line-clamp-2">
+        <p
+          class="text-sm font-medium text-n-slate-12 leading-snug line-clamp-2"
+        >
           {{ task.title }}
         </p>
         <div class="flex flex-wrap items-center gap-2 text-xs text-n-slate-11">
           <span
             v-if="stageFor(task)"
             class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium"
-            :class="STATUS_BADGE[stageFor(task).status_type] || STATUS_BADGE.active"
+            :class="
+              STATUS_BADGE[stageFor(task).status_type] || STATUS_BADGE.active
+            "
           >
             {{ stageFor(task).name }}
           </span>
@@ -277,7 +289,10 @@ const goToTask = task => {
             v-if="task.priority && task.priority !== 'none'"
             class="inline-flex items-center gap-1"
           >
-            <span class="size-1.5 rounded-full" :class="PRIORITY_DOT[task.priority]" />
+            <span
+              class="size-1.5 rounded-full"
+              :class="PRIORITY_DOT[task.priority]"
+            />
             {{ t(`KANBAN.PRIORITY.${task.priority.toUpperCase()}`) }}
           </span>
           <span
@@ -363,8 +378,10 @@ const goToTask = task => {
 
     <woot-modal v-model:show="showCreateModal" :on-close="closeCreateModal">
       <div class="flex flex-col w-full">
-        <div class="px-6 pt-5 -mb-2" v-if="funnels.length > 1">
-          <label class="text-sm font-medium text-n-slate-12 flex flex-col gap-1.5">
+        <div v-if="funnels.length > 1" class="px-6 pt-5 -mb-2">
+          <label
+            class="text-sm font-medium text-n-slate-12 flex flex-col gap-1.5"
+          >
             {{ t('KANBAN.TASK.FORM.FUNNEL_LABEL') }}
             <select
               v-model="createFunnelId"

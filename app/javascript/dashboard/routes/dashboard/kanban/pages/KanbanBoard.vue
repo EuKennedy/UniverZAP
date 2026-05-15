@@ -65,32 +65,6 @@ const ensureFunnel = async () => {
   }
 };
 
-onMounted(async () => {
-  await ensureFunnel();
-  await loadTasks();
-  if (props.taskId) openTaskFromRoute(Number(props.taskId));
-});
-
-watch(
-  () => props.funnelId,
-  async (next, prev) => {
-    if (Number(next) === Number(prev)) return;
-    await ensureFunnel();
-    await loadTasks();
-  }
-);
-
-watch(
-  () => props.taskId,
-  next => {
-    if (!next) {
-      closeTaskModal();
-      return;
-    }
-    openTaskFromRoute(Number(next));
-  }
-);
-
 const openTaskFromRoute = id => {
   const task = store.getters['kanbanTasks/getTask'](id);
   if (!task) return;
@@ -121,6 +95,32 @@ const closeTaskModal = () => {
     );
   }
 };
+
+onMounted(async () => {
+  await ensureFunnel();
+  await loadTasks();
+  if (props.taskId) openTaskFromRoute(Number(props.taskId));
+});
+
+watch(
+  () => props.funnelId,
+  async (next, prev) => {
+    if (Number(next) === Number(prev)) return;
+    await ensureFunnel();
+    await loadTasks();
+  }
+);
+
+watch(
+  () => props.taskId,
+  next => {
+    if (!next) {
+      closeTaskModal();
+      return;
+    }
+    openTaskFromRoute(Number(next));
+  }
+);
 
 const onCardClick = task => openEditTask(task);
 
@@ -276,7 +276,9 @@ const goToSettings = () => {
       v-if="funnelUiFlags.isFetching || taskUiFlags.isFetching"
       class="flex-1 flex items-center justify-center"
     >
-      <span class="i-lucide-loader-circle size-6 animate-spin text-n-slate-10" />
+      <span
+        class="i-lucide-loader-circle size-6 animate-spin text-n-slate-10"
+      />
     </section>
 
     <section
@@ -330,7 +332,11 @@ const goToSettings = () => {
       </div>
     </section>
 
-    <woot-modal v-model:show="showTaskModal" :on-close="closeTaskModal" size="medium">
+    <woot-modal
+      v-model:show="showTaskModal"
+      :on-close="closeTaskModal"
+      size="medium"
+    >
       <TaskFormModal
         v-if="showTaskModal && funnel"
         :task="editingTask"

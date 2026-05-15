@@ -6,6 +6,12 @@ import { useMapGetter } from 'dashboard/composables/store';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 
+const props = defineProps({
+  funnel: { type: Object, default: null },
+});
+
+const emit = defineEmits(['submit', 'close']);
+
 const AUTOMATION_KEYS = [
   'auto_create_task_for_new_conversation',
   'auto_assign_task_to_agent',
@@ -13,12 +19,6 @@ const AUTOMATION_KEYS = [
   'auto_resolve_conversation_on_task_close',
   'auto_win_task_on_conversation_resolve',
 ];
-
-const props = defineProps({
-  funnel: { type: Object, default: null },
-});
-
-const emit = defineEmits(['submit', 'close']);
 
 const { t } = useI18n();
 

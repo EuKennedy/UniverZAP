@@ -93,8 +93,13 @@ const totalTasks = funnel =>
       />
     </header>
 
-    <section v-if="uiFlags.isFetching" class="flex-1 flex items-center justify-center">
-      <span class="i-lucide-loader-circle size-6 animate-spin text-n-slate-10" />
+    <section
+      v-if="uiFlags.isFetching"
+      class="flex-1 flex items-center justify-center"
+    >
+      <span
+        class="i-lucide-loader-circle size-6 animate-spin text-n-slate-10"
+      />
     </section>
 
     <section
@@ -125,8 +130,7 @@ const totalTasks = funnel =>
 
     <section v-else class="px-8 py-6">
       <div
-        class="grid gap-4"
-        :style="{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }"
+        class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]"
       >
         <button
           v-for="funnel in funnels"
@@ -169,9 +173,7 @@ const totalTasks = funnel =>
             <div class="flex items-center gap-1.5 text-xs text-n-slate-11">
               <span class="i-lucide-square-check-big size-3.5" />
               <span>
-                {{
-                  t('KANBAN.OVERVIEW.TASK_COUNT', { n: totalTasks(funnel) })
-                }}
+                {{ t('KANBAN.OVERVIEW.TASK_COUNT', { n: totalTasks(funnel) }) }}
               </span>
             </div>
           </div>
