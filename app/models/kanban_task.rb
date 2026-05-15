@@ -35,7 +35,7 @@ class KanbanTask < ApplicationRecord
   has_many :kanban_task_contacts, dependent: :destroy
   has_many :contacts, through: :kanban_task_contacts
 
-  enum priority: { none: 0, low: 1, medium: 2, high: 3, urgent: 4 }
+  enum priority: { none: 0, low: 1, medium: 2, high: 3, urgent: 4 }, _prefix: :priority
 
   validates :title, presence: true, length: { maximum: 255 }
   validates :description, length: { maximum: 5000 }, allow_blank: true
