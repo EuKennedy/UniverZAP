@@ -24,6 +24,7 @@ import ShopifyOrdersList from 'dashboard/components/widgets/conversation/Shopify
 import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
+import KanbanTasksPanel from './KanbanTasksPanel.vue';
 
 const props = defineProps({
   conversationId: {
@@ -308,6 +309,18 @@ onMounted(() => {
               "
             >
               <SharedFiles />
+            </AccordionItem>
+          </div>
+          <div v-else-if="element.name === 'kanban_tasks'">
+            <AccordionItem
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.KANBAN_TASKS')"
+              :is-open="isContactSidebarItemOpen('is_kanban_tasks_open')"
+              compact
+              @toggle="
+                value => toggleSidebarUIState('is_kanban_tasks_open', value)
+              "
+            >
+              <KanbanTasksPanel :conversation-id="conversationId" />
             </AccordionItem>
           </div>
         </template>

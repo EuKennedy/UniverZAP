@@ -147,6 +147,7 @@ Rails.application.routes.draw do
               resource :participants, only: [:show, :create, :update, :destroy]
               resource :direct_uploads, only: [:create]
               resource :draft_messages, only: [:show, :update, :destroy]
+              resources :kanban_tasks, only: [:index]
             end
             member do
               post :mute
@@ -256,6 +257,23 @@ Rails.application.routes.draw do
             end
           end
           resources :labels, only: [:index, :show, :create, :update, :destroy]
+
+          resources :funnels do
+            resources :funnel_stages, only: [:index, :show, :create, :update, :destroy] do
+              collection do
+                post :reorder
+              end
+            end
+            resources :kanban_tasks, only: [:index, :create]
+          end
+
+          resources :kanban_tasks, only: [:show, :update, :destroy] do
+            member do
+              post :move
+              post :attach_conversation
+              delete :detach_conversation
+            end
+          end
 
           resources :notifications, only: [:index, :update, :destroy] do
             collection do

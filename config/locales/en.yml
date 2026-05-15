@@ -101,6 +101,7 @@ en:
     messages:
       search:
         time_range_limit_exceeded: 'Search is limited to the last %{days} days'
+      invalid_hex_color: must be a hex color
     categories:
       locale:
         unique: should be unique in the category and portal
