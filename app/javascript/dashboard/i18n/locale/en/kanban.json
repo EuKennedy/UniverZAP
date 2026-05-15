@@ -133,7 +133,7 @@
       "DELETE_CONFIRM_TITLE": "Delete task?",
       "DELETE_CONFIRM_MESSAGE": "This action cannot be undone.",
       "FORM": {
-        "TITLE_LABEL": "Title",
+        "TITLE_LABEL": "Card title",
         "TITLE_PLACEHOLDER": "Follow up with prospect",
         "DESCRIPTION_LABEL": "Description",
         "STAGE_LABEL": "Stage",
@@ -142,7 +142,12 @@
         "DUE_LABEL": "Due date",
         "ASSIGNEES_LABEL": "Assignees",
         "LABELS_LABEL": "Labels",
-        "FUNNEL_LABEL": "Funnel"
+        "FUNNEL_LABEL": "Funnel",
+        "CONTACTS_LABEL": "Contacts",
+        "CONTACT_SEARCH_PLACEHOLDER": "Search contact by name, email or phone…",
+        "CONTACT_NOT_FOUND": "No contact found.",
+        "NO_CONTACT_DETAILS": "No email or phone",
+        "REMOVE_CONTACT": "Remove contact"
       },
       "LINK_TITLE": "Link existing task",
       "LINK_DESCRIPTION": "Pick a task to attach to this conversation.",

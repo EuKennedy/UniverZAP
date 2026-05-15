@@ -40,6 +40,17 @@ const priorityMeta = computed(
   () => PRIORITY_STYLES[props.task.priority] || null
 );
 
+const primaryContact = computed(() => (props.task.contacts || [])[0] || null);
+const extraContacts = computed(() =>
+  Math.max(0, (props.task.contacts || []).length - 1)
+);
+
+const contactDetail = computed(() => {
+  const c = primaryContact.value;
+  if (!c) return null;
+  return c.email || c.phone_number || null;
+});
+
 const dueLabel = computed(() => {
   if (!props.task.due_date) return null;
   const date = new Date(props.task.due_date * 1000);
@@ -114,8 +125,35 @@ const extraAssignees = computed(() =>
       </span>
     </header>
 
+    <div v-if="primaryContact" class="flex items-center gap-2.5">
+      <Avatar
+        :src="primaryContact.thumbnail || primaryContact.avatar_url"
+        :name="primaryContact.name"
+        :size="32"
+        rounded-full
+        class="ring-2 ring-n-solid-1 flex-shrink-0"
+      />
+      <div class="flex flex-col min-w-0 flex-1">
+        <span
+          class="text-[13px] font-semibold text-n-slate-12 truncate tracking-tight"
+        >
+          {{ primaryContact.name }}
+        </span>
+        <span v-if="contactDetail" class="text-[11px] text-n-slate-11 truncate">
+          {{ contactDetail }}
+        </span>
+      </div>
+      <span
+        v-if="extraContacts"
+        class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-n-alpha-2 text-[10px] font-semibold text-n-slate-11"
+      >
+        +{{ extraContacts }}
+      </span>
+    </div>
+
     <p
-      class="text-sm font-medium text-n-slate-12 line-clamp-3 leading-snug tracking-[-0.01em]"
+      class="text-[13px] text-n-slate-12 line-clamp-2 leading-snug"
+      :class="{ 'font-semibold': !primaryContact }"
     >
       {{ task.title }}
     </p>
@@ -156,13 +194,6 @@ const extraAssignees = computed(() =>
         >
           <span class="i-lucide-message-square size-3.5" />
           {{ task.conversations.length }}
-        </span>
-        <span
-          v-if="(task.contacts || []).length"
-          class="inline-flex items-center gap-0.5 tabular-nums"
-        >
-          <span class="i-lucide-user size-3.5" />
-          {{ task.contacts.length }}
         </span>
       </div>
       <div

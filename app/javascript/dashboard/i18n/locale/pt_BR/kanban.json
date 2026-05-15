@@ -133,8 +133,8 @@
       "DELETE_CONFIRM_TITLE": "Excluir tarefa?",
       "DELETE_CONFIRM_MESSAGE": "Esta ação não pode ser desfeita.",
       "FORM": {
-        "TITLE_LABEL": "Título",
-        "TITLE_PLACEHOLDER": "Fazer follow-up com prospect",
+        "TITLE_LABEL": "Título do card",
+        "TITLE_PLACEHOLDER": "Ex: Fechar negócio com prospect",
         "DESCRIPTION_LABEL": "Descrição",
         "STAGE_LABEL": "Etapa",
         "PRIORITY_LABEL": "Prioridade",
@@ -142,7 +142,12 @@
         "DUE_LABEL": "Data de vencimento",
         "ASSIGNEES_LABEL": "Responsáveis",
         "LABELS_LABEL": "Etiquetas",
-        "FUNNEL_LABEL": "Funil"
+        "FUNNEL_LABEL": "Funil",
+        "CONTACTS_LABEL": "Contatos",
+        "CONTACT_SEARCH_PLACEHOLDER": "Buscar contato por nome, e-mail ou telefone…",
+        "CONTACT_NOT_FOUND": "Nenhum contato encontrado.",
+        "NO_CONTACT_DETAILS": "Sem e-mail ou telefone",
+        "REMOVE_CONTACT": "Remover contato"
       },
       "LINK_TITLE": "Vincular tarefa existente",
       "LINK_DESCRIPTION": "Escolha uma tarefa para anexar a esta conversa.",
