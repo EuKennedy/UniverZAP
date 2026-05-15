@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
-import { useAlert } from 'dashboard/composables/useAlert';
+import { useAlert } from 'dashboard/composables';
 import { useRouter } from 'vue-router';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Spinner from 'shared/components/Spinner.vue';
