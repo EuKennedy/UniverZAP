@@ -15,8 +15,9 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
   def create
     stage = @funnel.funnel_stages.find(permitted_params.fetch(:funnel_stage_id))
     @task = Current.account.kanban_tasks.new(permitted_params.merge(funnel: @funnel, funnel_stage: stage))
-    apply_associations(@task)
+    assignees_changed = apply_associations(@task)
     @task.save!
+    Kanban::AutomationService.handle_task_assignees_changed(@task) if assignees_changed
   end
 
   def update
@@ -25,8 +26,9 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
       @task.funnel_stage = stage
     end
     @task.assign_attributes(permitted_params.except(:funnel_stage_id))
-    apply_associations(@task)
+    assignees_changed = apply_associations(@task)
     @task.save!
+    Kanban::AutomationService.handle_task_assignees_changed(@task) if assignees_changed
   end
 
   def destroy
@@ -78,17 +80,19 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
   end
 
   def apply_associations(task)
-    apply_ids(task, param: :assignee_ids, setter: :assignee_ids, source: Current.account.users)
+    assignees_changed = apply_ids(task, param: :assignee_ids, setter: :assignee_ids, source: Current.account.users)
     apply_ids(task, param: :label_ids, setter: :task_label_ids, source: Current.account.labels)
     apply_ids(task, param: :conversation_ids, setter: :conversation_ids, source: Current.account.conversations)
     apply_ids(task, param: :contact_ids, setter: :contact_ids, source: Current.account.contacts)
+    assignees_changed
   end
 
   def apply_ids(task, param:, setter:, source:)
-    return unless params[:kanban_task].key?(param)
+    return false unless params[:kanban_task].key?(param)
 
     ids = Array(params[:kanban_task][param]).map(&:to_i)
     filtered = source.where(id: ids).pluck(:id)
     task.public_send("#{setter}=", filtered)
+    true
   end
 end

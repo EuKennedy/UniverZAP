@@ -45,6 +45,9 @@ class KanbanTask < ApplicationRecord
   before_validation :assign_position, on: :create
   before_create     :assign_display_id
 
+  after_create_commit  :run_automation_on_create
+  after_update_commit  :run_automation_on_stage_change
+
   scope :ordered_in_stage, -> { order(:position, :id) }
   scope :for_stage, ->(stage_id) { where(funnel_stage_id: stage_id) }
 
@@ -102,5 +105,15 @@ class KanbanTask < ApplicationRecord
     return if funnel.account_id == account_id
 
     errors.add(:funnel, 'must belong to the same account')
+  end
+
+  def run_automation_on_create
+    Kanban::AutomationService.handle_task_created(self)
+  end
+
+  def run_automation_on_stage_change
+    return unless previous_changes.key?('funnel_stage_id')
+
+    Kanban::AutomationService.handle_task_stage_changed(self)
   end
 end

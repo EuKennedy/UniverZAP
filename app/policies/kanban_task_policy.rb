@@ -15,6 +15,18 @@ class KanbanTaskPolicy < ApplicationPolicy
     funnel_visible?
   end
 
+  def move?
+    update?
+  end
+
+  def attach_conversation?
+    update?
+  end
+
+  def detach_conversation?
+    update?
+  end
+
   def destroy?
     @account_user.administrator? || assignee?
   end
