@@ -43,16 +43,20 @@ class Webhooks::WahaEventsJob < ApplicationJob
 
   def handle_ack(channel, event)
     payload = event[:payload] || {}
-    source_id = payload[:id].is_a?(Hash) ? payload.dig(:id, :_serialized) : payload[:id]
-    return if source_id.blank?
-
-    message = channel.inbox.messages.find_by(source_id: source_id.to_s)
+    message = find_ack_message(channel, payload)
     return unless message
 
     status = ack_status(payload[:ack] || payload[:ackName])
     message.update(status: status) if status
   rescue StandardError => e
     Rails.logger.error("[WAHA events] ack handling failed: #{e.message}")
+  end
+
+  def find_ack_message(channel, payload)
+    source_id = payload[:id].is_a?(Hash) ? payload.dig(:id, :_serialized) : payload[:id]
+    return nil if source_id.blank?
+
+    channel.inbox.messages.find_by(source_id: source_id.to_s)
   end
 
   def handle_session_status(channel, event)
@@ -82,11 +86,6 @@ class Webhooks::WahaEventsJob < ApplicationJob
   def normalize_to_cloud_api(payload)
     from_jid = payload[:fromMe] ? payload[:to] : payload[:from]
     phone_digits = from_jid.to_s.split('@').first
-    message_hash = build_message_hash(payload, phone_digits)
-    contact_hash = {
-      'profile' => { 'name' => payload.dig(:_data, :notifyName) || payload.dig(:contact, :pushName) || payload.dig(:contact, :name) },
-      'wa_id' => phone_digits
-    }
     {
       'entry' => [
         {
@@ -95,14 +94,21 @@ class Webhooks::WahaEventsJob < ApplicationJob
               'value' => {
                 'messaging_product' => 'whatsapp',
                 'metadata' => { 'display_phone_number' => phone_digits, 'phone_number_id' => phone_digits },
-                'contacts' => [contact_hash],
-                'messages' => [message_hash]
+                'contacts' => [build_contact_hash(payload, phone_digits)],
+                'messages' => [build_message_hash(payload, phone_digits)]
               }
             }
           ]
         }
       ]
     }
+  end
+
+  def build_contact_hash(payload, phone_digits)
+    name = payload.dig(:_data, :notifyName) ||
+           payload.dig(:contact, :pushName) ||
+           payload.dig(:contact, :name)
+    { 'profile' => { 'name' => name }, 'wa_id' => phone_digits }
   end
 
   def build_message_hash(payload, phone_digits)

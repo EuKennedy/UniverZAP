@@ -11,14 +11,14 @@ class Whatsapp::WahaSessionService
     request(:get, '/api/sessions')
   end
 
-  def get_session
+  def session
     request(:get, "/api/sessions/#{@session_name}")
   rescue WahaError
     nil
   end
 
   def session_exists?
-    !get_session.nil?
+    !session.nil?
   end
 
   def create_session(webhook_url:)

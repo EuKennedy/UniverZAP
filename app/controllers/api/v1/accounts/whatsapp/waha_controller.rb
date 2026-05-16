@@ -21,7 +21,7 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   # GET /api/v1/accounts/:account_id/whatsapp/waha/sessions/:session_name
   def show_session
     service = session_service(params[:session_name])
-    session = service.get_session
+    session = service.session
     return render(json: { error: 'not_found' }, status: :not_found) unless session
 
     render json: {
@@ -44,7 +44,7 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   # Adopts an existing WAHA session by ensuring our webhook URL is configured on it.
   def connect_existing
     service = session_service(params[:session_name])
-    session = service.get_session
+    session = service.session
     return render(json: { error: 'not_found' }, status: :not_found) unless session
 
     service.update_webhook(webhook_url: webhook_url)
@@ -82,7 +82,7 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   # same WAHA session id by accident.
   def sanitized_session_name
     raw = params.require(:session_name).to_s.downcase
-    slug = raw.gsub(/[^a-z0-9-]/, '-').gsub(/-+/, '-').gsub(/^-|-$/, '')
+    slug = raw.gsub(/[^a-z0-9-]/, '-').squeeze('-').gsub(/^-|-$/, '')
     "u#{Current.account.id}-#{slug.presence || SecureRandom.hex(4)}"
   end
 

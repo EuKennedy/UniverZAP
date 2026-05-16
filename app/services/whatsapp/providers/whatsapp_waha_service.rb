@@ -21,7 +21,7 @@ class Whatsapp::Providers::WhatsappWahaService < Whatsapp::Providers::BaseServic
   end
 
   def validate_provider_config?
-    session = session_service.get_session
+    session = session_service.session
     session.present? && %w[STARTING WORKING SCAN_QR_CODE FAILED STOPPED].include?(session['status'])
   rescue Whatsapp::WahaSessionService::WahaError
     false
