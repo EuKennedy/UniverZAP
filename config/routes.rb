@@ -332,6 +332,13 @@ Rails.application.routes.draw do
 
           namespace :whatsapp do
             resource :authorization, only: [:create]
+            scope :waha do
+              post 'sessions', to: 'waha#create_session'
+              get 'sessions/:session_name', to: 'waha#show_session'
+              get 'sessions/:session_name/qr', to: 'waha#session_qr'
+              post 'sessions/:session_name/connect', to: 'waha#connect_existing'
+              post 'sessions/:session_name/logout', to: 'waha#logout_session'
+            end
           end
 
           resources :webhooks, only: [:index, :create, :update, :destroy]
@@ -611,6 +618,8 @@ Rails.application.routes.draw do
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'
+  post 'webhooks/waha', to: 'webhooks/waha#process_payload'
+  post 'webhooks/waha/:session_name', to: 'webhooks/waha#process_payload'
   get 'webhooks/instagram', to: 'webhooks/instagram#verify'
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
   post 'webhooks/tiktok', to: 'webhooks/tiktok#events'

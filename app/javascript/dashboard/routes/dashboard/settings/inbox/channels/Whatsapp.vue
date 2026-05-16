@@ -6,6 +6,7 @@ import Twilio from './Twilio.vue';
 import ThreeSixtyDialogWhatsapp from './360DialogWhatsapp.vue';
 import CloudWhatsapp from './CloudWhatsapp.vue';
 import WhatsappEmbeddedSignup from './WhatsappEmbeddedSignup.vue';
+import WahaWhatsapp from './WahaWhatsapp.vue';
 import ChannelSelector from 'dashboard/components/ChannelSelector.vue';
 
 const route = useRoute();
@@ -19,6 +20,7 @@ const PROVIDER_TYPES = {
   WHATSAPP_EMBEDDED: 'whatsapp_embedded',
   WHATSAPP_MANUAL: 'whatsapp_manual',
   THREE_SIXTY_DIALOG: '360dialog',
+  WAHA: 'waha',
 };
 
 const hasWhatsappAppId = computed(() => {
@@ -40,6 +42,12 @@ const availableProviders = computed(() => [
     title: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WHATSAPP_CLOUD'),
     description: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WHATSAPP_CLOUD_DESC'),
     icon: 'i-woot-whatsapp',
+  },
+  {
+    key: PROVIDER_TYPES.WAHA,
+    title: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WAHA'),
+    description: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WAHA_DESC'),
+    icon: 'i-lucide-qr-code',
   },
   {
     key: PROVIDER_TYPES.TWILIO,
@@ -138,6 +146,7 @@ const handleManualLinkClick = () => {
         <ThreeSixtyDialogWhatsapp
           v-else-if="selectedProvider === PROVIDER_TYPES.THREE_SIXTY_DIALOG"
         />
+        <WahaWhatsapp v-else-if="selectedProvider === PROVIDER_TYPES.WAHA" />
         <CloudWhatsapp v-else />
       </div>
     </div>

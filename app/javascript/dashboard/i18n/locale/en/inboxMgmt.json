@@ -247,7 +247,31 @@
           "WHATSAPP_CLOUD": "WhatsApp Cloud",
           "WHATSAPP_CLOUD_DESC": "Quick setup through Meta",
           "TWILIO_DESC": "Connect via Twilio credentials",
-          "360_DIALOG": "360Dialog"
+          "360_DIALOG": "360Dialog",
+          "WAHA": "WhatsApp - Unofficial API",
+          "WAHA_DESC": "Connect any WhatsApp number by scanning a QR code via WAHA"
+        },
+        "WAHA": {
+          "TITLE": "WhatsApp via QR code",
+          "SUBTITLE": "Create or attach a session on your WAHA server, scan the QR code and your inbox will be ready.",
+          "NEW_SESSION_TITLE": "Create a new session",
+          "NEW_SESSION_DESC": "Generate a brand new session on WAHA and scan its QR code.",
+          "EXISTING_TITLE": "Connect an existing session",
+          "EXISTING_DESC": "Already created a session on WAHA? Plug it into a new inbox.",
+          "INBOX_NAME_LABEL": "Inbox name",
+          "INBOX_NAME_PLACEHOLDER": "Ex: Sales WhatsApp",
+          "SESSION_LABEL": "Session name",
+          "SESSION_PLACEHOLDER_NEW": "Ex: sales-team",
+          "SESSION_PLACEHOLDER_EXISTING": "Existing session name on WAHA",
+          "BACK": "Back",
+          "CREATE_AND_SHOW_QR": "Generate QR code",
+          "CONNECT": "Connect session",
+          "QR_LOADING": "Loading QR code…",
+          "QR_INSTRUCTIONS": "Open WhatsApp on your phone, go to Settings → Linked Devices → Link a Device and scan this code.",
+          "CONNECTED": "Session connected",
+          "FINISH": "Finish setup",
+          "SUCCESS": "WhatsApp inbox created.",
+          "CREATE_ERROR": "Could not finalize the inbox."
         },
         "SELECT_PROVIDER": {
           "TITLE": "Select your API provider",

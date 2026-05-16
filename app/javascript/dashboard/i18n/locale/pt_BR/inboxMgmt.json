@@ -247,7 +247,31 @@
           "WHATSAPP_CLOUD": "Cloud do WhatsApp",
           "WHATSAPP_CLOUD_DESC": "Configuração rápida via Meta",
           "TWILIO_DESC": "Conectar através de credenciais Twilio",
-          "360_DIALOG": "360Dialog"
+          "360_DIALOG": "360Dialog",
+          "WAHA": "WhatsApp - API Não Oficial",
+          "WAHA_DESC": "Conecte qualquer número escaneando um QR code via WAHA"
+        },
+        "WAHA": {
+          "TITLE": "WhatsApp via QR code",
+          "SUBTITLE": "Crie ou conecte uma sessão no seu servidor WAHA, escaneie o QR code e sua caixa de entrada estará pronta.",
+          "NEW_SESSION_TITLE": "Criar nova sessão",
+          "NEW_SESSION_DESC": "Gerar uma sessão nova no WAHA e escanear o QR code.",
+          "EXISTING_TITLE": "Conectar sessão existente",
+          "EXISTING_DESC": "Já criou uma sessão no WAHA? Conecte-a a uma nova caixa de entrada.",
+          "INBOX_NAME_LABEL": "Nome da caixa de entrada",
+          "INBOX_NAME_PLACEHOLDER": "Ex: WhatsApp Vendas",
+          "SESSION_LABEL": "Nome da sessão",
+          "SESSION_PLACEHOLDER_NEW": "Ex: time-vendas",
+          "SESSION_PLACEHOLDER_EXISTING": "Nome da sessão existente no WAHA",
+          "BACK": "Voltar",
+          "CREATE_AND_SHOW_QR": "Gerar QR code",
+          "CONNECT": "Conectar sessão",
+          "QR_LOADING": "Carregando QR code…",
+          "QR_INSTRUCTIONS": "Abra o WhatsApp no seu celular, vá em Configurações → Dispositivos conectados → Conectar dispositivo e escaneie este código.",
+          "CONNECTED": "Sessão conectada",
+          "FINISH": "Concluir configuração",
+          "SUCCESS": "Caixa de entrada do WhatsApp criada.",
+          "CREATE_ERROR": "Não foi possível concluir a criação da caixa de entrada."
         },
         "SELECT_PROVIDER": {
           "TITLE": "Selecione seu provedor de API",
