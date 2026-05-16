@@ -1,5 +1,4 @@
 class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseController
-  before_action :ensure_admin
   before_action :ensure_waha_configured
 
   # POST /api/v1/accounts/:account_id/whatsapp/waha/sessions
@@ -63,10 +62,6 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   end
 
   private
-
-  def ensure_admin
-    render_unauthorized('Administrator privileges required') unless Current.account_user&.administrator?
-  end
 
   def ensure_waha_configured
     return if ENV['WAHA_BASE_URL'].present? && ENV['WAHA_API_KEY'].present?

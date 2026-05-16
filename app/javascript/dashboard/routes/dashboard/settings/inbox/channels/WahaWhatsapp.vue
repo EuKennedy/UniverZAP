@@ -3,9 +3,8 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
-import axios from 'axios';
 import { useAlert } from 'dashboard/composables';
-import { useAccount } from 'dashboard/composables/useAccount';
+import WahaChannelAPI from 'dashboard/api/channel/wahaChannel';
 
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -13,7 +12,6 @@ import Button from 'dashboard/components-next/button/Button.vue';
 const { t } = useI18n();
 const router = useRouter();
 const store = useStore();
-const { accountId } = useAccount();
 
 const MODE = { NEW: 'new', EXISTING: 'existing' };
 const STEPS = { CHOOSE_MODE: 0, FORM: 1, QR: 2 };
@@ -28,10 +26,6 @@ const qrCode = ref('');
 const isSubmitting = ref(false);
 const error = ref('');
 let pollTimer = null;
-
-const apiBase = computed(
-  () => `/api/v1/accounts/${accountId.value}/whatsapp/waha`
-);
 
 const isWorking = computed(() => sessionStatus.value === 'WORKING');
 const phoneNumberFromMe = computed(() => {
@@ -51,7 +45,7 @@ onBeforeUnmount(stopPolling);
 
 const fetchSession = async name => {
   try {
-    const { data } = await axios.get(`${apiBase.value}/sessions/${name}`);
+    const { data } = await WahaChannelAPI.showSession(name);
     sessionStatus.value = data.status;
     sessionMe.value = data.me || null;
   } catch (e) {
@@ -61,7 +55,7 @@ const fetchSession = async name => {
 
 const fetchQr = async name => {
   try {
-    const { data } = await axios.get(`${apiBase.value}/sessions/${name}/qr`);
+    const { data } = await WahaChannelAPI.sessionQr(name);
     qrCode.value = data.qr;
   } catch (_e) {
     qrCode.value = '';
@@ -99,9 +93,9 @@ const handleNewSession = async () => {
   isSubmitting.value = true;
   error.value = '';
   try {
-    const { data } = await axios.post(`${apiBase.value}/sessions`, {
-      session_name: sessionName.value.trim(),
-    });
+    const { data } = await WahaChannelAPI.createSession(
+      sessionName.value.trim()
+    );
     sessionName.value = data.session_name;
     sessionStatus.value = data.status;
     step.value = STEPS.QR;
@@ -118,8 +112,8 @@ const handleConnectExisting = async () => {
   isSubmitting.value = true;
   error.value = '';
   try {
-    const { data } = await axios.post(
-      `${apiBase.value}/sessions/${encodeURIComponent(sessionName.value.trim())}/connect`
+    const { data } = await WahaChannelAPI.connectExisting(
+      sessionName.value.trim()
     );
     sessionName.value = data.session_name;
     sessionStatus.value = data.status;

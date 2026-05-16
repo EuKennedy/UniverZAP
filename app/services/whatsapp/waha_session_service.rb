@@ -125,8 +125,12 @@ class Whatsapp::WahaSessionService
 
     options = { headers: headers, timeout: 15 }
     options[:body] = body.to_json if body
+    Rails.logger.info("[WAHA] #{method.to_s.upcase} #{path} session=#{@session_name}")
     response = HTTParty.public_send(method, "#{@base_url}#{path}", options)
-    raise WahaError, "WAHA #{method} #{path} failed: #{response.code} #{response.body}" unless response.success?
+    unless response.success?
+      Rails.logger.error("[WAHA] #{method.to_s.upcase} #{path} -> #{response.code} body=#{response.body.to_s.truncate(500)}")
+      raise WahaError, "WAHA #{method} #{path} failed: #{response.code} #{response.body.to_s.truncate(300)}"
+    end
 
     response.parsed_response
   end
