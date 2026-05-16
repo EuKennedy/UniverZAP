@@ -123,15 +123,20 @@ class Whatsapp::WahaSessionService
   def request(method, path, body: nil)
     raise WahaError, 'WAHA_BASE_URL/api_key not configured' if @base_url.blank? || @api_key.blank?
 
+    response = perform_http(method, path, body)
+    handle_failure!(method, path, response) unless response.success?
+    response.parsed_response
+  end
+
+  def perform_http(method, path, body)
     options = { headers: headers, timeout: 15 }
     options[:body] = body.to_json if body
     Rails.logger.info("[WAHA] #{method.to_s.upcase} #{path} session=#{@session_name}")
-    response = HTTParty.public_send(method, "#{@base_url}#{path}", options)
-    unless response.success?
-      Rails.logger.error("[WAHA] #{method.to_s.upcase} #{path} -> #{response.code} body=#{response.body.to_s.truncate(500)}")
-      raise WahaError, "WAHA #{method} #{path} failed: #{response.code} #{response.body.to_s.truncate(300)}"
-    end
+    HTTParty.public_send(method, "#{@base_url}#{path}", options)
+  end
 
-    response.parsed_response
+  def handle_failure!(method, path, response)
+    Rails.logger.error("[WAHA] #{method.to_s.upcase} #{path} -> #{response.code} body=#{response.body.to_s.truncate(500)}")
+    raise WahaError, "WAHA #{method} #{path} failed: #{response.code} #{response.body.to_s.truncate(300)}"
   end
 end
