@@ -6,9 +6,9 @@ class Ai::Assistant < ApplicationRecord
   self.table_name = 'ai_assistants'
 
   belongs_to :account
-  has_many :trainings, class_name: 'Ai::Training', dependent: :destroy
-  has_many :intents, class_name: 'Ai::Intent', dependent: :destroy
-  has_many :invocations, class_name: 'Ai::Invocation', dependent: :nullify
+  has_many :trainings, class_name: 'Ai::Training', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
+  has_many :intents, class_name: 'Ai::Intent', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
+  has_many :invocations, class_name: 'Ai::Invocation', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
   has_many :inboxes, dependent: :nullify
   has_many :conversations, dependent: :nullify
 
