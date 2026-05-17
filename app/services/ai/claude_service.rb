@@ -35,12 +35,16 @@ class Ai::ClaudeService
 
   def build_payload(messages, system, overrides)
     {
-      model: overrides[:model] || @assistant&.model || 'claude-sonnet-4-5',
-      max_tokens: overrides[:max_tokens] || @assistant&.max_tokens || 1024,
-      temperature: overrides[:temperature] || @assistant&.temperature || 0.3,
+      model: pick(overrides[:model], @assistant&.model, 'claude-sonnet-4-5'),
+      max_tokens: pick(overrides[:max_tokens], @assistant&.max_tokens, 1024),
+      temperature: pick(overrides[:temperature], @assistant&.temperature, 0.3),
       system: system,
       messages: messages
     }.compact
+  end
+
+  def pick(*candidates)
+    candidates.compact.first
   end
 
   def perform_request(api_key, payload)

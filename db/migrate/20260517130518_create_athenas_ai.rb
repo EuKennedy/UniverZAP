@@ -21,29 +21,29 @@ class CreateAthenasAi < ActiveRecord::Migration[7.1]
     add_index :ai_assistants, %i[account_id name], unique: true
   end
 
-  def assistant_identity_columns(t)
-    t.string :name, null: false, limit: 80
-    t.string :role, default: 'Assistente', limit: 60
-    t.text :description
-    t.string :avatar_url
-    t.string :tone, default: 'friendly', limit: 40
+  def assistant_identity_columns(table)
+    table.string :name, null: false, limit: 80
+    table.string :role, default: 'Assistente', limit: 60
+    table.text :description
+    table.string :avatar_url
+    table.string :tone, default: 'friendly', limit: 40
   end
 
-  def assistant_model_columns(t)
-    t.string :provider, null: false, default: 'anthropic'
-    t.string :model, null: false, default: 'claude-sonnet-4-5'
-    t.text :system_prompt
-    t.float :temperature, null: false, default: 0.3
-    t.integer :max_tokens, null: false, default: 1024
-    t.string :encrypted_anthropic_key
-    t.string :encrypted_openai_key
-    t.jsonb :router_config, null: false, default: router_config_default
+  def assistant_model_columns(table)
+    table.string :provider, null: false, default: 'anthropic'
+    table.string :model, null: false, default: 'claude-sonnet-4-5'
+    table.text :system_prompt
+    table.float :temperature, null: false, default: 0.3
+    table.integer :max_tokens, null: false, default: 1024
+    table.string :encrypted_anthropic_key
+    table.string :encrypted_openai_key
+    table.jsonb :router_config, null: false, default: router_config_default
   end
 
-  def assistant_behavior_columns(t)
-    t.boolean :autopilot_enabled, null: false, default: false
-    t.jsonb :guardrails, null: false, default: guardrails_default
-    t.boolean :active, null: false, default: true
+  def assistant_behavior_columns(table)
+    table.boolean :autopilot_enabled, null: false, default: false
+    table.jsonb :guardrails, null: false, default: guardrails_default
+    table.boolean :active, null: false, default: true
   end
 
   def router_config_default
@@ -100,22 +100,22 @@ class CreateAthenasAi < ActiveRecord::Migration[7.1]
     add_index :ai_invocations, :conversation_id
   end
 
-  def invocation_link_columns(t)
-    t.bigint :conversation_id
-    t.bigint :message_id
-    t.string :phase, null: false, default: 'main'
-    t.string :model, null: false
+  def invocation_link_columns(table)
+    table.bigint :conversation_id
+    table.bigint :message_id
+    table.string :phase, null: false, default: 'main'
+    table.string :model, null: false
   end
 
-  def invocation_usage_columns(t)
-    t.integer :input_tokens, default: 0
-    t.integer :output_tokens, default: 0
-    t.integer :cache_read_tokens, default: 0
-    t.integer :cache_write_tokens, default: 0
-    t.float :cost_usd, default: 0.0
-    t.integer :duration_ms, default: 0
-    t.string :status, default: 'success'
-    t.text :error_message
+  def invocation_usage_columns(table)
+    table.integer :input_tokens, default: 0
+    table.integer :output_tokens, default: 0
+    table.integer :cache_read_tokens, default: 0
+    table.integer :cache_write_tokens, default: 0
+    table.float :cost_usd, default: 0.0
+    table.integer :duration_ms, default: 0
+    table.string :status, default: 'success'
+    table.text :error_message
   end
 
   def create_link_columns
