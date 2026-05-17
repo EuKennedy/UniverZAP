@@ -66,14 +66,7 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   # App so WAHA can drive the inbox via Chatwoot's REST API.
   def install_app
     inbox = create_api_inbox(params[:inbox_name].presence || params[:session_name])
-    session_service(params[:session_name]).install_chatwoot_app(
-      locale: params[:locale].presence || 'pt-BR',
-      chatwoot_url: ENV.fetch('FRONTEND_URL', request.base_url),
-      account_id: Current.account.id,
-      user_token: current_user_access_token,
-      inbox_id: inbox.id,
-      inbox_identifier: inbox.channel.identifier
-    )
+    session_service(params[:session_name]).install_chatwoot_app(chatwoot_app_options(inbox))
     render json: { inbox_id: inbox.id, inbox_identifier: inbox.channel.identifier }
   rescue Whatsapp::WahaSessionService::WahaError, ActiveRecord::RecordInvalid => e
     render json: { error: e.message }, status: :unprocessable_entity
@@ -121,5 +114,16 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   def current_user_access_token
     token = current_user.access_token || current_user.create_access_token
     token.token
+  end
+
+  def chatwoot_app_options(inbox)
+    {
+      locale: params[:locale].presence || 'pt-BR',
+      chatwoot_url: ENV.fetch('FRONTEND_URL', request.base_url),
+      account_id: Current.account.id,
+      user_token: current_user_access_token,
+      inbox_id: inbox.id,
+      inbox_identifier: inbox.channel.identifier
+    }
   end
 end

@@ -114,11 +114,11 @@ class Whatsapp::WahaSessionService
   # account + inbox. WAHA then drives the inbox via the Chatwoot API, creates
   # the "WhatsApp Integration" command contact, and forwards messages both ways.
   # See https://waha.devlike.pro/docs/apps/chatwoot/
-  def install_chatwoot_app(locale:, chatwoot_url:, account_id:, user_token:, inbox_id:, inbox_identifier:)
+  def install_chatwoot_app(options)
     payload = {
       session: @session_name,
       app: 'chatwoot',
-      config: chatwoot_app_config(locale, chatwoot_url, account_id, user_token, inbox_id, inbox_identifier),
+      config: chatwoot_app_config(options),
       enabled: true
     }
     request(:post, '/api/apps', body: payload)
@@ -153,14 +153,14 @@ class Whatsapp::WahaSessionService
     "data:#{mime};base64,#{Base64.strict_encode64(response.body)}"
   end
 
-  def chatwoot_app_config(locale, chatwoot_url, account_id, user_token, inbox_id, inbox_identifier)
+  def chatwoot_app_config(options)
     {
-      locale: locale,
-      url: chatwoot_url.to_s.chomp('/'),
-      accountId: account_id,
-      accountToken: user_token,
-      inboxId: inbox_id,
-      inboxIdentifier: inbox_identifier,
+      locale: options[:locale],
+      url: options[:chatwoot_url].to_s.chomp('/'),
+      accountId: options[:account_id],
+      accountToken: options[:user_token],
+      inboxId: options[:inbox_id],
+      inboxIdentifier: options[:inbox_identifier],
       templates: {},
       commands: { server: true, queue: true },
       conversations: { sort: 'created_newest', status: %w[open pending snoozed resolved] }
