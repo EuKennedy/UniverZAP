@@ -112,7 +112,38 @@
       "DELETE": "Excluir",
       "DELETE_CONFIRM": "Excluir este agente? Esta ação não pode ser desfeita.",
       "DELETE_SUCCESS": "Agente excluído.",
-      "PLACEHOLDER": "Editor detalhado em construção. Por enquanto este é o JSON cru do agente."
+      "SAVE": "Salvar alterações",
+      "SAVE_SUCCESS": "Alterações salvas.",
+      "STATUS_AUTOPILOT": "Autopiloto",
+      "STATUS_ACTIVE": "Ativo",
+      "STATUS_INACTIVE": "Inativo",
+      "ACTIVE_LABEL": "Agente ativo",
+      "ACTIVE_HINT": "Desative para impedir que o agente seja usado em conversas sem precisar excluir.",
+      "REPLACE_API_KEY_LABEL": "Substituir chave Anthropic",
+      "REPLACE_API_KEY_PLACEHOLDER": "Deixe em branco para manter a atual",
+      "REPLACE_API_KEY_HINT": "A chave atual não aparece aqui. Preencha apenas para substituí-la.",
+      "KNOWLEDGE_SOON_TITLE": "Base de conhecimento em construção",
+      "KNOWLEDGE_SOON_HINT": "Em breve você poderá enviar arquivos, URLs e FAQs aqui. Por enquanto adicione conhecimento via wizard.",
+      "ACTIVITY_SOON_TITLE": "Histórico de uso",
+      "ACTIVITY_SOON_HINT": "Em breve você verá conversas atendidas, tokens consumidos e custo. Por enquanto, métricas resumidas:",
+      "TABS": {
+        "GENERAL": "Geral",
+        "KNOWLEDGE": "Conhecimento",
+        "ACTIVITY": "Histórico"
+      },
+      "SECTIONS": {
+        "IDENTITY": "Identidade",
+        "IDENTITY_HINT": "Como o agente aparece para sua equipe.",
+        "PERSONALITY": "Personalidade",
+        "PERSONALITY_HINT": "Modelo, tom e instruções que definem como ele responde.",
+        "BEHAVIOR": "Comportamento",
+        "BEHAVIOR_HINT": "Limites, palavras de pausa e modo de operação."
+      },
+      "STATS": {
+        "INVOCATIONS": "Chamadas",
+        "TRAININGS": "Treinamentos",
+        "INTENTS": "Intenções"
+      }
     }
   }
 }

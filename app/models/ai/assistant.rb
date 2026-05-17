@@ -9,8 +9,8 @@ class Ai::Assistant < ApplicationRecord
   has_many :trainings, class_name: 'Ai::Training', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
   has_many :intents, class_name: 'Ai::Intent', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
   has_many :invocations, class_name: 'Ai::Invocation', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
-  has_many :inboxes, dependent: :nullify
-  has_many :conversations, dependent: :nullify
+  has_many :inboxes, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
+  has_many :conversations, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
 
   PROVIDERS = %w[anthropic openai].freeze
   TONES = %w[friendly formal sales support concierge].freeze

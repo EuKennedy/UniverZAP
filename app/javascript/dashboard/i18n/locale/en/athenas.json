@@ -112,7 +112,38 @@
       "DELETE": "Delete",
       "DELETE_CONFIRM": "Delete this agent? This cannot be undone.",
       "DELETE_SUCCESS": "Agent deleted.",
-      "PLACEHOLDER": "Detailed editor coming next. For now this is the raw configuration."
+      "SAVE": "Save changes",
+      "SAVE_SUCCESS": "Changes saved.",
+      "STATUS_AUTOPILOT": "Autopilot",
+      "STATUS_ACTIVE": "Active",
+      "STATUS_INACTIVE": "Inactive",
+      "ACTIVE_LABEL": "Agent active",
+      "ACTIVE_HINT": "Disable to stop the agent from being used without deleting it.",
+      "REPLACE_API_KEY_LABEL": "Replace Anthropic key",
+      "REPLACE_API_KEY_PLACEHOLDER": "Leave empty to keep the current one",
+      "REPLACE_API_KEY_HINT": "The current key is never displayed. Fill only to replace it.",
+      "KNOWLEDGE_SOON_TITLE": "Knowledge base coming soon",
+      "KNOWLEDGE_SOON_HINT": "Upload files, URLs and FAQs here soon. For now use the wizard to add knowledge.",
+      "ACTIVITY_SOON_TITLE": "Usage history",
+      "ACTIVITY_SOON_HINT": "Detailed conversation, token and cost charts coming soon. Summary for now:",
+      "TABS": {
+        "GENERAL": "General",
+        "KNOWLEDGE": "Knowledge",
+        "ACTIVITY": "Activity"
+      },
+      "SECTIONS": {
+        "IDENTITY": "Identity",
+        "IDENTITY_HINT": "How the agent appears to your team.",
+        "PERSONALITY": "Personality",
+        "PERSONALITY_HINT": "Model, tone and instructions that drive its replies.",
+        "BEHAVIOR": "Behavior",
+        "BEHAVIOR_HINT": "Guardrails, stop words and operating mode."
+      },
+      "STATS": {
+        "INVOCATIONS": "Calls",
+        "TRAININGS": "Trainings",
+        "INTENTS": "Intents"
+      }
     }
   }
 }
