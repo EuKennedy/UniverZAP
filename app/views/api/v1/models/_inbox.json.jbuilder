@@ -67,6 +67,14 @@ json.reauthorization_required resource.channel.try(:reauthorization_required?) i
 json.messaging_service_sid resource.channel.try(:messaging_service_sid)
 json.phone_number resource.channel.try(:phone_number)
 json.medium resource.channel.try(:medium) if resource.twilio?
+
+## API channels created by the WAHA wizard should look like a WhatsApp inbox
+## in the UI even though they are backed by Channel::Api under the hood.
+if resource.api? && resource.channel.additional_attributes.is_a?(Hash) &&
+   resource.channel.additional_attributes['source'] == 'waha'
+  json.medium 'whatsapp'
+  json.waha_session resource.channel.additional_attributes['session_name']
+end
 if resource.twilio?
   json.content_templates resource.channel.try(:content_templates)
   if Current.account_user&.administrator?

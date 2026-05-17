@@ -101,7 +101,10 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
     ActiveRecord::Base.transaction do
       channel = Current.account.api_channels.create!(
         webhook_url: nil,
-        additional_attributes: { source: 'waha' }
+        additional_attributes: {
+          source: 'waha',
+          session_name: params[:session_name]
+        }
       )
       Current.account.inboxes.create!(
         name: name.to_s.truncate(60),

@@ -172,6 +172,12 @@ export const getInboxIconByType = (type, medium, variant = 'fill') => {
     return iconMap[INBOX_TYPES.WHATSAPP];
   }
 
+  // API channels created by the WAHA wizard surface medium=whatsapp so the
+  // UI presents them as WhatsApp inboxes.
+  if (type === INBOX_TYPES.API && medium === 'whatsapp') {
+    return iconMap[INBOX_TYPES.WHATSAPP];
+  }
+
   return iconMap[type] ?? defaultIcon;
 };
 
