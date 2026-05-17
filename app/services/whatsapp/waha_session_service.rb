@@ -116,6 +116,7 @@ class Whatsapp::WahaSessionService
   # See https://waha.devlike.pro/docs/apps/chatwoot/
   def install_chatwoot_app(options)
     payload = {
+      id: options[:app_id] || "app_#{SecureRandom.hex(12)}",
       session: @session_name,
       app: 'chatwoot',
       config: chatwoot_app_config(options),
