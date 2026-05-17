@@ -39,21 +39,42 @@ class Ai::Assistant < ApplicationRecord
   end
 
   def push_event_data
+    identity_payload.merge(model_payload).merge(behavior_payload).merge(meta_payload)
+  end
+
+  private
+
+  def identity_payload
     {
       id: id,
       name: name,
       role: role,
       description: description,
       avatar_url: avatar_url,
-      tone: tone,
+      tone: tone
+    }
+  end
+
+  def model_payload
+    {
       provider: provider,
       model: model,
       temperature: temperature,
       max_tokens: max_tokens,
+      router_config: router_config
+    }
+  end
+
+  def behavior_payload
+    {
       autopilot_enabled: autopilot_enabled,
-      router_config: router_config,
       guardrails: guardrails,
-      active: active,
+      active: active
+    }
+  end
+
+  def meta_payload
+    {
       created_at: created_at.to_i,
       updated_at: updated_at.to_i,
       stats: {

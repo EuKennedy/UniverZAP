@@ -12,26 +12,46 @@ class CreateAthenasAi < ActiveRecord::Migration[7.1]
   def create_assistants_table
     create_table :ai_assistants do |t|
       t.references :account, null: false, foreign_key: true, index: true
-      t.string :name, null: false, limit: 80
-      t.string :role, default: 'Assistente', limit: 60
-      t.text :description
-      t.string :avatar_url
-      t.string :tone, default: 'friendly', limit: 40
-      t.string :provider, null: false, default: 'anthropic'
-      t.string :model, null: false, default: 'claude-sonnet-4-5'
-      t.text :system_prompt
-      t.float :temperature, null: false, default: 0.3
-      t.integer :max_tokens, null: false, default: 1024
-      t.boolean :autopilot_enabled, null: false, default: false
-      t.string :encrypted_anthropic_key
-      t.string :encrypted_openai_key
-      t.jsonb :router_config, null: false, default: { enabled: false, eco: 'claude-haiku-4-5', mid: 'claude-sonnet-4-5', pro: 'claude-opus-4-5' }
-      t.jsonb :guardrails, null: false, default: { stop_words: %w[humano atendente], max_messages_per_minute: 4, business_hours: nil }
-      t.boolean :active, null: false, default: true
+      assistant_identity_columns(t)
+      assistant_model_columns(t)
+      assistant_behavior_columns(t)
       t.timestamps
     end
     add_index :ai_assistants, %i[account_id active]
     add_index :ai_assistants, %i[account_id name], unique: true
+  end
+
+  def assistant_identity_columns(t)
+    t.string :name, null: false, limit: 80
+    t.string :role, default: 'Assistente', limit: 60
+    t.text :description
+    t.string :avatar_url
+    t.string :tone, default: 'friendly', limit: 40
+  end
+
+  def assistant_model_columns(t)
+    t.string :provider, null: false, default: 'anthropic'
+    t.string :model, null: false, default: 'claude-sonnet-4-5'
+    t.text :system_prompt
+    t.float :temperature, null: false, default: 0.3
+    t.integer :max_tokens, null: false, default: 1024
+    t.string :encrypted_anthropic_key
+    t.string :encrypted_openai_key
+    t.jsonb :router_config, null: false, default: router_config_default
+  end
+
+  def assistant_behavior_columns(t)
+    t.boolean :autopilot_enabled, null: false, default: false
+    t.jsonb :guardrails, null: false, default: guardrails_default
+    t.boolean :active, null: false, default: true
+  end
+
+  def router_config_default
+    { enabled: false, eco: 'claude-haiku-4-5', mid: 'claude-sonnet-4-5', pro: 'claude-opus-4-5' }
+  end
+
+  def guardrails_default
+    { stop_words: %w[humano atendente], max_messages_per_minute: 4, business_hours: nil }
   end
 
   def create_trainings_table
@@ -70,24 +90,32 @@ class CreateAthenasAi < ActiveRecord::Migration[7.1]
     create_table :ai_invocations do |t|
       t.references :ai_assistant, null: false, foreign_key: true, index: true
       t.references :account, null: false, foreign_key: true, index: true
-      t.bigint :conversation_id
-      t.bigint :message_id
-      t.string :phase, null: false, default: 'main' # main, classifier, router, summary, suggest
-      t.string :model, null: false
-      t.integer :input_tokens, default: 0
-      t.integer :output_tokens, default: 0
-      t.integer :cache_read_tokens, default: 0
-      t.integer :cache_write_tokens, default: 0
-      t.float :cost_usd, default: 0.0
-      t.integer :duration_ms, default: 0
-      t.string :status, default: 'success' # success, error
-      t.text :error_message
+      invocation_link_columns(t)
+      invocation_usage_columns(t)
       t.timestamps
     end
     add_index :ai_invocations, %i[ai_assistant_id created_at]
     add_index :ai_invocations, %i[account_id created_at]
     add_index :ai_invocations, %i[phase model created_at]
     add_index :ai_invocations, :conversation_id
+  end
+
+  def invocation_link_columns(t)
+    t.bigint :conversation_id
+    t.bigint :message_id
+    t.string :phase, null: false, default: 'main'
+    t.string :model, null: false
+  end
+
+  def invocation_usage_columns(t)
+    t.integer :input_tokens, default: 0
+    t.integer :output_tokens, default: 0
+    t.integer :cache_read_tokens, default: 0
+    t.integer :cache_write_tokens, default: 0
+    t.float :cost_usd, default: 0.0
+    t.integer :duration_ms, default: 0
+    t.string :status, default: 'success'
+    t.text :error_message
   end
 
   def create_link_columns

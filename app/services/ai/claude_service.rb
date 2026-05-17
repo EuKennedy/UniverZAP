@@ -4,8 +4,8 @@
 class Ai::ClaudeService
   class Error < StandardError; end
 
-  API_BASE = 'https://api.anthropic.com'
-  API_VERSION = '2023-06-01'
+  API_BASE = 'https://api.anthropic.com'.freeze
+  API_VERSION = '2023-06-01'.freeze
 
   COST_PER_MILLION = {
     'claude-opus-4-5' => { input: 15.0, output: 75.0 },
@@ -18,32 +18,39 @@ class Ai::ClaudeService
     @account = account || assistant&.account
   end
 
-  def chat(messages:, system: nil, model: nil, max_tokens: nil, temperature: nil, conversation: nil, phase: 'main')
+  def chat(messages:, system: nil, conversation: nil, phase: 'main', **overrides)
     api_key = @assistant&.resolved_anthropic_key
     raise Error, 'Anthropic API key not configured' if api_key.blank?
 
-    payload = {
-      model: model || @assistant&.model || 'claude-sonnet-4-5',
-      max_tokens: max_tokens || @assistant&.max_tokens || 1024,
-      temperature: temperature || @assistant&.temperature || 0.3,
-      system: system,
-      messages: messages
-    }.compact
-
+    payload = build_payload(messages, system, overrides)
     started_at = Time.zone.now
-    response = HTTParty.post(
-      "#{API_BASE}/v1/messages",
-      headers: headers(api_key),
-      body: payload.to_json,
-      timeout: 30
-    )
-    track_invocation(response: response, payload: payload, started_at: started_at, conversation: conversation, phase: phase)
+    response = perform_request(api_key, payload)
+    track(response: response, payload: payload, started_at: started_at, conversation: conversation, phase: phase)
   rescue StandardError => e
     Rails.logger.error("[Athenas] Claude chat failed: #{e.message}")
     raise Error, e.message
   end
 
   private
+
+  def build_payload(messages, system, overrides)
+    {
+      model: overrides[:model] || @assistant&.model || 'claude-sonnet-4-5',
+      max_tokens: overrides[:max_tokens] || @assistant&.max_tokens || 1024,
+      temperature: overrides[:temperature] || @assistant&.temperature || 0.3,
+      system: system,
+      messages: messages
+    }.compact
+  end
+
+  def perform_request(api_key, payload)
+    HTTParty.post(
+      "#{API_BASE}/v1/messages",
+      headers: headers(api_key),
+      body: payload.to_json,
+      timeout: 30
+    )
+  end
 
   def headers(api_key)
     {
@@ -53,21 +60,15 @@ class Ai::ClaudeService
     }
   end
 
-  def track_invocation(response:, payload:, started_at:, conversation:, phase:)
+  def track(response:, payload:, started_at:, conversation:, phase:)
     duration_ms = ((Time.zone.now - started_at) * 1000).to_i
-    if !response.success?
+    unless response.success?
       log_failed(payload: payload, response: response, duration_ms: duration_ms, conversation: conversation, phase: phase)
       raise Error, "Claude API #{response.code}: #{response.body.to_s.truncate(400)}"
     end
     parsed = response.parsed_response
-    text = extract_text(parsed)
     log_success(payload: payload, parsed: parsed, duration_ms: duration_ms, conversation: conversation, phase: phase)
-    {
-      content: text,
-      model: parsed['model'],
-      stop_reason: parsed['stop_reason'],
-      raw: parsed
-    }
+    { content: extract_text(parsed), model: parsed['model'], stop_reason: parsed['stop_reason'], raw: parsed }
   end
 
   def extract_text(parsed)
@@ -114,6 +115,6 @@ class Ai::ClaudeService
 
   def compute_cost(model, input_tokens, output_tokens)
     rates = COST_PER_MILLION[model] || COST_PER_MILLION['claude-sonnet-4-5']
-    (input_tokens * rates[:input] + output_tokens * rates[:output]) / 1_000_000.0
+    ((input_tokens * rates[:input]) + (output_tokens * rates[:output])) / 1_000_000.0
   end
 end
