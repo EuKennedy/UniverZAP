@@ -65,9 +65,10 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   # Creates an API channel inbox in Chatwoot and installs the WAHA Chatwoot
   # App so WAHA can drive the inbox via Chatwoot's REST API.
   def install_app
-    inbox = create_api_inbox(params[:inbox_name].presence || params[:session_name])
-    session_service(params[:session_name]).install_chatwoot_app(chatwoot_app_options(inbox))
-    render json: { inbox_id: inbox.id, inbox_identifier: inbox.channel.identifier }
+    app_id = "app_#{SecureRandom.hex(12)}"
+    inbox = create_api_inbox(params[:inbox_name].presence || params[:session_name], app_id: app_id)
+    session_service(params[:session_name]).install_chatwoot_app(chatwoot_app_options(inbox, app_id))
+    render json: { inbox_id: inbox.id, inbox_identifier: inbox.channel.identifier, app_id: app_id }
   rescue Whatsapp::WahaSessionService::WahaError, ActiveRecord::RecordInvalid => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
@@ -97,13 +98,14 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
     "#{base.chomp('/')}/webhooks/waha"
   end
 
-  def create_api_inbox(name)
+  def create_api_inbox(name, app_id:)
     ActiveRecord::Base.transaction do
       channel = Current.account.api_channels.create!(
-        webhook_url: nil,
+        webhook_url: waha_chatwoot_webhook_url(app_id),
         additional_attributes: {
           source: 'waha',
-          session_name: params[:session_name]
+          session_name: params[:session_name],
+          waha_app_id: app_id
         }
       )
       Current.account.inboxes.create!(
@@ -114,13 +116,19 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
     end
   end
 
+  def waha_chatwoot_webhook_url(app_id)
+    base = ENV.fetch('WAHA_BASE_URL', '').chomp('/')
+    "#{base}/webhooks/chatwoot/#{params[:session_name]}/#{app_id}"
+  end
+
   def current_user_access_token
     token = current_user.access_token || current_user.create_access_token
     token.token
   end
 
-  def chatwoot_app_options(inbox)
+  def chatwoot_app_options(inbox, app_id)
     {
+      app_id: app_id,
       locale: params[:locale].presence || 'pt-BR',
       chatwoot_url: ENV.fetch('FRONTEND_URL', request.base_url),
       account_id: Current.account.id,
