@@ -79,6 +79,10 @@ class Account < ApplicationRecord
   has_many :instagram_channels, dependent: :destroy_async, class_name: '::Channel::Instagram'
   has_many :tiktok_channels, dependent: :destroy_async, class_name: '::Channel::Tiktok'
   has_many :hooks, dependent: :destroy_async, class_name: 'Integrations::Hook'
+  has_many :ai_assistants, dependent: :destroy_async, class_name: 'Ai::Assistant'
+  has_many :ai_trainings, dependent: :destroy_async, class_name: 'Ai::Training'
+  has_many :ai_intents, dependent: :destroy_async, class_name: 'Ai::Intent'
+  has_many :ai_invocations, dependent: :destroy_async, class_name: 'Ai::Invocation'
   has_many :inboxes, dependent: :destroy_async
   has_many :labels, dependent: :destroy_async
   has_many :line_channels, dependent: :destroy_async, class_name: '::Channel::Line'

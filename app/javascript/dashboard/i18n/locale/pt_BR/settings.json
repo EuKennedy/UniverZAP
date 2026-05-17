@@ -350,6 +350,8 @@
     "SMS": "SMS",
     "WHATSAPP": "WhatsApp",
     "CAMPAIGNS": "Campanhas",
+    "ATHENAS_AI": "Athenas AI",
+    "KANBAN": "Kanban",
     "ONGOING": "Em andamento",
     "ONE_OFF": "Única",
     "REPORTS_SLA": "SLA",

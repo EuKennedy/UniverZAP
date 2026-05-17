@@ -56,6 +56,7 @@ class Inbox < ApplicationRecord
 
   belongs_to :account
   belongs_to :portal, optional: true
+  belongs_to :ai_assistant, class_name: 'Ai::Assistant', optional: true
 
   belongs_to :channel, polymorphic: true, dependent: :destroy
 

@@ -101,6 +101,7 @@ class Conversation < ApplicationRecord
   belongs_to :inbox
   belongs_to :assignee, class_name: 'User', optional: true, inverse_of: :assigned_conversations
   belongs_to :assignee_agent_bot, class_name: 'AgentBot', optional: true
+  belongs_to :ai_assistant, class_name: 'Ai::Assistant', optional: true
   belongs_to :contact
   belongs_to :contact_inbox
   belongs_to :team, optional: true

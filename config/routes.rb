@@ -330,6 +330,17 @@ Rails.application.routes.draw do
             resource :authorization, only: [:create]
           end
 
+          namespace :ai do
+            resources :assistants do
+              member do
+                post :duplicate
+              end
+              resources :trainings, only: [:index, :create, :update, :destroy]
+              resources :intents, only: [:index, :create, :update, :destroy]
+            end
+            post 'conversations/:conversation_id/suggestion', to: 'suggestions#create'
+          end
+
           namespace :whatsapp do
             resource :authorization, only: [:create]
             scope :waha do

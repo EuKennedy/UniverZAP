@@ -323,6 +323,17 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'AthenasAI',
+      label: t('SIDEBAR.ATHENAS_AI'),
+      icon: 'i-lucide-brain-circuit',
+      to: accountScopedRoute('athenas_assistants_index'),
+      activeOn: [
+        'athenas_assistants_index',
+        'athenas_assistant_wizard',
+        'athenas_assistant_edit',
+      ],
+    },
+    {
       name: 'Captain',
       icon: 'i-woot-captain',
       label: t('SIDEBAR.CAPTAIN'),

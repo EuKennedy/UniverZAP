@@ -22,6 +22,7 @@ import generalSettings from './generalSettings.json';
 import helpCenter from './helpCenter.json';
 import inbox from './inbox.json';
 import inboxMgmt from './inboxMgmt.json';
+import athenas from './athenas.json';
 import integrationApps from './integrationApps.json';
 import kanban from './kanban.json';
 import integrations from './integrations.json';
@@ -68,6 +69,7 @@ export default {
   ...helpCenter,
   ...inbox,
   ...inboxMgmt,
+  ...athenas,
   ...integrationApps,
   ...kanban,
   ...integrations,

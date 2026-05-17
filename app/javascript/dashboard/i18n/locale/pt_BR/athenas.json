@@ -1,0 +1,118 @@
+{
+  "ATHENAS": {
+    "LIST": {
+      "TITLE": "Athenas AI",
+      "SUBTITLE": "Construa, treine e supervisione os agentes de IA que falam com seus clientes.",
+      "CREATE": "Novo agente",
+      "CREATE_FIRST": "Criar meu primeiro agente",
+      "AUTOPILOT_BADGE": "Auto",
+      "EMPTY_TITLE": "Nenhum agente ainda",
+      "EMPTY_DESCRIPTION": "A Athenas AI permite colocar um agente de WhatsApp no ar em minutos. Escolha um papel, ensine sobre o seu negócio e deixe ele qualificar leads, atender e até fechar vendas sozinho."
+    },
+    "WIZARD": {
+      "HEADER_TITLE": "Novo agente Athenas",
+      "BACK": "Voltar",
+      "PREVIOUS": "Anterior",
+      "NEXT": "Avançar",
+      "SKIP": "Configurar depois",
+      "FINISH": "Criar agente",
+      "SUCCESS": "Agente criado.",
+      "STEPS": {
+        "IDENTITY": {
+          "LABEL": "Identidade",
+          "TITLE": "Etapa 1 de 5 · Identidade",
+          "HEADING": "Quem é o seu agente?",
+          "HELPER": "Dê um nome, um papel e uma descrição curta para que sua equipe reconheça."
+        },
+        "PERSONALITY": {
+          "LABEL": "Personalidade",
+          "TITLE": "Etapa 2 de 5 · Personalidade",
+          "HEADING": "Como ele deve falar?",
+          "HELPER": "Escolha o tom, o modelo de IA e escreva o system prompt que define o comportamento."
+        },
+        "KNOWLEDGE": {
+          "LABEL": "Conhecimento",
+          "TITLE": "Etapa 3 de 5 · Conhecimento",
+          "HEADING": "Ensine sobre o seu negócio",
+          "HELPER": "Adicione catálogo, FAQs, scripts. Você pode pular esta etapa e configurar depois."
+        },
+        "BEHAVIOR": {
+          "LABEL": "Comportamento",
+          "TITLE": "Etapa 4 de 5 · Comportamento",
+          "HEADING": "Defina os limites",
+          "HELPER": "Decida se ele pode responder sozinho e quais palavras devolvem a conversa para um humano."
+        },
+        "REVIEW": {
+          "LABEL": "Revisão",
+          "TITLE": "Etapa 5 de 5 · Revisão",
+          "HEADING": "Pronto pra subir?",
+          "HELPER": "Confira tudo antes de criar o agente."
+        }
+      },
+      "IDENTITY": {
+        "NAME_LABEL": "Nome do agente",
+        "NAME_PLACEHOLDER": "Ex: Athena · Helena · Atlas",
+        "NAME_REQUIRED": "Diga o nome do agente para continuar.",
+        "ROLE_LABEL": "Papel / função",
+        "ROLE_PLACEHOLDER": "Ex: SDR, Closer, Suporte",
+        "DESCRIPTION_LABEL": "Descrição",
+        "DESCRIPTION_PLACEHOLDER": "O que esse agente faz? Para quem ele atende?",
+        "AVATAR_LABEL": "URL do avatar",
+        "AVATAR_PLACEHOLDER": "https://…"
+      },
+      "PERSONALITY": {
+        "TONE_LABEL": "Tom de voz",
+        "MODEL_LABEL": "Modelo",
+        "PROMPT_LABEL": "System prompt",
+        "PROMPT_PLACEHOLDER": "Descreva como o agente deve agir, o que pode prometer e o que precisa evitar.",
+        "PROMPT_HINT": "Selecione um tom acima para carregar um template, depois ajuste.",
+        "TEMPERATURE_LABEL": "Criatividade",
+        "MAX_TOKENS_LABEL": "Tokens máximos por resposta",
+        "API_KEY_LABEL": "Chave da Anthropic (opcional)",
+        "API_KEY_PLACEHOLDER": "sk-ant-…",
+        "API_KEY_HINT": "Deixe em branco para usar a chave compartilhada da plataforma."
+      },
+      "KNOWLEDGE": {
+        "TITLE_LABEL": "Título",
+        "TITLE_PLACEHOLDER": "Ex: Catálogo de produtos",
+        "CATEGORY_LABEL": "Categoria",
+        "CATEGORIES": {
+          "BASE": "Base de conhecimento",
+          "CATALOG": "Catálogo / Produtos",
+          "POLICIES": "Políticas / Termos",
+          "SALES": "Vendas / Scripts",
+          "FAQ": "FAQ",
+          "SUPPORT": "Suporte"
+        },
+        "CONTENT_LABEL": "Conteúdo",
+        "CONTENT_PLACEHOLDER": "Cole o conteúdo aqui. URLs e arquivos serão suportados em breve.",
+        "ADD": "Adicionar conhecimento"
+      },
+      "BEHAVIOR": {
+        "AUTOPILOT_LABEL": "Ativar autopiloto",
+        "AUTOPILOT_HINT": "O agente responde sozinho assim que uma mensagem chega. Você ainda pode ligar/desligar por conversa.",
+        "STOP_WORDS_LABEL": "Palavras de pausa",
+        "STOP_WORDS_PLACEHOLDER": "humano, atendente, falar com gente",
+        "STOP_WORDS_HINT": "Se o cliente disser qualquer uma dessas palavras, o bot entrega a conversa para um humano.",
+        "RATE_LIMIT_LABEL": "Mensagens máximas por minuto"
+      },
+      "REVIEW": {
+        "HELPER": "Você pode editar prompts, conhecimento e regras a qualquer momento.",
+        "MODEL": "Modelo",
+        "TONE": "Tom",
+        "AUTOPILOT": "Autopiloto",
+        "AUTOPILOT_ON": "Ativo",
+        "AUTOPILOT_OFF": "Desativado",
+        "KNOWLEDGE": "Conhecimentos",
+        "KNOWLEDGE_COUNT": "{n} item(s)"
+      }
+    },
+    "EDIT": {
+      "LOADING": "Carregando agente…",
+      "DELETE": "Excluir",
+      "DELETE_CONFIRM": "Excluir este agente? Esta ação não pode ser desfeita.",
+      "DELETE_SUCCESS": "Agente excluído.",
+      "PLACEHOLDER": "Editor detalhado em construção. Por enquanto este é o JSON cru do agente."
+    }
+  }
+}

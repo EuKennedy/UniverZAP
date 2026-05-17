@@ -1,0 +1,118 @@
+{
+  "ATHENAS": {
+    "LIST": {
+      "TITLE": "Athenas AI",
+      "SUBTITLE": "Build, train and supervise the AI agents that talk with your customers.",
+      "CREATE": "New agent",
+      "CREATE_FIRST": "Create my first agent",
+      "AUTOPILOT_BADGE": "Auto",
+      "EMPTY_TITLE": "No agents yet",
+      "EMPTY_DESCRIPTION": "Athenas AI lets you launch an autonomous WhatsApp agent in minutes. Pick a role, teach it about your business and let it qualify leads, answer support and even close deals on its own."
+    },
+    "WIZARD": {
+      "HEADER_TITLE": "New Athenas agent",
+      "BACK": "Back",
+      "PREVIOUS": "Previous",
+      "NEXT": "Next",
+      "SKIP": "Configure later",
+      "FINISH": "Create agent",
+      "SUCCESS": "Agent created.",
+      "STEPS": {
+        "IDENTITY": {
+          "LABEL": "Identity",
+          "TITLE": "Step 1 of 5 · Identity",
+          "HEADING": "Who is your agent?",
+          "HELPER": "Give it a name, a role and a short description so your team recognises it."
+        },
+        "PERSONALITY": {
+          "LABEL": "Personality",
+          "TITLE": "Step 2 of 5 · Personality",
+          "HEADING": "How should it talk?",
+          "HELPER": "Pick the tone, the underlying model and write the system prompt that defines its behavior."
+        },
+        "KNOWLEDGE": {
+          "LABEL": "Knowledge",
+          "TITLE": "Step 3 of 5 · Knowledge",
+          "HEADING": "Teach it about your business",
+          "HELPER": "Add catalogue, FAQs, sales playbooks. You can skip this step and add later."
+        },
+        "BEHAVIOR": {
+          "LABEL": "Behavior",
+          "TITLE": "Step 4 of 5 · Behavior",
+          "HEADING": "Set the guardrails",
+          "HELPER": "Decide if it can reply on its own and which words hand the conversation back to a human."
+        },
+        "REVIEW": {
+          "LABEL": "Review",
+          "TITLE": "Step 5 of 5 · Review",
+          "HEADING": "Ready to launch?",
+          "HELPER": "Review the configuration before creating the agent."
+        }
+      },
+      "IDENTITY": {
+        "NAME_LABEL": "Agent name",
+        "NAME_PLACEHOLDER": "Ex: Athena · Helena · Atlas",
+        "NAME_REQUIRED": "Tell us your agent's name to continue.",
+        "ROLE_LABEL": "Role",
+        "ROLE_PLACEHOLDER": "Ex: SDR, Closer, Support",
+        "DESCRIPTION_LABEL": "Description",
+        "DESCRIPTION_PLACEHOLDER": "What does this agent do? Who is it for?",
+        "AVATAR_LABEL": "Avatar URL",
+        "AVATAR_PLACEHOLDER": "https://…"
+      },
+      "PERSONALITY": {
+        "TONE_LABEL": "Tone of voice",
+        "MODEL_LABEL": "Model",
+        "PROMPT_LABEL": "System prompt",
+        "PROMPT_PLACEHOLDER": "Describe how the agent should behave, what it can promise and what it must avoid.",
+        "PROMPT_HINT": "Pick a tone above to load a starter template, then tweak.",
+        "TEMPERATURE_LABEL": "Creativity",
+        "MAX_TOKENS_LABEL": "Max response tokens",
+        "API_KEY_LABEL": "Anthropic API key (optional)",
+        "API_KEY_PLACEHOLDER": "sk-ant-…",
+        "API_KEY_HINT": "Leave empty to use the platform pooled key."
+      },
+      "KNOWLEDGE": {
+        "TITLE_LABEL": "Title",
+        "TITLE_PLACEHOLDER": "Ex: Product catalogue",
+        "CATEGORY_LABEL": "Category",
+        "CATEGORIES": {
+          "BASE": "Knowledge base",
+          "CATALOG": "Catalogue / Products",
+          "POLICIES": "Policies / Terms",
+          "SALES": "Sales / Scripts",
+          "FAQ": "FAQ",
+          "SUPPORT": "Support"
+        },
+        "CONTENT_LABEL": "Content",
+        "CONTENT_PLACEHOLDER": "Paste the raw knowledge here. URLs and files can be added later.",
+        "ADD": "Add knowledge"
+      },
+      "BEHAVIOR": {
+        "AUTOPILOT_LABEL": "Enable autopilot",
+        "AUTOPILOT_HINT": "The agent will reply on its own as soon as a message arrives. You can also toggle this per conversation later.",
+        "STOP_WORDS_LABEL": "Stop words",
+        "STOP_WORDS_PLACEHOLDER": "humano, atendente, falar com gente",
+        "STOP_WORDS_HINT": "If the customer types any of these, the bot will hand the conversation to a human.",
+        "RATE_LIMIT_LABEL": "Max messages per minute"
+      },
+      "REVIEW": {
+        "HELPER": "You can come back to edit prompts, knowledge and guardrails any time.",
+        "MODEL": "Model",
+        "TONE": "Tone",
+        "AUTOPILOT": "Autopilot",
+        "AUTOPILOT_ON": "Active",
+        "AUTOPILOT_OFF": "Off",
+        "KNOWLEDGE": "Knowledge",
+        "KNOWLEDGE_COUNT": "{n} item(s)"
+      }
+    },
+    "EDIT": {
+      "LOADING": "Loading agent…",
+      "DELETE": "Delete",
+      "DELETE_CONFIRM": "Delete this agent? This cannot be undone.",
+      "DELETE_SUCCESS": "Agent deleted.",
+      "PLACEHOLDER": "Detailed editor coming next. For now this is the raw configuration."
+    }
+  }
+}
