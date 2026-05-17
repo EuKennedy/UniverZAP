@@ -145,7 +145,8 @@ const finish = async () => {
       accountScopedRoute('athenas_assistant_edit', { id: assistant.id })
     );
   } catch (e) {
-    error.value = e?.response?.data?.error || e.message;
+    error.value =
+      e?.response?.data?.message || e?.response?.data?.error || e.message;
   } finally {
     isSaving.value = false;
   }
