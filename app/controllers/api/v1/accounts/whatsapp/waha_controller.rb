@@ -61,6 +61,24 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
+  # POST /api/v1/accounts/:account_id/whatsapp/waha/sessions/:session_name/install_app
+  # Creates an API channel inbox in Chatwoot and installs the WAHA Chatwoot
+  # App so WAHA can drive the inbox via Chatwoot's REST API.
+  def install_app
+    inbox = create_api_inbox(params[:inbox_name].presence || params[:session_name])
+    session_service(params[:session_name]).install_chatwoot_app(
+      locale: params[:locale].presence || 'pt-BR',
+      chatwoot_url: ENV.fetch('FRONTEND_URL', request.base_url),
+      account_id: Current.account.id,
+      user_token: current_user_access_token,
+      inbox_id: inbox.id,
+      inbox_identifier: inbox.channel.identifier
+    )
+    render json: { inbox_id: inbox.id, inbox_identifier: inbox.channel.identifier }
+  rescue Whatsapp::WahaSessionService::WahaError, ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   private
 
   def ensure_waha_configured
@@ -84,5 +102,24 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   def webhook_url
     base = ENV.fetch('FRONTEND_URL', request.base_url)
     "#{base.chomp('/')}/webhooks/waha"
+  end
+
+  def create_api_inbox(name)
+    ActiveRecord::Base.transaction do
+      channel = Current.account.api_channels.create!(
+        webhook_url: nil,
+        additional_attributes: { source: 'waha' }
+      )
+      Current.account.inboxes.create!(
+        name: name.to_s.truncate(60),
+        channel: channel,
+        lock_to_single_conversation: true
+      )
+    end
+  end
+
+  def current_user_access_token
+    token = current_user.access_token || current_user.create_access_token
+    token.token
   end
 end

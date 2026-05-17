@@ -110,6 +110,30 @@ class Whatsapp::WahaSessionService
     nil
   end
 
+  # Installs the built-in WAHA Chatwoot App and points it at the given Chatwoot
+  # account + inbox. WAHA then drives the inbox via the Chatwoot API, creates
+  # the "WhatsApp Integration" command contact, and forwards messages both ways.
+  # See https://waha.devlike.pro/docs/apps/chatwoot/
+  def install_chatwoot_app(locale:, chatwoot_url:, account_id:, user_token:, inbox_id:, inbox_identifier:)
+    payload = {
+      session: @session_name,
+      app: 'chatwoot',
+      config: chatwoot_app_config(locale, chatwoot_url, account_id, user_token, inbox_id, inbox_identifier),
+      enabled: true
+    }
+    request(:post, '/api/apps', body: payload)
+  end
+
+  def list_apps
+    request(:get, "/api/apps?session=#{@session_name}")
+  rescue WahaError
+    []
+  end
+
+  def uninstall_app(app_id)
+    request(:delete, "/api/apps/#{app_id}")
+  end
+
   private
 
   def headers
@@ -127,6 +151,20 @@ class Whatsapp::WahaSessionService
 
     mime = content_type.split(';').first.presence || 'image/png'
     "data:#{mime};base64,#{Base64.strict_encode64(response.body)}"
+  end
+
+  def chatwoot_app_config(locale, chatwoot_url, account_id, user_token, inbox_id, inbox_identifier)
+    {
+      locale: locale,
+      url: chatwoot_url.to_s.chomp('/'),
+      accountId: account_id,
+      accountToken: user_token,
+      inboxId: inbox_id,
+      inboxIdentifier: inbox_identifier,
+      templates: {},
+      commands: { server: true, queue: true },
+      conversations: { sort: 'created_newest', status: %w[open pending snoozed resolved] }
+    }
   end
 
   def qr_data_url_from_json(parsed)

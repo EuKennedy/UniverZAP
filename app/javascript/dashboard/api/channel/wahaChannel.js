@@ -35,6 +35,13 @@ class WahaChannel extends ApiClient {
       `${this.baseUrl()}/whatsapp/waha/sessions/${encodeURIComponent(name)}/logout`
     );
   }
+
+  installApp(name, { inboxName, locale } = {}) {
+    return axios.post(
+      `${this.baseUrl()}/whatsapp/waha/sessions/${encodeURIComponent(name)}/install_app`,
+      { inbox_name: inboxName, locale }
+    );
+  }
 }
 
 export default new WahaChannel();

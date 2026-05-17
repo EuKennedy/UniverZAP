@@ -338,6 +338,7 @@ Rails.application.routes.draw do
               get 'sessions/:session_name/qr', to: 'waha#session_qr'
               post 'sessions/:session_name/connect', to: 'waha#connect_existing'
               post 'sessions/:session_name/logout', to: 'waha#logout_session'
+              post 'sessions/:session_name/install_app', to: 'waha#install_app'
             end
           end
 

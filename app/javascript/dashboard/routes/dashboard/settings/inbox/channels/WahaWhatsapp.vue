@@ -2,7 +2,6 @@
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import WahaChannelAPI from 'dashboard/api/channel/wahaChannel';
 
@@ -11,7 +10,6 @@ import Button from 'dashboard/components-next/button/Button.vue';
 
 const { t } = useI18n();
 const router = useRouter();
-const store = useStore();
 
 const MODE = { NEW: 'new', EXISTING: 'existing' };
 const STEPS = { CHOOSE_MODE: 0, FORM: 1, QR: 2 };
@@ -139,22 +137,20 @@ const finalizeInbox = async () => {
   isSubmitting.value = true;
   error.value = '';
   try {
-    const inbox = await store.dispatch('inboxes/createChannel', {
-      name: inboxName.value.trim() || sessionName.value,
-      channel: {
-        type: 'whatsapp',
-        phone_number: phoneNumberFromMe.value,
-        provider: 'waha',
-        provider_config: { session_name: sessionName.value },
-      },
+    const { data } = await WahaChannelAPI.installApp(sessionName.value, {
+      inboxName: inboxName.value.trim() || sessionName.value,
+      locale: 'pt-BR',
     });
     useAlert(t('INBOX_MGMT.ADD.WHATSAPP.WAHA.SUCCESS'));
     router.replace({
       name: 'settings_inboxes_add_agents',
-      params: { page: 'new', inbox_id: inbox.id },
+      params: { page: 'new', inbox_id: data.inbox_id },
     });
   } catch (e) {
-    error.value = e?.message || t('INBOX_MGMT.ADD.WHATSAPP.WAHA.CREATE_ERROR');
+    error.value =
+      e?.response?.data?.error ||
+      e?.message ||
+      t('INBOX_MGMT.ADD.WHATSAPP.WAHA.CREATE_ERROR');
   } finally {
     isSubmitting.value = false;
   }
