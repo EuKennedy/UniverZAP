@@ -328,11 +328,21 @@ const onSubmit = () => {
           <select
             v-model="form.funnel_stage_id"
             class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand"
+            :disabled="!stages.length"
           >
+            <option v-if="!stages.length" :value="null" disabled selected>
+              {{ t('KANBAN.TASK.FORM.STAGE_EMPTY') }}
+            </option>
             <option v-for="stage in stages" :key="stage.id" :value="stage.id">
               {{ stage.name }}
             </option>
           </select>
+          <p
+            v-if="!stages.length"
+            class="text-[11px] text-n-amber-11 bg-n-amber-3 px-2 py-1 rounded-md ring-1 ring-inset ring-n-amber-6 leading-snug"
+          >
+            {{ t('KANBAN.TASK.FORM.STAGE_EMPTY_HINT') }}
+          </p>
         </div>
         <div class="flex flex-col gap-1.5">
           <label class="text-sm font-medium text-n-slate-12">

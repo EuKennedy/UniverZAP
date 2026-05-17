@@ -143,6 +143,8 @@
         "ASSIGNEES_LABEL": "Responsáveis",
         "LABELS_LABEL": "Etiquetas",
         "FUNNEL_LABEL": "Funil",
+        "STAGE_EMPTY": "Configure etapas no funil primeiro",
+        "STAGE_EMPTY_HINT": "Vá em Kanban → configurações do funil para criar etapas antes de adicionar tarefas.",
         "CONTACTS_LABEL": "Contatos",
         "CONTACT_SEARCH_PLACEHOLDER": "Buscar contato por nome, e-mail ou telefone…",
         "CONTACT_NOT_FOUND": "Nenhum contato encontrado.",

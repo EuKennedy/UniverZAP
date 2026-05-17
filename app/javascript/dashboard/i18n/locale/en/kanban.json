@@ -143,6 +143,8 @@
         "ASSIGNEES_LABEL": "Assignees",
         "LABELS_LABEL": "Labels",
         "FUNNEL_LABEL": "Funnel",
+        "STAGE_EMPTY": "Set up stages first",
+        "STAGE_EMPTY_HINT": "Go to Kanban → funnel settings to add stages before creating tasks.",
         "CONTACTS_LABEL": "Contacts",
         "CONTACT_SEARCH_PLACEHOLDER": "Search contact by name, email or phone…",
         "CONTACT_NOT_FOUND": "No contact found.",
