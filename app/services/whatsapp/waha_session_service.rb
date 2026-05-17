@@ -61,14 +61,13 @@ class Whatsapp::WahaSessionService
 
   def qr_code
     response = HTTParty.get(
-      "#{@base_url}/api/#{@session_name}/auth/qr?format=raw",
+      "#{@base_url}/api/#{@session_name}/auth/qr?format=image",
       headers: headers,
       timeout: 10
     )
-    raise WahaError, "WAHA QR failed: #{response.code}" unless response.success?
+    raise WahaError, "WAHA QR failed: #{response.code} #{response.body.to_s.truncate(200)}" unless response.success?
 
-    parsed = response.parsed_response
-    parsed.is_a?(Hash) ? parsed['value'] : parsed
+    extract_qr_data_url(response)
   end
 
   def update_webhook(webhook_url:)
@@ -118,6 +117,21 @@ class Whatsapp::WahaSessionService
       'Content-Type' => 'application/json',
       'X-Api-Key' => @api_key
     }
+  end
+
+  # WAHA returns either application/json with {mimetype, data} (base64)
+  # or raw image/png bytes depending on version.
+  def extract_qr_data_url(response)
+    content_type = response.headers['content-type'].to_s
+    if content_type.include?('application/json')
+      parsed = response.parsed_response
+      data = parsed.is_a?(Hash) ? (parsed['data'] || parsed['value']) : parsed
+      mimetype = parsed.is_a?(Hash) ? (parsed['mimetype'] || 'image/png') : 'image/png'
+      return data.to_s.start_with?('data:') ? data : "data:#{mimetype};base64,#{data}"
+    end
+
+    mime = content_type.split(';').first.presence || 'image/png'
+    "data:#{mime};base64,#{Base64.strict_encode64(response.body)}"
   end
 
   def request(method, path, body: nil)
