@@ -1,10 +1,11 @@
 <script setup>
-import { computed, useTemplateRef } from 'vue';
+import { computed, onMounted, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useElementSize, useWindowSize } from '@vueuse/core';
 import { useMapGetter } from 'dashboard/composables/store';
 import { REPLY_EDITOR_MODES } from 'dashboard/components/widgets/WootWriter/constants';
 import { useCaptain } from 'dashboard/composables/useCaptain';
+import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
 import Button from 'dashboard/components-next/button/Button.vue';
 import DropdownBody from 'next/dropdown-menu/base/DropdownBody.vue';
 
@@ -34,6 +35,24 @@ const emit = defineEmits(['executeCopilotAction']);
 const { t } = useI18n();
 
 const { draftMessage } = useCaptain();
+const {
+  assistants,
+  activeAssistant,
+  activeAssistantId,
+  fetchAssistants,
+  setAssistant,
+} = useAthenasAssistant();
+
+const showAssistantPicker = ref(false);
+
+onMounted(() => {
+  fetchAssistants();
+});
+
+const handleAssistantPick = id => {
+  setAssistant(id);
+  showAssistantPicker.value = false;
+};
 
 const replyMode = useMapGetter('draftMessages/getReplyEditorMode');
 
@@ -202,6 +221,70 @@ const handleSubMenuItemClick = (parentItem, subItem) => {
     :class="{ 'selection-menu': hasSelection && isEditorMenuPopover }"
     :style="hasSelection && isEditorMenuPopover ? selectionMenuStyle : {}"
   >
+    <div
+      v-if="assistants.length > 0"
+      class="flex flex-col items-stretch gap-1.5"
+    >
+      <button
+        type="button"
+        class="w-full flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-n-slate-3 dark:hover:bg-n-slate-3 text-left"
+        @click="showAssistantPicker = !showAssistantPicker"
+      >
+        <span class="flex items-center gap-2 min-w-0">
+          <Icon
+            icon="i-lucide-sparkles"
+            class="text-n-teal-11 size-3.5 shrink-0"
+          />
+          <span class="flex flex-col min-w-0">
+            <span
+              class="text-[10px] uppercase tracking-wide text-n-slate-10 leading-none"
+            >
+              {{ t('INTEGRATION_SETTINGS.OPEN_AI.ATHENAS_ASSISTANT_LABEL') }}
+            </span>
+            <span class="text-xs text-n-slate-12 font-medium truncate">
+              {{
+                activeAssistant?.name ||
+                t('INTEGRATION_SETTINGS.OPEN_AI.PICK_ATHENAS_ASSISTANT')
+              }}
+            </span>
+          </span>
+        </span>
+        <Icon
+          :icon="
+            showAssistantPicker
+              ? 'i-lucide-chevron-up'
+              : 'i-lucide-chevron-down'
+          "
+          class="text-n-slate-10 size-3 shrink-0"
+        />
+      </button>
+      <div
+        v-if="showAssistantPicker"
+        class="flex flex-col gap-0.5 max-h-48 overflow-y-auto rounded-md bg-n-slate-2 dark:bg-n-slate-2 p-1"
+      >
+        <button
+          v-for="assistant in assistants"
+          :key="assistant.id"
+          type="button"
+          class="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-n-slate-3 dark:hover:bg-n-slate-3 flex items-center gap-2"
+          :class="{
+            'bg-n-teal-3 dark:bg-n-teal-3 text-n-teal-12':
+              assistant.id === activeAssistantId,
+            'text-n-slate-12': assistant.id !== activeAssistantId,
+          }"
+          @click="handleAssistantPick(assistant.id)"
+        >
+          <span class="truncate flex-1">{{ assistant.name }}</span>
+          <Icon
+            v-if="assistant.id === activeAssistantId"
+            icon="i-lucide-check"
+            class="size-3 text-n-teal-11"
+          />
+        </button>
+      </div>
+      <div class="h-px w-full bg-n-strong" />
+    </div>
+
     <div v-if="menuItems.length > 0" class="flex flex-col items-start gap-2.5">
       <div
         v-for="item in menuItems"

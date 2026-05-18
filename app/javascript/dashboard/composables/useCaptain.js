@@ -12,6 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import TasksAPI from 'dashboard/api/captain/tasks';
 import AthenasAssistantsAPI from 'dashboard/api/athenas';
+import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
 import { CAPTAIN_ERROR_TYPES } from 'dashboard/composables/captain/constants';
 
 export function useCaptain() {
@@ -136,12 +137,8 @@ export function useCaptain() {
    * @param {AbortSignal} [options.signal] - AbortSignal to cancel the request.
    * @returns {Promise<{message: string, followUpContext?: Object}>} The summary and optional follow-up context.
    */
-  const athenasAssistantId = computed(() => {
-    const inboxId = currentChat.value?.inbox_id;
-    if (!inboxId) return null;
-    const inbox = store.getters['inboxes/getInbox'](inboxId);
-    return inbox?.ai_assistant_id || null;
-  });
+  const { activeAssistantId } = useAthenasAssistant();
+  const athenasAssistantId = computed(() => activeAssistantId.value);
 
   const summarizeConversation = async (options = {}) => {
     try {

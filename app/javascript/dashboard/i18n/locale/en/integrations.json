@@ -184,6 +184,8 @@
         "SUMMARIZE": "Summarize the conversation",
         "ASK_COPILOT": "Ask Copilot"
       },
+      "ATHENAS_ASSISTANT_LABEL": "Assistant",
+      "PICK_ATHENAS_ASSISTANT": "Pick assistant",
       "ASSISTANCE_MODAL": {
         "DRAFT_TITLE": "Draft content",
         "GENERATED_TITLE": "Generated content",
