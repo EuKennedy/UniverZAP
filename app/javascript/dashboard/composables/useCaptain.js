@@ -149,10 +149,11 @@ export function useCaptain() {
           assistantId: options.assistantId || athenasAssistantId.value,
         }
       );
-      return {
-        message: result?.data?.summary || '',
-        followUpContext: null,
-      };
+      const summary = result?.data?.summary || '';
+      if (!summary) {
+        useAlert(t('INTEGRATION_SETTINGS.OPEN_AI.GENERATE_EMPTY'));
+      }
+      return { message: summary, followUpContext: null };
     } catch (error) {
       handleAPIError(error);
       return { message: '', errorType: getErrorType(error) };
@@ -171,10 +172,11 @@ export function useCaptain() {
         signal: options.signal,
         assistantId: options.assistantId || athenasAssistantId.value,
       });
-      return {
-        message: result?.data?.suggestion || '',
-        followUpContext: null,
-      };
+      const suggestion = result?.data?.suggestion || '';
+      if (!suggestion) {
+        useAlert(t('INTEGRATION_SETTINGS.OPEN_AI.GENERATE_EMPTY'));
+      }
+      return { message: suggestion, followUpContext: null };
     } catch (error) {
       handleAPIError(error);
       return { message: '', errorType: getErrorType(error) };

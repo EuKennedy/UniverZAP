@@ -10,12 +10,19 @@ class Ai::SummarizeService
     raise Ai::ClaudeService::Error, 'No AI assistant assigned to this conversation' if @assistant.nil?
     raise Ai::ClaudeService::Error, 'Conversation has no messages to summarize' if transcript.blank?
 
-    Ai::ClaudeService.new(assistant: @assistant).chat(
+    response = Ai::ClaudeService.new(assistant: @assistant).chat(
       messages: [{ role: 'user', content: transcript }],
       system: system_prompt,
       conversation: @conversation,
       phase: 'summarize'
     )
+
+    if response[:content].to_s.strip.empty?
+      Rails.logger.warn("[Athenas] summarize got empty content assistant=#{@assistant.id} conv=#{@conversation.display_id} stop=#{response[:stop_reason]}")
+      raise Ai::ClaudeService::Error, 'Assistant returned empty response'
+    end
+
+    response
   end
 
   private

@@ -195,6 +195,7 @@
       "ATHENAS_THINKING": "Thinking…",
       "ATHENAS_INPUT_PLACEHOLDER": "Ask your Athenas assistant…",
       "NO_ATHENAS_ASSISTANT": "Configure an Athenas assistant to use the copilot.",
+      "GENERATE_EMPTY": "The assistant returned an empty response. Check the inbox assistant config or try again.",
       "ASSISTANCE_MODAL": {
         "DRAFT_TITLE": "Draft content",
         "GENERATED_TITLE": "Generated content",

@@ -9,12 +9,22 @@ class Ai::SuggestReplyService
   def perform
     raise Ai::ClaudeService::Error, 'No AI assistant assigned to this conversation' if @assistant.nil?
 
-    Ai::ClaudeService.new(assistant: @assistant).chat(
-      messages: build_messages,
+    messages = build_messages
+    raise Ai::ClaudeService::Error, 'Conversation has no messages yet' if messages.empty?
+
+    response = Ai::ClaudeService.new(assistant: @assistant).chat(
+      messages: messages,
       system: build_system_prompt,
       conversation: @conversation,
       phase: 'suggest'
     )
+
+    if response[:content].to_s.strip.empty?
+      Rails.logger.warn("[Athenas] suggest_reply got empty content assistant=#{@assistant.id} conv=#{@conversation.display_id} stop=#{response[:stop_reason]}")
+      raise Ai::ClaudeService::Error, 'Assistant returned empty response'
+    end
+
+    response
   end
 
   private
