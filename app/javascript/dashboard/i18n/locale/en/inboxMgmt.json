@@ -661,7 +661,22 @@
       "BOT_CONFIGURATION": "Bot Configuration",
       "ACCOUNT_HEALTH": "Account Health",
       "CSAT": "CSAT",
-      "VOICE": "Voice"
+      "VOICE": "Voice",
+      "ATHENAS_AI": "Athenas AI"
+    },
+    "ATHENAS_AI": {
+      "TITLE": "Athenas AI",
+      "SUBTITLE": "Pick which Athenas agent handles this inbox and how it operates.",
+      "ASSISTANT_TITLE": "Active agent",
+      "ASSISTANT_HINT": "Choose one of your Athenas agents or leave it off.",
+      "NO_ASSISTANT": "No agent",
+      "NO_ASSISTANT_HINT": "Inbox stays fully manual.",
+      "MODE_TITLE": "Mode",
+      "MODE_HINT": "How the agent participates in conversations.",
+      "EMPTY_TITLE": "No Athenas agents yet",
+      "EMPTY_HINT": "Create an agent in the Athenas AI section to wire it up here.",
+      "SAVE": "Save",
+      "AUTOPILOT_BADGE": "Auto"
     },
     "VOICE_CONFIGURATION": {
       "ENABLE_VOICE": {

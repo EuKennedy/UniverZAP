@@ -75,6 +75,19 @@ if resource.api? && resource.channel.additional_attributes.is_a?(Hash) &&
   json.medium 'whatsapp'
   json.waha_session resource.channel.additional_attributes['session_name']
 end
+
+## Athenas AI assistant assignment.
+json.ai_assistant_id resource.ai_assistant_id
+json.ai_mode resource.ai_mode
+if resource.ai_assistant_id.present?
+  json.ai_assistant do
+    json.id resource.ai_assistant.id
+    json.name resource.ai_assistant.name
+    json.role resource.ai_assistant.role
+    json.avatar_url resource.ai_assistant.avatar_url
+    json.autopilot_enabled resource.ai_assistant.autopilot_enabled
+  end
+end
 if resource.twilio?
   json.content_templates resource.channel.try(:content_templates)
   if Current.account_user&.administrator?

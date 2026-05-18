@@ -22,6 +22,7 @@ import WeeklyAvailability from './components/WeeklyAvailability.vue';
 import GreetingsEditor from 'shared/components/GreetingsEditor.vue';
 import ConfigurationPage from './settingsPage/ConfigurationPage.vue';
 import VoiceConfigurationPage from './settingsPage/VoiceConfigurationPage.vue';
+import AthenasInboxSettings from './settingsPage/AthenasInboxSettings.vue';
 import CustomerSatisfactionPage from './settingsPage/CustomerSatisfactionPage.vue';
 import CollaboratorsPage from './settingsPage/CollaboratorsPage.vue';
 import BotConfiguration from './components/BotConfiguration.vue';
@@ -44,6 +45,7 @@ import { copyTextToClipboard } from 'shared/helpers/clipboard';
 
 export default {
   components: {
+    AthenasInboxSettings,
     BotConfiguration,
     CollaboratorsPage,
     ConfigurationPage,
@@ -248,6 +250,14 @@ export default {
           },
         ];
       }
+
+      visibleToAllChannelTabs = [
+        ...visibleToAllChannelTabs,
+        {
+          key: 'athenas-ai',
+          name: this.$t('INBOX_MGMT.TABS.ATHENAS_AI'),
+        },
+      ];
 
       return visibleToAllChannelTabs;
     },
@@ -1280,6 +1290,9 @@ export default {
             :is-registering-webhook="isRegisteringWebhook"
             @register-webhook="registerWebhook"
           />
+        </div>
+        <div v-if="selectedTabKey === 'athenas-ai'" class="mx-6 max-w-4xl">
+          <AthenasInboxSettings :inbox="inbox" />
         </div>
       </div>
     </section>

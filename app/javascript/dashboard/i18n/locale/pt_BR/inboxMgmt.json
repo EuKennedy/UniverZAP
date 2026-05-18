@@ -660,7 +660,23 @@
       "WIDGET_BUILDER": "Construtor de Widget",
       "BOT_CONFIGURATION": "Configuração do Bot",
       "ACCOUNT_HEALTH": "Saúde da conta",
-      "CSAT": "CSAT"
+      "CSAT": "CSAT",
+      "VOICE": "Voz",
+      "ATHENAS_AI": "Athenas AI"
+    },
+    "ATHENAS_AI": {
+      "TITLE": "Athenas AI",
+      "SUBTITLE": "Escolha qual agente Athenas atende esta caixa de entrada e como ele opera.",
+      "ASSISTANT_TITLE": "Agente ativo",
+      "ASSISTANT_HINT": "Escolha um dos seus agentes Athenas ou deixe desativado.",
+      "NO_ASSISTANT": "Sem agente",
+      "NO_ASSISTANT_HINT": "Caixa de entrada totalmente manual.",
+      "MODE_TITLE": "Modo de operação",
+      "MODE_HINT": "Como o agente participa das conversas.",
+      "EMPTY_TITLE": "Nenhum agente Athenas ainda",
+      "EMPTY_HINT": "Crie um agente na seção Athenas AI para conectá-lo aqui.",
+      "SAVE": "Salvar",
+      "AUTOPILOT_BADGE": "Auto"
     },
     "CHANNEL_PREFERENCES": "Preferências do Canal",
     "WIDGET_FEATURES": "Recursos do widget",
