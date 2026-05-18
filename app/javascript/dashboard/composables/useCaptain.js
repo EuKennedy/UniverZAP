@@ -136,16 +136,26 @@ export function useCaptain() {
    * @param {AbortSignal} [options.signal] - AbortSignal to cancel the request.
    * @returns {Promise<{message: string, followUpContext?: Object}>} The summary and optional follow-up context.
    */
+  const athenasAssistantId = computed(() => {
+    const inboxId = currentChat.value?.inbox_id;
+    if (!inboxId) return null;
+    const inbox = store.getters['inboxes/getInbox'](inboxId);
+    return inbox?.ai_assistant_id || null;
+  });
+
   const summarizeConversation = async (options = {}) => {
     try {
-      const result = await TasksAPI.summarize(
+      const result = await AthenasAssistantsAPI.summarize(
         conversationId.value,
-        options.signal
+        {
+          signal: options.signal,
+          assistantId: options.assistantId || athenasAssistantId.value,
+        }
       );
-      const {
-        data: { message: generatedMessage, follow_up_context: followUpContext },
-      } = result;
-      return { message: generatedMessage, followUpContext };
+      return {
+        message: result?.data?.summary || '',
+        followUpContext: null,
+      };
     } catch (error) {
       handleAPIError(error);
       return { message: '', errorType: getErrorType(error) };
@@ -158,35 +168,16 @@ export function useCaptain() {
    * @param {AbortSignal} [options.signal] - AbortSignal to cancel the request.
    * @returns {Promise<{message: string, followUpContext?: Object}>} The reply suggestion and optional follow-up context.
    */
-  const athenasAssistantId = computed(() => {
-    const inboxId = currentChat.value?.inbox_id;
-    if (!inboxId) return null;
-    const inbox = store.getters['inboxes/getInbox'](inboxId);
-    return inbox?.ai_assistant_id || null;
-  });
-
   const getReplySuggestion = async (options = {}) => {
-    if (athenasAssistantId.value) {
-      try {
-        const result = await AthenasAssistantsAPI.suggest(conversationId.value);
-        return {
-          message: result?.data?.suggestion || '',
-          followUpContext: null,
-        };
-      } catch (error) {
-        handleAPIError(error);
-        return { message: '', errorType: getErrorType(error) };
-      }
-    }
     try {
-      const result = await TasksAPI.replySuggestion(
-        conversationId.value,
-        options.signal
-      );
-      const {
-        data: { message: generatedMessage, follow_up_context: followUpContext },
-      } = result;
-      return { message: generatedMessage, followUpContext };
+      const result = await AthenasAssistantsAPI.suggest(conversationId.value, {
+        signal: options.signal,
+        assistantId: options.assistantId || athenasAssistantId.value,
+      });
+      return {
+        message: result?.data?.suggestion || '',
+        followUpContext: null,
+      };
     } catch (error) {
       handleAPIError(error);
       return { message: '', errorType: getErrorType(error) };
