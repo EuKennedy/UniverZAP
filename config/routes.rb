@@ -339,6 +339,10 @@ Rails.application.routes.draw do
               resources :intents, only: [:index, :create, :update, :destroy]
             end
             post 'conversations/:conversation_id/suggestion', to: 'suggestions#create'
+            post 'conversations/:conversation_id/summary', to: 'summaries#create'
+            resources :chat_threads, only: [:index, :show, :create, :update, :destroy] do
+              resources :chat_messages, only: [:index, :create]
+            end
           end
 
           namespace :whatsapp do
