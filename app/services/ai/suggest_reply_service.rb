@@ -53,7 +53,7 @@ class Ai::SuggestReplyService
                            .order(created_at: :desc)
                            .limit(HISTORY_LIMIT)
                            .reverse
-    history.map { |m| { role: role_for(m), content: m.content.to_s } }.reject { |m| m[:content].blank? }
+    history.map { |m| { role: role_for(m), content: m.content_for_llm.to_s } }.reject { |m| m[:content].blank? }
   end
 
   def role_for(message)

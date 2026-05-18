@@ -268,10 +268,19 @@ class Message < ApplicationRecord
     Messages::SearchDataPresenter.new(self).search_data
   end
 
+  CHANNEL_SIGNATURE_PATTERNS = [
+    /\s*Enviado do WhatsApp\s*\z/i,
+    /\s*Sent from WhatsApp\s*\z/i,
+    /\s*Sent via WhatsApp\s*\z/i
+  ].freeze
+
   # Returns message content suitable for LLM consumption
   # Falls back to audio transcription or attachment placeholder when content is nil
   def content_for_llm
-    return content if content.present?
+    if content.present?
+      cleaned = CHANNEL_SIGNATURE_PATTERNS.reduce(content) { |t, pattern| t.gsub(pattern, '') }.strip
+      return cleaned.presence || content
+    end
 
     audio_transcription = attachments
                           .where(file_type: :audio)
