@@ -34,15 +34,15 @@ class Ai::SuggestReplyService
 
   def build_system_prompt
     [
-      "Você está redigindo a próxima mensagem que o(a) atendente humano(a) irá enviar para o cliente.",
+      'Você está redigindo a próxima mensagem que o(a) atendente humano(a) irá enviar para o cliente.',
       "Persona do atendente: #{@assistant.name}, #{@assistant.role}.",
       @assistant.system_prompt.presence,
       tone_instruction,
       'Leia o histórico abaixo e gere APENAS o texto da resposta que o atendente deve enviar agora. ' \
-        'Não cumprimente novamente se o atendente já cumprimentou. ' \
-        'Não escreva prefixos como "Atendente:", "Resposta:", aspas, ou explicações. ' \
-        'Saída deve ser só o corpo da mensagem em português brasileiro, tom natural, frases curtas. ' \
-        'NÃO use markdown. NÃO se identifique como IA.',
+      'Não cumprimente novamente se o atendente já cumprimentou. ' \
+      'Não escreva prefixos como "Atendente:", "Resposta:", aspas, ou explicações. ' \
+      'Saída deve ser só o corpo da mensagem em português brasileiro, tom natural, frases curtas. ' \
+      'NÃO use markdown. NÃO se identifique como IA.',
       knowledge_snippets
     ].compact.join("\n\n")
   end
