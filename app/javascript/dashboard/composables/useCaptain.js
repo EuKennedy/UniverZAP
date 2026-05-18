@@ -11,6 +11,7 @@ import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import TasksAPI from 'dashboard/api/captain/tasks';
+import AthenasAssistantsAPI from 'dashboard/api/athenas';
 import { CAPTAIN_ERROR_TYPES } from 'dashboard/composables/captain/constants';
 
 export function useCaptain() {
@@ -157,7 +158,26 @@ export function useCaptain() {
    * @param {AbortSignal} [options.signal] - AbortSignal to cancel the request.
    * @returns {Promise<{message: string, followUpContext?: Object}>} The reply suggestion and optional follow-up context.
    */
+  const athenasAssistantId = computed(() => {
+    const inboxId = currentChat.value?.inbox_id;
+    if (!inboxId) return null;
+    const inbox = store.getters['inboxes/getInbox'](inboxId);
+    return inbox?.ai_assistant_id || null;
+  });
+
   const getReplySuggestion = async (options = {}) => {
+    if (athenasAssistantId.value) {
+      try {
+        const result = await AthenasAssistantsAPI.suggest(conversationId.value);
+        return {
+          message: result?.data?.suggestion || '',
+          followUpContext: null,
+        };
+      } catch (error) {
+        handleAPIError(error);
+        return { message: '', errorType: getErrorType(error) };
+      }
+    }
     try {
       const result = await TasksAPI.replySuggestion(
         conversationId.value,
