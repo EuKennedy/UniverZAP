@@ -1,8 +1,6 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useWindowSize } from '@vueuse/core';
-import { vOnClickOutside } from '@vueuse/components';
 import { useAlert } from 'dashboard/composables';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useUISettings } from 'dashboard/composables/useUISettings';
@@ -11,11 +9,9 @@ import AthenasAssistantsAPI from 'dashboard/api/athenas';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'next/icon/Icon.vue';
 import Spinner from 'shared/components/Spinner.vue';
-import wootConstants from 'dashboard/constants/globals';
 
 const { t } = useI18n();
 const { uiSettings, updateUISettings } = useUISettings();
-const { width: windowWidth } = useWindowSize();
 
 const currentChat = useMapGetter('getSelectedChat');
 
@@ -37,10 +33,6 @@ const isLoadingMessages = ref(false);
 const isCreatingThread = ref(false);
 const messagesContainerRef = useTemplateRef('messagesContainerRef');
 
-const isSmallScreen = computed(
-  () => windowWidth.value < wootConstants.SMALL_SCREEN_BREAKPOINT
-);
-
 const isOpen = computed(() => Boolean(uiSettings.value?.is_copilot_panel_open));
 const conversationId = computed(() => currentChat.value?.id || null);
 
@@ -52,10 +44,6 @@ const closePanel = () => {
     is_contact_sidebar_open: false,
     is_copilot_panel_open: false,
   });
-};
-
-const handleOutsideClick = () => {
-  if (isSmallScreen.value && isOpen.value) closePanel();
 };
 
 const scrollToBottom = async () => {
@@ -212,8 +200,7 @@ onMounted(async () => {
 <template>
   <div
     v-if="isOpen"
-    v-on-click-outside="handleOutsideClick"
-    class="bg-n-surface-2 h-full overflow-hidden flex flex-col fixed top-0 ltr:right-0 rtl:left-0 z-40 w-full max-w-sm transition-transform duration-300 ease-in-out md:static md:w-[360px] md:min-w-[360px] ltr:border-l rtl:border-r border-n-weak 2xl:min-w-[400px] 2xl:w-[400px] shadow-lg md:shadow-none"
+    class="bg-n-surface-2 overflow-hidden flex flex-col fixed z-50 border border-n-weak shadow-2xl rounded-xl bottom-4 ltr:right-4 rtl:left-4 w-[380px] h-[600px] max-h-[80vh] max-sm:inset-4 max-sm:w-auto max-sm:h-auto max-sm:rounded-xl"
   >
     <header
       class="flex items-center justify-between gap-2 px-4 py-3 border-b border-n-weak"

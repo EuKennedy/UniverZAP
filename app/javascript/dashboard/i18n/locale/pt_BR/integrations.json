@@ -184,6 +184,18 @@
         "SUMMARIZE": "Resumir a conversa",
         "ASK_COPILOT": "Perguntar ao Copiloto"
       },
+      "ATHENAS_ASSISTANT_LABEL": "Agente",
+      "PICK_ATHENAS_ASSISTANT": "Escolher agente",
+      "ATHENAS_COPILOT": "Copiloto Athenas",
+      "ATHENAS_COPILOT_SUBTITLE": "Pergunte ao agente sobre esta conversa",
+      "ATHENAS_THREADS": "Conversas recentes",
+      "ATHENAS_NEW_THREAD": "+ Nova conversa",
+      "ATHENAS_EMPTY_TITLE": "Pergunte ao agente",
+      "ATHENAS_EMPTY_BODY": "Peça um resumo, rascunhe uma resposta ou pergunte qualquer coisa sobre esta conversa.",
+      "ATHENAS_THINKING": "Pensando…",
+      "ATHENAS_INPUT_PLACEHOLDER": "Pergunte ao seu agente Athenas…",
+      "NO_ATHENAS_ASSISTANT": "Configure um agente Athenas para usar o copiloto.",
+      "GENERATE_EMPTY": "O agente retornou uma resposta vazia. Verifique a configuração do agente do inbox ou tente novamente.",
       "ASSISTANCE_MODAL": {
         "DRAFT_TITLE": "Conteúdo do rascunho",
         "GENERATED_TITLE": "Conteúdo gerado",
