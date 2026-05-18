@@ -38,7 +38,7 @@ class Ai::ChatThread < ApplicationRecord
   end
 
   def touch_activity!
-    touch(:last_activity_at)
+    update!(last_activity_at: Time.current)
   end
 
   def push_event_data
