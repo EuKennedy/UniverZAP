@@ -20,7 +20,10 @@ class Ai::SuggestReplyService
     )
 
     if response[:content].to_s.strip.empty?
-      Rails.logger.warn("[Athenas] suggest_reply got empty content assistant=#{@assistant.id} conv=#{@conversation.display_id} stop=#{response[:stop_reason]}")
+      Rails.logger.warn(
+        "[Athenas] suggest_reply empty content assistant=#{@assistant.id} " \
+        "conv=#{@conversation.display_id} stop=#{response[:stop_reason]}"
+      )
       raise Ai::ClaudeService::Error, 'Assistant returned empty response'
     end
 
