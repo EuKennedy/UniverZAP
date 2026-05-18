@@ -20,8 +20,10 @@ class CreateAthenasChatTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
     add_index :ai_chat_threads, %i[account_id user_id last_activity_at], name: 'index_ai_chat_threads_on_account_user_activity'
-    add_index :ai_chat_threads, %i[conversation_id user_id], where: 'conversation_id IS NOT NULL',
-                                name: 'index_ai_chat_threads_on_conversation_user'
+    add_index :ai_chat_threads,
+              %i[conversation_id user_id],
+              where: 'conversation_id IS NOT NULL',
+              name: 'index_ai_chat_threads_on_conversation_user'
   end
 
   def create_chat_messages_table

@@ -12,8 +12,12 @@ class Ai::ChatThread < ApplicationRecord
   belongs_to :user
   belongs_to :ai_assistant, class_name: 'Ai::Assistant'
   belongs_to :conversation, optional: true
-  has_many :chat_messages, -> { order(created_at: :asc) }, class_name: 'Ai::ChatMessage',
-                           foreign_key: :ai_chat_thread_id, inverse_of: :chat_thread, dependent: :destroy
+  has_many :chat_messages,
+           -> { order(created_at: :asc) },
+           class_name: 'Ai::ChatMessage',
+           foreign_key: :ai_chat_thread_id,
+           inverse_of: :chat_thread,
+           dependent: :destroy
 
   validates :title, presence: true, length: { maximum: TITLE_LIMIT }
   validates :last_activity_at, presence: true
@@ -34,7 +38,7 @@ class Ai::ChatThread < ApplicationRecord
   end
 
   def touch_activity!
-    update_column(:last_activity_at, Time.current)
+    touch(:last_activity_at)
   end
 
   def push_event_data

@@ -13,14 +13,7 @@ class Api::V1::Accounts::Ai::ChatThreadsController < Api::V1::Accounts::BaseCont
   end
 
   def create
-    assistant = Current.account.ai_assistants.active.find(thread_params[:ai_assistant_id])
-    thread = Current.account.ai_chat_threads.create!(
-      user: Current.user,
-      ai_assistant: assistant,
-      conversation_id: thread_params[:conversation_id],
-      title: thread_params[:title].presence || default_title(thread_params[:initial_message])
-    )
-
+    thread = build_thread
     return render_thread(thread) if thread_params[:initial_message].blank?
 
     result = Ai::ChatService.new(thread: thread, user_message: thread_params[:initial_message]).perform
@@ -43,6 +36,16 @@ class Api::V1::Accounts::Ai::ChatThreadsController < Api::V1::Accounts::BaseCont
 
   def set_thread
     @thread = Current.account.ai_chat_threads.for_user(Current.user).find(params[:id])
+  end
+
+  def build_thread
+    assistant = Current.account.ai_assistants.active.find(thread_params[:ai_assistant_id])
+    Current.account.ai_chat_threads.create!(
+      user: Current.user,
+      ai_assistant: assistant,
+      conversation_id: thread_params[:conversation_id],
+      title: thread_params[:title].presence || default_title(thread_params[:initial_message])
+    )
   end
 
   def thread_params

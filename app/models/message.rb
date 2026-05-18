@@ -277,19 +277,23 @@ class Message < ApplicationRecord
   # Returns message content suitable for LLM consumption
   # Falls back to audio transcription or attachment placeholder when content is nil
   def content_for_llm
-    if content.present?
-      cleaned = CHANNEL_SIGNATURE_PATTERNS.reduce(content) { |t, pattern| t.gsub(pattern, '') }.strip
-      return cleaned.presence || content
-    end
-
-    audio_transcription = attachments
-                          .where(file_type: :audio)
-                          .filter_map { |att| att.meta&.dig('transcribed_text') }
-                          .join(' ')
-                          .presence
-    return "[Voice Message] #{audio_transcription}" if audio_transcription.present?
+    return cleaned_content_for_llm if content.present?
+    return "[Voice Message] #{audio_transcription_for_llm}" if audio_transcription_for_llm.present?
 
     '[Attachment]' if attachments.any?
+  end
+
+  def cleaned_content_for_llm
+    cleaned = CHANNEL_SIGNATURE_PATTERNS.reduce(content) { |text, pattern| text.gsub(pattern, '') }.strip
+    cleaned.presence || content
+  end
+
+  def audio_transcription_for_llm
+    @audio_transcription_for_llm ||= attachments
+                                     .where(file_type: :audio)
+                                     .filter_map { |att| att.meta&.dig('transcribed_text') }
+                                     .join(' ')
+                                     .presence
   end
 
   private

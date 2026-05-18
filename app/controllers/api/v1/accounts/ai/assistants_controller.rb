@@ -1,5 +1,5 @@
 class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseController
-  before_action :ensure_admin
+  before_action :ensure_admin, only: %i[create update destroy duplicate]
   before_action :fetch_assistant, except: [:index, :create]
 
   def index
