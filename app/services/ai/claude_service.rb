@@ -22,10 +22,14 @@ class Ai::ClaudeService
     api_key = @assistant&.resolved_anthropic_key
     raise Error, 'Anthropic API key not configured' if api_key.blank?
 
+    Ai::QuotaService.check!(account: @account) if @account.present?
+
     payload = build_payload(messages, system, overrides)
     started_at = Time.zone.now
     response = perform_request(api_key, payload)
     track(response: response, payload: payload, started_at: started_at, conversation: conversation, phase: phase)
+  rescue Error
+    raise
   rescue StandardError => e
     Rails.logger.error("[Athenas] Claude chat failed: #{e.message}")
     raise Error, e.message
