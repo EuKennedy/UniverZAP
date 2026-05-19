@@ -149,6 +149,7 @@
   "ATHENAS_ONBOARDING": {
     "TITLE": "Deixe o UniverZAP pronto em três passos",
     "SUBTITLE": "{done} de {total} passos concluídos. Termine para sua IA começar a atender.",
+    "PILL_LABEL": "Configurar UniverZAP ({done}/{total})",
     "DONE_BADGE": "Pronto",
     "ALL_DONE": "Tudo configurado. UniverZAP pronto para vender.",
     "FINISH": "Finalizar onboarding",

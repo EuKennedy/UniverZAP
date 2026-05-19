@@ -149,6 +149,7 @@
   "ATHENAS_ONBOARDING": {
     "TITLE": "Get UniverZAP ready in three steps",
     "SUBTITLE": "{done} of {total} steps done. Finish them and your AI is ready to talk to customers.",
+    "PILL_LABEL": "Set up UniverZAP ({done}/{total})",
     "DONE_BADGE": "Done",
     "ALL_DONE": "All set. UniverZAP is ready to roll.",
     "FINISH": "Finish onboarding",
