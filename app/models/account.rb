@@ -114,6 +114,7 @@ class Account < ApplicationRecord
 
   before_validation :validate_limit_keys
   after_create_commit :notify_creation
+  after_create_commit :seed_default_athenas_assistant
   after_destroy :remove_account_sequences
 
   def agents
@@ -177,6 +178,26 @@ class Account < ApplicationRecord
 
   def notify_creation
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CREATED, Time.zone.now, account: self)
+  end
+
+  def seed_default_athenas_assistant
+    return if ai_assistants.exists?
+
+    ai_assistants.create!(
+      name: 'Athenas',
+      role: 'Atendente',
+      description: 'Assistente padrão criado automaticamente para você começar.',
+      tone: 'friendly',
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      temperature: 0.3,
+      max_tokens: 1024,
+      system_prompt: 'Você é um(a) atendente humano(a). Responda em português brasileiro, ' \
+                     'tom amigável e objetivo, frases curtas. Não se identifique como IA.',
+      active: true
+    )
+  rescue StandardError => e
+    Rails.logger.error("[Athenas] failed to seed default assistant for account #{id}: #{e.message}")
   end
 
   trigger.after(:insert).for_each(:row) do
