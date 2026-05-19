@@ -26,6 +26,22 @@ class AthenasAssistantsAPI extends ApiClient {
     );
   }
 
+  rewrite(
+    { content, operation, conversationId, assistantId },
+    { signal } = {}
+  ) {
+    return axios.post(
+      `${this.baseUrl()}/ai/rewrites`,
+      {
+        content,
+        operation,
+        conversation_display_id: conversationId,
+        ai_assistant_id: assistantId,
+      },
+      { signal }
+    );
+  }
+
   listThreads({ conversationId } = {}) {
     return axios.get(`${this.baseUrl()}/ai/chat_threads`, {
       params: conversationId ? { conversation_id: conversationId } : {},

@@ -102,6 +102,9 @@ export function useCaptain() {
     return CAPTAIN_ERROR_TYPES.API_ERROR;
   };
 
+  const { activeAssistantId } = useAthenasAssistant();
+  const athenasAssistantId = computed(() => activeAssistantId.value);
+
   // === Task Methods ===
   /**
    * Rewrites content with a specific operation.
@@ -113,18 +116,20 @@ export function useCaptain() {
    */
   const rewriteContent = async (content, operation, options = {}) => {
     try {
-      const result = await TasksAPI.rewrite(
+      const result = await AthenasAssistantsAPI.rewrite(
         {
           content: content || draftMessage.value,
           operation,
           conversationId: conversationId.value,
+          assistantId: options.assistantId || athenasAssistantId.value,
         },
-        options.signal
+        { signal: options.signal }
       );
-      const {
-        data: { message: generatedMessage, follow_up_context: followUpContext },
-      } = result;
-      return { message: generatedMessage, followUpContext };
+      const message = result?.data?.message || '';
+      if (!message) {
+        useAlert(t('INTEGRATION_SETTINGS.OPEN_AI.GENERATE_EMPTY'));
+      }
+      return { message, followUpContext: null };
     } catch (error) {
       handleAPIError(error);
       return { message: '', errorType: getErrorType(error) };
@@ -137,9 +142,6 @@ export function useCaptain() {
    * @param {AbortSignal} [options.signal] - AbortSignal to cancel the request.
    * @returns {Promise<{message: string, followUpContext?: Object}>} The summary and optional follow-up context.
    */
-  const { activeAssistantId } = useAthenasAssistant();
-  const athenasAssistantId = computed(() => activeAssistantId.value);
-
   const summarizeConversation = async (options = {}) => {
     try {
       const result = await AthenasAssistantsAPI.summarize(
