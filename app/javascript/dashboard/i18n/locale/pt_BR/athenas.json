@@ -145,5 +145,29 @@
         "INTENTS": "Intenções"
       }
     }
+  },
+  "ATHENAS_ONBOARDING": {
+    "TITLE": "Deixe o UniverZAP pronto em três passos",
+    "SUBTITLE": "{done} de {total} passos concluídos. Termine para sua IA começar a atender.",
+    "DONE_BADGE": "Pronto",
+    "ALL_DONE": "Tudo configurado. UniverZAP pronto para vender.",
+    "FINISH": "Finalizar onboarding",
+    "STEPS": {
+      "ASSISTANT": {
+        "TITLE": "Personalize seu agente Athenas",
+        "BODY": "Ajuste persona, tom e conhecimento para a IA falar como sua empresa.",
+        "CTA": "Personalizar"
+      },
+      "WHATSAPP": {
+        "TITLE": "Conecte seu WhatsApp",
+        "BODY": "Conecte seu número para as mensagens começarem a chegar na caixa de entrada.",
+        "CTA": "Conectar"
+      },
+      "TEAM": {
+        "TITLE": "Convide sua equipe",
+        "BODY": "Traga seus atendentes para a caixa não ficar só com você. Opcional, pode fazer depois.",
+        "CTA": "Convidar"
+      }
+    }
   }
 }

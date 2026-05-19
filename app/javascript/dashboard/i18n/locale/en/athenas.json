@@ -145,5 +145,29 @@
         "INTENTS": "Intents"
       }
     }
+  },
+  "ATHENAS_ONBOARDING": {
+    "TITLE": "Get UniverZAP ready in three steps",
+    "SUBTITLE": "{done} of {total} steps done. Finish them and your AI is ready to talk to customers.",
+    "DONE_BADGE": "Done",
+    "ALL_DONE": "All set. UniverZAP is ready to roll.",
+    "FINISH": "Finish onboarding",
+    "STEPS": {
+      "ASSISTANT": {
+        "TITLE": "Personalize your Athenas agent",
+        "BODY": "Adjust the persona, tone and knowledge so the AI sounds like your business.",
+        "CTA": "Customize"
+      },
+      "WHATSAPP": {
+        "TITLE": "Connect your WhatsApp",
+        "BODY": "Plug your WhatsApp number so messages start arriving in the inbox.",
+        "CTA": "Connect"
+      },
+      "TEAM": {
+        "TITLE": "Invite your team",
+        "BODY": "Bring agents in so the inbox is not just on you. Optional, you can do it later.",
+        "CTA": "Invite"
+      }
+    }
   }
 }

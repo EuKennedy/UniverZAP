@@ -2,13 +2,13 @@
 import { mapGetters } from 'vuex';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useAccount } from 'dashboard/composables/useAccount';
-import OnboardingView from '../OnboardingView.vue';
 import EmptyStateMessage from './EmptyStateMessage.vue';
+import AthenasOnboardingChecklist from 'dashboard/components-next/onboarding/AthenasOnboardingChecklist.vue';
 
 export default {
   components: {
-    OnboardingView,
     EmptyStateMessage,
+    AthenasOnboardingChecklist,
   },
   props: {
     isOnExpandedLayout: {
@@ -73,9 +73,9 @@ export default {
     <!-- No inboxes attached -->
     <div
       v-if="!inboxesList.length && !uiFlags.isFetching && !loadingChatList"
-      class="clearfix mx-auto"
+      class="clearfix mx-auto w-full max-w-2xl px-6 py-8"
     >
-      <OnboardingView v-if="isAdmin" />
+      <AthenasOnboardingChecklist v-if="isAdmin" />
       <EmptyStateMessage v-else :message="$t('CONVERSATION.NO_INBOX_AGENT')" />
     </div>
     <!-- Show empty state images if not loading -->
