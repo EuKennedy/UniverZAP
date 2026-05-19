@@ -117,6 +117,9 @@ const onSetupRoute = computed(() => {
 
 const isVisible = computed(() => {
   if (!isAdmin.value) return false;
+  // only surface the dock while the tenant has zero inboxes — once they
+  // have at least one channel connected, we get out of the way
+  if (hasInbox.value) return false;
   if (isDismissed.value) return false;
   if (isExplicitlyDismissed.value) return false;
   if (isExplicitlyDone.value) return false;
