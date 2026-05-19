@@ -36,11 +36,21 @@ export function useConfig() {
    */
   const enterprisePlanName = config.enterprisePlanName;
 
+  /**
+   * Whether the legacy Captain stack should be exposed in the UI.
+   * Toggled via the CAPTAIN_VISIBLE env var so the install can flip it
+   * back on without a code change. Defaults to false because Athenas
+   * replaces Captain end-to-end on this fork.
+   * @type {boolean}
+   */
+  const captainVisible = config.captainVisible === 'true';
+
   return {
     hostURL,
     vapidPublicKey,
     enabledLanguages,
     isEnterprise,
     enterprisePlanName,
+    captainVisible,
   };
 }
