@@ -115,6 +115,11 @@ class Whatsapp::WahaSessionService
   # the "WhatsApp Integration" command contact, and forwards messages both ways.
   # See https://waha.devlike.pro/docs/apps/chatwoot/
   def install_chatwoot_app(options)
+    # WAHA enforces "only one Chatwoot app per session". Wipe any pre-existing
+    # Chatwoot app on this session so re-connecting an existing WAHA session
+    # always lands a fresh config (account, token, inbox identifier).
+    uninstall_existing_chatwoot_apps
+
     payload = {
       id: options[:app_id] || "app_#{SecureRandom.hex(12)}",
       session: @session_name,
@@ -123,6 +128,24 @@ class Whatsapp::WahaSessionService
       enabled: true
     }
     request(:post, '/api/apps', body: payload)
+  end
+
+  def uninstall_existing_chatwoot_apps
+    apps = list_apps
+    return unless apps.is_a?(Array)
+
+    apps.each do |app|
+      next unless app.is_a?(Hash)
+      next unless app['app'] == 'chatwoot'
+      next if app['session'] && app['session'] != @session_name
+
+      app_id = app['id']
+      next if app_id.blank?
+
+      uninstall_app(app_id)
+    rescue WahaError => e
+      Rails.logger.warn("[WAHA] failed to uninstall stale Chatwoot app #{app_id}: #{e.message}")
+    end
   end
 
   def list_apps

@@ -5,7 +5,6 @@ import { useRouter } from 'vue-router';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
-import { frontendURL } from 'dashboard/helper/URLHelper';
 import Icon from 'next/icon/Icon.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 
@@ -50,26 +49,33 @@ const hasTeam = computed(() => (agents.value || []).length > 1);
 const goToAssistant = () => {
   const first = assistants.value[0];
   if (first) {
-    router.push(
-      frontendURL(`accounts/${accountId.value}/athenas/assistants/${first.id}`)
-    );
+    router.push({
+      name: 'athenas_assistant_edit',
+      params: { accountId: accountId.value, id: first.id },
+    });
   } else {
-    router.push(
-      frontendURL(`accounts/${accountId.value}/athenas/assistants/new`)
-    );
+    router.push({
+      name: 'athenas_assistant_wizard',
+      params: { accountId: accountId.value },
+    });
   }
 };
 
+const goToInbox = () => {
+  router.push({
+    name: 'settings_inbox_new',
+    params: { accountId: accountId.value },
+  });
+};
+
+const goToTeam = () => {
+  router.push({
+    name: 'agent_list',
+    params: { accountId: accountId.value },
+  });
+};
+
 const steps = computed(() => [
-  {
-    key: 'assistant',
-    icon: 'i-lucide-sparkles',
-    title: t('ATHENAS_ONBOARDING.STEPS.ASSISTANT.TITLE'),
-    body: t('ATHENAS_ONBOARDING.STEPS.ASSISTANT.BODY'),
-    cta: t('ATHENAS_ONBOARDING.STEPS.ASSISTANT.CTA'),
-    done: hasCustomAssistant.value,
-    onClick: () => goToAssistant(),
-  },
   {
     key: 'whatsapp',
     icon: 'i-lucide-message-circle',
@@ -77,10 +83,7 @@ const steps = computed(() => [
     body: t('ATHENAS_ONBOARDING.STEPS.WHATSAPP.BODY'),
     cta: t('ATHENAS_ONBOARDING.STEPS.WHATSAPP.CTA'),
     done: hasInbox.value,
-    onClick: () =>
-      router.push(
-        frontendURL(`accounts/${accountId.value}/settings/inboxes/new/whatsapp`)
-      ),
+    onClick: () => goToInbox(),
   },
   {
     key: 'team',
@@ -89,10 +92,16 @@ const steps = computed(() => [
     body: t('ATHENAS_ONBOARDING.STEPS.TEAM.BODY'),
     cta: t('ATHENAS_ONBOARDING.STEPS.TEAM.CTA'),
     done: hasTeam.value,
-    onClick: () =>
-      router.push(
-        frontendURL(`accounts/${accountId.value}/settings/agents/new`)
-      ),
+    onClick: () => goToTeam(),
+  },
+  {
+    key: 'assistant',
+    icon: 'i-lucide-sparkles',
+    title: t('ATHENAS_ONBOARDING.STEPS.ASSISTANT.TITLE'),
+    body: t('ATHENAS_ONBOARDING.STEPS.ASSISTANT.BODY'),
+    cta: t('ATHENAS_ONBOARDING.STEPS.ASSISTANT.CTA'),
+    done: hasCustomAssistant.value,
+    onClick: () => goToAssistant(),
   },
 ]);
 
