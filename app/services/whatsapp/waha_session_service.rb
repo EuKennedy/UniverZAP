@@ -144,22 +144,27 @@ class Whatsapp::WahaSessionService
     return unless apps.is_a?(Array)
 
     target_url = matching_url.to_s.chomp('/')
+    apps.each { |app| uninstall_chatwoot_app_if_match(app, target_url) }
+  end
 
-    apps.each do |app|
-      next unless app.is_a?(Hash)
-      next unless app['app'] == 'chatwoot'
-      next if app['session'] && app['session'] != @session_name
+  def uninstall_chatwoot_app_if_match(app, target_url)
+    return unless chatwoot_app_matches?(app, target_url)
 
-      app_url = app.dig('config', 'url').to_s.chomp('/')
-      next if target_url.present? && app_url != target_url
+    app_id = app['id']
+    return if app_id.blank?
 
-      app_id = app['id']
-      next if app_id.blank?
+    uninstall_app(app_id)
+  rescue WahaError => e
+    Rails.logger.warn("[WAHA] failed to uninstall stale Chatwoot app #{app['id']}: #{e.message}")
+  end
 
-      uninstall_app(app_id)
-    rescue WahaError => e
-      Rails.logger.warn("[WAHA] failed to uninstall stale Chatwoot app #{app_id}: #{e.message}")
-    end
+  def chatwoot_app_matches?(app, target_url)
+    return false unless app.is_a?(Hash)
+    return false unless app['app'] == 'chatwoot'
+    return false if app['session'] && app['session'] != @session_name
+    return true if target_url.blank?
+
+    app.dig('config', 'url').to_s.chomp('/') == target_url
   end
 
   def list_apps
