@@ -70,25 +70,15 @@ class Whatsapp::WahaSessionService
     extract_qr_data_url(response)
   end
 
+  # Preserve other systems' webhooks on the session — only refresh ours.
   def update_webhook(webhook_url:)
-    # Preserve any webhooks already attached to the session (other systems
-    # could be listening on this WAHA session) and only add / refresh our own.
-    existing = current_webhooks
-    our_webhook = {
-      url: webhook_url,
-      events: %w[message message.any message.ack session.status]
-    }
-    merged = existing.reject { |w| w['url'] == webhook_url || w[:url] == webhook_url } + [our_webhook]
-
-    payload = { config: { webhooks: merged } }
-    request(:put, "/api/sessions/#{@session_name}", body: payload)
+    our = { url: webhook_url, events: %w[message message.any message.ack session.status] }
+    others = current_webhooks.reject { |w| (w['url'] || w[:url]) == webhook_url }
+    request(:put, "/api/sessions/#{@session_name}", body: { config: { webhooks: others + [our] } })
   end
 
   def current_webhooks
-    s = session
-    return [] unless s.is_a?(Hash)
-
-    Array(s.dig('config', 'webhooks'))
+    Array(session.is_a?(Hash) ? session.dig('config', 'webhooks') : nil)
   end
 
   def send_text(chat_id:, text:)
