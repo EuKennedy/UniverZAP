@@ -71,17 +71,24 @@ class Whatsapp::WahaSessionService
   end
 
   def update_webhook(webhook_url:)
-    payload = {
-      config: {
-        webhooks: [
-          {
-            url: webhook_url,
-            events: %w[message message.any message.ack session.status]
-          }
-        ]
-      }
+    # Preserve any webhooks already attached to the session (other systems
+    # could be listening on this WAHA session) and only add / refresh our own.
+    existing = current_webhooks
+    our_webhook = {
+      url: webhook_url,
+      events: %w[message message.any message.ack session.status]
     }
+    merged = existing.reject { |w| w['url'] == webhook_url || w[:url] == webhook_url } + [our_webhook]
+
+    payload = { config: { webhooks: merged } }
     request(:put, "/api/sessions/#{@session_name}", body: payload)
+  end
+
+  def current_webhooks
+    s = session
+    return [] unless s.is_a?(Hash)
+
+    Array(s.dig('config', 'webhooks'))
   end
 
   def send_text(chat_id:, text:)
@@ -116,9 +123,11 @@ class Whatsapp::WahaSessionService
   # See https://waha.devlike.pro/docs/apps/chatwoot/
   def install_chatwoot_app(options)
     # WAHA enforces "only one Chatwoot app per session". Wipe any pre-existing
-    # Chatwoot app on this session so re-connecting an existing WAHA session
-    # always lands a fresh config (account, token, inbox identifier).
-    uninstall_existing_chatwoot_apps
+    # Chatwoot app on this session that already points at OUR Chatwoot URL so
+    # re-connecting picks up a fresh account / token / inbox identifier.
+    # Chatwoot apps that point to a different Chatwoot install are left
+    # untouched so the same WAHA session can fan out to multiple installs.
+    uninstall_existing_chatwoot_apps(matching_url: options[:chatwoot_url])
 
     payload = {
       id: options[:app_id] || "app_#{SecureRandom.hex(12)}",
@@ -130,14 +139,19 @@ class Whatsapp::WahaSessionService
     request(:post, '/api/apps', body: payload)
   end
 
-  def uninstall_existing_chatwoot_apps
+  def uninstall_existing_chatwoot_apps(matching_url: nil)
     apps = list_apps
     return unless apps.is_a?(Array)
+
+    target_url = matching_url.to_s.chomp('/')
 
     apps.each do |app|
       next unless app.is_a?(Hash)
       next unless app['app'] == 'chatwoot'
       next if app['session'] && app['session'] != @session_name
+
+      app_url = app.dig('config', 'url').to_s.chomp('/')
+      next if target_url.present? && app_url != target_url
 
       app_id = app['id']
       next if app_id.blank?
