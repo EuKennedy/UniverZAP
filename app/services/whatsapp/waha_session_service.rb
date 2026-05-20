@@ -117,24 +117,15 @@ class Whatsapp::WahaSessionService
     nil
   end
 
-  # Installs the built-in WAHA Chatwoot App and points it at the given Chatwoot
-  # account + inbox. WAHA then drives the inbox via the Chatwoot API, creates
-  # the "WhatsApp Integration" command contact, and forwards messages both ways.
-  # See https://waha.devlike.pro/docs/apps/chatwoot/
+  # Install WAHA's built-in Chatwoot App, replacing any stale Chatwoot app on
+  # this session that points at our own Chatwoot URL. Other Chatwoot installs
+  # sharing the session are left alone. Docs: https://waha.devlike.pro/docs/apps/chatwoot/
   def install_chatwoot_app(options)
-    # WAHA enforces "only one Chatwoot app per session". Wipe any pre-existing
-    # Chatwoot app on this session that already points at OUR Chatwoot URL so
-    # re-connecting picks up a fresh account / token / inbox identifier.
-    # Chatwoot apps that point to a different Chatwoot install are left
-    # untouched so the same WAHA session can fan out to multiple installs.
     uninstall_existing_chatwoot_apps(matching_url: options[:chatwoot_url])
-
     payload = {
       id: options[:app_id] || "app_#{SecureRandom.hex(12)}",
-      session: @session_name,
-      app: 'chatwoot',
-      config: chatwoot_app_config(options),
-      enabled: true
+      session: @session_name, app: 'chatwoot',
+      config: chatwoot_app_config(options), enabled: true
     }
     request(:post, '/api/apps', body: payload)
   end
