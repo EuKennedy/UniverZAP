@@ -85,20 +85,13 @@ class Whatsapp::WahaSessionService
     request(:post, '/api/sendText', body: { session: @session_name, chatId: chat_id, text: text })
   end
 
+  MEDIA_ENDPOINTS = { 'image' => '/api/sendImage', 'video' => '/api/sendVideo',
+                      'audio' => '/api/sendVoice', 'document' => '/api/sendFile' }.freeze
+
   def send_media(chat_id:, type:, url:, caption: nil, filename: nil)
-    body = {
-      session: @session_name,
-      chatId: chat_id,
-      file: { url: url, filename: filename }.compact
-    }
+    body = { session: @session_name, chatId: chat_id, file: { url: url, filename: filename }.compact }
     body[:caption] = caption if caption.present? && %w[image video document].include?(type)
-    endpoint = {
-      'image' => '/api/sendImage',
-      'video' => '/api/sendVideo',
-      'audio' => '/api/sendVoice',
-      'document' => '/api/sendFile'
-    }.fetch(type, '/api/sendFile')
-    request(:post, endpoint, body: body)
+    request(:post, MEDIA_ENDPOINTS.fetch(type, '/api/sendFile'), body: body)
   end
 
   def fetch_contact(chat_id:)
