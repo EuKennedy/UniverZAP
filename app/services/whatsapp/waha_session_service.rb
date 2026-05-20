@@ -112,6 +112,17 @@ class Whatsapp::WahaSessionService
   # sharing the session are left alone. Docs: https://waha.devlike.pro/docs/apps/chatwoot/
   def install_chatwoot_app(options)
     uninstall_existing_chatwoot_apps(matching_url: options[:chatwoot_url])
+    perform_app_install(options)
+  rescue WahaError => e
+    stale_id = e.message[/Chatwoot app with ID '([a-z0-9_]+)'/i, 1]
+    raise unless stale_id
+
+    Rails.logger.warn("[WAHA] forcing uninstall of stale Chatwoot app #{stale_id} after install conflict")
+    safe_uninstall_app(stale_id)
+    perform_app_install(options)
+  end
+
+  def perform_app_install(options)
     payload = {
       id: options[:app_id] || "app_#{SecureRandom.hex(12)}",
       session: @session_name, app: 'chatwoot',
