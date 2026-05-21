@@ -39,9 +39,18 @@ export function useChannelIcon(inbox) {
     }
 
     // Channel::Api inboxes provisioned through the WAHA wizard / migration
-    // are surfaced as WhatsApp in the UI (serializer sets medium='whatsapp').
-    if (type === 'Channel::Api' && inboxDetails.medium === 'whatsapp') {
-      icon = 'i-woot-whatsapp';
+    // are surfaced as WhatsApp in the UI. Match either medium='whatsapp'
+    // (set by serializer) or additional_attributes.source='waha' (raw DB)
+    // so caller-supplied lightweight inbox objects still render correctly.
+    if (type === 'Channel::Api') {
+      const medium = inboxDetails.medium;
+      const additionalAttrs =
+        inboxDetails.additional_attributes ||
+        inboxDetails.additionalAttributes ||
+        {};
+      if (medium === 'whatsapp' || additionalAttrs.source === 'waha') {
+        icon = 'i-woot-whatsapp';
+      }
     }
 
     // Special case for voice-enabled inboxes (Twilio, WhatsApp, etc.)
