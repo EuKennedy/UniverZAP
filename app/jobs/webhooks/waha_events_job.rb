@@ -6,31 +6,41 @@ class Webhooks::WahaEventsJob < ApplicationJob
     session_name = event[:session]
     return if session_name.blank?
 
-    channel = Channel::Whatsapp.where(provider: 'waha')
-                               .where("provider_config->>'session_name' = ?", session_name)
-                               .first
-    return unless channel
+    inbox = find_inbox(session_name)
+    return unless inbox
 
     case event[:event]
     when 'message', 'message.any'
-      handle_message(channel, event)
+      handle_message(inbox, event)
     when 'message.ack'
-      handle_ack(channel, event)
+      handle_ack(inbox, event)
     when 'session.status'
-      handle_session_status(channel, event)
+      handle_session_status(inbox, event)
     end
   end
 
   private
 
-  def handle_message(channel, event)
+  # Native UniverZAP inboxes store WAHA sessions on Channel::Whatsapp with
+  # provider='waha'. Migrated tenants (e.g. fazer-ai-pro) use Channel::Api
+  # with session_name on additional_attributes. Resolve via either path so
+  # incoming events route to the right inbox regardless of fork origin.
+  def find_inbox(session_name)
+    whatsapp = Channel::Whatsapp.where(provider: 'waha')
+                                .where("provider_config->>'session_name' = ?", session_name)
+                                .first
+    return whatsapp.inbox if whatsapp
+
+    Channel::Api.where("additional_attributes->>'session_name' = ?", session_name).first&.inbox
+  end
+
+  def handle_message(inbox, event)
     payload = event[:payload] || {}
     return if payload.blank?
 
     # message.any duplicates message; skip the duplicate when fromMe is false.
     return if event[:event] == 'message.any' && payload[:fromMe] == false
 
-    inbox = channel.inbox
     normalized = normalize_to_cloud_api(payload)
     Whatsapp::IncomingMessageWahaService.new(
       inbox: inbox,
@@ -41,9 +51,9 @@ class Webhooks::WahaEventsJob < ApplicationJob
     Rails.logger.error("[WAHA events] message handling failed: #{e.message}\n#{e.backtrace.first(5).join("\n")}")
   end
 
-  def handle_ack(channel, event)
+  def handle_ack(inbox, event)
     payload = event[:payload] || {}
-    message = find_ack_message(channel, payload)
+    message = find_ack_message(inbox, payload)
     return unless message
 
     status = ack_status(payload[:ack] || payload[:ackName])
@@ -52,16 +62,21 @@ class Webhooks::WahaEventsJob < ApplicationJob
     Rails.logger.error("[WAHA events] ack handling failed: #{e.message}")
   end
 
-  def find_ack_message(channel, payload)
+  def find_ack_message(inbox, payload)
     source_id = payload[:id].is_a?(Hash) ? payload.dig(:id, :_serialized) : payload[:id]
     return nil if source_id.blank?
 
-    channel.inbox.messages.find_by(source_id: source_id.to_s)
+    inbox.messages.find_by(source_id: source_id.to_s)
   end
 
-  def handle_session_status(channel, event)
+  def handle_session_status(inbox, event)
     status = event.dig(:payload, :status)
     return if status.blank?
+
+    # Reauthorization helpers only exist on Channel::Whatsapp. Migrated
+    # Channel::Api inboxes have no reauthorization state, so we log and skip.
+    channel = inbox.channel
+    return unless channel.respond_to?(:prompt_reauthorization!)
 
     case status
     when 'FAILED', 'STOPPED'
