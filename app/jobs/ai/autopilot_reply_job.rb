@@ -9,10 +9,12 @@ class Ai::AutopilotReplyJob < ApplicationJob
     return unless message && assistant
 
     conversation = message.conversation
-    return if conversation.assignee_id.present?
+    # NOTE: the listener already gated on ai_mode='autopilot'. Skip the
+    # assignee check — autopilot intentionally overrides a human assignee
+    # when the conversation explicitly opted into it.
     return if rate_limited?(conversation, assistant)
 
-    result = Ai::SuggestReplyService.new(conversation: conversation, assistant: assistant).perform
+    result = Ai::AutopilotReplyService.new(conversation: conversation, assistant: assistant).perform
     reply_text = result[:content].to_s.strip
     return if reply_text.blank?
 

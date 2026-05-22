@@ -159,18 +159,29 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     render json: task.push_event_data
   end
 
-  # UniverZAP: toggle the Athenas autopilot assistant on this conversation.
-  # Persists the assistant id and an `enabled` flag in additional_attributes.
+  # UniverZAP: toggle Athenas autopilot on this conversation. Drives
+  # AthenasAutopilotListener via the canonical `ai_mode` + `ai_assistant_id`
+  # columns. Mirrored into additional_attributes for legacy UI consumers.
   def autopilot
     enabled = ActiveModel::Type::Boolean.new.cast(params[:enabled])
     assistant_id = params[:ai_assistant_id].presence
+    if enabled && assistant_id
+      assistant = current_account.ai_assistants.find(assistant_id)
+      @conversation.ai_mode = 'autopilot'
+      @conversation.ai_assistant = assistant
+    else
+      @conversation.ai_mode = nil
+      @conversation.ai_assistant = nil
+    end
     @conversation.additional_attributes ||= {}
     @conversation.additional_attributes['autopilot_enabled'] = enabled
     @conversation.additional_attributes['autopilot_assistant_id'] = enabled ? assistant_id : nil
     @conversation.save!
     render json: {
-      autopilot_enabled: @conversation.additional_attributes['autopilot_enabled'],
-      autopilot_assistant_id: @conversation.additional_attributes['autopilot_assistant_id']
+      autopilot_enabled: enabled,
+      autopilot_assistant_id: enabled ? assistant_id : nil,
+      ai_mode: @conversation.ai_mode,
+      ai_assistant_id: @conversation.ai_assistant_id
     }
   end
 

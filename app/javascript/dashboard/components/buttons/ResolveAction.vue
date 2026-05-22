@@ -72,12 +72,22 @@ const openAutopilotMenu = async () => {
   closeDropdown();
 };
 
-const autopilotEnabled = computed(
-  () => !!currentChat.value?.additional_attributes?.autopilot_enabled
-);
-const autopilotAssistantId = computed(
-  () => currentChat.value?.additional_attributes?.autopilot_assistant_id || null
-);
+// Read autopilot state from the canonical columns (ai_mode + ai_assistant_id)
+// with a fallback to additional_attributes for older payloads.
+const autopilotEnabled = computed(() => {
+  const chat = currentChat.value;
+  if (!chat) return false;
+  if (chat.ai_mode === 'autopilot') return true;
+  return !!chat.additional_attributes?.autopilot_enabled;
+});
+const autopilotAssistantId = computed(() => {
+  const chat = currentChat.value;
+  return (
+    chat?.ai_assistant_id ||
+    chat?.additional_attributes?.autopilot_assistant_id ||
+    null
+  );
+});
 
 const setAutopilot = async ({ assistantId, enabled }) => {
   try {
