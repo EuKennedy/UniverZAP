@@ -6,6 +6,9 @@ const state = {
   mineCount: 0,
   unAssignedCount: 0,
   allCount: 0,
+  // UniverZAP attendance-state tabs
+  waitingCount: 0,
+  inAttendanceCount: 0,
 };
 
 export const getters = {
@@ -56,11 +59,16 @@ export const mutations = {
       mine_count: mineCount,
       unassigned_count: unAssignedCount,
       all_count: allCount,
+      waiting_count: waitingCount,
+      in_attendance_count: inAttendanceCount,
     } = {}
   ) {
     $state.mineCount = mineCount;
     $state.allCount = allCount;
     $state.unAssignedCount = unAssignedCount;
+    if (waitingCount !== undefined) $state.waitingCount = waitingCount;
+    if (inAttendanceCount !== undefined)
+      $state.inAttendanceCount = inAttendanceCount;
     $state.updatedOn = new Date();
   },
 };

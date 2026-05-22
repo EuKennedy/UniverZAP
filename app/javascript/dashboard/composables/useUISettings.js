@@ -128,7 +128,9 @@ const isEditorHotKeyEnabled = (key, uiSettings) => {
     enter_to_send_enabled: enterToSendEnabled,
   } = uiSettings.value || {};
   if (!editorMessageKey) {
-    return key === (enterToSendEnabled ? 'enter' : 'cmd_enter');
+    // UniverZAP default: Enter sends, Shift+Enter newline (WhatsApp/Slack-like).
+    // Users who explicitly opted out via enter_to_send_enabled=false keep cmd_enter.
+    return key === (enterToSendEnabled === false ? 'cmd_enter' : 'enter');
   }
   return editorMessageKey === key;
 };

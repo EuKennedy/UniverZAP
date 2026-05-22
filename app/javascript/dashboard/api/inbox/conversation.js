@@ -137,6 +137,20 @@ class ConversationApi extends ApiClient {
     return axios.get(`${this.url}/${conversationId}/inbox_assistant`);
   }
 
+  attachToKanban({ conversationId, funnelStageId, title }) {
+    return axios.post(`${this.url}/${conversationId}/attach_to_kanban`, {
+      funnel_stage_id: funnelStageId,
+      title,
+    });
+  }
+
+  setAutopilot({ conversationId, aiAssistantId, enabled }) {
+    return axios.post(`${this.url}/${conversationId}/autopilot`, {
+      ai_assistant_id: aiAssistantId,
+      enabled,
+    });
+  }
+
   delete(conversationId) {
     return axios.delete(`${this.url}/${conversationId}`);
   }

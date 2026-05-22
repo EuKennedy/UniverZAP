@@ -51,7 +51,8 @@ class ConversationFinder
         mine_count: mine_count,
         assigned_count: assigned_count,
         unassigned_count: unassigned_count,
-        all_count: all_count
+        all_count: all_count,
+        **set_count_for_attendance_states
       }
     }
   end
@@ -67,7 +68,8 @@ class ConversationFinder
         mine_count: mine_count,
         assigned_count: assigned_count,
         unassigned_count: unassigned_count,
-        all_count: all_count
+        all_count: all_count,
+        **set_count_for_attendance_states
       }
     }
   end
@@ -144,6 +146,10 @@ class ConversationFinder
       @conversations = current_user.participating_conversations.where(account_id: current_account.id)
     when 'unattended'
       @conversations = @conversations.unattended
+    when 'waiting'
+      @conversations = @conversations.waiting
+    when 'in_attendance'
+      @conversations = @conversations.in_attendance
     end
     @conversations
   end
@@ -189,6 +195,14 @@ class ConversationFinder
       @conversations.unassigned.count,
       @conversations.count
     ]
+  end
+
+  # UniverZAP: attendance state counts (waiting vs in_attendance) for tab badges.
+  def set_count_for_attendance_states
+    {
+      waiting_count: @conversations.waiting.count,
+      in_attendance_count: @conversations.in_attendance.count
+    }
   end
 
   def current_page

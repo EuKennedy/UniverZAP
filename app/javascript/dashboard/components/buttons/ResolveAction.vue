@@ -19,6 +19,7 @@ import {
 import ButtonGroup from 'dashboard/components-next/buttonGroup/ButtonGroup.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
+import ConversationKanbanAttachModal from 'dashboard/components-next/ConversationKanbanAttach/ConversationKanbanAttachModal.vue';
 
 const store = useStore();
 const getters = useStoreGetters();
@@ -34,6 +35,67 @@ const closeDropdown = () => toggleDropdown(false);
 const openDropdown = () => toggleDropdown(true);
 
 const currentChat = computed(() => getters.getSelectedChat.value);
+
+// UniverZAP: Kanban attach modal + Autopilot dropdown
+const showKanbanModal = ref(false);
+const [showAutopilotMenu, toggleAutopilotMenu] = useToggle();
+const closeAutopilotMenu = () => toggleAutopilotMenu(false);
+
+const aiAssistants = computed(
+  () => getters['agents/getAiAssistants']?.value || []
+);
+
+const fetchedAssistants = ref(false);
+const ensureAssistantsLoaded = async () => {
+  if (fetchedAssistants.value) return;
+  try {
+    if (store.getters['agents/getAiAssistants'] !== undefined) {
+      await store.dispatch('agents/fetchAiAssistants');
+    }
+  } catch (_) {
+    /* noop */
+  }
+  fetchedAssistants.value = true;
+};
+
+const openKanbanModal = () => {
+  showKanbanModal.value = true;
+  closeDropdown();
+};
+const closeKanbanModal = () => {
+  showKanbanModal.value = false;
+};
+
+const openAutopilotMenu = async () => {
+  await ensureAssistantsLoaded();
+  toggleAutopilotMenu(true);
+  closeDropdown();
+};
+
+const autopilotEnabled = computed(
+  () => !!currentChat.value?.additional_attributes?.autopilot_enabled
+);
+const autopilotAssistantId = computed(
+  () => currentChat.value?.additional_attributes?.autopilot_assistant_id || null
+);
+
+const setAutopilot = async ({ assistantId, enabled }) => {
+  try {
+    await store.dispatch('setAutopilot', {
+      conversationId: currentChat.value.id,
+      aiAssistantId: assistantId,
+      enabled,
+    });
+    useAlert(
+      enabled
+        ? t('CONVERSATION.AUTOPILOT.ENABLED')
+        : t('CONVERSATION.AUTOPILOT.DISABLED')
+    );
+    closeAutopilotMenu();
+  } catch (error) {
+    useAlert(error?.message || t('CONVERSATION.AUTOPILOT.ERROR'));
+  }
+};
 
 const isOpen = computed(
   () => currentChat.value.status === wootConstants.STATUS_TYPE.OPEN
@@ -117,6 +179,22 @@ const onCmdOpenConversation = () => {
   toggleStatus(wootConstants.STATUS_TYPE.OPEN);
 };
 
+const copyCsatLink = async () => {
+  const uuid = currentChat.value?.uuid;
+  if (!uuid) {
+    useAlert(t('CONVERSATION.CSAT_LINK.MISSING_UUID'));
+    return;
+  }
+  const link = `${window.location.origin}/survey/responses/${uuid}`;
+  try {
+    await navigator.clipboard.writeText(link);
+    useAlert(t('CONVERSATION.CSAT_LINK.COPIED'));
+  } catch (_) {
+    useAlert(link);
+  }
+  closeDropdown();
+};
+
 const onCmdResolveConversation = () => {
   const currentCustomAttributes = currentChat.value.custom_attributes || {};
   const { hasMissing, missing } = checkMissingAttributes(
@@ -171,7 +249,68 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
 </script>
 
 <template>
-  <div class="flex relative justify-end items-center resolve-actions">
+  <div class="flex relative justify-end items-center gap-2 resolve-actions">
+    <Button
+      :label="t('CONVERSATION.HEADER.MOVE_TO_KANBAN')"
+      icon="i-lucide-layout-grid"
+      size="sm"
+      color="slate"
+      faded
+      no-animation
+      @click="openKanbanModal"
+    />
+    <div class="relative">
+      <Button
+        :label="t('CONVERSATION.HEADER.AUTOPILOT')"
+        :icon="autopilotEnabled ? 'i-lucide-sparkles' : 'i-lucide-bot'"
+        size="sm"
+        color="slate"
+        :solid="autopilotEnabled"
+        :faded="!autopilotEnabled"
+        no-animation
+        @click="openAutopilotMenu"
+      />
+      <div
+        v-if="showAutopilotMenu"
+        v-on-clickaway="closeAutopilotMenu"
+        class="border rounded-lg shadow-lg border-n-strong dark:border-n-strong p-2 z-10 bg-n-alpha-3 backdrop-blur-[100px] absolute right-0 top-full mt-1 min-w-[16rem] max-w-[20rem]"
+      >
+        <p
+          class="text-[11px] uppercase tracking-wide text-n-slate-10 mb-1 px-2"
+        >
+          {{ t('CONVERSATION.AUTOPILOT.MENU_TITLE') }}
+        </p>
+        <button
+          v-if="autopilotEnabled"
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm text-n-ruby-11 hover:bg-n-alpha-1 rounded-md"
+          @click="setAutopilot({ assistantId: null, enabled: false })"
+        >
+          {{ t('CONVERSATION.AUTOPILOT.TURN_OFF') }}
+        </button>
+        <p
+          v-if="!aiAssistants.length"
+          class="text-xs text-n-slate-11 px-3 py-2"
+        >
+          {{ t('CONVERSATION.AUTOPILOT.NO_ASSISTANTS') }}
+        </p>
+        <button
+          v-for="assistant in aiAssistants"
+          :key="assistant.id"
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-2"
+          :class="
+            assistant.id === autopilotAssistantId
+              ? 'bg-n-alpha-2 text-n-slate-12'
+              : 'text-n-slate-11 hover:bg-n-alpha-1'
+          "
+          @click="setAutopilot({ assistantId: assistant.id, enabled: true })"
+        >
+          <span class="i-lucide-bot size-3.5 flex-shrink-0" />
+          <span class="truncate">{{ assistant.name }}</span>
+        </button>
+      </div>
+    </div>
     <ButtonGroup
       class="flex-shrink-0 rounded-lg shadow outline-1 outline"
       :class="!showOpenButton ? 'outline-n-container' : 'outline-transparent'"
@@ -248,11 +387,29 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
             @click="() => toggleStatus(wootConstants.STATUS_TYPE.PENDING)"
           />
         </WootDropdownItem>
+        <WootDropdownItem>
+          <Button
+            :label="t('CONVERSATION.RESOLVE_DROPDOWN.COPY_CSAT_LINK')"
+            ghost
+            slate
+            sm
+            start
+            icon="i-lucide-link"
+            class="w-full"
+            @click="copyCsatLink"
+          />
+        </WootDropdownItem>
       </WootDropdownMenu>
     </div>
     <ConversationResolveAttributesModal
       ref="resolveAttributesModalRef"
       @submit="handleResolveWithAttributes"
+    />
+    <ConversationKanbanAttachModal
+      v-if="currentChat?.id"
+      :show="showKanbanModal"
+      :conversation-id="currentChat.id"
+      @close="closeKanbanModal"
     />
   </div>
 </template>

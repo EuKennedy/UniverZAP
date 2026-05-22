@@ -482,6 +482,24 @@ const actions = {
     }
   },
 
+  attachToKanban: async (_, { conversationId, funnelStageId, title }) => {
+    const response = await ConversationApi.attachToKanban({
+      conversationId,
+      funnelStageId,
+      title,
+    });
+    return response.data;
+  },
+
+  setAutopilot: async (_, { conversationId, aiAssistantId, enabled }) => {
+    const response = await ConversationApi.setAutopilot({
+      conversationId,
+      aiAssistantId,
+      enabled,
+    });
+    return response.data;
+  },
+
   setConversationFilters({ commit }, data) {
     commit(types.SET_CONVERSATION_FILTERS, data);
   },

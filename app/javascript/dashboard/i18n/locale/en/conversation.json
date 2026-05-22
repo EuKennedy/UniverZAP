@@ -91,6 +91,8 @@
       "RESOLVE_ACTION": "Resolve",
       "REOPEN_ACTION": "Reopen",
       "OPEN_ACTION": "Open",
+      "MOVE_TO_KANBAN": "Move to Kanban",
+      "AUTOPILOT": "Autopilot",
       "MORE_ACTIONS": "More actions",
       "OPEN": "More",
       "CLOSE": "Close",
@@ -110,6 +112,7 @@
     },
     "RESOLVE_DROPDOWN": {
       "MARK_PENDING": "Mark as pending",
+      "COPY_CSAT_LINK": "Copy review link",
       "SNOOZE_UNTIL": "Snooze",
       "SNOOZE": {
         "TITLE": "Snooze until",
@@ -250,6 +253,29 @@
       }
     },
     "VISIBLE_TO_AGENTS": "Private Note: Only visible to you and your team",
+    "CSAT_LINK": {
+      "COPIED": "Review link copied to clipboard",
+      "MISSING_UUID": "Conversation has no UUID"
+    },
+    "KANBAN_ATTACH": {
+      "TITLE": "Move conversation to Kanban",
+      "SUBTITLE": "Choose a funnel and stage to attach this conversation.",
+      "CLOSE": "Close",
+      "FUNNELS": "Funnels",
+      "EMPTY": "No funnels yet. Create one in Kanban settings.",
+      "NO_STAGES": "This funnel has no stages.",
+      "MOVE_HERE": "Move here",
+      "SUCCESS": "Attached to {stage}",
+      "ERROR": "Could not attach to Kanban"
+    },
+    "AUTOPILOT": {
+      "MENU_TITLE": "Athenas autopilot",
+      "TURN_OFF": "Turn off autopilot",
+      "NO_ASSISTANTS": "No assistants configured yet.",
+      "ENABLED": "Autopilot enabled",
+      "DISABLED": "Autopilot disabled",
+      "ERROR": "Could not update autopilot"
+    },
     "CHANGE_STATUS": "Conversation status changed",
     "CHANGE_STATUS_FAILED": "Conversation status change failed",
     "CHANGE_AGENT": "Conversation Assignee changed",

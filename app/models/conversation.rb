@@ -79,6 +79,11 @@ class Conversation < ApplicationRecord
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
   scope :unattended, -> { where(first_reply_created_at: nil).or(where.not(waiting_since: nil)) }
+  # UniverZAP semantics:
+  # - waiting       = no agent reply yet (conversation still awaiting first response).
+  # - in_attendance = agent has already replied at least once.
+  scope :waiting, -> { where(first_reply_created_at: nil) }
+  scope :in_attendance, -> { where.not(first_reply_created_at: nil) }
   scope :resolvable_not_waiting, lambda { |auto_resolve_after|
     return none if auto_resolve_after.to_i.zero?
 

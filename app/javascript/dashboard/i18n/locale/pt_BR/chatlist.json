@@ -17,6 +17,8 @@
     "ASSIGNEE_TYPE_TABS": {
       "me": "Minhas",
       "unassigned": "Não atribuídas",
+      "waiting": "Aguardando",
+      "in_attendance": "Em atendimento",
       "all": "Todos"
     },
     "CHAT_STATUS_FILTER_ITEMS": {

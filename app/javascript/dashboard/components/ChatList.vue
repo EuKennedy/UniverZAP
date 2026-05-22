@@ -243,16 +243,32 @@ const conversationListPagination = computed(() => {
   return currentPage.value + 1;
 });
 
+// UniverZAP: waiting / in_attendance are attendance-state tabs, not
+// assignee filters. Translate them into `conversation_type` while keeping
+// assignee_type='all' so the backend returns the full attendance bucket.
+const ATTENDANCE_STATE_TABS = [
+  wootConstants.ASSIGNEE_TYPE.WAITING,
+  wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE,
+];
+
+const isAttendanceStateTab = computed(() =>
+  ATTENDANCE_STATE_TABS.includes(activeAssigneeTab.value)
+);
+
 const conversationFilters = computed(() => {
   return {
     inboxId: props.conversationInbox ? props.conversationInbox : undefined,
-    assigneeType: activeAssigneeTab.value,
+    assigneeType: isAttendanceStateTab.value
+      ? wootConstants.ASSIGNEE_TYPE.ALL
+      : activeAssigneeTab.value,
     status: activeStatus.value,
     sortBy: activeSortBy.value,
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
     teamId: props.teamId || undefined,
-    conversationType: props.conversationType || undefined,
+    conversationType: isAttendanceStateTab.value
+      ? activeAssigneeTab.value
+      : props.conversationType || undefined,
   };
 });
 
@@ -302,6 +318,12 @@ function filterByAssigneeTab(conversations) {
   if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.UNASSIGNED) {
     return conversations.filter(c => !c.meta?.assignee);
   }
+  if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.WAITING) {
+    return conversations.filter(c => !c.first_reply_created_at);
+  }
+  if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE) {
+    return conversations.filter(c => !!c.first_reply_created_at);
+  }
   return [...conversations];
 }
 
@@ -320,6 +342,13 @@ const conversationList = computed(() => {
       localConversationList = [...mineChatsList.value(filters)];
     } else if (activeAssigneeTab.value === 'unassigned') {
       localConversationList = [...unAssignedChatsList.value(filters)];
+    } else if (
+      activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.WAITING ||
+      activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE
+    ) {
+      // Backend already returns the filtered bucket; reuse the "all" list and
+      // filter client-side by first_reply_created_at for incremental updates.
+      localConversationList = filterByAssigneeTab(allChatList.value(filters));
     } else {
       localConversationList = [...allChatList.value(filters)];
     }

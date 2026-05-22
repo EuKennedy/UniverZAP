@@ -138,6 +138,42 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     @conversation.save!
   end
 
+  # UniverZAP: attach this conversation (and its contact) to a Kanban stage.
+  # Creates a KanbanTask in the requested stage, linked to the conversation
+  # and contact. Returns the task so the client can refresh the board.
+  def attach_to_kanban
+    funnel_stage = FunnelStage.joins(:funnel)
+                              .where(funnels: { account_id: current_account.id })
+                              .find(params.require(:funnel_stage_id))
+    title = params[:title].presence ||
+            "##{@conversation.display_id} · #{@conversation.contact&.name || 'Conversa'}"
+    task = current_account.kanban_tasks.create!(
+      funnel: funnel_stage.funnel,
+      funnel_stage: funnel_stage,
+      title: title
+    )
+    task.conversations << @conversation unless task.conversations.include?(@conversation)
+    if @conversation.contact && !task.contacts.include?(@conversation.contact)
+      task.contacts << @conversation.contact
+    end
+    render json: task.push_event_data
+  end
+
+  # UniverZAP: toggle the Athenas autopilot assistant on this conversation.
+  # Persists the assistant id and an `enabled` flag in additional_attributes.
+  def autopilot
+    enabled = ActiveModel::Type::Boolean.new.cast(params[:enabled])
+    assistant_id = params[:ai_assistant_id].presence
+    @conversation.additional_attributes ||= {}
+    @conversation.additional_attributes['autopilot_enabled'] = enabled
+    @conversation.additional_attributes['autopilot_assistant_id'] = enabled ? assistant_id : nil
+    @conversation.save!
+    render json: {
+      autopilot_enabled: @conversation.additional_attributes['autopilot_enabled'],
+      autopilot_assistant_id: @conversation.additional_attributes['autopilot_assistant_id']
+    }
+  end
+
   def destroy
     authorize @conversation, :destroy?
     ::DeleteObjectJob.perform_later(@conversation, Current.user, request.ip)

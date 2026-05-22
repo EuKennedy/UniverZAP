@@ -34,12 +34,22 @@ export const ASSIGNEE_TYPE_TAB_PERMISSIONS = {
     count: 'mineCount',
     permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
   },
-  unassigned: {
-    count: 'unAssignedCount',
+  // UniverZAP: replaces the legacy "unassigned" tab. Shows conversations
+  // awaiting first agent response (first_reply_created_at IS NULL).
+  waiting: {
+    count: 'waitingCount',
     permissions: [
       ...ROLES,
       MANAGE_ALL_CONVERSATION_PERMISSIONS,
       CONVERSATION_UNASSIGNED_PERMISSIONS,
+    ],
+  },
+  in_attendance: {
+    count: 'inAttendanceCount',
+    permissions: [
+      ...ROLES,
+      MANAGE_ALL_CONVERSATION_PERMISSIONS,
+      CONVERSATION_PARTICIPATING_PERMISSIONS,
     ],
   },
   all: {
