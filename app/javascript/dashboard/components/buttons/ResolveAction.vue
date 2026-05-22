@@ -418,7 +418,7 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
     <ConversationKanbanAttachModal
       v-if="currentChat?.id"
       :show="showKanbanModal"
-      :conversation-id="currentChat.id"
+      :conversation="currentChat"
       @close="closeKanbanModal"
     />
   </div>

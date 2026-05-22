@@ -8,7 +8,9 @@ class Ai::Assistant < ApplicationRecord
   belongs_to :account
   has_many :trainings, class_name: 'Ai::Training', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
   has_many :intents, class_name: 'Ai::Intent', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
-  has_many :invocations, class_name: 'Ai::Invocation', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
+  # `ai_invocations.ai_assistant_id` is NOT NULL in the schema, so `:nullify`
+  # blows up on destroy. Cascade deletion keeps the table consistent.
+  has_many :invocations, class_name: 'Ai::Invocation', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
   has_many :inboxes, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
   has_many :conversations, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
   has_many :chat_threads, class_name: 'Ai::ChatThread', foreign_key: :ai_assistant_id,
