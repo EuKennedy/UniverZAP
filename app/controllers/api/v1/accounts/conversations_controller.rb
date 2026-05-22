@@ -165,24 +165,9 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   def autopilot
     enabled = ActiveModel::Type::Boolean.new.cast(params[:enabled])
     assistant_id = params[:ai_assistant_id].presence
-    if enabled && assistant_id
-      assistant = current_account.ai_assistants.find(assistant_id)
-      @conversation.ai_mode = 'autopilot'
-      @conversation.ai_assistant = assistant
-    else
-      @conversation.ai_mode = nil
-      @conversation.ai_assistant = nil
-    end
-    @conversation.additional_attributes ||= {}
-    @conversation.additional_attributes['autopilot_enabled'] = enabled
-    @conversation.additional_attributes['autopilot_assistant_id'] = enabled ? assistant_id : nil
+    apply_autopilot_state(enabled: enabled, assistant_id: assistant_id)
     @conversation.save!
-    render json: {
-      autopilot_enabled: enabled,
-      autopilot_assistant_id: enabled ? assistant_id : nil,
-      ai_mode: @conversation.ai_mode,
-      ai_assistant_id: @conversation.ai_assistant_id
-    }
+    render json: autopilot_response_payload(enabled: enabled, assistant_id: assistant_id)
   end
 
   def destroy
@@ -192,6 +177,28 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   end
 
   private
+
+  def apply_autopilot_state(enabled:, assistant_id:)
+    if enabled && assistant_id
+      @conversation.ai_mode = 'autopilot'
+      @conversation.ai_assistant = current_account.ai_assistants.find(assistant_id)
+    else
+      @conversation.ai_mode = nil
+      @conversation.ai_assistant = nil
+    end
+    @conversation.additional_attributes ||= {}
+    @conversation.additional_attributes['autopilot_enabled'] = enabled
+    @conversation.additional_attributes['autopilot_assistant_id'] = enabled ? assistant_id : nil
+  end
+
+  def autopilot_response_payload(enabled:, assistant_id:)
+    {
+      autopilot_enabled: enabled,
+      autopilot_assistant_id: enabled ? assistant_id : nil,
+      ai_mode: @conversation.ai_mode,
+      ai_assistant_id: @conversation.ai_assistant_id
+    }
+  end
 
   def permitted_update_params
     # TODO: Move the other conversation attributes to this method and remove specific endpoints for each attribute

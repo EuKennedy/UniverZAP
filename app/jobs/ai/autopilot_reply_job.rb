@@ -9,26 +9,33 @@ class Ai::AutopilotReplyJob < ApplicationJob
     return unless message && assistant
 
     conversation = message.conversation
-    # NOTE: the listener already gated on ai_mode='autopilot'. Skip the
-    # assignee check — autopilot intentionally overrides a human assignee
-    # when the conversation explicitly opted into it.
+    # NOTE: the listener already gated on ai_mode='autopilot'. Autopilot
+    # intentionally overrides a human assignee when the conversation opted in.
     return if rate_limited?(conversation, assistant)
 
-    result = Ai::AutopilotReplyService.new(conversation: conversation, assistant: assistant).perform
-    reply_text = result[:content].to_s.strip
+    reply_text = generate_reply_text(conversation, assistant)
     return if reply_text.blank?
 
+    send_outgoing(conversation, assistant, reply_text)
+  rescue Ai::ClaudeService::Error => e
+    Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
+  end
+
+  private
+
+  def generate_reply_text(conversation, assistant)
+    result = Ai::AutopilotReplyService.new(conversation: conversation, assistant: assistant).perform
+    result[:content].to_s.strip
+  end
+
+  def send_outgoing(conversation, assistant, reply_text)
     Messages::MessageBuilder.new(
       assistant_user(assistant),
       conversation,
       content: reply_text,
       message_type: :outgoing
     ).perform
-  rescue Ai::ClaudeService::Error => e
-    Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
   end
-
-  private
 
   def rate_limited?(conversation, assistant)
     limit = (assistant.guardrails.is_a?(Hash) ? assistant.guardrails['max_messages_per_minute'] : nil) || 4

@@ -25,54 +25,69 @@ class Ai::AutopilotReplyService
     raise Ai::ClaudeService::Error, 'No AI assistant assigned to this conversation' if @assistant.nil?
 
     ensure_fresh_summary
-
     messages = build_recent_messages
     raise Ai::ClaudeService::Error, 'Conversation has no messages yet' if messages.empty?
 
-    response = Ai::ClaudeService.new(assistant: @assistant).chat(
-      messages: messages,
-      system: build_system_prompt,
-      conversation: @conversation,
-      phase: 'autopilot'
-    )
-
-    if response[:content].to_s.strip.empty?
-      Rails.logger.warn(
-        "[Athenas] autopilot empty content assistant=#{@assistant.id} " \
-        "conv=#{@conversation.display_id} stop=#{response[:stop_reason]}"
-      )
-      raise Ai::ClaudeService::Error, 'Assistant returned empty response'
-    end
-
+    response = call_claude(messages)
+    raise_on_empty(response)
     response
   end
 
   private
 
+  def call_claude(messages)
+    Ai::ClaudeService.new(assistant: @assistant).chat(
+      messages: messages,
+      system: build_system_prompt,
+      conversation: @conversation,
+      phase: 'autopilot'
+    )
+  end
+
+  def raise_on_empty(response)
+    return if response[:content].to_s.strip.present?
+
+    Rails.logger.warn(
+      "[Athenas] autopilot empty content assistant=#{@assistant.id} " \
+      "conv=#{@conversation.display_id} stop=#{response[:stop_reason]}"
+    )
+    raise Ai::ClaudeService::Error, 'Assistant returned empty response'
+  end
+
   # Generates (or refreshes) the cached conversation summary. The summary
   # stays in `conversation.additional_attributes` so it persists across
   # autopilot ticks without an extra table.
   def ensure_fresh_summary
-    total_messages = @conversation.messages.where(message_type: %i[incoming outgoing]).count
-    cached = (@conversation.additional_attributes || {})['autopilot_summary'] || {}
-    cached_count = cached['message_count'].to_i
-    return if cached['text'].present? && (total_messages - cached_count) < SUMMARY_REFRESH_AFTER
+    return if summary_fresh?
 
     summary = generate_summary
     return if summary.blank?
 
-    @conversation.additional_attributes = (@conversation.additional_attributes || {}).merge(
-      'autopilot_summary' => {
-        'text' => summary,
-        'message_count' => total_messages,
-        'generated_at' => Time.current.to_i
-      }
-    )
-    @conversation.save!(touch: false)
+    persist_summary(summary)
   rescue Ai::ClaudeService::Error => e
     # Summary failures should not block a reply attempt — fall through with
     # whatever summary (if any) we have cached.
     Rails.logger.warn("[Athenas] autopilot summary refresh failed: #{e.message}")
+  end
+
+  def summary_fresh?
+    cached = (@conversation.additional_attributes || {})['autopilot_summary'] || {}
+    return false if cached['text'].blank?
+
+    total = @conversation.messages.where(message_type: %i[incoming outgoing]).count
+    (total - cached['message_count'].to_i) < SUMMARY_REFRESH_AFTER
+  end
+
+  def persist_summary(summary)
+    total = @conversation.messages.where(message_type: %i[incoming outgoing]).count
+    @conversation.additional_attributes = (@conversation.additional_attributes || {}).merge(
+      'autopilot_summary' => {
+        'text' => summary,
+        'message_count' => total,
+        'generated_at' => Time.current.to_i
+      }
+    )
+    @conversation.save!(touch: false)
   end
 
   def generate_summary
