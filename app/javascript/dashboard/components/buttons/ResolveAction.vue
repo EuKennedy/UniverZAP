@@ -20,6 +20,7 @@ import ButtonGroup from 'dashboard/components-next/buttonGroup/ButtonGroup.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
 import ConversationKanbanAttachModal from 'dashboard/components-next/ConversationKanbanAttach/ConversationKanbanAttachModal.vue';
+import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
 
 const store = useStore();
 const getters = useStoreGetters();
@@ -41,21 +42,18 @@ const showKanbanModal = ref(false);
 const [showAutopilotMenu, toggleAutopilotMenu] = useToggle();
 const closeAutopilotMenu = () => toggleAutopilotMenu(false);
 
-const aiAssistants = computed(
-  () => getters['agents/getAiAssistants']?.value || []
-);
+const {
+  assistants: athenasAssistants,
+  fetchAssistants: fetchAthenasAssistants,
+} = useAthenasAssistant();
+const aiAssistants = computed(() => athenasAssistants.value || []);
 
-const fetchedAssistants = ref(false);
 const ensureAssistantsLoaded = async () => {
-  if (fetchedAssistants.value) return;
   try {
-    if (store.getters['agents/getAiAssistants'] !== undefined) {
-      await store.dispatch('agents/fetchAiAssistants');
-    }
+    await fetchAthenasAssistants();
   } catch (_) {
     /* noop */
   }
-  fetchedAssistants.value = true;
 };
 
 const openKanbanModal = () => {
