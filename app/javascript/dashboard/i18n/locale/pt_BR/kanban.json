@@ -182,7 +182,12 @@
       "DUE_TOMORROW": "Vence amanhã",
       "DUE_YESTERDAY": "Venceu ontem",
       "DUE_IN_DAYS": "Vence em {n} dias",
-      "DUE_OVERDUE_DAYS": "Atrasada {n} dias"
+      "DUE_OVERDUE_DAYS": "Atrasada {n} dias",
+      "ADDED_NOW": "Adicionado agora",
+      "ADDED_MINUTES": "Adicionado há {n}min",
+      "ADDED_HOURS": "Adicionado há {n}h",
+      "ADDED_DAYS": "Adicionado há {n}d",
+      "ADDED_MONTHS": "Adicionado há {n}mês"
     }
   }
 }

@@ -40,38 +40,20 @@ class ConversationFinder
   def perform
     set_up
 
-    mine_count, unassigned_count, all_count, = set_count_for_all_conversations
-    assigned_count = all_count - unassigned_count
+    # Counters MUST be computed before conversation_type/assignee_type filters
+    # so every tab badge reflects the same base set. Otherwise switching tabs
+    # zeroes out the counter of the other tab.
+    counts = build_count_payload
 
+    filter_by_conversation_type if params[:conversation_type]
     filter_by_assignee_type
 
-    {
-      conversations: conversations,
-      count: {
-        mine_count: mine_count,
-        assigned_count: assigned_count,
-        unassigned_count: unassigned_count,
-        all_count: all_count,
-        **set_count_for_attendance_states
-      }
-    }
+    { conversations: conversations, count: counts }
   end
 
   def perform_meta_only
     set_up
-
-    mine_count, unassigned_count, all_count, = set_count_for_all_conversations
-    assigned_count = all_count - unassigned_count
-
-    {
-      count: {
-        mine_count: mine_count,
-        assigned_count: assigned_count,
-        unassigned_count: unassigned_count,
-        all_count: all_count,
-        **set_count_for_attendance_states
-      }
-    }
+    { count: build_count_payload }
   end
 
   private
@@ -121,7 +103,6 @@ class ConversationFinder
       current_user,
       current_account
     ).perform
-    filter_by_conversation_type if params[:conversation_type]
     @conversations
   end
 
@@ -195,6 +176,17 @@ class ConversationFinder
       @conversations.unassigned.count,
       @conversations.count
     ]
+  end
+
+  def build_count_payload
+    mine_count, unassigned_count, all_count = set_count_for_all_conversations
+    {
+      mine_count: mine_count,
+      assigned_count: all_count - unassigned_count,
+      unassigned_count: unassigned_count,
+      all_count: all_count,
+      **set_count_for_attendance_states
+    }
   end
 
   # UniverZAP: attendance state counts (waiting vs in_attendance) for tab badges.

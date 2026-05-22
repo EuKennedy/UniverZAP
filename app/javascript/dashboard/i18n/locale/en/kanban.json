@@ -182,7 +182,12 @@
       "DUE_TOMORROW": "Due tomorrow",
       "DUE_YESTERDAY": "Due yesterday",
       "DUE_IN_DAYS": "Due in {n} days",
-      "DUE_OVERDUE_DAYS": "Overdue {n} days"
+      "DUE_OVERDUE_DAYS": "Overdue {n} days",
+      "ADDED_NOW": "Added just now",
+      "ADDED_MINUTES": "Added {n}m ago",
+      "ADDED_HOURS": "Added {n}h ago",
+      "ADDED_DAYS": "Added {n}d ago",
+      "ADDED_MONTHS": "Added {n}mo ago"
     }
   }
 }
