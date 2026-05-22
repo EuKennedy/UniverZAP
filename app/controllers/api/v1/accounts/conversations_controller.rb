@@ -69,7 +69,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   end
 
   def transcript
-    render json: { error: 'email param missing' }, status: :unprocessable_entity and return if params[:email].blank?
+    render json: { error: 'email param missing' }, status: :unprocessable_content and return if params[:email].blank?
     return render_payment_required('Email transcript is not available on your plan') unless @conversation.account.email_transcript_enabled?
     return head :too_many_requests unless @conversation.account.within_email_rate_limit?
 
@@ -142,20 +142,9 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   # Creates a KanbanTask in the requested stage, linked to the conversation
   # and contact. Returns the task so the client can refresh the board.
   def attach_to_kanban
-    funnel_stage = FunnelStage.joins(:funnel)
-                              .where(funnels: { account_id: current_account.id })
-                              .find(params.require(:funnel_stage_id))
-    title = params[:title].presence ||
-            "##{@conversation.display_id} · #{@conversation.contact&.name || 'Conversa'}"
-    task = current_account.kanban_tasks.create!(
-      funnel: funnel_stage.funnel,
-      funnel_stage: funnel_stage,
-      title: title
-    )
-    task.conversations << @conversation unless task.conversations.include?(@conversation)
-    if @conversation.contact && !task.contacts.include?(@conversation.contact)
-      task.contacts << @conversation.contact
-    end
+    funnel_stage = scoped_funnel_stage(params.require(:funnel_stage_id))
+    task = build_kanban_task(funnel_stage)
+    link_conversation_to_task(task)
     render json: task.push_event_data
   end
 
@@ -177,6 +166,31 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   end
 
   private
+
+  def scoped_funnel_stage(stage_id)
+    FunnelStage.joins(:funnel)
+               .where(funnels: { account_id: current_account.id })
+               .find(stage_id)
+  end
+
+  def build_kanban_task(funnel_stage)
+    current_account.kanban_tasks.create!(
+      funnel: funnel_stage.funnel,
+      funnel_stage: funnel_stage,
+      title: kanban_task_title
+    )
+  end
+
+  def kanban_task_title
+    params[:title].presence ||
+      "##{@conversation.display_id} · #{@conversation.contact&.name || 'Conversa'}"
+  end
+
+  def link_conversation_to_task(task)
+    task.conversations << @conversation if task.conversations.exclude?(@conversation)
+    contact = @conversation.contact
+    task.contacts << contact if contact && task.contacts.exclude?(contact)
+  end
 
   def apply_autopilot_state(enabled:, assistant_id:)
     if enabled && assistant_id
@@ -266,7 +280,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     @contact_inbox ||= ::ContactInbox.find_by!(source_id: params[:source_id])
     authorize @contact_inbox.inbox, :show?
   rescue ActiveRecord::RecordNotUnique
-    render json: { error: 'source_id should be unique' }, status: :unprocessable_entity
+    render json: { error: 'source_id should be unique' }, status: :unprocessable_content
   end
 
   def build_contact_inbox
