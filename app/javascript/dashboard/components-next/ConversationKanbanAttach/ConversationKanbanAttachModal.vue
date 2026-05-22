@@ -80,7 +80,7 @@ const attach = async stage => {
   if (attachingStageId.value) return;
   attachingStageId.value = stage.id;
   try {
-    await store.dispatch('conversations/attachToKanban', {
+    await store.dispatch('attachToKanban', {
       conversationId: props.conversation.id,
       funnelStageId: stage.id,
     });
