@@ -13,8 +13,8 @@
 #
 # Output shape matches Ai::SuggestReplyService so the job stays drop-in.
 class Ai::AutopilotReplyService
-  RECENT_WINDOW = 6
-  SUMMARY_REFRESH_AFTER = 10
+  RECENT_WINDOW = 16
+  SUMMARY_REFRESH_AFTER = 5
 
   def initialize(conversation:, assistant: nil)
     @conversation = conversation
@@ -107,7 +107,10 @@ class Ai::AutopilotReplyService
       tone_instruction,
       summary_block,
       knowledge_snippets,
-      'Regras: gere APENAS o corpo da próxima mensagem que o atendente deve enviar. ' \
+      'IMPORTANTE: as mensagens recentes abaixo (role user/assistant) são a verdade do momento. ' \
+      'O resumo é só pano de fundo — se o resumo contradisser o que o cliente acabou de dizer, ' \
+      'IGNORE o resumo e responda ao que está acontecendo AGORA. ' \
+      'Gere APENAS o corpo da próxima mensagem do atendente. ' \
       'Português brasileiro, frases curtas, sem markdown, sem prefixos, sem aspas. ' \
       'NÃO se identifique como IA. Se precisar de algo que não está no contexto, ' \
       'pergunte ao cliente de forma natural.'
