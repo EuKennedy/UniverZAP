@@ -13,8 +13,8 @@
 #
 # Output shape matches Ai::SuggestReplyService so the job stays drop-in.
 class Ai::AutopilotReplyService
-  RECENT_WINDOW = 16
-  SUMMARY_REFRESH_AFTER = 5
+  RECENT_WINDOW = 25
+  SUMMARY_REFRESH_AFTER = 99_999 # effectively disabled — autopilot relies on recent msgs only
 
   def initialize(conversation:, assistant: nil)
     @conversation = conversation
@@ -24,7 +24,6 @@ class Ai::AutopilotReplyService
   def perform
     raise Ai::ClaudeService::Error, 'No AI assistant assigned to this conversation' if @assistant.nil?
 
-    ensure_fresh_summary
     messages = build_recent_messages
     raise Ai::ClaudeService::Error, 'Conversation has no messages yet' if messages.empty?
 
@@ -105,11 +104,9 @@ class Ai::AutopilotReplyService
       "Persona: #{@assistant.name}, #{@assistant.role}.",
       @assistant.system_prompt.presence,
       tone_instruction,
-      summary_block,
       knowledge_snippets,
-      'IMPORTANTE: as mensagens recentes abaixo (role user/assistant) são a verdade do momento. ' \
-      'O resumo é só pano de fundo — se o resumo contradisser o que o cliente acabou de dizer, ' \
-      'IGNORE o resumo e responda ao que está acontecendo AGORA. ' \
+      'Use APENAS as mensagens recentes abaixo (role user/assistant) como contexto. ' \
+      'Não invente histórico que não está visível. Se o cliente mudar de assunto, acompanhe. ' \
       'Gere APENAS o corpo da próxima mensagem do atendente. ' \
       'Português brasileiro, frases curtas, sem markdown, sem prefixos, sem aspas. ' \
       'NÃO se identifique como IA. Se precisar de algo que não está no contexto, ' \
