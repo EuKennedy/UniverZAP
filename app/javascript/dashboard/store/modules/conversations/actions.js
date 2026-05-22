@@ -491,13 +491,30 @@ const actions = {
     return response.data;
   },
 
-  setAutopilot: async (_, { conversationId, aiAssistantId, enabled }) => {
+  setAutopilot: async (
+    { commit, getters: storeGetters },
+    { conversationId, aiAssistantId, enabled }
+  ) => {
     const response = await ConversationApi.setAutopilot({
       conversationId,
       aiAssistantId,
       enabled,
     });
-    return response.data;
+    const payload = response.data || {};
+    const existing = storeGetters.getConversationById(conversationId) || {};
+    const existingAttrs = existing.additional_attributes || {};
+    commit(types.UPDATE_CONVERSATION, {
+      id: Number(conversationId),
+      ai_mode: payload.ai_mode ?? null,
+      ai_assistant_id: payload.ai_assistant_id ?? null,
+      additional_attributes: {
+        ...existingAttrs,
+        autopilot_enabled: !!payload.autopilot_enabled,
+        autopilot_assistant_id: payload.autopilot_assistant_id ?? null,
+      },
+      updated_at: Math.floor(Date.now() / 1000),
+    });
+    return payload;
   },
 
   setConversationFilters({ commit }, data) {
