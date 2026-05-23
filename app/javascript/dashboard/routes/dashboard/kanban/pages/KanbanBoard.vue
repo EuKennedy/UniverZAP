@@ -171,7 +171,21 @@ watch(
   }
 );
 
-const onCardClick = task => openEditTask(task);
+// Salesforce-style: click on a Kanban card sends the operator straight
+// to the linked conversation. Falls back to the task edit modal when the
+// task has no conversation attached.
+const onCardClick = task => {
+  const conversation = (task.conversations || [])[0];
+  if (conversation?.id) {
+    router.push(
+      accountScopedRoute('inbox_conversation', {
+        conversation_id: conversation.id,
+      })
+    );
+    return;
+  }
+  openEditTask(task);
+};
 
 const onTaskDragstart = (task, event) => {
   draggingTaskId.value = task.id;
