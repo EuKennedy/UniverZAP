@@ -80,18 +80,32 @@ const onDrop = event => {
 
 <template>
   <section
-    class="kanban-column flex flex-col w-[300px] flex-shrink-0 rounded-2xl bg-n-alpha-1 ring-1 ring-inset ring-transparent transition-[box-shadow,background-color,ring-color] duration-200"
+    class="kanban-column flex flex-col w-[300px] flex-shrink-0 rounded-2xl bg-n-alpha-1 ring-1 ring-inset ring-transparent transition-all duration-200 relative overflow-hidden"
     :class="{
-      'ring-n-brand bg-n-brand/[0.04] shadow-[0_0_0_1px_rgba(var(--brand-rgb,99,102,241),0.15)]':
+      'ring-2 ring-n-iris-9 bg-n-iris-9/[0.05] shadow-[0_0_0_4px_rgba(99,102,241,0.08)]':
         isOver,
     }"
   >
+    <!-- Stage color accent top -->
+    <span
+      class="absolute inset-x-0 top-0 h-[3px] z-20"
+      :style="{
+        background: `linear-gradient(to right, ${stage.color}cc, ${stage.color}66)`,
+      }"
+    />
+
     <header
-      class="sticky top-0 z-10 flex items-center gap-2 px-3 pt-3 pb-2 rounded-t-2xl bg-gradient-to-b from-n-alpha-1 to-transparent backdrop-blur-sm"
+      class="sticky top-0 z-10 flex items-center gap-2 px-3.5 pt-4 pb-2.5 rounded-t-2xl backdrop-blur-md"
+      :style="{
+        background: `linear-gradient(to bottom, ${stage.color}10, transparent)`,
+      }"
     >
       <span
-        class="size-2 rounded-full flex-shrink-0 ring-2 ring-n-alpha-1"
-        :style="{ backgroundColor: stage.color }"
+        class="size-2.5 rounded-full flex-shrink-0 ring-2 ring-n-solid-1 shadow-[0_0_8px]"
+        :style="{
+          backgroundColor: stage.color,
+          boxShadow: `0 0 8px ${stage.color}66`,
+        }"
       />
       <h2
         class="flex-1 text-[13px] font-semibold text-n-slate-12 truncate tracking-tight"
@@ -107,7 +121,8 @@ const onDrop = event => {
         {{ t(statusBadge.label) }}
       </span>
       <span
-        class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-md text-[11px] tabular-nums font-semibold text-n-slate-11 bg-n-alpha-2"
+        class="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-md text-[11px] tabular-nums font-bold bg-n-solid-1 ring-1 ring-inset ring-n-weak"
+        :style="{ color: stage.color }"
       >
         {{ tasks.length }}
       </span>

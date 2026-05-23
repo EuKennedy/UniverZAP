@@ -47,6 +47,55 @@ const editingTask = ref(null);
 const defaultStageId = ref(null);
 const showDeleteConfirm = ref(false);
 const taskPendingDelete = ref(null);
+const search = ref('');
+const priorityFilter = ref('all');
+
+const tasksByStageFiltered = stageId => {
+  const all = tasksByStage(stageId) || [];
+  const q = search.value.trim().toLowerCase();
+  return all.filter(task => {
+    if (
+      priorityFilter.value !== 'all' &&
+      task.priority !== priorityFilter.value
+    ) {
+      return false;
+    }
+    if (!q) return true;
+    const title = (task.title || '').toLowerCase();
+    const contactName = (task.contacts?.[0]?.name || '').toLowerCase();
+    return title.includes(q) || contactName.includes(q);
+  });
+};
+
+const boardStats = computed(() => {
+  const stagesList = stages.value;
+  const allTasks = stagesList.flatMap(s => tasksByStage(s.id) || []);
+  const total = allTasks.length;
+  const wonStageIds = new Set(
+    stagesList.filter(s => s.status_type === 'won').map(s => s.id)
+  );
+  const won = allTasks.filter(task =>
+    wonStageIds.has(task.funnel_stage_id)
+  ).length;
+  const overdue = allTasks.filter(task => {
+    if (!task.due_date) return false;
+    return Number(task.due_date) * 1000 < Date.now();
+  }).length;
+  return {
+    total,
+    won,
+    overdue,
+    rate: total ? Math.round((won / total) * 100) : 0,
+  };
+});
+
+const PRIORITY_OPTIONS = [
+  { key: 'all', label: 'KANBAN.BOARD.FILTER.ALL' },
+  { key: 'urgent', label: 'KANBAN.PRIORITY.URGENT' },
+  { key: 'high', label: 'KANBAN.PRIORITY.HIGH' },
+  { key: 'medium', label: 'KANBAN.PRIORITY.MEDIUM' },
+  { key: 'low', label: 'KANBAN.PRIORITY.LOW' },
+];
 
 const loadTasks = async () => {
   try {
@@ -225,64 +274,164 @@ const goToSettings = () => {
 
 <template>
   <div class="flex flex-col h-full w-full bg-n-background">
+    <!-- HERO HEADER: breadcrumb + name + inline stats + actions -->
     <header
-      class="flex items-center justify-between flex-shrink-0 gap-4 px-6 py-4 border-b border-n-weak"
+      class="flex-shrink-0 px-7 pt-5 pb-4 border-b border-n-weak relative overflow-hidden"
     >
-      <div class="flex items-center gap-2.5 min-w-0">
-        <Button
-          icon="i-lucide-arrow-left"
-          size="xs"
-          ghost
-          slate
-          :aria-label="t('KANBAN.BOARD.BACK')"
-          @click="goBack"
-        />
-        <nav
-          class="flex items-center gap-1.5 text-[12px] text-n-slate-11 flex-shrink-0"
-        >
-          <button
-            type="button"
-            class="hover:text-n-slate-12 transition-colors"
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-n-alpha-1 to-transparent pointer-events-none"
+      />
+      <div class="relative flex items-start justify-between gap-4 mb-4">
+        <div class="flex items-start gap-3 min-w-0 flex-1">
+          <Button
+            icon="i-lucide-arrow-left"
+            size="xs"
+            ghost
+            slate
+            :aria-label="t('KANBAN.BOARD.BACK')"
+            class="mt-0.5"
             @click="goBack"
-          >
-            {{ t('KANBAN.OVERVIEW.TITLE') }}
-          </button>
-          <span class="i-lucide-chevron-right size-3 text-n-slate-9" />
-        </nav>
-        <div class="flex flex-col gap-0.5 min-w-0">
-          <h1
-            class="text-base font-semibold text-n-slate-12 truncate tracking-tight"
-            :title="funnel?.name"
-          >
-            {{ funnel?.name || t('KANBAN.BOARD.LOADING') }}
-          </h1>
-          <p
-            v-if="funnel?.description"
-            class="text-[11px] text-n-slate-11 truncate"
-          >
-            {{ funnel.description }}
-          </p>
+          />
+          <div class="flex flex-col gap-1 min-w-0 flex-1">
+            <nav class="flex items-center gap-1.5 text-[11px] text-n-slate-10">
+              <button
+                type="button"
+                class="hover:text-n-slate-12 transition-colors uppercase tracking-[0.1em] font-medium"
+                @click="goBack"
+              >
+                {{ t('KANBAN.OVERVIEW.TITLE') }}
+              </button>
+              <span class="i-lucide-chevron-right size-3 text-n-slate-9" />
+              <span class="text-n-slate-11">{{ funnel?.name }}</span>
+            </nav>
+            <h1
+              class="text-[20px] font-semibold text-n-slate-12 truncate tracking-tight leading-tight"
+              :title="funnel?.name"
+            >
+              {{ funnel?.name || t('KANBAN.BOARD.LOADING') }}
+            </h1>
+            <p
+              v-if="funnel?.description"
+              class="text-[12px] text-n-slate-11 truncate"
+            >
+              {{ funnel.description }}
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <Button
+            v-if="stages.length"
+            icon="i-lucide-plus"
+            size="sm"
+            solid
+            blue
+            :label="t('KANBAN.BOARD.NEW_TASK')"
+            @click="openCreateTask(stages[0])"
+          />
+          <Button
+            v-if="isAdmin"
+            icon="i-lucide-settings-2"
+            size="sm"
+            faded
+            slate
+            :aria-label="t('KANBAN.BOARD.SETTINGS')"
+            @click="goToSettings"
+          />
         </div>
       </div>
-      <div class="flex items-center gap-2 flex-shrink-0">
-        <Button
-          v-if="stages.length"
-          icon="i-lucide-plus"
-          size="sm"
-          :label="t('KANBAN.BOARD.NEW_TASK')"
-          @click="openCreateTask(stages[0])"
-        />
-        <Button
-          v-if="isAdmin"
-          icon="i-lucide-settings-2"
-          size="sm"
-          faded
-          slate
-          :label="t('KANBAN.BOARD.SETTINGS')"
-          @click="goToSettings"
-        />
+
+      <!-- Stats inline -->
+      <div
+        v-if="stages.length"
+        class="relative flex items-center gap-6 text-[12px]"
+      >
+        <span class="inline-flex items-center gap-1.5">
+          <span class="i-lucide-square-check-big size-3.5 text-n-slate-10" />
+          <span class="text-n-slate-10">{{
+            t('KANBAN.BOARD.STATS.TOTAL')
+          }}</span>
+          <span class="tabular-nums font-semibold text-n-slate-12">{{
+            boardStats.total
+          }}</span>
+        </span>
+        <span class="size-1 rounded-full bg-n-slate-7" />
+        <span class="inline-flex items-center gap-1.5">
+          <span class="i-lucide-trending-up size-3.5 text-n-teal-11" />
+          <span class="text-n-slate-10">{{ t('KANBAN.BOARD.STATS.WON') }}</span>
+          <span class="tabular-nums font-semibold text-n-teal-11">{{
+            boardStats.won
+          }}</span>
+          <span class="tabular-nums font-semibold text-n-teal-11">
+            {{ t('KANBAN.BOARD.STATS.RATE', { n: boardStats.rate }) }}
+          </span>
+        </span>
+        <span class="size-1 rounded-full bg-n-slate-7" />
+        <span
+          class="inline-flex items-center gap-1.5"
+          :class="boardStats.overdue ? 'text-n-ruby-11' : ''"
+        >
+          <span
+            class="i-lucide-alarm-clock size-3.5"
+            :class="boardStats.overdue ? 'text-n-ruby-11' : 'text-n-slate-10'"
+          />
+          <span
+            :class="boardStats.overdue ? 'text-n-ruby-11' : 'text-n-slate-10'"
+          >
+            {{ t('KANBAN.BOARD.STATS.OVERDUE') }}
+          </span>
+          <span
+            class="tabular-nums font-semibold"
+            :class="boardStats.overdue ? 'text-n-ruby-11' : 'text-n-slate-12'"
+          >
+            {{ boardStats.overdue }}
+          </span>
+        </span>
       </div>
     </header>
+
+    <!-- Toolbar: search + priority filter -->
+    <div
+      v-if="stages.length"
+      class="flex-shrink-0 flex items-center gap-3 px-7 py-3 border-b border-n-weak"
+    >
+      <div
+        class="flex-1 max-w-sm flex items-center gap-2 px-3 py-1.5 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak focus-within:ring-n-slate-7 transition"
+      >
+        <span class="i-lucide-search size-3.5 text-n-slate-10 flex-shrink-0" />
+        <input
+          v-model="search"
+          type="text"
+          :placeholder="t('KANBAN.BOARD.SEARCH_PLACEHOLDER')"
+          class="flex-1 bg-transparent outline-none text-[13px] text-n-slate-12 placeholder:text-n-slate-10"
+        />
+        <button
+          v-if="search"
+          type="button"
+          class="text-n-slate-10 hover:text-n-slate-12"
+          @click="search = ''"
+        >
+          <span class="i-lucide-x size-3.5" />
+        </button>
+      </div>
+      <div
+        class="flex items-center gap-1 p-0.5 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak"
+      >
+        <button
+          v-for="opt in PRIORITY_OPTIONS"
+          :key="opt.key"
+          type="button"
+          class="px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors"
+          :class="
+            priorityFilter === opt.key
+              ? 'bg-n-solid-1 text-n-slate-12 shadow-sm'
+              : 'text-n-slate-11 hover:text-n-slate-12'
+          "
+          @click="priorityFilter = opt.key"
+        >
+          {{ t(opt.label) }}
+        </button>
+      </div>
+    </div>
 
     <section
       v-if="funnelUiFlags.isFetching || taskUiFlags.isFetching"
@@ -327,12 +476,12 @@ const goToSettings = () => {
     </section>
 
     <section v-else class="flex-1 overflow-x-auto overflow-y-hidden">
-      <div class="flex items-stretch gap-4 px-6 py-5 h-full min-w-min">
+      <div class="flex items-stretch gap-4 px-7 py-5 h-full min-w-min">
         <KanbanColumn
           v-for="stage in stages"
           :key="stage.id"
           :stage="stage"
-          :tasks="tasksByStage(stage.id)"
+          :tasks="tasksByStageFiltered(stage.id)"
           :dragging-task-id="draggingTaskId"
           :can-mutate="canMutate"
           @card-click="onCardClick"

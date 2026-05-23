@@ -8,7 +8,14 @@
       "EMPTY_DESCRIPTION": "Funnels organize your team's work into stages. Create your first one to start tracking tasks and conversations on the board.",
       "CREATE_FIRST": "Create funnel",
       "STAGE_COUNT": "{n} stages",
-      "TASK_COUNT": "{n} tasks"
+      "TASK_COUNT": "{n} tasks",
+      "SEARCH_PLACEHOLDER": "Search funnels…",
+      "NO_MATCH": "No funnels matching \"{q}\"",
+      "STATS": {
+        "FUNNELS": "Funnels",
+        "STAGES": "Stages",
+        "TASKS": "Tasks"
+      }
     },
     "BOARD": {
       "BACK": "Back to overview",
@@ -18,7 +25,17 @@
       "SETTINGS": "Settings",
       "NO_STAGES_TITLE": "No stages configured",
       "NO_STAGES_DESCRIPTION": "Add stages from settings to start placing tasks on the board.",
-      "OPEN_SETTINGS": "Open settings"
+      "OPEN_SETTINGS": "Open settings",
+      "SEARCH_PLACEHOLDER": "Search task or contact…",
+      "STATS": {
+        "TOTAL": "Total",
+        "WON": "Won",
+        "OVERDUE": "Overdue",
+        "RATE": "· {n}%"
+      },
+      "FILTER": {
+        "ALL": "All"
+      }
     },
     "SETTINGS": {
       "BACK": "Back to board",

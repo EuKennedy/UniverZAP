@@ -8,13 +8,30 @@
       "EMPTY_DESCRIPTION": "Funis organizam o trabalho do time em etapas. Crie o primeiro para começar a acompanhar tarefas e conversas no quadro.",
       "CREATE_FIRST": "Criar funil",
       "STAGE_COUNT": "{n} etapas",
-      "TASK_COUNT": "{n} tarefas"
+      "TASK_COUNT": "{n} tarefas",
+      "SEARCH_PLACEHOLDER": "Buscar funis…",
+      "NO_MATCH": "Nenhum funil para \"{q}\"",
+      "STATS": {
+        "FUNNELS": "Funis",
+        "STAGES": "Etapas",
+        "TASKS": "Tarefas"
+      }
     },
     "BOARD": {
       "BACK": "Voltar para visão geral",
       "LOADING": "Carregando funil…",
       "NOT_FOUND": "Funil não encontrado.",
       "NEW_TASK": "Nova tarefa",
+      "SEARCH_PLACEHOLDER": "Buscar tarefa ou contato…",
+      "STATS": {
+        "TOTAL": "Total",
+        "WON": "Ganhos",
+        "OVERDUE": "Atrasadas",
+        "RATE": "· {n}%"
+      },
+      "FILTER": {
+        "ALL": "Tudo"
+      },
       "SETTINGS": "Configurações",
       "NO_STAGES_TITLE": "Sem etapas configuradas",
       "NO_STAGES_DESCRIPTION": "Adicione etapas nas configurações para começar a posicionar tarefas no quadro.",
