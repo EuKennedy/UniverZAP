@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Defina sua senha · UniverZAP</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+           margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 32px;
+           background: radial-gradient(circle at 20% 0%, #1e293b 0%, #0a0f1e 65%);
+           color: #f8fafc; }
+    .card { width: 100%; max-width: 480px; padding: 32px; border-radius: 20px;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.55); }
+    .brand { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .brand-mark { width: 36px; height: 36px; border-radius: 10px;
+                  background: linear-gradient(135deg, #14b8a6, #0d9488);
+                  display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 16px; }
+    .brand-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: #e2e8f0; }
+    h1 { font-size: 24px; margin: 0 0 8px; letter-spacing: -0.02em; }
+    .meta { color: #94a3b8; font-size: 14px; margin: 0 0 4px; line-height: 1.5; }
+    .plan { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px;
+            margin: 12px 0 24px; border-radius: 999px; font-size: 11px; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(20, 184, 166, 0.08));
+            color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.35); }
+    form { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 12px;
+            color: #94a3b8; font-weight: 500; }
+    input { padding: 12px 14px; border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px; font-size: 14px; background: rgba(15, 23, 42, 0.6);
+            color: #f8fafc; outline: none; transition: border-color .15s; }
+    input:focus { border-color: #14b8a6; }
+    input:disabled { color: #64748b; }
+    button { padding: 13px; background: linear-gradient(135deg, #14b8a6, #0d9488);
+             color: #fff; border: 0; border-radius: 10px; font-weight: 600;
+             font-size: 14px; cursor: pointer; transition: transform .1s, box-shadow .15s; }
+    button:hover { box-shadow: 0 8px 24px -8px rgba(20, 184, 166, 0.5); transform: translateY(-1px); }
+    .footer { margin-top: 24px; font-size: 12px; color: #64748b; text-align: center; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">U</div>
+      <span class="brand-name">UniverZAP</span>
+    </div>
+    <h1>Bem-vindo, <%= @claims['name'] %></h1>
+    <p class="meta"><%= @claims['email'] %></p>
+    <span class="plan">★ Plano <%= @claims['role'].upcase %></span>
+    <p class="meta">Defina uma senha pra acessar o painel.</p>
+
+    <%= form_with url: connect_setup_path, method: :post, local: true do |f| %>
+      <%= hidden_field_tag :token, @token %>
+      <label>
+        Email
+        <input type="email" value="<%= @claims['email'] %>" disabled />
+      </label>
+      <label>
+        Senha · mínimo 8 caracteres
+        <input type="password" name="password" minlength="8" required autofocus autocomplete="new-password" />
+      </label>
+      <button type="submit">Criar senha e entrar</button>
+    <% end %>
+
+    <p class="footer">Ao continuar você aceita os Termos de Uso e a Política de Privacidade.</p>
+  </div>
+</body>
+</html>

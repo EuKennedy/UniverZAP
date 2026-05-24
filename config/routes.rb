@@ -1,4 +1,12 @@
 Rails.application.routes.draw do
+  # Univercart Connect — partner integration (cobrança recorrente externa).
+  # Webhook precisa ficar acima do mount Devise pra não passar pelo CSRF/auth chain.
+  post 'univercart-webhook', to: 'webhooks/univercart#create'
+  namespace :connect do
+    get  'setup', to: 'setup#show'
+    post 'setup', to: 'setup#create'
+  end
+
   # AUTH STARTS
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
