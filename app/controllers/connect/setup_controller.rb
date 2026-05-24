@@ -39,9 +39,7 @@ class Connect::SetupController < ApplicationController
     token    = params[:token]
     password = params[:password].to_s
 
-    if password.length < 8
-      return render plain: 'Senha muito curta (mínimo 8 caracteres).', status: :bad_request
-    end
+    return render plain: 'Senha muito curta (mínimo 8 caracteres).', status: :bad_request if password.length < 8
 
     result = Univercart::Jwt.verify(
       jwt: token,
@@ -66,36 +64,52 @@ class Connect::SetupController < ApplicationController
   # Cria User + Account + AccountUser (administrator). Ultra = 1 account isolado por buyer.
   def provision_user!(claims, password)
     ActiveRecord::Base.transaction do
-      user = User.find_or_initialize_by(email: claims['email'])
-      if user.new_record?
-        user.assign_attributes(
-          name: claims['name'],
-          password: password,
-          password_confirmation: password,
-          confirmed_at: Time.current,
-          custom_attributes: {
-            univercart_subscription_id: claims['sub'],
-            univercart_role: claims['role']
-          }
-        )
-        user.save!
-      else
-        user.update!(
-          password: password,
-          password_confirmation: password,
-          custom_attributes: (user.custom_attributes || {}).merge(
-            'univercart_subscription_id' => claims['sub'],
-            'univercart_role'            => claims['role']
-          )
-        )
-      end
-
-      if user.accounts.empty?
-        account = Account.create!(name: claims['name'])
-        AccountUser.create!(user: user, account: account, role: :administrator)
-      end
-
+      user = upsert_user(claims, password)
+      ensure_user_has_account(user, claims)
       user
     end
+  end
+
+  def upsert_user(claims, password)
+    user = User.find_or_initialize_by(email: claims['email'])
+    if user.new_record?
+      create_new_user(user, claims, password)
+    else
+      update_existing_user(user, claims, password)
+    end
+    user
+  end
+
+  def create_new_user(user, claims, password)
+    user.assign_attributes(
+      name: claims['name'],
+      password: password,
+      password_confirmation: password,
+      confirmed_at: Time.current,
+      custom_attributes: univercart_user_attrs(claims)
+    )
+    user.save!
+  end
+
+  def update_existing_user(user, claims, password)
+    user.update!(
+      password: password,
+      password_confirmation: password,
+      custom_attributes: (user.custom_attributes || {}).merge(univercart_user_attrs(claims).stringify_keys)
+    )
+  end
+
+  def univercart_user_attrs(claims)
+    {
+      univercart_subscription_id: claims['sub'],
+      univercart_role: claims['role']
+    }
+  end
+
+  def ensure_user_has_account(user, claims)
+    return unless user.accounts.empty?
+
+    account = Account.create!(name: claims['name'])
+    AccountUser.create!(user: user, account: account, role: :administrator)
   end
 end
