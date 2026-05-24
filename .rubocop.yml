@@ -233,6 +233,7 @@ AllCops:
     - 'storage/**/*'
     - 'db/migrate/20230426130150_init_schema.rb'
     - 'script/**/*'
+    - 'docker/**/*'
 
 FactoryBot/SyntaxMethods:
   Enabled: false
