@@ -94,16 +94,51 @@ class KanbanTask < ApplicationRecord
   end
 
   def associations_payload
-    subtasks_loaded = subtasks.to_a
-    completed_count = subtasks_loaded.count { |s| s.completed_at.present? }
+    relations_payload.merge(subtasks_payload)
+  end
+
+  def relations_payload
     {
-      assignees: assignees.map { |u| { id: u.id, name: u.name, avatar_url: u.avatar_url } },
-      labels: task_labels.map { |l| { id: l.id, title: l.title, color: l.color } },
-      conversations: conversations.map { |c| { id: c.id, display_id: c.display_id, status: c.status, inbox_id: c.inbox_id } },
-      contacts: contacts.map { |c| { id: c.id, name: c.name, email: c.email, phone_number: c.phone_number, thumbnail: c.avatar_url } },
-      subtasks: subtasks_loaded.map { |s| subtask_payload(s) },
-      subtasks_count: subtasks_loaded.size,
-      subtasks_completed_count: completed_count
+      assignees: assignees.map { |u| assignee_payload(u) },
+      labels: task_labels.map { |l| label_payload(l) },
+      conversations: conversations.map { |c| conversation_payload(c) },
+      contacts: contacts.map { |c| contact_payload(c) }
+    }
+  end
+
+  def subtasks_payload
+    loaded = subtasks.to_a
+    {
+      subtasks: loaded.map { |s| subtask_payload(s) },
+      subtasks_count: loaded.size,
+      subtasks_completed_count: loaded.count { |s| s.completed_at.present? }
+    }
+  end
+
+  def assignee_payload(user)
+    { id: user.id, name: user.name, avatar_url: user.avatar_url }
+  end
+
+  def label_payload(label)
+    { id: label.id, title: label.title, color: label.color }
+  end
+
+  def conversation_payload(conversation)
+    {
+      id: conversation.id,
+      display_id: conversation.display_id,
+      status: conversation.status,
+      inbox_id: conversation.inbox_id
+    }
+  end
+
+  def contact_payload(contact)
+    {
+      id: contact.id,
+      name: contact.name,
+      email: contact.email,
+      phone_number: contact.phone_number,
+      thumbnail: contact.avatar_url
     }
   end
 
