@@ -9,6 +9,13 @@ class Connect::SetupController < ApplicationController
   PARTNER_SLUG = -> { ENV.fetch('UNIVERCART_PARTNER_SLUG', 'univerzap') }
   JWT_SECRET   = -> { ENV.fetch('UNIVERCART_JWT_SECRET') }
 
+  PASSWORD_RULES = {
+    length:  ->(v) { v.length >= 8 },
+    upper:   ->(v) { v =~ /[A-Z]/ },
+    lower:   ->(v) { v =~ /[a-z]/ },
+    special: ->(v) { v =~ %r{[ !@#$%^&*()_+\-=\[\]{}|"/\\.,`<>:;?~']} }
+  }.freeze
+
   # GET /connect/setup?t=<JWT>
   def show
     token = params[:t]
@@ -36,23 +43,26 @@ class Connect::SetupController < ApplicationController
 
   # POST /connect/setup
   def create
-    token    = params[:token]
-    password = params[:password].to_s
-
-    return render plain: 'Senha muito curta (mínimo 8 caracteres).', status: :bad_request if password.length < 8
-
+    @token = params[:token]
     result = Univercart::Jwt.verify(
-      jwt: token,
+      jwt: @token,
       jwt_secret: JWT_SECRET.call,
       expected_audience: PARTNER_SLUG.call
     )
     return render plain: 'Sessão expirada. Recomece pelo email.', status: :unauthorized unless result.ok
 
-    claims = result.claims
-    sub = UnivercartSubscription.find_by(external_user_id: claims['sub'])
+    @claims = result.claims
+    company_name = params[:company_name].to_s.strip
+    password = params[:password].to_s
+    password_confirmation = params[:password_confirmation].to_s
+
+    error = validate_setup_input(company_name, password, password_confirmation)
+    return render_setup_error(error) if error
+
+    sub = UnivercartSubscription.find_by(external_user_id: @claims['sub'])
     return render plain: 'Assinatura não localizada. Aguarde o processamento.', status: :not_found unless sub
 
-    user = provision_user!(claims, password)
+    user = provision_user!(@claims, password, company_name)
     sub.update!(user_id: user.id)
 
     sign_in(user, scope: :user)
@@ -61,11 +71,36 @@ class Connect::SetupController < ApplicationController
 
   private
 
+  def validate_setup_input(company_name, password, password_confirmation)
+    return 'Informe o nome da empresa (mínimo 2 caracteres).' if company_name.length < 2
+    return 'As senhas não conferem.' if password != password_confirmation
+
+    missing = PASSWORD_RULES.reject { |_, rule| rule.call(password) }.keys
+    return password_rules_message(missing) if missing.any?
+
+    nil
+  end
+
+  def password_rules_message(missing)
+    labels = {
+      length:  '8+ caracteres',
+      upper:   '1 letra maiúscula',
+      lower:   '1 letra minúscula',
+      special: '1 caractere especial'
+    }
+    "Senha não atende: #{missing.map { |k| labels[k] }.join(', ')}."
+  end
+
+  def render_setup_error(message)
+    @setup_error = message
+    render :show, status: :unprocessable_entity
+  end
+
   # Cria User + Account + AccountUser (administrator). Ultra = 1 account isolado por buyer.
-  def provision_user!(claims, password)
+  def provision_user!(claims, password, company_name)
     ActiveRecord::Base.transaction do
       user = upsert_user(claims, password)
-      ensure_user_has_account(user, claims)
+      ensure_user_has_account(user, company_name)
       user
     end
   end
@@ -106,10 +141,10 @@ class Connect::SetupController < ApplicationController
     }
   end
 
-  def ensure_user_has_account(user, claims)
+  def ensure_user_has_account(user, company_name)
     return unless user.accounts.empty?
 
-    account = Account.create!(name: claims['name'])
+    account = Account.create!(name: company_name)
     AccountUser.create!(user: user, account: account, role: :administrator)
   end
 end

@@ -6,66 +6,232 @@
   <title>Defina sua senha · UniverZAP</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-           margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 32px;
-           background: radial-gradient(circle at 20% 0%, #1e293b 0%, #0a0f1e 65%);
-           color: #f8fafc; }
-    .card { width: 100%; max-width: 480px; padding: 32px; border-radius: 20px;
-            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px);
-            border: 1px solid rgba(148, 163, 184, 0.16);
-            box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.55); }
-    .brand { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 24px; }
-    .brand-mark { width: 36px; height: 36px; border-radius: 10px;
-                  background: linear-gradient(135deg, #14b8a6, #0d9488);
-                  display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 16px; }
-    .brand-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: #e2e8f0; }
-    h1 { font-size: 24px; margin: 0 0 8px; letter-spacing: -0.02em; }
-    .meta { color: #94a3b8; font-size: 14px; margin: 0 0 4px; line-height: 1.5; }
-    .plan { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px;
-            margin: 12px 0 24px; border-radius: 999px; font-size: 11px; font-weight: 700;
-            letter-spacing: 0.08em; text-transform: uppercase;
-            background: linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(20, 184, 166, 0.08));
-            color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.35); }
-    form { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
-    label { display: flex; flex-direction: column; gap: 6px; font-size: 12px;
-            color: #94a3b8; font-weight: 500; }
-    input { padding: 12px 14px; border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 10px; font-size: 14px; background: rgba(15, 23, 42, 0.6);
-            color: #f8fafc; outline: none; transition: border-color .15s; }
-    input:focus { border-color: #14b8a6; }
-    input:disabled { color: #64748b; }
-    button { padding: 13px; background: linear-gradient(135deg, #14b8a6, #0d9488);
-             color: #fff; border: 0; border-radius: 10px; font-weight: 600;
-             font-size: 14px; cursor: pointer; transition: transform .1s, box-shadow .15s; }
-    button:hover { box-shadow: 0 8px 24px -8px rgba(20, 184, 166, 0.5); transform: translateY(-1px); }
-    .footer { margin-top: 24px; font-size: 12px; color: #64748b; text-align: center; line-height: 1.5; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Inter", system-ui, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+      background:
+        radial-gradient(80% 60% at 15% 0%, rgba(20, 184, 166, 0.18) 0%, transparent 55%),
+        radial-gradient(60% 50% at 90% 100%, rgba(13, 148, 136, 0.12) 0%, transparent 55%),
+        #0a0f0e;
+      color: #f1f5f4;
+      letter-spacing: -0.005em;
+    }
+    .shell { width: 100%; max-width: 480px; }
+    .logo {
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 28px;
+    }
+    .logo img { height: 36px; width: auto; }
+    .card {
+      padding: 32px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(20, 27, 26, 0.85), rgba(10, 15, 14, 0.92));
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(20, 184, 166, 0.14);
+      box-shadow:
+        0 32px 80px -24px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.025em; font-weight: 600; }
+    .subtitle { color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.5; }
+    .name-pill { color: #14b8a6; font-weight: 600; }
+    .plan {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 11px; margin: 16px 0 28px;
+      border-radius: 999px; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      background: linear-gradient(135deg, rgba(20, 184, 166, 0.22), rgba(13, 148, 136, 0.08));
+      color: #5eead4;
+      border: 1px solid rgba(20, 184, 166, 0.3);
+    }
+    form { display: flex; flex-direction: column; gap: 18px; }
+    label {
+      display: flex; flex-direction: column; gap: 7px;
+      font-size: 12px; color: #94a3b8; font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+    .input {
+      padding: 13px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 12px;
+      font-size: 14px;
+      background: rgba(10, 15, 14, 0.7);
+      color: #f1f5f4;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      font-family: inherit;
+    }
+    .input:focus {
+      border-color: rgba(20, 184, 166, 0.7);
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+    }
+    .input:disabled { color: #64748b; cursor: not-allowed; }
+    .input.invalid { border-color: rgba(244, 63, 94, 0.55); }
+    .rules { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+    .rule {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11.5px; color: #64748b;
+      transition: color .15s;
+    }
+    .rule.ok { color: #14b8a6; }
+    .rule .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #475569; transition: background .15s, transform .15s;
+    }
+    .rule.ok .dot { background: #14b8a6; transform: scale(1.4); box-shadow: 0 0 8px rgba(20, 184, 166, 0.6); }
+    button {
+      padding: 14px;
+      background: linear-gradient(135deg, #14b8a6, #0d9488);
+      color: #062927;
+      border: 0; border-radius: 12px;
+      font-weight: 700; font-size: 14px;
+      cursor: pointer;
+      transition: transform .12s, box-shadow .15s, opacity .15s;
+      font-family: inherit;
+      letter-spacing: 0.01em;
+    }
+    button:hover:not(:disabled) {
+      box-shadow: 0 12px 32px -10px rgba(20, 184, 166, 0.55);
+      transform: translateY(-1px);
+    }
+    button:disabled {
+      background: rgba(20, 184, 166, 0.25);
+      color: rgba(241, 245, 244, 0.4);
+      cursor: not-allowed;
+    }
+    .footer {
+      margin-top: 22px; font-size: 11px;
+      color: #475569; text-align: center; line-height: 1.6;
+    }
+    .footer strong { color: #94a3b8; font-weight: 500; }
+    .error {
+      display: none;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #fda4af;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .error.visible { display: block; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="brand">
-      <div class="brand-mark">U</div>
-      <span class="brand-name">UniverZAP</span>
+  <div class="shell">
+    <div class="logo">
+      <img src="/brand-assets/logo_dark.svg" alt="UniverZAP" onerror="this.onerror=null;this.src='/brand-assets/logo_dark.png';" />
     </div>
-    <h1>Bem-vindo, <%= @claims['name'] %></h1>
-    <p class="meta"><%= @claims['email'] %></p>
-    <span class="plan">★ Plano <%= @claims['role'].upcase %></span>
-    <p class="meta">Defina uma senha pra acessar o painel.</p>
+    <div class="card">
+      <h1>Bem-vindo, <span class="name-pill"><%= @claims['name'].to_s.split.first %></span></h1>
+      <p class="subtitle"><%= @claims['email'] %></p>
+      <span class="plan">★ Plano <%= @claims['role'].upcase %></span>
 
-    <%= form_with url: connect_setup_path, method: :post, local: true do |f| %>
-      <%= hidden_field_tag :token, @token %>
-      <label>
-        Email
-        <input type="email" value="<%= @claims['email'] %>" disabled />
-      </label>
-      <label>
-        Senha · mínimo 8 caracteres
-        <input type="password" name="password" minlength="8" required autofocus autocomplete="new-password" />
-      </label>
-      <button type="submit">Criar senha e entrar</button>
-    <% end %>
+      <p class="subtitle" style="margin-bottom: 24px;">Configure sua conta para acessar o painel.</p>
 
-    <p class="footer">Ao continuar você aceita os Termos de Uso e a Política de Privacidade.</p>
+      <div id="error-box" class="error<%= @setup_error.present? ? ' visible' : '' %>"><%= @setup_error %></div>
+
+      <%= form_with url: connect_setup_path, method: :post, local: true, id: 'setup-form' do |f| %>
+        <%= hidden_field_tag :token, @token %>
+
+        <label>
+          Nome da empresa
+          <input type="text" name="company_name" id="company-name" class="input"
+                 placeholder="Ex.: Lizzon Professional"
+                 required minlength="2" maxlength="80" autofocus autocomplete="organization" />
+        </label>
+
+        <label>
+          Email
+          <input type="email" value="<%= @claims['email'] %>" class="input" disabled />
+        </label>
+
+        <label>
+          Senha
+          <input type="password" name="password" id="password" class="input"
+                 minlength="8" required autocomplete="new-password" />
+        </label>
+
+        <div class="rules" aria-live="polite">
+          <div class="rule" data-rule="length"><span class="dot"></span>8+ caracteres</div>
+          <div class="rule" data-rule="upper"><span class="dot"></span>1 maiúscula (A-Z)</div>
+          <div class="rule" data-rule="lower"><span class="dot"></span>1 minúscula (a-z)</div>
+          <div class="rule" data-rule="special"><span class="dot"></span>1 caractere especial (!@#$ etc.)</div>
+        </div>
+
+        <label>
+          Confirme a senha
+          <input type="password" name="password_confirmation" id="password-confirm" class="input"
+                 minlength="8" required autocomplete="new-password" />
+        </label>
+
+        <button type="submit" id="submit-btn" disabled>Criar conta e entrar</button>
+      <% end %>
+
+      <p class="footer">
+        Ao continuar você aceita os <strong>Termos de Uso</strong> e a <strong>Política de Privacidade</strong>.
+      </p>
+    </div>
   </div>
+
+  <script>
+    (function () {
+      var form = document.getElementById('setup-form');
+      var company = document.getElementById('company-name');
+      var pwd = document.getElementById('password');
+      var pwdConfirm = document.getElementById('password-confirm');
+      var submit = document.getElementById('submit-btn');
+      var errorBox = document.getElementById('error-box');
+
+      var rules = {
+        length:  function (v) { return v.length >= 8; },
+        upper:   function (v) { return /[A-Z]/.test(v); },
+        lower:   function (v) { return /[a-z]/.test(v); },
+        special: function (v) { return /[ !@#$%^&*()_+\-=\[\]{}|"\/\\.,`<>:;?~']/.test(v); }
+      };
+
+      function validate() {
+        var v = pwd.value;
+        var allOk = true;
+        Object.keys(rules).forEach(function (key) {
+          var el = document.querySelector('[data-rule="' + key + '"]');
+          var ok = rules[key](v);
+          el.classList.toggle('ok', ok);
+          if (!ok) allOk = false;
+        });
+
+        var match = v.length > 0 && v === pwdConfirm.value;
+        pwdConfirm.classList.toggle('invalid', pwdConfirm.value.length > 0 && !match);
+
+        var companyOk = company.value.trim().length >= 2;
+        company.classList.toggle('invalid', company.value.length > 0 && !companyOk);
+
+        submit.disabled = !(allOk && match && companyOk);
+        if (errorBox.classList.contains('visible')) {
+          errorBox.classList.remove('visible');
+        }
+      }
+
+      company.addEventListener('input', validate);
+      pwd.addEventListener('input', validate);
+      pwdConfirm.addEventListener('input', validate);
+
+      form.addEventListener('submit', function (e) {
+        var v = pwd.value;
+        var allOk = Object.keys(rules).every(function (k) { return rules[k](v); });
+        var match = v === pwdConfirm.value;
+        var companyOk = company.value.trim().length >= 2;
+        if (!(allOk && match && companyOk)) {
+          e.preventDefault();
+          errorBox.textContent = 'Confira os requisitos antes de continuar.';
+          errorBox.classList.add('visible');
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
