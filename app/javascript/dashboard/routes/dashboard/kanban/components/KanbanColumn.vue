@@ -1,6 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import draggable from 'vuedraggable';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import KanbanCard from './KanbanCard.vue';
@@ -8,21 +9,12 @@ import KanbanCard from './KanbanCard.vue';
 const props = defineProps({
   stage: { type: Object, required: true },
   tasks: { type: Array, required: true },
-  draggingTaskId: { type: [Number, null], default: null },
   canMutate: { type: Boolean, default: true },
 });
 
-const emit = defineEmits([
-  'cardClick',
-  'taskDragstart',
-  'taskDragend',
-  'taskDrop',
-  'addTask',
-]);
+const emit = defineEmits(['cardClick', 'taskMoved', 'addTask']);
 
 const { t } = useI18n();
-const isOver = ref(false);
-const dropIndex = ref(null);
 
 const STATUS_BADGE = {
   won: {
@@ -38,42 +30,28 @@ const STATUS_BADGE = {
 
 const statusBadge = computed(() => STATUS_BADGE[props.stage.status_type]);
 
-const computeDropIndex = event => {
-  const list = event.currentTarget.querySelectorAll('[data-card-id]');
-  for (let i = 0; i < list.length; i += 1) {
-    const rect = list[i].getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    if (event.clientY < midpoint) return i;
-  }
-  return list.length;
-};
+// vuedraggable mutates its bound array directly. We forward the raw event
+// up to the board so it can dispatch the API move; the optimistic local
+// reorder is already done by the time `onChange` fires. The board owns the
+// rollback path if the API rejects the move.
+const localTasks = computed({
+  get() {
+    return props.tasks;
+  },
+  set() {
+    // no-op — board owns the source of truth
+  },
+});
 
-const onDragOver = event => {
-  if (props.draggingTaskId == null) return;
-  event.preventDefault();
-  // eslint-disable-next-line no-param-reassign
-  event.dataTransfer.dropEffect = 'move';
-  isOver.value = true;
-  dropIndex.value = computeDropIndex(event);
-};
-
-const onDragLeave = event => {
-  if (event.currentTarget === event.target) {
-    isOver.value = false;
-    dropIndex.value = null;
-  }
-};
-
-const onDrop = event => {
-  if (props.draggingTaskId == null) return;
-  event.preventDefault();
-  const position = (dropIndex.value ?? props.tasks.length) + 1;
-  isOver.value = false;
-  dropIndex.value = null;
-  emit('taskDrop', {
+const onChange = event => {
+  const item = event.added?.element || event.moved?.element;
+  if (!item) return;
+  const newIndex =
+    event.added?.newIndex ?? event.moved?.newIndex ?? props.tasks.length;
+  emit('taskMoved', {
+    taskId: item.id,
     stageId: props.stage.id,
-    taskId: props.draggingTaskId,
-    position,
+    position: newIndex + 1,
   });
 };
 </script>
@@ -81,10 +59,6 @@ const onDrop = event => {
 <template>
   <section
     class="kanban-column flex flex-col w-[300px] flex-shrink-0 rounded-2xl bg-n-alpha-1 ring-1 ring-inset ring-transparent transition-all duration-200 relative overflow-hidden"
-    :class="{
-      'ring-2 ring-n-iris-9 bg-n-iris-9/[0.05] shadow-[0_0_0_4px_rgba(99,102,241,0.08)]':
-        isOver,
-    }"
   >
     <!-- Stage color accent top -->
     <span
@@ -128,41 +102,35 @@ const onDrop = event => {
       </span>
     </header>
 
-    <div
+    <draggable
+      v-model="localTasks"
+      :group="{ name: 'kanban-tasks', pull: canMutate, put: canMutate }"
+      :animation="180"
+      :delay="60"
+      delay-on-touch-only
+      :disabled="!canMutate"
+      item-key="id"
+      ghost-class="kanban-card-ghost"
+      chosen-class="kanban-card-chosen"
+      drag-class="kanban-card-drag"
       class="kanban-column-body flex-1 flex flex-col gap-2 px-2 pb-2 pt-1 min-h-[120px] overflow-y-auto overscroll-contain"
-      @dragover="onDragOver"
-      @dragleave="onDragLeave"
-      @drop="onDrop"
+      @change="onChange"
     >
-      <template v-for="(task, idx) in tasks" :key="task.id">
-        <div
-          v-if="isOver && dropIndex === idx && task.id !== draggingTaskId"
-          class="h-0.5 mx-1 rounded-full bg-n-brand shadow-[0_0_8px_var(--colors-n-brand)] animate-pulse"
-        />
-        <KanbanCard
-          :task="task"
-          :data-card-id="task.id"
-          :is-dragging="task.id === draggingTaskId"
-          @click="emit('cardClick', task)"
-          @dragstart="(t2, e) => emit('taskDragstart', t2, e)"
-          @dragend="e => emit('taskDragend', e)"
-        />
+      <template #item="{ element: task }">
+        <KanbanCard :task="task" @click="emit('cardClick', task)" />
       </template>
-      <div
-        v-if="isOver && dropIndex === tasks.length"
-        class="h-0.5 mx-1 rounded-full bg-n-brand shadow-[0_0_8px_var(--colors-n-brand)] animate-pulse"
-      />
-      <div
-        v-if="!tasks.length"
-        class="flex flex-col items-center justify-center gap-2 py-10 px-4 rounded-xl border border-dashed border-n-weak select-none"
-        :class="{ 'border-n-brand bg-n-brand/[0.06]': isOver }"
-      >
-        <span class="i-lucide-inbox size-5 text-n-slate-10" />
-        <p class="text-[11px] text-n-slate-10 text-center leading-tight">
-          {{ t('KANBAN.COLUMN.EMPTY') }}
-        </p>
-      </div>
-    </div>
+      <template #footer>
+        <div
+          v-if="!tasks.length"
+          class="flex flex-col items-center justify-center gap-2 py-10 px-4 rounded-xl border border-dashed border-n-weak select-none"
+        >
+          <span class="i-lucide-inbox size-5 text-n-slate-10" />
+          <p class="text-[11px] text-n-slate-10 text-center leading-tight">
+            {{ t('KANBAN.COLUMN.EMPTY') }}
+          </p>
+        </div>
+      </template>
+    </draggable>
 
     <footer v-if="canMutate" class="px-2 pb-2 pt-1">
       <Button
@@ -177,3 +145,24 @@ const onDrop = event => {
     </footer>
   </section>
 </template>
+
+<style>
+/* SortableJS exposes hooks via class names. Tune them here so dragging stays
+   on-brand without coupling card markup to drag state. */
+.kanban-card-ghost {
+  opacity: 0.4;
+  transform: scale(0.97) rotate(-0.6deg);
+}
+.kanban-card-ghost .kanban-card {
+  background: rgba(20, 184, 166, 0.08);
+  border-color: rgba(20, 184, 166, 0.5);
+}
+.kanban-card-chosen .kanban-card {
+  box-shadow: 0 16px 48px -12px rgba(0, 0, 0, 0.5);
+  cursor: grabbing;
+}
+.kanban-card-drag .kanban-card {
+  transform: rotate(-1.2deg);
+  box-shadow: 0 24px 56px -10px rgba(0, 0, 0, 0.7);
+}
+</style>

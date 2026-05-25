@@ -5,10 +5,9 @@ import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 
 const props = defineProps({
   task: { type: Object, required: true },
-  isDragging: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['click', 'dragstart', 'dragend']);
+const emit = defineEmits(['click']);
 
 const { t } = useI18n();
 
@@ -121,14 +120,8 @@ const hasTitle = computed(
 
 <template>
   <article
-    :draggable="true"
     class="kanban-card group relative flex flex-col gap-3 p-3.5 pl-4 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak cursor-grab transition-[transform,box-shadow,ring] duration-200 ease-out hover:ring-n-slate-7 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.32)] hover:-translate-y-0.5"
-    :class="{
-      'opacity-30 cursor-grabbing scale-[0.97] rotate-[-0.6deg]': isDragging,
-    }"
     @click="emit('click', task)"
-    @dragstart="emit('dragstart', task, $event)"
-    @dragend="emit('dragend', $event)"
   >
     <!-- Priority accent bar -->
     <span

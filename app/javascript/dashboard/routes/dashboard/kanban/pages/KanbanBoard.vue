@@ -41,7 +41,6 @@ const tasksByStage = stageId =>
     Number(stageId)
   );
 
-const draggingTaskId = ref(null);
 const showTaskModal = ref(false);
 const editingTask = ref(null);
 const defaultStageId = ref(null);
@@ -187,25 +186,11 @@ const onCardClick = task => {
   openEditTask(task);
 };
 
-const onTaskDragstart = (task, event) => {
-  draggingTaskId.value = task.id;
-  if (event?.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move';
-    try {
-      event.dataTransfer.setData('text/plain', String(task.id));
-    } catch (_) {
-      /* noop */
-    }
-  }
-};
-
-const onTaskDragend = () => {
-  draggingTaskId.value = null;
-};
-
-const onTaskDrop = async ({ stageId, taskId: droppedId, position }) => {
-  draggingTaskId.value = null;
-  const task = store.getters['kanbanTasks/getTask'](droppedId);
+// SortableJS reorders the local array before this fires. If the API rejects
+// the move we trigger a full reload to restore canonical state — cheaper than
+// computing a per-card rollback.
+const onTaskMoved = async ({ taskId, stageId, position }) => {
+  const task = store.getters['kanbanTasks/getTask'](taskId);
   if (!task) return;
   if (
     task.funnel_stage_id === Number(stageId) &&
@@ -215,7 +200,7 @@ const onTaskDrop = async ({ stageId, taskId: droppedId, position }) => {
   }
   try {
     await store.dispatch('kanbanTasks/move', {
-      id: droppedId,
+      id: taskId,
       funnelId: Number(props.funnelId),
       funnelStageId: stageId,
       position,
@@ -496,12 +481,9 @@ const goToSettings = () => {
           :key="stage.id"
           :stage="stage"
           :tasks="tasksByStageFiltered(stage.id)"
-          :dragging-task-id="draggingTaskId"
           :can-mutate="canMutate"
           @card-click="onCardClick"
-          @task-dragstart="onTaskDragstart"
-          @task-dragend="onTaskDragend"
-          @task-drop="onTaskDrop"
+          @task-moved="onTaskMoved"
           @add-task="openCreateTask"
         />
       </div>
