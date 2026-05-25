@@ -10,9 +10,9 @@ class Connect::SetupController < ApplicationController
   JWT_SECRET   = -> { ENV.fetch('UNIVERCART_JWT_SECRET') }
 
   PASSWORD_RULES = {
-    length:  ->(v) { v.length >= 8 },
-    upper:   ->(v) { v =~ /[A-Z]/ },
-    lower:   ->(v) { v =~ /[a-z]/ },
+    length: ->(v) { v.length >= 8 },
+    upper: ->(v) { v =~ /[A-Z]/ },
+    lower: ->(v) { v =~ /[a-z]/ },
     special: ->(v) { v =~ %r{[ !@#$%^&*()_+\-=\[\]{}|"/\\.,`<>:;?~']} }
   }.freeze
 
@@ -43,33 +43,55 @@ class Connect::SetupController < ApplicationController
 
   # POST /connect/setup
   def create
+    return unless verify_setup_token
+
+    inputs = setup_params
+    error = validate_setup_input(inputs[:company_name], inputs[:password], inputs[:password_confirmation])
+    return render_setup_error(error) if error
+
+    sub = find_subscription
+    return unless sub
+
+    complete_setup(sub, inputs)
+  end
+
+  private
+
+  def verify_setup_token
     @token = params[:token]
     result = Univercart::Jwt.verify(
       jwt: @token,
       jwt_secret: JWT_SECRET.call,
       expected_audience: PARTNER_SLUG.call
     )
-    return render plain: 'Sessão expirada. Recomece pelo email.', status: :unauthorized unless result.ok
+    return @claims = result.claims if result.ok
 
-    @claims = result.claims
-    company_name = params[:company_name].to_s.strip
-    password = params[:password].to_s
-    password_confirmation = params[:password_confirmation].to_s
+    render plain: 'Sessão expirada. Recomece pelo email.', status: :unauthorized
+    false
+  end
 
-    error = validate_setup_input(company_name, password, password_confirmation)
-    return render_setup_error(error) if error
+  def setup_params
+    {
+      company_name: params[:company_name].to_s.strip,
+      password: params[:password].to_s,
+      password_confirmation: params[:password_confirmation].to_s
+    }
+  end
 
+  def find_subscription
     sub = UnivercartSubscription.find_by(external_user_id: @claims['sub'])
-    return render plain: 'Assinatura não localizada. Aguarde o processamento.', status: :not_found unless sub
+    return sub if sub
 
-    user = provision_user!(@claims, password, company_name)
+    render plain: 'Assinatura não localizada. Aguarde o processamento.', status: :not_found
+    nil
+  end
+
+  def complete_setup(sub, inputs)
+    user = provision_user!(@claims, inputs[:password], inputs[:company_name])
     sub.update!(user_id: user.id)
-
     sign_in(user, scope: :user)
     redirect_to "/app/accounts/#{user.accounts.first.id}/dashboard"
   end
-
-  private
 
   def validate_setup_input(company_name, password, password_confirmation)
     return 'Informe o nome da empresa (mínimo 2 caracteres).' if company_name.length < 2
@@ -83,9 +105,9 @@ class Connect::SetupController < ApplicationController
 
   def password_rules_message(missing)
     labels = {
-      length:  '8+ caracteres',
-      upper:   '1 letra maiúscula',
-      lower:   '1 letra minúscula',
+      length: '8+ caracteres',
+      upper: '1 letra maiúscula',
+      lower: '1 letra minúscula',
       special: '1 caractere especial'
     }
     "Senha não atende: #{missing.map { |k| labels[k] }.join(', ')}."
