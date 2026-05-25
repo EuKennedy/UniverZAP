@@ -53,7 +53,15 @@
       "DELETE_STAGE": "Delete stage",
       "DANGER_TITLE": "Danger zone",
       "DANGER_SUBTITLE": "Deleting a funnel removes all of its stages and tasks. This cannot be undone.",
-      "DELETE_FUNNEL": "Delete funnel"
+      "DELETE_FUNNEL": "Delete funnel",
+      "TABS": {
+        "GENERAL": "General",
+        "STAGES": "Stages",
+        "AUTOMATIONS": "Automations"
+      },
+      "AUTOMATIONS_TITLE": "Stage automations",
+      "AUTOMATIONS_SUBTITLE": "Coming soon: trigger automated actions — assign atendente, send a message, or tag a conversation — when a task enters or leaves a stage.",
+      "COMING_SOON": "Coming soon"
     },
     "FUNNEL": {
       "NEW_TITLE": "Create funnel",

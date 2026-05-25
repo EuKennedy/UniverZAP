@@ -53,7 +53,15 @@
       "DELETE_STAGE": "Excluir etapa",
       "DANGER_TITLE": "Zona de perigo",
       "DANGER_SUBTITLE": "Excluir um funil remove todas as suas etapas e tarefas. Esta ação não pode ser desfeita.",
-      "DELETE_FUNNEL": "Excluir funil"
+      "DELETE_FUNNEL": "Excluir funil",
+      "TABS": {
+        "GENERAL": "Geral",
+        "STAGES": "Etapas",
+        "AUTOMATIONS": "Automações"
+      },
+      "AUTOMATIONS_TITLE": "Automações por etapa",
+      "AUTOMATIONS_SUBTITLE": "Em breve: dispare ações automáticas — atribuir atendente, enviar mensagem ou marcar conversa — quando uma tarefa entrar ou sair de uma etapa.",
+      "COMING_SOON": "Em breve"
     },
     "FUNNEL": {
       "NEW_TITLE": "Criar funil",

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -7,7 +7,10 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
 
+import draggable from 'vuedraggable';
+
 import Button from 'dashboard/components-next/button/Button.vue';
+import Icon from 'next/icon/Icon.vue';
 import FunnelFormModal from '../components/FunnelFormModal.vue';
 import StageFormModal from '../components/StageFormModal.vue';
 
@@ -35,7 +38,36 @@ const editingStage = ref(null);
 const showDeleteFunnelModal = ref(false);
 const showDeleteStageModal = ref(false);
 const stagePendingDelete = ref(null);
-const draggingStageId = ref(null);
+
+// Tab state — defaults to the General tab so admins land on the most-used
+// surface. `automations` is a roadmap placeholder until the stage trigger
+// engine lands.
+const TABS = ['general', 'stages', 'automations'];
+const activeTab = ref('general');
+const setTab = key => {
+  if (TABS.includes(key)) activeTab.value = key;
+};
+
+// Local copy of stages used by vuedraggable. Bound through v-model so
+// SortableJS can mutate the order optimistically before the API confirms.
+const stagesDraft = ref([]);
+const syncStagesDraft = () => {
+  stagesDraft.value = stages.value.slice();
+};
+
+const onStagesReordered = async () => {
+  const orderedIds = stagesDraft.value.map(s => s.id);
+  try {
+    await store.dispatch('funnels/reorderStages', {
+      funnelId: Number(props.funnelId),
+      orderedIds,
+    });
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.STAGE.REORDER_ERROR'));
+    await store.dispatch('funnels/show', Number(props.funnelId));
+    syncStagesDraft();
+  }
+};
 
 const ensureFunnel = async () => {
   if (funnel.value) return;
@@ -131,49 +163,9 @@ const confirmDeleteStage = async () => {
   }
 };
 
-const onStageDragstart = (stage, event) => {
-  draggingStageId.value = stage.id;
-  if (event?.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move';
-    try {
-      event.dataTransfer.setData('text/plain', String(stage.id));
-    } catch (_) {
-      /* noop */
-    }
-  }
-};
-
-const onStageDragend = () => {
-  draggingStageId.value = null;
-};
-
-const onStageDragover = event => {
-  if (draggingStageId.value == null) return;
-  event.preventDefault();
-  // eslint-disable-next-line no-param-reassign
-  event.dataTransfer.dropEffect = 'move';
-};
-
-const onStageDrop = async (targetStage, event) => {
-  event.preventDefault();
-  const sourceId = draggingStageId.value;
-  draggingStageId.value = null;
-  if (sourceId == null || sourceId === targetStage.id) return;
-  const ordered = stages.value.map(s => s.id);
-  const fromIdx = ordered.indexOf(sourceId);
-  const toIdx = ordered.indexOf(targetStage.id);
-  if (fromIdx === -1 || toIdx === -1) return;
-  ordered.splice(toIdx, 0, ordered.splice(fromIdx, 1)[0]);
-  try {
-    await store.dispatch('funnels/reorderStages', {
-      funnelId: Number(props.funnelId),
-      orderedIds: ordered,
-    });
-  } catch (error) {
-    useAlert(error?.message || t('KANBAN.STAGE.REORDER_ERROR'));
-    await store.dispatch('funnels/show', Number(props.funnelId));
-  }
-};
+// Keep the local draft in sync whenever the canonical stages change
+// (initial load, modal updates, websocket pushes).
+watch(stages, syncStagesDraft, { immediate: true });
 
 const openDeleteFunnel = () => {
   showDeleteFunnelModal.value = true;
@@ -253,7 +245,38 @@ const STATUS_BADGE = {
       {{ t('KANBAN.BOARD.NOT_FOUND') }}
     </section>
 
-    <section v-else class="flex flex-col gap-6 max-w-3xl px-6 py-6">
+    <nav
+      v-else
+      class="flex-shrink-0 flex items-center gap-1 px-6 border-b border-n-weak"
+      role="tablist"
+    >
+      <button
+        v-for="tab in TABS"
+        :key="tab"
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === tab"
+        class="relative px-3 py-3 text-xs font-medium tracking-tight transition-colors duration-150 cursor-pointer"
+        :class="
+          activeTab === tab
+            ? 'text-n-slate-12'
+            : 'text-n-slate-11 hover:text-n-slate-12'
+        "
+        @click="setTab(tab)"
+      >
+        {{ t(`KANBAN.SETTINGS.TABS.${tab.toUpperCase()}`) }}
+        <span
+          v-if="activeTab === tab"
+          class="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-n-teal-9"
+        />
+      </button>
+    </nav>
+
+    <section
+      v-if="funnel"
+      v-show="activeTab === 'general'"
+      class="flex flex-col gap-6 max-w-3xl px-6 py-6"
+    >
       <article
         class="flex flex-col gap-4 p-5 rounded-xl bg-n-solid-1 border border-n-weak"
       >
@@ -302,6 +325,32 @@ const STATUS_BADGE = {
       </article>
 
       <article
+        class="flex items-center justify-between p-5 rounded-xl border border-n-ruby-6 bg-n-ruby-2/30"
+      >
+        <div class="flex flex-col gap-0.5">
+          <h2 class="text-sm font-medium text-n-slate-12">
+            {{ t('KANBAN.SETTINGS.DANGER_TITLE') }}
+          </h2>
+          <p class="text-xs text-n-slate-11">
+            {{ t('KANBAN.SETTINGS.DANGER_SUBTITLE') }}
+          </p>
+        </div>
+        <Button
+          icon="i-lucide-trash-2"
+          size="sm"
+          ruby
+          :label="t('KANBAN.SETTINGS.DELETE_FUNNEL')"
+          @click="openDeleteFunnel"
+        />
+      </article>
+    </section>
+
+    <section
+      v-if="funnel"
+      v-show="activeTab === 'stages'"
+      class="flex flex-col gap-6 max-w-3xl px-6 py-6"
+    >
+      <article
         class="flex flex-col gap-4 p-5 rounded-xl bg-n-solid-1 border border-n-weak"
       >
         <header class="flex items-start justify-between gap-3">
@@ -321,77 +370,89 @@ const STATUS_BADGE = {
           />
         </header>
         <p
-          v-if="!stages.length"
+          v-if="!stagesDraft.length"
           class="text-sm text-n-slate-11 py-4 text-center"
         >
           {{ t('KANBAN.SETTINGS.STAGES_EMPTY') }}
         </p>
-        <ul v-else class="flex flex-col gap-1.5">
-          <li
-            v-for="stage in stages"
-            :key="stage.id"
-            :draggable="true"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-n-weak bg-n-background hover:border-n-slate-7 transition-colors"
-            :class="{ 'opacity-40': draggingStageId === stage.id }"
-            @dragstart="onStageDragstart(stage, $event)"
-            @dragend="onStageDragend"
-            @dragover="onStageDragover"
-            @drop="onStageDrop(stage, $event)"
-          >
-            <span
-              class="i-lucide-grip-vertical size-4 text-n-slate-10 cursor-grab"
-            />
-            <span
-              class="size-2.5 rounded-full flex-shrink-0"
-              :style="{ backgroundColor: stage.color }"
-            />
-            <span class="flex-1 text-sm text-n-slate-12 truncate">
-              {{ stage.name }}
-            </span>
-            <span
-              class="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium"
-              :class="STATUS_BADGE[stage.status_type]?.cls"
+        <draggable
+          v-else
+          v-model="stagesDraft"
+          :animation="180"
+          handle=".stage-row-handle"
+          item-key="id"
+          ghost-class="stage-row-ghost"
+          class="flex flex-col gap-1.5"
+          @end="onStagesReordered"
+        >
+          <template #item="{ element: stage }">
+            <li
+              class="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-n-weak bg-n-background hover:border-n-slate-7 transition-colors"
             >
-              {{ t(STATUS_BADGE[stage.status_type]?.label) }}
-            </span>
-            <Button
-              icon="i-lucide-pen-line"
-              size="xs"
-              ghost
-              slate
-              :aria-label="t('KANBAN.SETTINGS.EDIT_STAGE')"
-              @click="openEditStage(stage)"
-            />
-            <Button
-              icon="i-lucide-trash-2"
-              size="xs"
-              ghost
-              ruby
-              :aria-label="t('KANBAN.SETTINGS.DELETE_STAGE')"
-              @click="requestDeleteStage(stage)"
-            />
-          </li>
-        </ul>
+              <span
+                class="stage-row-handle i-lucide-grip-vertical size-4 text-n-slate-10 cursor-grab"
+              />
+              <span
+                class="size-2.5 rounded-full flex-shrink-0"
+                :style="{ backgroundColor: stage.color }"
+              />
+              <span class="flex-1 text-sm text-n-slate-12 truncate">
+                {{ stage.name }}
+              </span>
+              <span
+                class="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium"
+                :class="STATUS_BADGE[stage.status_type]?.cls"
+              >
+                {{ t(STATUS_BADGE[stage.status_type]?.label) }}
+              </span>
+              <Button
+                icon="i-lucide-pen-line"
+                size="xs"
+                ghost
+                slate
+                :aria-label="t('KANBAN.SETTINGS.EDIT_STAGE')"
+                @click="openEditStage(stage)"
+              />
+              <Button
+                icon="i-lucide-trash-2"
+                size="xs"
+                ghost
+                ruby
+                :aria-label="t('KANBAN.SETTINGS.DELETE_STAGE')"
+                @click="requestDeleteStage(stage)"
+              />
+            </li>
+          </template>
+        </draggable>
       </article>
+    </section>
 
+    <section
+      v-if="funnel"
+      v-show="activeTab === 'automations'"
+      class="flex flex-col gap-6 max-w-3xl px-6 py-6"
+    >
       <article
-        class="flex items-center justify-between p-5 rounded-xl border border-n-ruby-6 bg-n-ruby-2/30"
+        class="flex flex-col items-center gap-4 p-10 rounded-xl bg-n-solid-1 border border-n-weak text-center"
       >
-        <div class="flex flex-col gap-0.5">
+        <span
+          class="inline-flex items-center justify-center size-12 rounded-full bg-n-teal-3 text-n-teal-11"
+        >
+          <Icon icon="i-lucide-workflow" class="size-6" />
+        </span>
+        <div class="flex flex-col gap-1 max-w-md">
           <h2 class="text-sm font-medium text-n-slate-12">
-            {{ t('KANBAN.SETTINGS.DANGER_TITLE') }}
+            {{ t('KANBAN.SETTINGS.AUTOMATIONS_TITLE') }}
           </h2>
-          <p class="text-xs text-n-slate-11">
-            {{ t('KANBAN.SETTINGS.DANGER_SUBTITLE') }}
+          <p class="text-xs text-n-slate-11 leading-relaxed">
+            {{ t('KANBAN.SETTINGS.AUTOMATIONS_SUBTITLE') }}
           </p>
         </div>
-        <Button
-          icon="i-lucide-trash-2"
-          size="sm"
-          ruby
-          :label="t('KANBAN.SETTINGS.DELETE_FUNNEL')"
-          @click="openDeleteFunnel"
-        />
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-n-amber-3 text-n-amber-11 text-[10px] font-bold uppercase tracking-wider"
+        >
+          {{ t('KANBAN.SETTINGS.COMING_SOON') }}
+        </span>
       </article>
     </section>
 
@@ -436,3 +497,12 @@ const STATUS_BADGE = {
     />
   </div>
 </template>
+
+<style>
+/* SortableJS ghost while dragging a stage row in the Stages tab. */
+.stage-row-ghost {
+  opacity: 0.45;
+  background: rgba(20, 184, 166, 0.08);
+  border-color: rgba(20, 184, 166, 0.45);
+}
+</style>
