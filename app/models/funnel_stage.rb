@@ -25,6 +25,7 @@ class FunnelStage < ApplicationRecord
   validates :name, presence: true, length: { maximum: 120 }
   validates :description, length: { maximum: 2000 }, allow_blank: true
   validates :color, format: { with: HEX_COLOR_REGEX, message: :invalid_hex_color }
+  validates :wip_limit, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   before_validation :assign_position, on: :create
 
@@ -41,6 +42,7 @@ class FunnelStage < ApplicationRecord
       color: color,
       position: position,
       status_type: status_type,
+      wip_limit: wip_limit,
       tasks_count: kanban_tasks.count,
       created_at: created_at.to_i,
       updated_at: updated_at.to_i

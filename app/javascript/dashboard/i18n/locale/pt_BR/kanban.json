@@ -30,7 +30,16 @@
         "RATE": "· {n}%"
       },
       "FILTER": {
-        "ALL": "Tudo"
+        "ALL": "Tudo",
+        "ALL_ASSIGNEES": "Todos atendentes",
+        "ALL_LABELS": "Todas etiquetas",
+        "DUE_ALL": "Qualquer prazo",
+        "DUE_OVERDUE": "Atrasadas",
+        "DUE_TODAY": "Hoje",
+        "DUE_WEEK": "Esta semana",
+        "DUE_NONE": "Sem prazo",
+        "HAS_CONVERSATION": "Com conversa",
+        "CLEAR": "Limpar filtros"
       },
       "SETTINGS": "Configurações",
       "NO_STAGES_TITLE": "Sem etapas configuradas",
@@ -145,7 +154,11 @@
         "NAME_PLACEHOLDER": "Descoberta",
         "DESCRIPTION_LABEL": "Descrição",
         "COLOR_LABEL": "Cor",
-        "STATUS_LABEL": "Status"
+        "STATUS_LABEL": "Status",
+        "WIP_LIMIT_LABEL": "Limite WIP",
+        "WIP_LIMIT_PLACEHOLDER": "Sem limite",
+        "WIP_LIMIT_UNIT": "tarefas",
+        "WIP_LIMIT_HINT": "Alerta visual quando a etapa ultrapassa esse número. Mantém o time focado."
       }
     },
     "TASK": {
@@ -218,7 +231,23 @@
     },
     "COLUMN": {
       "EMPTY": "Arraste tarefas aqui ou adicione uma nova.",
-      "ADD_TASK": "Adicionar tarefa"
+      "ADD_TASK": "Adicionar tarefa",
+      "WIP_OVER": "Acima do limite",
+      "WIP_OVER_TOOLTIP": "Limite recomendado é {limit}."
+    },
+    "BULK": {
+      "LABEL": "Ações em massa",
+      "MOVE": "Mover para",
+      "ASSIGN": "Atribuir",
+      "UNASSIGN": "Remover atendentes",
+      "DELETE": "Excluir",
+      "CLEAR": "Limpar seleção",
+      "MOVE_SUCCESS": "{count} tarefa(s) movida(s).",
+      "ASSIGN_SUCCESS": "{count} tarefa(s) atualizadas.",
+      "DELETE_SUCCESS": "{count} tarefa(s) excluída(s).",
+      "DELETE_CONFIRM_TITLE": "Excluir tarefas em massa?",
+      "DELETE_CONFIRM_MESSAGE": "Você está prestes a excluir {count} tarefa(s). Esta ação não pode ser desfeita.",
+      "ERROR": "Algo deu errado. Recarregando o quadro."
     },
     "CARD": {
       "IN_FUNNEL": "Em",

@@ -48,7 +48,7 @@ class Api::V1::Accounts::FunnelStagesController < Api::V1::Accounts::BaseControl
   end
 
   def permitted_params
-    params.require(:funnel_stage).permit(:name, :description, :color, :position, :status_type)
+    params.require(:funnel_stage).permit(:name, :description, :color, :position, :status_type, :wip_limit)
   end
 
   def check_admin_for_reorder

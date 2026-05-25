@@ -34,7 +34,16 @@
         "RATE": "· {n}%"
       },
       "FILTER": {
-        "ALL": "All"
+        "ALL": "All",
+        "ALL_ASSIGNEES": "All assignees",
+        "ALL_LABELS": "All labels",
+        "DUE_ALL": "Any due date",
+        "DUE_OVERDUE": "Overdue",
+        "DUE_TODAY": "Today",
+        "DUE_WEEK": "This week",
+        "DUE_NONE": "No due date",
+        "HAS_CONVERSATION": "With conversation",
+        "CLEAR": "Clear filters"
       }
     },
     "SETTINGS": {
@@ -145,7 +154,11 @@
         "NAME_PLACEHOLDER": "Discovery",
         "DESCRIPTION_LABEL": "Description",
         "COLOR_LABEL": "Color",
-        "STATUS_LABEL": "Status"
+        "STATUS_LABEL": "Status",
+        "WIP_LIMIT_LABEL": "WIP limit",
+        "WIP_LIMIT_PLACEHOLDER": "No limit",
+        "WIP_LIMIT_UNIT": "tasks",
+        "WIP_LIMIT_HINT": "Visual warning when the stage goes over this count. Keeps the team focused."
       }
     },
     "TASK": {
@@ -218,7 +231,23 @@
     },
     "COLUMN": {
       "EMPTY": "Drag tasks here or add a new one.",
-      "ADD_TASK": "Add task"
+      "ADD_TASK": "Add task",
+      "WIP_OVER": "Over limit",
+      "WIP_OVER_TOOLTIP": "Recommended limit is {limit}."
+    },
+    "BULK": {
+      "LABEL": "Bulk actions",
+      "MOVE": "Move to",
+      "ASSIGN": "Assign",
+      "UNASSIGN": "Unassign all",
+      "DELETE": "Delete",
+      "CLEAR": "Clear selection",
+      "MOVE_SUCCESS": "{count} task(s) moved.",
+      "ASSIGN_SUCCESS": "{count} task(s) updated.",
+      "DELETE_SUCCESS": "{count} task(s) deleted.",
+      "DELETE_CONFIRM_TITLE": "Bulk delete tasks?",
+      "DELETE_CONFIRM_MESSAGE": "You're about to delete {count} task(s). This cannot be undone.",
+      "ERROR": "Something went wrong. Reloading the board."
     },
     "CARD": {
       "IN_FUNNEL": "In",

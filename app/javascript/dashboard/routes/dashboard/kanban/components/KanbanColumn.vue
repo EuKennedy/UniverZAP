@@ -11,9 +11,21 @@ const props = defineProps({
   tasks: { type: Array, required: true },
   funnelName: { type: String, default: '' },
   canMutate: { type: Boolean, default: true },
+  selectedTaskIds: { type: Set, default: () => new Set() },
+  inlineEditingTaskId: { type: [Number, null], default: null },
 });
 
-const emit = defineEmits(['cardClick', 'taskMoved', 'addTask']);
+const emit = defineEmits([
+  'cardClick',
+  'cardSelect',
+  'cardTitleEdit',
+  'cardTitleSubmit',
+  'cardTitleCancel',
+  'taskMoved',
+  'addTask',
+]);
+
+const selectionActive = computed(() => props.selectedTaskIds.size > 0);
 
 const { t } = useI18n();
 
@@ -30,6 +42,20 @@ const STATUS_BADGE = {
 };
 
 const statusBadge = computed(() => STATUS_BADGE[props.stage.status_type]);
+
+// WIP limit visualisation: when the stage has a soft cap, the column header
+// shows the count as `N / limit` and tints ruby once the cap is breached.
+const wipLimit = computed(() =>
+  props.stage.wip_limit && props.stage.wip_limit > 0
+    ? props.stage.wip_limit
+    : null
+);
+const isOverWip = computed(
+  () => wipLimit.value !== null && props.tasks.length > wipLimit.value
+);
+const isAtWip = computed(
+  () => wipLimit.value !== null && props.tasks.length === wipLimit.value
+);
 
 // Header icon mirrors the stage status — gives the operator a quick visual
 // anchor before they even read the stage name.
@@ -123,9 +149,27 @@ const onChange = event => {
         {{ stage.name }}
       </span>
       <span
-        class="text-[12px] tabular-nums font-semibold text-n-slate-11 ml-0.5"
+        class="text-[12px] tabular-nums font-semibold ml-0.5"
+        :class="
+          isOverWip
+            ? 'text-n-ruby-11'
+            : isAtWip
+              ? 'text-n-amber-11'
+              : 'text-n-slate-11'
+        "
       >
         {{ tasks.length }}
+        <span v-if="wipLimit !== null" class="text-n-slate-10 font-normal">
+          / {{ wipLimit }}
+        </span>
+      </span>
+      <span
+        v-if="isOverWip"
+        class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold bg-n-ruby-3 text-n-ruby-11 ring-1 ring-inset ring-n-ruby-6 animate-pulse"
+        :title="t('KANBAN.COLUMN.WIP_OVER_TOOLTIP', { limit: wipLimit })"
+      >
+        <span class="i-lucide-alert-triangle size-2.5" />
+        {{ t('KANBAN.COLUMN.WIP_OVER') }}
       </span>
       <span
         v-if="statusBadge"
@@ -165,7 +209,14 @@ const onChange = event => {
           :task="task"
           :funnel-name="funnelName"
           :stage-color="stage.color"
+          :selected="selectedTaskIds.has(task.id)"
+          :selection-active="selectionActive"
+          :editing="inlineEditingTaskId === task.id"
           @click="emit('cardClick', task)"
+          @select="payload => emit('cardSelect', payload)"
+          @title-edit="payload => emit('cardTitleEdit', payload)"
+          @title-submit="payload => emit('cardTitleSubmit', payload)"
+          @title-cancel="emit('cardTitleCancel')"
         />
       </template>
       <template #footer>

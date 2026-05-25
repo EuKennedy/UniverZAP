@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -11,6 +11,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import KanbanColumn from '../components/KanbanColumn.vue';
 import TaskFormModal from '../components/TaskFormModal.vue';
 import KanbanTaskDrawer from '../components/KanbanTaskDrawer.vue';
+import KanbanBulkActionBar from '../components/KanbanBulkActionBar.vue';
 
 const props = defineProps({
   funnelId: { type: [String, Number], required: true },
@@ -49,23 +50,105 @@ const showDeleteConfirm = ref(false);
 const taskPendingDelete = ref(null);
 const search = ref('');
 const priorityFilter = ref('all');
+const assigneeFilter = ref(null); // null | user id
+const labelFilter = ref(null); // null | label title
+const dueFilter = ref('all'); // 'all' | 'overdue' | 'today' | 'week' | 'none'
+const hasConversationFilter = ref(false);
+
+// Bulk select state. We model it as a Set so adds/removes are O(1) and the
+// child columns can do `Set.has(taskId)` for the selection ring.
+const selectedTaskIds = ref(new Set());
+const inlineEditingTaskId = ref(null);
+const showBulkDeleteConfirm = ref(false);
+
+const agentsList = useMapGetter('agents/getAgents');
+const labelsList = useMapGetter('labels/getLabels');
+const searchInputRef = ref(null);
+
+const isDueWithinWeek = ts => {
+  if (!ts) return false;
+  const ms = Number(ts) * 1000;
+  const now = Date.now();
+  return ms >= now && ms - now < 7 * 24 * 60 * 60 * 1000;
+};
+const isOverdueTs = ts => {
+  if (!ts) return false;
+  return Number(ts) * 1000 < Date.now();
+};
+const isTodayTs = ts => {
+  if (!ts) return false;
+  const d = new Date(Number(ts) * 1000);
+  const today = new Date();
+  return (
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate()
+  );
+};
+
+const matchesFilters = task => {
+  if (
+    priorityFilter.value !== 'all' &&
+    task.priority !== priorityFilter.value
+  ) {
+    return false;
+  }
+  if (
+    assigneeFilter.value !== null &&
+    !(task.assignees || []).some(a => a.id === assigneeFilter.value)
+  ) {
+    return false;
+  }
+  if (
+    labelFilter.value !== null &&
+    !(task.labels || []).some(l => l.title === labelFilter.value)
+  ) {
+    return false;
+  }
+  if (hasConversationFilter.value && !(task.conversations || []).length) {
+    return false;
+  }
+  if (dueFilter.value !== 'all') {
+    if (dueFilter.value === 'none' && task.due_date) return false;
+    if (dueFilter.value === 'overdue' && !isOverdueTs(task.due_date))
+      return false;
+    if (dueFilter.value === 'today' && !isTodayTs(task.due_date)) return false;
+    if (dueFilter.value === 'week' && !isDueWithinWeek(task.due_date))
+      return false;
+  }
+  return true;
+};
 
 const tasksByStageFiltered = stageId => {
   const all = tasksByStage(stageId) || [];
   const q = search.value.trim().toLowerCase();
   return all.filter(task => {
-    if (
-      priorityFilter.value !== 'all' &&
-      task.priority !== priorityFilter.value
-    ) {
-      return false;
-    }
+    if (!matchesFilters(task)) return false;
     if (!q) return true;
     const title = (task.title || '').toLowerCase();
     const contactName = (task.contacts?.[0]?.name || '').toLowerCase();
     return title.includes(q) || contactName.includes(q);
   });
 };
+
+const clearAllFilters = () => {
+  search.value = '';
+  priorityFilter.value = 'all';
+  assigneeFilter.value = null;
+  labelFilter.value = null;
+  dueFilter.value = 'all';
+  hasConversationFilter.value = false;
+};
+
+const activeFilterCount = computed(() => {
+  let n = 0;
+  if (priorityFilter.value !== 'all') n += 1;
+  if (assigneeFilter.value !== null) n += 1;
+  if (labelFilter.value !== null) n += 1;
+  if (dueFilter.value !== 'all') n += 1;
+  if (hasConversationFilter.value) n += 1;
+  return n;
+});
 
 const boardStats = computed(() => {
   const stagesList = stages.value;
@@ -149,6 +232,13 @@ onMounted(async () => {
   await ensureFunnel();
   await loadTasks();
   if (props.taskId) openTaskFromRoute(Number(props.taskId));
+  // eslint-disable-next-line no-use-before-define
+  document.addEventListener('keydown', onKeydown);
+});
+
+onBeforeUnmount(() => {
+  // eslint-disable-next-line no-use-before-define
+  document.removeEventListener('keydown', onKeydown);
 });
 
 watch(
@@ -186,6 +276,144 @@ const onCardClick = task => {
   }
   openEditTask(task);
 };
+
+// Selection handlers — toggle membership on click, clear with Esc or the
+// floating bar's Clear button.
+const onCardSelect = ({ taskId }) => {
+  const next = new Set(selectedTaskIds.value);
+  if (next.has(taskId)) next.delete(taskId);
+  else next.add(taskId);
+  selectedTaskIds.value = next;
+};
+const clearSelection = () => {
+  selectedTaskIds.value = new Set();
+};
+
+// Inline title editing
+const onCardTitleEdit = task => {
+  inlineEditingTaskId.value = task.id;
+};
+const onCardTitleCancel = () => {
+  inlineEditingTaskId.value = null;
+};
+const onCardTitleSubmit = async ({ taskId, title }) => {
+  inlineEditingTaskId.value = null;
+  try {
+    await store.dispatch('kanbanTasks/update', { id: taskId, title });
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.TASK.SAVE_ERROR'));
+    await loadTasks();
+  }
+};
+
+// Bulk actions
+const onBulkMove = async stageId => {
+  const ids = Array.from(selectedTaskIds.value);
+  try {
+    await Promise.all(
+      ids.map(id =>
+        store.dispatch('kanbanTasks/move', {
+          id,
+          funnelId: Number(props.funnelId),
+          funnelStageId: stageId,
+          position: 1,
+        })
+      )
+    );
+    useAlert(t('KANBAN.BULK.MOVE_SUCCESS', { count: ids.length }));
+    clearSelection();
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.BULK.ERROR'));
+    await loadTasks();
+  }
+};
+
+const onBulkAssign = async agentId => {
+  const ids = Array.from(selectedTaskIds.value);
+  try {
+    await Promise.all(
+      ids.map(id =>
+        store.dispatch('kanbanTasks/update', {
+          id,
+          assignee_ids: agentId ? [agentId] : [],
+        })
+      )
+    );
+    useAlert(t('KANBAN.BULK.ASSIGN_SUCCESS', { count: ids.length }));
+    clearSelection();
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.BULK.ERROR'));
+    await loadTasks();
+  }
+};
+
+const requestBulkDelete = () => {
+  if (!selectedTaskIds.value.size) return;
+  showBulkDeleteConfirm.value = true;
+};
+const cancelBulkDelete = () => {
+  showBulkDeleteConfirm.value = false;
+};
+const confirmBulkDelete = async () => {
+  const ids = Array.from(selectedTaskIds.value);
+  showBulkDeleteConfirm.value = false;
+  try {
+    await Promise.all(
+      ids.map(id =>
+        store.dispatch('kanbanTasks/delete', {
+          id,
+          funnelId: Number(props.funnelId),
+        })
+      )
+    );
+    useAlert(t('KANBAN.BULK.DELETE_SUCCESS', { count: ids.length }));
+    clearSelection();
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.BULK.ERROR'));
+    await loadTasks();
+  }
+};
+
+// Keyboard shortcuts. Bound at document scope so the user can interact from
+// anywhere on the board view. Each guard avoids hijacking real text inputs.
+const isEditableTarget = el =>
+  el &&
+  (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+
+function onKeydown(event) {
+  if (event.key === 'Escape') {
+    if (selectedTaskIds.value.size > 0) {
+      event.preventDefault();
+      clearSelection();
+      return;
+    }
+    if (inlineEditingTaskId.value) {
+      event.preventDefault();
+      inlineEditingTaskId.value = null;
+      return;
+    }
+    if (showTaskModal.value) {
+      event.preventDefault();
+      closeTaskModal();
+    }
+    return;
+  }
+  if (isEditableTarget(event.target)) return;
+
+  if (event.key === '/' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault();
+    searchInputRef.value?.focus();
+    return;
+  }
+  if (
+    (event.key === 'n' || event.key === 'N') &&
+    !event.metaKey &&
+    !event.ctrlKey
+  ) {
+    event.preventDefault();
+    openCreateTask(stages.value[0]);
+  }
+}
 
 // SortableJS reorders the local array before this fires. If the API rejects
 // the move we trigger a full reload to restore canonical state — cheaper than
@@ -399,11 +627,18 @@ const goToSettings = () => {
       >
         <span class="i-lucide-search size-3.5 text-n-slate-10 flex-shrink-0" />
         <input
+          ref="searchInputRef"
           v-model="search"
           type="text"
           :placeholder="t('KANBAN.BOARD.SEARCH_PLACEHOLDER')"
           class="flex-1 bg-transparent outline-none text-[13px] text-n-slate-12 placeholder:text-n-slate-10"
         />
+        <kbd
+          v-if="!search"
+          class="hidden md:inline-flex items-center justify-center size-5 rounded text-[10px] font-mono text-n-slate-10 bg-n-alpha-2 ring-1 ring-inset ring-n-weak"
+        >
+          {{ '/' }}
+        </kbd>
         <button
           v-if="search"
           type="button"
@@ -431,6 +666,82 @@ const goToSettings = () => {
           {{ t(opt.label) }}
         </button>
       </div>
+
+      <!-- Assignee filter -->
+      <select
+        v-model="assigneeFilter"
+        class="px-2.5 py-1.5 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak text-[11px] font-medium text-n-slate-12 focus:outline-none focus:ring-n-teal-7 cursor-pointer"
+      >
+        <option :value="null">
+          {{ t('KANBAN.BOARD.FILTER.ALL_ASSIGNEES') }}
+        </option>
+        <option
+          v-for="agent in agentsList || []"
+          :key="agent.id"
+          :value="agent.id"
+        >
+          {{ agent.name }}
+        </option>
+      </select>
+
+      <!-- Label filter -->
+      <select
+        v-model="labelFilter"
+        class="px-2.5 py-1.5 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak text-[11px] font-medium text-n-slate-12 focus:outline-none focus:ring-n-teal-7 cursor-pointer"
+      >
+        <option :value="null">
+          {{ t('KANBAN.BOARD.FILTER.ALL_LABELS') }}
+        </option>
+        <option
+          v-for="label in labelsList || []"
+          :key="label.id"
+          :value="label.title"
+        >
+          {{ label.title }}
+        </option>
+      </select>
+
+      <!-- Due window filter -->
+      <select
+        v-model="dueFilter"
+        class="px-2.5 py-1.5 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak text-[11px] font-medium text-n-slate-12 focus:outline-none focus:ring-n-teal-7 cursor-pointer"
+      >
+        <option value="all">{{ t('KANBAN.BOARD.FILTER.DUE_ALL') }}</option>
+        <option value="overdue">
+          {{ t('KANBAN.BOARD.FILTER.DUE_OVERDUE') }}
+        </option>
+        <option value="today">{{ t('KANBAN.BOARD.FILTER.DUE_TODAY') }}</option>
+        <option value="week">{{ t('KANBAN.BOARD.FILTER.DUE_WEEK') }}</option>
+        <option value="none">{{ t('KANBAN.BOARD.FILTER.DUE_NONE') }}</option>
+      </select>
+
+      <!-- Has-conversation toggle -->
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ring-1 ring-inset text-[11px] font-medium transition-colors"
+        :class="
+          hasConversationFilter
+            ? 'bg-n-teal-3 ring-n-teal-7 text-n-teal-11'
+            : 'bg-n-alpha-1 ring-n-weak text-n-slate-11 hover:text-n-slate-12'
+        "
+        :aria-pressed="hasConversationFilter"
+        @click="hasConversationFilter = !hasConversationFilter"
+      >
+        <span class="i-lucide-message-square size-3.5" aria-hidden="true" />
+        {{ t('KANBAN.BOARD.FILTER.HAS_CONVERSATION') }}
+      </button>
+
+      <button
+        v-if="activeFilterCount > 0 || search"
+        type="button"
+        class="text-[11px] font-medium text-n-slate-11 hover:text-n-slate-12 transition-colors cursor-pointer"
+        @click="clearAllFilters"
+      >
+        {{ t('KANBAN.BOARD.FILTER.CLEAR') }}
+        <span v-if="activeFilterCount" class="text-n-teal-11 tabular-nums">
+          ({{ activeFilterCount }})
+        </span>
+      </button>
     </div>
 
     <section
@@ -484,12 +795,40 @@ const goToSettings = () => {
           :tasks="tasksByStageFiltered(stage.id)"
           :funnel-name="funnel?.name || ''"
           :can-mutate="canMutate"
+          :selected-task-ids="selectedTaskIds"
+          :inline-editing-task-id="inlineEditingTaskId"
           @card-click="onCardClick"
+          @card-select="onCardSelect"
+          @card-title-edit="onCardTitleEdit"
+          @card-title-submit="onCardTitleSubmit"
+          @card-title-cancel="onCardTitleCancel"
           @task-moved="onTaskMoved"
           @add-task="openCreateTask"
         />
       </div>
     </section>
+
+    <KanbanBulkActionBar
+      :count="selectedTaskIds.size"
+      :stages="stages"
+      :agents="agentsList || []"
+      @move="onBulkMove"
+      @assign="onBulkAssign"
+      @delete="requestBulkDelete"
+      @clear="clearSelection"
+    />
+
+    <woot-delete-modal
+      v-model:show="showBulkDeleteConfirm"
+      :on-close="cancelBulkDelete"
+      :on-confirm="confirmBulkDelete"
+      :title="t('KANBAN.BULK.DELETE_CONFIRM_TITLE')"
+      :message="
+        t('KANBAN.BULK.DELETE_CONFIRM_MESSAGE', { count: selectedTaskIds.size })
+      "
+      :confirm-text="t('KANBAN.BULK.DELETE')"
+      :reject-text="t('KANBAN.TASK.CANCEL')"
+    />
 
     <KanbanTaskDrawer v-model:show="showTaskModal" @close="closeTaskModal">
       <TaskFormModal

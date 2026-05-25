@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   format,
@@ -15,9 +15,76 @@ const props = defineProps({
   task: { type: Object, required: true },
   funnelName: { type: String, default: '' },
   stageColor: { type: String, default: '' },
+  selected: { type: Boolean, default: false },
+  selectionActive: { type: Boolean, default: false },
+  editing: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['click']);
+const emit = defineEmits([
+  'click',
+  'select',
+  'titleEdit',
+  'titleSubmit',
+  'titleCancel',
+]);
+
+const onClick = event => {
+  // While a selection batch is open, plain clicks toggle membership instead
+  // of opening the drawer. Shift / Cmd / Ctrl always treat the click as a
+  // selection action.
+  if (
+    props.selectionActive ||
+    event.shiftKey ||
+    event.metaKey ||
+    event.ctrlKey
+  ) {
+    emit('select', { taskId: props.task.id, additive: true });
+    return;
+  }
+  emit('click', props.task);
+};
+
+const onCheckboxClick = event => {
+  event.stopPropagation();
+  emit('select', { taskId: props.task.id, additive: true });
+};
+
+const onTitleDblClick = event => {
+  if (props.selectionActive) return;
+  event.stopPropagation();
+  emit('titleEdit', props.task);
+};
+
+// Inline title editing: the board flips `editing` on this card and we swap
+// the heading for an autofocused input. Enter saves, Escape rolls back.
+const draftTitle = ref('');
+const titleInputRef = ref(null);
+
+watch(
+  () => props.editing,
+  flag => {
+    if (!flag) return;
+    draftTitle.value = props.task.title || '';
+    nextTick(() => {
+      titleInputRef.value?.focus();
+      titleInputRef.value?.select();
+    });
+  },
+  { immediate: true }
+);
+
+const commitTitle = () => {
+  const next = draftTitle.value.trim();
+  if (!next || next === props.task.title) {
+    emit('titleCancel');
+    return;
+  }
+  emit('titleSubmit', { taskId: props.task.id, title: next });
+};
+const cancelTitle = () => {
+  draftTitle.value = props.task.title || '';
+  emit('titleCancel');
+};
 const { t } = useI18n();
 
 // Priority meta — `cls` controls the icon + label tint; the flag icon
@@ -119,9 +186,26 @@ const labelsExtra = computed(() =>
 
 <template>
   <article
-    class="kanban-card group relative flex flex-col gap-2.5 p-3.5 rounded-xl bg-n-solid-1 ring-1 ring-n-weak cursor-pointer overflow-hidden"
-    @click="emit('click', task)"
+    class="kanban-card group relative flex flex-col gap-2.5 p-3.5 rounded-xl bg-n-solid-1 ring-1 cursor-pointer overflow-hidden"
+    :class="selected ? 'ring-2 !ring-n-teal-9 bg-n-teal-3/20' : 'ring-n-weak'"
+    @click="onClick"
   >
+    <!-- Selection checkbox: revealed on hover or when a selection batch is
+         already open. Click never propagates to the card body. -->
+    <button
+      type="button"
+      class="absolute top-2 right-2 z-10 size-5 rounded-md ring-1 ring-n-slate-7 bg-n-solid-1/95 inline-flex items-center justify-center transition-opacity duration-150 cursor-pointer"
+      :class="
+        selected || selectionActive
+          ? 'opacity-100 ring-n-teal-9 bg-n-teal-9 text-white'
+          : 'opacity-0 group-hover:opacity-100 hover:ring-n-teal-9'
+      "
+      :aria-pressed="selected"
+      :aria-label="selected ? 'Deselect task' : 'Select task'"
+      @click="onCheckboxClick"
+    >
+      <span v-if="selected" class="i-lucide-check size-3" aria-hidden="true" />
+    </button>
     <!-- Stage color rail — left border accent inherits column color. -->
     <span
       v-if="stageColor"
@@ -137,9 +221,22 @@ const labelsExtra = computed(() =>
         class="i-lucide-check-circle-2 size-4 text-n-teal-11 flex-shrink-0 mt-0.5"
         aria-hidden="true"
       />
+      <input
+        v-if="editing"
+        ref="titleInputRef"
+        v-model="draftTitle"
+        type="text"
+        class="flex-1 text-[13.5px] font-semibold text-n-slate-12 leading-snug bg-n-background border border-n-teal-9 rounded-md px-2 py-1 focus:outline-none pr-7"
+        @click.stop
+        @blur="commitTitle"
+        @keydown.enter.prevent="commitTitle"
+        @keydown.escape.prevent="cancelTitle"
+      />
       <h3
-        class="flex-1 text-[13.5px] font-semibold text-n-slate-12 leading-snug m-0 tracking-tight"
+        v-else
+        class="flex-1 text-[13.5px] font-semibold text-n-slate-12 leading-snug m-0 tracking-tight pr-7"
         :class="{ 'line-through opacity-60': isCompleted }"
+        @dblclick="onTitleDblClick"
       >
         {{ task.title }}
       </h3>

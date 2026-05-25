@@ -31,6 +31,7 @@ const form = reactive({
   description: '',
   color: COLOR_SWATCHES[0],
   status_type: 'active',
+  wip_limit: null,
 });
 
 watch(
@@ -40,6 +41,7 @@ watch(
     form.description = next?.description || '';
     form.color = next?.color || COLOR_SWATCHES[0];
     form.status_type = next?.status_type || 'active';
+    form.wip_limit = next?.wip_limit ?? null;
   },
   { immediate: true }
 );
@@ -57,6 +59,10 @@ const onSubmit = () => {
     description: form.description.trim(),
     color: form.color,
     status_type: form.status_type,
+    wip_limit:
+      form.wip_limit && Number(form.wip_limit) > 0
+        ? Number(form.wip_limit)
+        : null,
   });
 };
 </script>
@@ -130,6 +136,34 @@ const onSubmit = () => {
             {{ t(`KANBAN.STAGE.STATUS_${status.toUpperCase()}`) }}
           </button>
         </div>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-n-slate-12">
+          {{ t('KANBAN.STAGE.FORM.WIP_LIMIT_LABEL') }}
+        </label>
+        <div
+          class="flex items-center gap-2 px-3 py-2 rounded-md border border-n-weak bg-n-background focus-within:border-n-brand"
+        >
+          <span
+            class="i-lucide-gauge size-4 text-n-slate-10"
+            aria-hidden="true"
+          />
+          <input
+            v-model.number="form.wip_limit"
+            type="number"
+            min="1"
+            step="1"
+            :placeholder="t('KANBAN.STAGE.FORM.WIP_LIMIT_PLACEHOLDER')"
+            class="flex-1 bg-transparent text-sm text-n-slate-12 focus:outline-none tabular-nums"
+          />
+          <span class="text-xs text-n-slate-10">
+            {{ t('KANBAN.STAGE.FORM.WIP_LIMIT_UNIT') }}
+          </span>
+        </div>
+        <p class="text-[11px] text-n-slate-10 leading-relaxed">
+          {{ t('KANBAN.STAGE.FORM.WIP_LIMIT_HINT') }}
+        </p>
       </div>
 
       <footer class="flex justify-end gap-2 pt-2">
