@@ -46,7 +46,7 @@
     },
     "ATTRIBUTES": {
       "STATUS": "Status",
-      "ASSIGNEE_NAME": "Agente atribuído",
+      "ASSIGNEE_NAME": "Atendente atribuído",
       "INBOX_NAME": "Caixa de Entrada",
       "TEAM_NAME": "Nome do Time",
       "CONVERSATION_IDENTIFIER": "Identificador da conversa",

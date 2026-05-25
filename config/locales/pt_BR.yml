@@ -150,7 +150,7 @@ pt_BR:
     period: Reportando o período %{since} a %{until}
     utc_warning: O relatório gerado está em fuso horário UTC
     agent_csv:
-      agent_name: Nome do Agente
+      agent_name: Nome do Atendente
       conversations_count: Conversas atribuídas
       avg_first_response_time: Tempo médio de primeira resposta
       avg_resolution_time: Tempo médio de resolução
@@ -189,7 +189,7 @@ pt_BR:
     sla_csv:
       conversation_id: ID da conversa
       sla_policy_breached: Política SLA
-      assignee: Agente atribuído
+      assignee: Atendente atribuído
       team: Time
       inbox: Caixa de Entrada
       labels: Etiquetas
@@ -202,7 +202,7 @@ pt_BR:
         contact_email_address: E-mail de contato
         contact_phone_number: Telefone de contato
         link_to_the_conversation: Link para a conversa
-        agent_name: Nome do Agente
+        agent_name: Nome do Atendente
         rating: Classificação
         feedback: Comentário de Feedback
         recorded_at: Data de gravação
@@ -220,7 +220,7 @@ pt_BR:
     no_content: 'Sem conteúdo'
   conversations:
     captain:
-      handoff: 'Transferindo para que outro agente dê assistência.'
+      handoff: 'Transferindo para que outro atendente dê assistência.'
     messages:
       instagram_story_content: '%{story_sender} mencionou você na conversa: '
       instagram_deleted_story_content: Este Story não está mais disponível.
@@ -238,7 +238,7 @@ pt_BR:
         resolved_by_tool: 'A conversa foi marcada como resolvida por %{user_name}: %{reason}'
         open: 'A conversa foi aberta por %{user_name}'
         open_with_reason: 'A conversa foi marcada como aberta por %{user_name} (%{reason})'
-        auto_opened_after_agent_reply: 'A conversa foi marcada como aberta automaticamente após a resposta de um agente'
+        auto_opened_after_agent_reply: 'A conversa foi marcada como aberta automaticamente após a resposta de um atendente'
       agent_bot:
         error_moved_to_open: 'A conversa foi marcada como aberta pelo sistema devido a um erro com o robô de atendimento.'
       status:
@@ -308,11 +308,11 @@ pt_BR:
     #Note: webhooks and dashboard_apps don't need short_description as they use different modal components
     dashboard_apps:
       name: 'Painel de Aplicativos'
-      description: 'O Painel de Aplicativos permite que você crie e incorpore aplicativos que exibem informações, pedidos ou histórico de pagamento, fornecendo mais contexto aos seus agentes de suporte ao cliente.'
+      description: 'O Painel de Aplicativos permite que você crie e incorpore aplicativos que exibem informações, pedidos ou histórico de pagamento, fornecendo mais contexto aos seus atendentes de suporte ao cliente.'
     dyte:
       name: 'Dyte'
       short_description: 'Iniciar chamadas de vídeo/voz com clientes diretamente do Chatwoot.'
-      description: 'Dyte é um produto que integra as funcionalidades de áudio e vídeo em sua aplicação. Com esta integração, os seus agentes podem iniciar chamadas de vídeo/voz com seus clientes diretamente do chatwoot.'
+      description: 'Dyte é um produto que integra as funcionalidades de áudio e vídeo em sua aplicação. Com esta integração, os seus atendentes podem iniciar chamadas de vídeo/voz com seus clientes diretamente do chatwoot.'
       meeting_name: '%{agent_name} começou a reunião'
     slack:
       name: 'Slack'
@@ -323,12 +323,12 @@ pt_BR:
       description: 'Eventos webhook fornecem atualizações sobre atividades em tempo real na sua conta Chatwoot. Você pode se inscrever em seus eventos preferidos, e o Chatwoot enviará as chamadas HTTP com as atualizações.'
     dialogflow:
       name: 'Dialogflow'
-      short_description: 'Crie chatbots para lidar com as consultas iniciais antes de transferir para agentes.'
-      description: 'Construa chatbots com o Dialogflow e integre-os facilmente na sua caixa de entrada. Esses bots podem lidar com as consultas iniciais antes de transferi-las para um agente de atendimento ao cliente.'
+      short_description: 'Crie chatbots para lidar com as consultas iniciais antes de transferir para atendentes.'
+      description: 'Construa chatbots com o Dialogflow e integre-os facilmente na sua caixa de entrada. Esses bots podem lidar com as consultas iniciais antes de transferi-las para um atendente de atendimento ao cliente.'
     google_translate:
       name: 'Tradutor do Google'
-      short_description: 'Traduzir automaticamente mensagens de clientes para agentes.'
-      description: "Integre o Google Tradutor para ajudar os agentes a traduzir facilmente as mensagens dos clientes. Esta integração detecta automaticamente o idioma e o converte para o idioma preferido do agente ou do administrador."
+      short_description: 'Traduzir automaticamente mensagens de clientes para atendentes.'
+      description: "Integre o Google Tradutor para ajudar os atendentes a traduzir facilmente as mensagens dos clientes. Esta integração detecta automaticamente o idioma e o converte para o idioma preferido do atendente ou do administrador."
     openai:
       name: 'OpenAI'
       short_description: 'Sugestões, resumos e aprimoramento de mensagem e resposta com IA.'

@@ -118,7 +118,7 @@
       }
     },
     "MENTION": {
-      "AGENTS": "Agentes",
+      "AGENTS": "Atendentes",
       "TEAMS": "Times"
     },
     "CUSTOM_SNOOZE": {
@@ -160,9 +160,9 @@
         "TOMORROW": "Até amanhã",
         "NEXT_WEEK": "Até a próxima semana"
       },
-      "ASSIGN_AGENT": "Atribuir Agente",
+      "ASSIGN_AGENT": "Atribuir Atendente",
       "ASSIGN_LABEL": "Atribuir etiqueta",
-      "AGENTS_LOADING": "Carregando agentes...",
+      "AGENTS_LOADING": "Carregando atendentes...",
       "ASSIGN_TEAM": "Atribuir time",
       "DELETE": "Excluir conversa",
       "OPEN_IN_NEW_TAB": "Abrir em nova aba",
@@ -171,7 +171,7 @@
       "API": {
         "AGENT_ASSIGNMENT": {
           "SUCCESFUL": "ID da conversa {conversationId} atribuído para \"{agentName}\"",
-          "FAILED": "Não foi possível atribuir agente. Por favor, tente novamente."
+          "FAILED": "Não foi possível atribuir atendente. Por favor, tente novamente."
         },
         "LABEL_ASSIGNMENT": {
           "SUCCESFUL": "Etiqueta #{labelName} atribuída para a conversa {conversationId}",
@@ -192,7 +192,7 @@
       "ENABLE_SIGN_TOOLTIP": "Ativar assinatura",
       "DISABLE_SIGN_TOOLTIP": "Desativar assinatura",
       "MSG_INPUT": "Shift + enter para nova linha. Digite '/' para selecionar uma Resposta Pronta.",
-      "PRIVATE_MSG_INPUT": "A mensagem será visível apenas para agentes",
+      "PRIVATE_MSG_INPUT": "A mensagem será visível apenas para atendentes",
       "MESSAGING_RESTRICTED": "Você não pode responder esta conversa",
       "MESSAGING_RESTRICTED_WHATSAPP": "Você só pode responder usando uma mensagem de modelo devido à restrição da janela de 24 horas",
       "MESSAGING_RESTRICTED_API": "Você só pode responder usando uma mensagem de template devido à restrição da janela de mensagens",
@@ -272,15 +272,15 @@
     "AUTOPILOT": {
       "MENU_TITLE": "Autopiloto Athenas",
       "TURN_OFF": "Desativar autopiloto",
-      "NO_ASSISTANTS": "Nenhum agente configurado ainda.",
+      "NO_ASSISTANTS": "Nenhum atendente configurado ainda.",
       "ENABLED": "Autopiloto ativado",
       "DISABLED": "Autopiloto desativado",
       "ERROR": "Falha ao atualizar o autopiloto"
     },
     "CHANGE_STATUS": "Estado da conversa mudou",
     "CHANGE_STATUS_FAILED": "Mudança de status da conversa falhou",
-    "CHANGE_AGENT": "Novo agente atribuído",
-    "CHANGE_AGENT_FAILED": "Falha ao atribuir outro agente",
+    "CHANGE_AGENT": "Novo atendente atribuído",
+    "CHANGE_AGENT_FAILED": "Falha ao atribuir outro atendente",
     "ASSIGN_LABEL_SUCCESFUL": "Etiqueta atribuída com sucesso",
     "ASSIGN_LABEL_FAILED": "Falha ao atribuir etiqueta",
     "CHANGE_TEAM": "Status da conversa mudou",
@@ -296,7 +296,7 @@
     "SEND_FAILED": "Não foi possível enviar a mensagem! Tente novamente",
     "TRY_AGAIN": "tentar novamente",
     "ASSIGNMENT": {
-      "SELECT_AGENT": "selecionar Agente",
+      "SELECT_AGENT": "selecionar Atendente",
       "REMOVE": "Excluir",
       "ASSIGN": "Atribuir"
     },
@@ -340,7 +340,7 @@
     "SEND_EMAIL_PAYMENT_REQUIRED": "A transcrição de e-mail não está disponível no seu plano atual. Por favor, atualize para usar este recurso.",
     "FORM": {
       "SEND_TO_CONTACT": "Envie a transcrição para o cliente",
-      "SEND_TO_AGENT": "Envie a transcrição para o agente designado",
+      "SEND_TO_AGENT": "Envie a transcrição para o atendente designado",
       "SEND_TO_OTHER_EMAIL_ADDRESS": "Enviar a transcrição para outro endereço de e-mail",
       "EMAIL": {
         "PLACEHOLDER": "Digite um endereço de e-mail",
@@ -362,7 +362,7 @@
     },
     "TEAM_MEMBERS": {
       "TITLE": "Convidar membros de seu time",
-      "DESCRIPTION": "Já que você está se preparando para conversar com seu cliente, traga seus colegas para ajudá-lo. Você pode convidar seus colegas adicionando os endereços de e-mail deles na lista de agentes.",
+      "DESCRIPTION": "Já que você está se preparando para conversar com seu cliente, traga seus colegas para ajudá-lo. Você pode convidar seus colegas adicionando os endereços de e-mail deles na lista de atendentes.",
       "NEW_LINK": "Clique aqui para convidar um membro do time"
     },
     "LABELS": {
@@ -372,12 +372,12 @@
     },
     "CANNED_RESPONSES": {
       "TITLE": "Criar respostas prontas",
-      "DESCRIPTION": "Os modelos de respostas prontas ajudam você a responder rapidamente a uma conversa. Os agentes podem digitar o caractere '/' seguido pelo atalho para inserir uma resposta.",
+      "DESCRIPTION": "Os modelos de respostas prontas ajudam você a responder rapidamente a uma conversa. Os atendentes podem digitar o caractere '/' seguido pelo atalho para inserir uma resposta.",
       "NEW_LINK": "Clique aqui para criar uma resposta pronta"
     }
   },
   "CONVERSATION_SIDEBAR": {
-    "ASSIGNEE_LABEL": "Agente atribuído",
+    "ASSIGNEE_LABEL": "Atendente atribuído",
     "SELF_ASSIGN": "Atribuir a mim",
     "TEAM_LABEL": "Time atribuído",
     "SELECT": {

@@ -1,7 +1,7 @@
 {
   "AUTOMATION": {
     "HEADER": "Automação",
-    "DESCRIPTION": "A automação pode substituir e simplificar processos existentes que requerem esforço manual, como a adição de etiquetas e a atribuição de conversas ao agente mais adequado. Isso permite que o time se concentre em seus pontos fortes e reduza o tempo gasto em tarefas rotineiras.",
+    "DESCRIPTION": "A automação pode substituir e simplificar processos existentes que requerem esforço manual, como a adição de etiquetas e a atribuição de conversas ao atendente mais adequado. Isso permite que o time se concentre em seus pontos fortes e reduza o tempo gasto em tarefas rotineiras.",
     "LEARN_MORE": "Aprenda mais sobre automação",
     "COUNT": "{n} automação | {n} automações",
     "HEADER_BTN_TXT": "Criar Automação",
@@ -138,7 +138,7 @@
       "CONVERSATION_OPENED": "Conversa Aberta"
     },
     "ACTIONS": {
-      "ASSIGN_AGENT": "Atribuir ao Agente",
+      "ASSIGN_AGENT": "Atribuir ao Atendente",
       "ASSIGN_TEAM": "Atribuir um Time",
       "REMOVE_ASSIGNED_AGENT": "Remove Assigned Agent",
       "REMOVE_ASSIGNED_TEAM": "Remover Time Atribuído",
@@ -182,7 +182,7 @@
       "MAIL_SUBJECT": "Assunto do e-mail",
       "COUNTRY_NAME": "País/região",
       "REFERER_LINK": "Link de origem",
-      "ASSIGNEE_NAME": "Agente atribuído",
+      "ASSIGNEE_NAME": "Atendente atribuído",
       "TEAM_NAME": "Time",
       "PRIORITY": "Prioridade",
       "LABELS": "Etiquetas"

@@ -23,8 +23,8 @@
         "BODY": "Autenticar sua conta e criar uma caixa de entrada."
       },
       "AGENT": {
-        "TITLE": "Adicionar Agentes",
-        "BODY": "Adicionar agentes à caixa de entrada criada."
+        "TITLE": "Adicionar Atendentes",
+        "BODY": "Adicionar atendentes à caixa de entrada criada."
       },
       "FINISH": {
         "TITLE": "Então!",
@@ -524,10 +524,10 @@
         }
       },
       "AGENTS": {
-        "TITLE": "Agentes",
-        "DESC": "Aqui você pode adicionar agentes para gerenciar sua caixa de entrada recém-criada. Somente esses agentes selecionados terão acesso à sua caixa de entrada. Os agentes que não fazem parte desta caixa de entrada não poderão ver ou responder a mensagens nessa caixa de entrada quando fizerem login. <br> <b> PS: </b> Como administrador, se você precisar acessar todas as caixas de entrada, adicione-se como agente a todas as caixas de entrada criadas.",
-        "VALIDATION_ERROR": "Adicione pelo menos um agente à sua nova caixa de entrada",
-        "PICK_AGENTS": "Escolha agentes para a caixa de entrada"
+        "TITLE": "Atendentes",
+        "DESC": "Aqui você pode adicionar atendentes para gerenciar sua caixa de entrada recém-criada. Somente esses atendentes selecionados terão acesso à sua caixa de entrada. Os atendentes que não fazem parte desta caixa de entrada não poderão ver ou responder a mensagens nessa caixa de entrada quando fizerem login. <br> <b> PS: </b> Como administrador, se você precisar acessar todas as caixas de entrada, adicione-se como atendente a todas as caixas de entrada criadas.",
+        "VALIDATION_ERROR": "Adicione pelo menos um atendente à sua nova caixa de entrada",
+        "PICK_AGENTS": "Escolha atendentes para a caixa de entrada"
       },
       "DETAILS": {
         "TITLE": "Detalhes da Caixa de Entrada",
@@ -567,8 +567,8 @@
       "DESC": ""
     },
     "AGENTS": {
-      "BUTTON_TEXT": "Adicionar agentes",
-      "ADD_AGENTS": "Adicionando agentes à sua caixa de entrada..."
+      "BUTTON_TEXT": "Adicionar atendentes",
+      "ADD_AGENTS": "Adicionando atendentes à sua caixa de entrada..."
     },
     "FINISH": {
       "TITLE": "Sua caixa de entrada está pronta!",
@@ -585,7 +585,7 @@
     "EDIT": {
       "API": {
         "SUCCESS_MESSAGE": "Configurações de caixa de entrada atualizadas com sucesso",
-        "AUTO_ASSIGNMENT_SUCCESS_MESSAGE": "Agente atualizado com sucesso",
+        "AUTO_ASSIGNMENT_SUCCESS_MESSAGE": "Atendente atualizado com sucesso",
         "ERROR_MESSAGE": "Não foi possível atualizar as configurações da caixa de entrada. Por favor, tente novamente mais tarde."
       },
       "EMAIL_COLLECT_BOX": {
@@ -598,12 +598,12 @@
       },
       "SENDER_NAME_SECTION": {
         "TITLE": "Nome do remetente",
-        "SUB_TEXT": "Selecione o nome mostrado ao seu cliente quando ele recebe e-mails dos seus agentes.",
+        "SUB_TEXT": "Selecione o nome mostrado ao seu cliente quando ele recebe e-mails dos seus atendentes.",
         "FOR_EG": "Por ex:",
         "FRIENDLY": {
           "TITLE": "Amigável",
           "FROM": "de",
-          "SUBTITLE": "Adicione o nome do agente que enviou a resposta ao nome do remetente para torná-la amigável."
+          "SUBTITLE": "Adicione o nome do atendente que enviou a resposta ao nome do remetente para torná-la amigável."
         },
         "PROFESSIONAL": {
           "TITLE": "Profissional",
@@ -644,7 +644,7 @@
         "NO": "Não, Mantenha "
       },
       "API": {
-        "SUCCESS_MESSAGE": "Agente excluído com sucesso",
+        "SUCCESS_MESSAGE": "Atendente excluído com sucesso",
         "ERROR_MESSAGE": "Não foi possível excluir a caixa de entrada. Tente novamente mais tarde.",
         "AVATAR_SUCCESS_MESSAGE": "Perfil da caixa de entrada excluído com sucesso",
         "AVATAR_ERROR_MESSAGE": "Não foi possível excluir o perfil da caixa de entrada. Por favor, tente novamente mais tarde."
@@ -652,7 +652,7 @@
     },
     "TABS": {
       "SETTINGS": "Configurações",
-      "COLLABORATORS": "Agentes",
+      "COLLABORATORS": "Atendentes",
       "CONFIGURATION": "Configuração",
       "CAMPAIGN": "Campanhas",
       "PRE_CHAT_FORM": "Formulário Chat Pré",
@@ -666,15 +666,15 @@
     },
     "ATHENAS_AI": {
       "TITLE": "Athenas AI",
-      "SUBTITLE": "Escolha qual agente Athenas atende esta caixa de entrada e como ele opera.",
-      "ASSISTANT_TITLE": "Agente ativo",
-      "ASSISTANT_HINT": "Escolha um dos seus agentes Athenas ou deixe desativado.",
-      "NO_ASSISTANT": "Sem agente",
+      "SUBTITLE": "Escolha qual atendente Athenas atende esta caixa de entrada e como ele opera.",
+      "ASSISTANT_TITLE": "Atendente ativo",
+      "ASSISTANT_HINT": "Escolha um dos seus atendentes Athenas ou deixe desativado.",
+      "NO_ASSISTANT": "Sem atendente",
       "NO_ASSISTANT_HINT": "Caixa de entrada totalmente manual.",
       "MODE_TITLE": "Modo de operação",
-      "MODE_HINT": "Como o agente participa das conversas.",
-      "EMPTY_TITLE": "Nenhum agente Athenas ainda",
-      "EMPTY_HINT": "Crie um agente na seção Athenas AI para conectá-lo aqui.",
+      "MODE_HINT": "Como o atendente participa das conversas.",
+      "EMPTY_TITLE": "Nenhum atendente Athenas ainda",
+      "EMPTY_HINT": "Crie um atendente na seção Athenas AI para conectá-lo aqui.",
       "SAVE": "Salvar",
       "AUTOPILOT_BADGE": "Auto"
     },
@@ -773,23 +773,23 @@
         "REQUIRE_LABEL": "Exigir validação de identidade para todas as conversas",
         "REQUIRE_DESCRIPTION": "Quando ativado, os usuários devem fornecer um token de identidade válido para iniciar conversas. Solicitações sem tokens válidos serão rejeitadas."
       },
-      "INBOX_AGENTS": "Agentes",
-      "INBOX_AGENTS_SUB_TEXT": "Adicionar ou remover agentes dessa caixa de entrada",
+      "INBOX_AGENTS": "Atendentes",
+      "INBOX_AGENTS_SUB_TEXT": "Adicionar ou remover atendentes dessa caixa de entrada",
       "AGENT_ASSIGNMENT": "Atribuição de conversa",
       "AGENT_ASSIGNMENT_SUB_TEXT": "Atualizar configurações de atribuição de conversa",
       "UPDATE": "Atualizar",
       "ENABLE_EMAIL_COLLECT_BOX": "Ativar caixa de coleta de e-mail",
       "ENABLE_EMAIL_COLLECT_BOX_SUB_TEXT": "Ativar ou desativar caixa de coleta de e-mails em novas conversas",
       "AUTO_ASSIGNMENT": "Habilitar atribuição automática",
-      "SENDER_NAME_SECTION": "Habilitar o Nome do Agente no E-mail",
-      "SENDER_NAME_SECTION_TEXT": "Ativar/Desativar exibição do nome do agente no e-mail, se estiver desativado, exibirá o nome da empresa",
+      "SENDER_NAME_SECTION": "Habilitar o Nome do Atendente no E-mail",
+      "SENDER_NAME_SECTION_TEXT": "Ativar/Desativar exibição do nome do atendente no e-mail, se estiver desativado, exibirá o nome da empresa",
       "ENABLE_CONTINUITY_VIA_EMAIL": "Habilitar continuidade das conversas por e-mail",
       "ENABLE_CONTINUITY_VIA_EMAIL_SUB_TEXT": "As conversas continuarão sobre o e-mail se o endereço de e-mail de contato estiver disponível.",
       "LOCK_TO_SINGLE_CONVERSATION": "Roteamento de Conversa",
       "LOCK_TO_SINGLE_CONVERSATION_SUB_TEXT": "Configurar a criação de conversas para contatos existentes",
       "INBOX_UPDATE_TITLE": "Configurações da Caixa de Entrada",
       "INBOX_UPDATE_SUB_TEXT": "Atualize suas configurações de caixa de entrada",
-      "AUTO_ASSIGNMENT_SUB_TEXT": "Ativar ou desativar a atribuição automática de novas conversas aos agentes adicionados a essa caixa de entrada.",
+      "AUTO_ASSIGNMENT_SUB_TEXT": "Ativar ou desativar a atribuição automática de novas conversas aos atendentes adicionados a essa caixa de entrada.",
       "HMAC_VERIFICATION": "Validação de Identidade do Usuário",
       "HMAC_DESCRIPTION": "Para validar a identidade do usuário, você pode passar um `identifier_hash` para cada usuário. Você pode gerar um hash HMAC sha256 usando o `identifier` com a chave mostrada aqui.",
       "HMAC_LINK_TO_DOCS": "Você pode ler mais aqui.",
@@ -842,11 +842,11 @@
     "AUTO_ASSIGNMENT": {
       "MAX_ASSIGNMENT_LIMIT": "Limite de atribuição automática",
       "MAX_ASSIGNMENT_LIMIT_RANGE_ERROR": "Por favor, insira um valor maior que 0",
-      "MAX_ASSIGNMENT_LIMIT_SUB_TEXT": "Limitar o número máximo de conversas desta caixa de entrada que pode ser atribuído automaticamente a um agente"
+      "MAX_ASSIGNMENT_LIMIT_SUB_TEXT": "Limitar o número máximo de conversas desta caixa de entrada que pode ser atribuído automaticamente a um atendente"
     },
     "ASSIGNMENT": {
       "TITLE": "Atribuição de conversa",
-      "DESCRIPTION": "Atribua automaticamente as conversas recebidas aos agentes disponíveis com base nas políticas de atribuição",
+      "DESCRIPTION": "Atribua automaticamente as conversas recebidas aos atendentes disponíveis com base nas políticas de atribuição",
       "ENABLE_AUTO_ASSIGNMENT": "Ativar atribuição automática de conversas",
       "DEFAULT_RULES_TITLE": "Regras de atribuição padrão",
       "DEFAULT_RULES_DESCRIPTION": "Utilizando o comportamento de atribuição padrão para todas as conversas",
@@ -874,7 +874,7 @@
       "UPGRADE_PROMPT": "Políticas de atribuição personalizadas estão disponíveis no plano Business",
       "UPGRADE_TO_BUSINESS": "Atualizar para o Business",
       "DEFAULT_POLICY_LINKED": "Política padrão vinculada",
-      "DEFAULT_POLICY_DESCRIPTION": "Vincule uma política de atribuição personalizada para definir como as conversas serão atribuídas aos agentes nesta caixa de entrada.",
+      "DEFAULT_POLICY_DESCRIPTION": "Vincule uma política de atribuição personalizada para definir como as conversas serão atribuídas aos atendentes nesta caixa de entrada.",
       "LINK_EXISTING_POLICY": "Vincular política existente",
       "CREATE_NEW_POLICY": "Criar nova política",
       "NO_POLICIES": "Nenhuma política de atribuição encontrada",
@@ -1001,7 +1001,7 @@
       "UPDATE": "Atualizar configurações do horário comercial",
       "TOGGLE_AVAILABILITY": "Permitir a disponibilidade de negócios para essa caixa de entrada",
       "UNAVAILABLE_MESSAGE_LABEL": "Mensagem indisponível para visitantes",
-      "TOGGLE_HELP": "Permitir a disponibilidade de negócios mostrará as horas disponíveis no widget de bate-papo ao vivo, mesmo que todos os agentes estejam offline. Os vistores disponíveis horários externos podem ser avisados com uma mensagem e um formulário de pré-bate-papo.",
+      "TOGGLE_HELP": "Permitir a disponibilidade de negócios mostrará as horas disponíveis no widget de bate-papo ao vivo, mesmo que todos os atendentes estejam offline. Os vistores disponíveis horários externos podem ser avisados com uma mensagem e um formulário de pré-bate-papo.",
       "DAY": {
         "DAY": "Dia",
         "AVAILABILITY": "Disponibilidade",

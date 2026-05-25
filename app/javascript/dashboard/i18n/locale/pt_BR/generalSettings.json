@@ -3,7 +3,7 @@
     "LIMIT_MESSAGES": {
       "CONVERSATION": "Você excedeu o limite de conversas. O plano Hacker permite apenas 500 conversas.",
       "INBOXES": "Você excedeu o limite da caixa de entrada. O plano Hacker só suporta chat ao vivo do site. Caixas adicionais como e-mail, WhatsApp etc. requerem um plano pago.",
-      "AGENTS": "Você excedeu o limite do agente. Seu plano permite apenas {allowedAgents} agentes.",
+      "AGENTS": "Você excedeu o limite do atendente. Seu plano permite apenas {allowedAgents} atendentes.",
       "NON_ADMIN": "Entre em contato com o administrador para atualizar o plano e continuar usando todos os recursos."
     },
     "TITLE": "Conta",
@@ -68,7 +68,7 @@
           "PLACEHOLDER": "Selecione a etiqueta"
         },
         "IGNORE_WAITING": {
-          "LABEL": "Pular conversas aguardando a resposta do agente"
+          "LABEL": "Pular conversas aguardando a resposta do atendente"
         },
         "UPDATE_BUTTON": "Salvar Alterações"
       },
@@ -188,7 +188,7 @@
       "REPORTS": "Relatórios",
       "CONVERSATION": "Conversas",
       "BULK_ACTIONS": "Ações em massa",
-      "CHANGE_ASSIGNEE": "Atribuir novo agente",
+      "CHANGE_ASSIGNEE": "Atribuir novo atendente",
       "CHANGE_PRIORITY": "Alterar Prioridade",
       "CHANGE_TEAM": "Alterar o Time",
       "SNOOZE_CONVERSATION": "Adiar Conversa",
@@ -204,11 +204,11 @@
       "GO_TO_CONTACTS_DASHBOARD": "Ir para Painel de Contatos",
       "GO_TO_REPORTS_OVERVIEW": "Ir para Resumo de Relatórios",
       "GO_TO_CONVERSATION_REPORTS": "Ir para Relatórios das Conversas",
-      "GO_TO_AGENT_REPORTS": "Ir para Relatórios do Agente",
+      "GO_TO_AGENT_REPORTS": "Ir para Relatórios do Atendente",
       "GO_TO_LABEL_REPORTS": "Ir para Relatórios de Etiquetas",
       "GO_TO_INBOX_REPORTS": "Ir para Relatórios da Caixa de Entrada",
       "GO_TO_TEAM_REPORTS": "Ir para Relatórios de Time",
-      "GO_TO_SETTINGS_AGENTS": "Ir para Configurações de Agente",
+      "GO_TO_SETTINGS_AGENTS": "Ir para Configurações de Atendente",
       "GO_TO_SETTINGS_TEAMS": "Ir para as Configurações de Time",
       "GO_TO_SETTINGS_INBOXES": "Ir para as Configurações da Caixa de Entrada",
       "GO_TO_SETTINGS_LABELS": "Ir para as Configurações de Etiqueta",
@@ -218,7 +218,7 @@
       "GO_TO_SETTINGS_PROFILE": "Ir para as Configurações do Perfil",
       "GO_TO_NOTIFICATIONS": "Ir para Notificações",
       "ADD_LABELS_TO_CONVERSATION": "Adicionar etiqueta à conversa",
-      "ASSIGN_AN_AGENT": "Atribuir um agente",
+      "ASSIGN_AN_AGENT": "Atribuir um atendente",
       "AI_ASSIST": "Assistente IA",
       "ASSIGN_PRIORITY": "Atribuir prioridade",
       "ASSIGN_A_TEAM": "Atribuir um time",

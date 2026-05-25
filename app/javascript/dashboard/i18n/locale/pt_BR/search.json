@@ -57,10 +57,10 @@
       "FILTER_MESSAGE": "Filtrar mensagens por:",
       "FROM": "Remetente",
       "IN": "Caixa de Entrada",
-      "AGENTS": "Agentes",
+      "AGENTS": "Atendentes",
       "CONTACTS": "Contatos",
       "INBOXES": "Caixas de Entrada",
-      "NO_AGENTS": "Nenhum agente encontrado",
+      "NO_AGENTS": "Nenhum atendente encontrado",
       "NO_CONTACTS": "Comece a pesquisar para ver os resultados",
       "NO_INBOXES": "Nenhuma caixa de entrada encontrada"
     }

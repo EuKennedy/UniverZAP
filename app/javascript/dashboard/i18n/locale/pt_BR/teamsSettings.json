@@ -3,13 +3,13 @@
     "NEW_TEAM": "Criar novo time",
     "HEADER": "Times",
     "LOADING": "Buscando times",
-    "DESCRIPTION": "Os times permitem que você organize agentes em grupos com base em suas responsabilidades. Um agente pode pertencer a vários times. Ao trabalhar de forma colaborativa, você pode atribuir conversas a times específicos.",
+    "DESCRIPTION": "Os times permitem que você organize atendentes em grupos com base em suas responsabilidades. Um atendente pode pertencer a vários times. Ao trabalhar de forma colaborativa, você pode atribuir conversas a times específicos.",
     "LEARN_MORE": "Saiba mais sobre times",
     "COUNT": "{n} time | {n} times",
     "SEARCH_PLACEHOLDER": "Pesquisar times...",
     "NO_RESULTS": "Nenhum time encontrado correspondente à sua busca",
     "LIST": {
-      "404": "Não existem agentes associados a esta conta.",
+      "404": "Não existem atendentes associados a esta conta.",
       "EDIT_TEAM": "Editar time",
       "NONE": "Nenhuma"
     },
@@ -19,17 +19,17 @@
         "DESC": "Adicione um título e uma descrição a seu novo time."
       },
       "AGENTS": {
-        "BUTTON_TEXT": "Adicionar agente a seu time",
-        "TITLE": "Adicionar agentes ao time: {teamName}",
-        "DESC": "Adicione agentes a seu time recém-criado. Isso permite que você colabore como um time em conversas, seja notificado sobre novos eventos na mesma conversa."
+        "BUTTON_TEXT": "Adicionar atendente a seu time",
+        "TITLE": "Adicionar atendentes ao time: {teamName}",
+        "DESC": "Adicione atendentes a seu time recém-criado. Isso permite que você colabore como um time em conversas, seja notificado sobre novos eventos na mesma conversa."
       },
       "WIZARD_CREATE": {
         "TITLE": "Criar",
-        "BODY": "Criar um novo time de agentes."
+        "BODY": "Criar um novo time de atendentes."
       },
       "WIZARD_ADD_AGENTS": {
-        "TITLE": "Adicionar Agentes",
-        "BODY": "Adicionar agentes ao time."
+        "TITLE": "Adicionar Atendentes",
+        "BODY": "Adicionar atendentes ao time."
       },
       "WIZARD_FINISH": {
         "TITLE": "Finalizar",
@@ -43,9 +43,9 @@
         "BUTTON_TEXT": "Atualizar time"
       },
       "AGENTS": {
-        "BUTTON_TEXT": "Atualizar agentes no time",
-        "TITLE": "Adicionar agentes ao time: {teamName}",
-        "DESC": "Adicionar agentes ao seu time recém-criado. Todos os agentes adicionados serão notificados quando uma conversa for atribuída a este time."
+        "BUTTON_TEXT": "Atualizar atendentes no time",
+        "TITLE": "Adicionar atendentes ao time: {teamName}",
+        "DESC": "Adicionar atendentes ao seu time recém-criado. Todos os atendentes adicionados serão notificados quando uma conversa for atribuída a este time."
       },
       "EDIT_WIZARD_DETAILS": {
         "TITLE": "Detalhes do time",
@@ -53,9 +53,9 @@
         "BODY": "Alterar nome, descrição e outros detalhes."
       },
       "EDIT_WIZARD_AGENTS": {
-        "TITLE": "Alterar agentes",
+        "TITLE": "Alterar atendentes",
         "ROUTE": "ajustes_times_editar_membros",
-        "BODY": "Gerenciar agentes do seu time."
+        "BODY": "Gerenciar atendentes do seu time."
       },
       "EDIT_WIZARD_FINISH": {
         "TITLE": "Finalizar",
@@ -67,22 +67,22 @@
       "ERROR_MESSAGE": "Não foi possível salvar os detalhes do time. Tente novamente."
     },
     "AGENTS": {
-      "AGENT": "Agente",
+      "AGENT": "Atendente",
       "EMAIL": "E-mail",
-      "BUTTON_TEXT": "Adicionar agentes",
-      "ADD_AGENTS": "Adicionando agentes à sua caixa de entrada...",
+      "BUTTON_TEXT": "Adicionar atendentes",
+      "ADD_AGENTS": "Adicionando atendentes à sua caixa de entrada...",
       "SELECT": "Selecionar",
-      "SELECT_ALL": "Selecionar todos os agentes",
-      "SELECTED_COUNT": "{selected} de {total} agentes selecionados."
+      "SELECT_ALL": "Selecionar todos os atendentes",
+      "SELECTED_COUNT": "{selected} de {total} atendentes selecionados."
     },
     "ADD": {
-      "TITLE": "Adicionar agentes ao time: {teamName}",
-      "DESC": "Adicione agentes ao time recém-criado. Isso permite que você colabore como um time em conversas, seja notificado sobre novos eventos na mesma conversa.",
+      "TITLE": "Adicionar atendentes ao time: {teamName}",
+      "DESC": "Adicione atendentes ao time recém-criado. Isso permite que você colabore como um time em conversas, seja notificado sobre novos eventos na mesma conversa.",
       "SELECT": "Selecionar",
-      "SELECT_ALL": "Selecionar todos os agentes",
-      "SELECTED_COUNT": "{selected} de {total} agentes selecionados.",
-      "BUTTON_TEXT": "Adicionar agentes",
-      "AGENT_VALIDATION_ERROR": "Selecione pelo menos um agente."
+      "SELECT_ALL": "Selecionar todos os atendentes",
+      "SELECTED_COUNT": "{selected} de {total} atendentes selecionados.",
+      "BUTTON_TEXT": "Adicionar atendentes",
+      "AGENT_VALIDATION_ERROR": "Selecione pelo menos um atendente."
     },
     "FINISH": {
       "TITLE": "Sua caixa de entrada está pronta!",
@@ -92,7 +92,7 @@
     "DELETE": {
       "BUTTON_TEXT": "Excluir",
       "API": {
-        "SUCCESS_MESSAGE": "Agente excluído com sucesso.",
+        "SUCCESS_MESSAGE": "Atendente excluído com sucesso.",
         "ERROR_MESSAGE": "Não foi possível excluir o time. Tente novamente."
       },
       "CONFIRM": {

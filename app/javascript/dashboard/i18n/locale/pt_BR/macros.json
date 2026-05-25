@@ -1,7 +1,7 @@
 {
   "MACROS": {
     "HEADER": "Macros",
-    "DESCRIPTION": "Uma macro é um conjunto de ações salvas que ajudam os agentes de atendimento ao cliente a concluir tarefas com facilidade. Os agentes podem definir um conjunto de ações, como etiquetar uma conversa com um rótulo, enviar uma transcrição de e-mail, atualizar um atributo personalizado, etc., e podem executar essas ações com um único clique.",
+    "DESCRIPTION": "Uma macro é um conjunto de ações salvas que ajudam os atendentes de atendimento ao cliente a concluir tarefas com facilidade. Os atendentes podem definir um conjunto de ações, como etiquetar uma conversa com um rótulo, enviar uma transcrição de e-mail, atualizar um atributo personalizado, etc., e podem executar essas ações com um único clique.",
     "LEARN_MORE": "Aprenda mais sobre macros",
     "COUNT": "{n} macro | {n} macros",
     "HEADER_BTN_TXT": "Adicionar uma nova macro",
@@ -66,7 +66,7 @@
         "LABEL": "Visibilidade da Macro",
         "GLOBAL": {
           "LABEL": "Publico",
-          "DESCRIPTION": "Esta macro está disponível publicamente para todos os agentes desta conta."
+          "DESCRIPTION": "Esta macro está disponível publicamente para todos os atendentes desta conta."
         },
         "PERSONAL": {
           "LABEL": "Privada",
@@ -90,7 +90,7 @@
     },
     "ACTIONS": {
       "ASSIGN_TEAM": "Atribuir um Time",
-      "ASSIGN_AGENT": "Atribuir um Agente",
+      "ASSIGN_AGENT": "Atribuir um Atendente",
       "ADD_LABEL": "Adicionar uma Etiqueta",
       "REMOVE_LABEL": "Remover uma Etiqueta",
       "REMOVE_ASSIGNED_AGENT": "Remove Assigned Agent",

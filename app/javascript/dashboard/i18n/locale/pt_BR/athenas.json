@@ -2,26 +2,26 @@
   "ATHENAS": {
     "LIST": {
       "TITLE": "Athenas AI",
-      "SUBTITLE": "Construa, treine e supervisione os agentes de IA que falam com seus clientes.",
-      "CREATE": "Novo agente",
-      "CREATE_FIRST": "Criar meu primeiro agente",
+      "SUBTITLE": "Construa, treine e supervisione os assistentes de IA que falam com seus clientes.",
+      "CREATE": "Novo assistente",
+      "CREATE_FIRST": "Criar meu primeiro assistente",
       "AUTOPILOT_BADGE": "Auto",
-      "EMPTY_TITLE": "Nenhum agente ainda",
-      "EMPTY_DESCRIPTION": "A Athenas AI permite colocar um agente de WhatsApp no ar em minutos. Escolha um papel, ensine sobre o seu negócio e deixe ele qualificar leads, atender e até fechar vendas sozinho."
+      "EMPTY_TITLE": "Nenhum assistente ainda",
+      "EMPTY_DESCRIPTION": "A Athenas AI permite colocar um assistente de WhatsApp no ar em minutos. Escolha um papel, ensine sobre o seu negócio e deixe ele qualificar leads, atender e até fechar vendas sozinho."
     },
     "WIZARD": {
-      "HEADER_TITLE": "Novo agente Athenas",
+      "HEADER_TITLE": "Novo assistente Athenas",
       "BACK": "Voltar",
       "PREVIOUS": "Anterior",
       "NEXT": "Avançar",
       "SKIP": "Configurar depois",
-      "FINISH": "Criar agente",
-      "SUCCESS": "Agente criado.",
+      "FINISH": "Criar assistente",
+      "SUCCESS": "Assistente criado.",
       "STEPS": {
         "IDENTITY": {
           "LABEL": "Identidade",
           "TITLE": "Etapa 1 de 5 · Identidade",
-          "HEADING": "Quem é o seu agente?",
+          "HEADING": "Quem é o seu assistente?",
           "HELPER": "Dê um nome, um papel e uma descrição curta para que sua equipe reconheça."
         },
         "PERSONALITY": {
@@ -46,17 +46,17 @@
           "LABEL": "Revisão",
           "TITLE": "Etapa 5 de 5 · Revisão",
           "HEADING": "Pronto pra subir?",
-          "HELPER": "Confira tudo antes de criar o agente."
+          "HELPER": "Confira tudo antes de criar o assistente."
         }
       },
       "IDENTITY": {
-        "NAME_LABEL": "Nome do agente",
+        "NAME_LABEL": "Nome do assistente",
         "NAME_PLACEHOLDER": "Ex: Athena · Helena · Atlas",
-        "NAME_REQUIRED": "Diga o nome do agente para continuar.",
+        "NAME_REQUIRED": "Diga o nome do assistente para continuar.",
         "ROLE_LABEL": "Papel / função",
         "ROLE_PLACEHOLDER": "Ex: SDR, Closer, Suporte",
         "DESCRIPTION_LABEL": "Descrição",
-        "DESCRIPTION_PLACEHOLDER": "O que esse agente faz? Para quem ele atende?",
+        "DESCRIPTION_PLACEHOLDER": "O que esse assistente faz? Para quem ele atende?",
         "AVATAR_LABEL": "URL do avatar",
         "AVATAR_PLACEHOLDER": "https://…"
       },
@@ -64,7 +64,7 @@
         "TONE_LABEL": "Tom de voz",
         "MODEL_LABEL": "Modelo",
         "PROMPT_LABEL": "System prompt",
-        "PROMPT_PLACEHOLDER": "Descreva como o agente deve agir, o que pode prometer e o que precisa evitar.",
+        "PROMPT_PLACEHOLDER": "Descreva como o assistente deve agir, o que pode prometer e o que precisa evitar.",
         "PROMPT_HINT": "Selecione um tom acima para carregar um template, depois ajuste.",
         "TEMPERATURE_LABEL": "Criatividade",
         "MAX_TOKENS_LABEL": "Tokens máximos por resposta",
@@ -90,7 +90,7 @@
       },
       "BEHAVIOR": {
         "AUTOPILOT_LABEL": "Ativar autopiloto",
-        "AUTOPILOT_HINT": "O agente responde sozinho assim que uma mensagem chega. Você ainda pode ligar/desligar por conversa.",
+        "AUTOPILOT_HINT": "O assistente responde sozinho assim que uma mensagem chega. Você ainda pode ligar/desligar por conversa.",
         "STOP_WORDS_LABEL": "Palavras de pausa",
         "STOP_WORDS_PLACEHOLDER": "humano, atendente, falar com gente",
         "STOP_WORDS_HINT": "Se o cliente disser qualquer uma dessas palavras, o bot entrega a conversa para um humano.",
@@ -108,17 +108,17 @@
       }
     },
     "EDIT": {
-      "LOADING": "Carregando agente…",
+      "LOADING": "Carregando assistente…",
       "DELETE": "Excluir",
-      "DELETE_CONFIRM": "Excluir este agente? Esta ação não pode ser desfeita.",
-      "DELETE_SUCCESS": "Agente excluído.",
+      "DELETE_CONFIRM": "Excluir este assistente? Esta ação não pode ser desfeita.",
+      "DELETE_SUCCESS": "Assistente excluído.",
       "SAVE": "Salvar alterações",
       "SAVE_SUCCESS": "Alterações salvas.",
       "STATUS_AUTOPILOT": "Autopiloto",
       "STATUS_ACTIVE": "Ativo",
       "STATUS_INACTIVE": "Inativo",
-      "ACTIVE_LABEL": "Agente ativo",
-      "ACTIVE_HINT": "Desative para impedir que o agente seja usado em conversas sem precisar excluir.",
+      "ACTIVE_LABEL": "Assistente ativo",
+      "ACTIVE_HINT": "Desative para impedir que o assistente seja usado em conversas sem precisar excluir.",
       "REPLACE_API_KEY_LABEL": "Substituir chave Anthropic",
       "REPLACE_API_KEY_PLACEHOLDER": "Deixe em branco para manter a atual",
       "REPLACE_API_KEY_HINT": "A chave atual não aparece aqui. Preencha apenas para substituí-la.",
@@ -133,7 +133,7 @@
       },
       "SECTIONS": {
         "IDENTITY": "Identidade",
-        "IDENTITY_HINT": "Como o agente aparece para sua equipe.",
+        "IDENTITY_HINT": "Como o assistente aparece para sua equipe.",
         "PERSONALITY": "Personalidade",
         "PERSONALITY_HINT": "Modelo, tom e instruções que definem como ele responde.",
         "BEHAVIOR": "Comportamento",
@@ -155,7 +155,7 @@
     "FINISH": "Finalizar onboarding",
     "STEPS": {
       "ASSISTANT": {
-        "TITLE": "Personalize seu agente Athenas",
+        "TITLE": "Personalize seu assistente Athenas",
         "BODY": "Ajuste persona, tom e conhecimento para a IA falar como sua empresa.",
         "CTA": "Personalizar"
       },
