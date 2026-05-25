@@ -162,15 +162,40 @@ const onSubmit = () => {
 </script>
 
 <template>
-  <div class="flex flex-col max-h-[88vh] w-full">
-    <woot-modal-header
-      :header-title="
-        isEdit ? t('KANBAN.TASK.EDIT_TITLE') : t('KANBAN.TASK.NEW_TITLE')
-      "
-      :header-content="t('KANBAN.TASK.DESCRIPTION')"
-    />
+  <div class="flex flex-col h-full w-full">
+    <header
+      class="flex items-start justify-between gap-4 px-7 py-5 border-b border-n-weak flex-shrink-0"
+    >
+      <div class="flex flex-col gap-1 min-w-0">
+        <span
+          class="text-[10px] font-bold uppercase tracking-[0.18em] text-n-teal-11"
+        >
+          {{
+            isEdit ? t('KANBAN.TASK.EDIT_BADGE') : t('KANBAN.TASK.NEW_BADGE')
+          }}
+        </span>
+        <h2
+          class="text-xl font-semibold text-n-slate-12 m-0 leading-tight tracking-tight truncate"
+        >
+          {{
+            isEdit ? t('KANBAN.TASK.EDIT_TITLE') : t('KANBAN.TASK.NEW_TITLE')
+          }}
+        </h2>
+        <p class="text-xs text-n-slate-11 m-0 leading-relaxed">
+          {{ t('KANBAN.TASK.DESCRIPTION') }}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="shrink-0 inline-flex items-center justify-center size-9 rounded-lg text-n-slate-11 hover:text-n-slate-12 hover:bg-n-alpha-2 transition-colors cursor-pointer"
+        :aria-label="t('KANBAN.TASK.CANCEL')"
+        @click="emit('close')"
+      >
+        <span class="i-lucide-x size-5" />
+      </button>
+    </header>
     <form
-      class="flex flex-col gap-5 px-6 py-5 overflow-y-auto"
+      class="flex flex-col gap-5 px-7 py-6 overflow-y-auto flex-1"
       @submit.prevent="onSubmit"
     >
       <section
@@ -450,7 +475,9 @@ const onSubmit = () => {
         </div>
       </fieldset>
 
-      <footer class="flex items-center justify-between gap-2 pt-2">
+      <footer
+        class="sticky bottom-0 -mx-7 -mb-6 px-7 py-4 bg-n-surface-1/95 backdrop-blur-md border-t border-n-weak flex items-center justify-between gap-2 z-10"
+      >
         <Button
           v-if="isEdit"
           faded

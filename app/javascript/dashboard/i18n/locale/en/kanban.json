@@ -141,6 +141,8 @@
       }
     },
     "TASK": {
+      "NEW_BADGE": "New task",
+      "EDIT_BADGE": "Edit task",
       "NEW_TITLE": "Create task",
       "EDIT_TITLE": "Edit task",
       "DESCRIPTION": "Tasks track work through your funnel. Assign, label and link to conversations.",

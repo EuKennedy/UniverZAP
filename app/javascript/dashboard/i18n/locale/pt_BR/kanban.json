@@ -141,6 +141,8 @@
       }
     },
     "TASK": {
+      "NEW_BADGE": "Nova tarefa",
+      "EDIT_BADGE": "Editar tarefa",
       "NEW_TITLE": "Criar tarefa",
       "EDIT_TITLE": "Editar tarefa",
       "DESCRIPTION": "Tarefas acompanham o trabalho pelo funil. Atribua, etiquete e vincule a conversas.",

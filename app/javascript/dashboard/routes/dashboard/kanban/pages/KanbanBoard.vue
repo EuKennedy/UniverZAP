@@ -10,6 +10,7 @@ import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import KanbanColumn from '../components/KanbanColumn.vue';
 import TaskFormModal from '../components/TaskFormModal.vue';
+import KanbanTaskDrawer from '../components/KanbanTaskDrawer.vue';
 
 const props = defineProps({
   funnelId: { type: [String, Number], required: true },
@@ -489,11 +490,7 @@ const goToSettings = () => {
       </div>
     </section>
 
-    <woot-modal
-      v-model:show="showTaskModal"
-      :on-close="closeTaskModal"
-      size="medium"
-    >
+    <KanbanTaskDrawer v-model:show="showTaskModal" @close="closeTaskModal">
       <TaskFormModal
         v-if="showTaskModal && funnel"
         :task="editingTask"
@@ -503,7 +500,7 @@ const goToSettings = () => {
         @close="closeTaskModal"
         @delete="requestDeleteTask"
       />
-    </woot-modal>
+    </KanbanTaskDrawer>
 
     <woot-delete-modal
       v-model:show="showDeleteConfirm"
