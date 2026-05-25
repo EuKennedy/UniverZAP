@@ -169,6 +169,7 @@ const confirmDeletion = () => {
           <Button
             :label="$t('AGENT_MGMT.HEADER_BTN_TXT')"
             size="sm"
+            data-onboarding="agents-nav"
             @click="openAddPopup"
           />
         </template>
