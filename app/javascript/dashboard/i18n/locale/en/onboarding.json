@@ -30,5 +30,70 @@
     "VALIDATION_ERROR": "Please fill in all required fields",
     "SUCCESS": "Details saved successfully",
     "ERROR": "Could not save details. Please try again."
+  },
+  "ONBOARDING_TOUR": {
+    "LAUNCHER": {
+      "ARIA_LABEL": "Open guided setup",
+      "PROGRESS_LABEL": "{done} of {total} steps complete",
+      "PULSE_HINT": "Get started"
+    },
+    "PANEL": {
+      "TITLE": "Set up UniverZAP",
+      "SUBTITLE": "{done} of {total} steps complete",
+      "INTRO": "Connect WhatsApp, invite your team and meet Athenas — your AI assistant.",
+      "START_TOUR": "Start guided tour",
+      "RESUME_TOUR": "Continue tour",
+      "RETAKE_TOUR": "Retake tour",
+      "DISMISS": "Dismiss",
+      "ALL_DONE_TITLE": "You're all set!",
+      "ALL_DONE_BODY": "UniverZAP is fully configured. Your first conversation will appear in the inbox.",
+      "FINISH": "Finish onboarding",
+      "STEPS": {
+        "INBOX": {
+          "TITLE": "Connect a WhatsApp channel",
+          "DESCRIPTION": "Hook up your first WhatsApp number so customer messages flow in.",
+          "CTA": "Add inbox"
+        },
+        "TEAM_MEMBERS": {
+          "TITLE": "Invite your atendentes",
+          "DESCRIPTION": "Bring your team in — they'll respond to conversations.",
+          "CTA": "Invite team"
+        },
+        "TEAM_GROUP": {
+          "TITLE": "Create a team",
+          "DESCRIPTION": "Group atendentes by department to route conversations smartly.",
+          "CTA": "Create team"
+        },
+        "ASSISTANT": {
+          "TITLE": "Configure Athenas AI",
+          "DESCRIPTION": "Train your AI assistant to qualify leads and reply 24/7.",
+          "CTA": "Create assistant"
+        },
+        "FIRST_REPLY": {
+          "TITLE": "Send your first reply",
+          "DESCRIPTION": "Reply to your first conversation to mark UniverZAP as live.",
+          "CTA": "Open inbox"
+        }
+      }
+    },
+    "TOUR": {
+      "WELCOME_TITLE": "Welcome to UniverZAP",
+      "WELCOME_BODY": "Let's get your workspace ready in under 5 minutes. We'll point you to exactly where you need to click.",
+      "WELCOME_CTA": "Start tour",
+      "WELCOME_SKIP": "Skip for now",
+      "STEP_PROGRESS": "Step {current} of {total}",
+      "NEXT": "Next",
+      "PREVIOUS": "Back",
+      "DONE": "Finish",
+      "SKIP": "Skip",
+      "EXIT": "Exit tour",
+      "EXIT_CONFIRM_TITLE": "Exit guided tour?",
+      "EXIT_CONFIRM_BODY": "You can resume from the launcher anytime.",
+      "EXIT_CONFIRM_OK": "Exit tour",
+      "EXIT_CONFIRM_CANCEL": "Keep going",
+      "FINISH_TITLE": "Setup complete",
+      "FINISH_BODY": "UniverZAP is live. Your first conversation will appear in the inbox.",
+      "FINISH_CTA": "Open dashboard"
+    }
   }
 }

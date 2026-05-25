@@ -1,0 +1,99 @@
+{
+  "ONBOARDING_NEXT": {
+    "GREETING": "Olá {name}!",
+    "SUBTITLE": "Confira os detalhes a seguir",
+    "YOUR_DETAILS": "Seus dados",
+    "COMPANY_DETAILS": "Dados da empresa",
+    "FIELDS": {
+      "EMAIL": "Email",
+      "YOUR_ROLE": "Sua função",
+      "WEBSITE": "Site",
+      "LANGUAGE": "Idioma",
+      "TIMEZONE": "Fuso horário",
+      "COMPANY_SIZE": "Tamanho da empresa",
+      "INDUSTRY": "Setor",
+      "REFERRAL_SOURCE": "Onde você nos encontrou?"
+    },
+    "PLACEHOLDERS": {
+      "SELECT_ROLE": "Selecione sua função",
+      "ENTER_WEBSITE": "www.exemplo.com",
+      "SELECT_LANGUAGE": "Selecione o idioma",
+      "SELECT_TIMEZONE": "Selecione o fuso",
+      "SELECT_COMPANY_SIZE": "Selecione o tamanho",
+      "SELECT_INDUSTRY": "Selecione o setor",
+      "SELECT_REFERRAL_SOURCE": "Selecione a origem"
+    },
+    "EMAIL_VERIFIED": "Email verificado",
+    "SETTING_UP": "Configurando sua conta...",
+    "CONTINUE": "Continuar",
+    "SAVING": "Salvando...",
+    "VALIDATION_ERROR": "Preencha todos os campos obrigatórios",
+    "SUCCESS": "Dados salvos com sucesso",
+    "ERROR": "Não foi possível salvar os dados. Tente novamente."
+  },
+  "ONBOARDING_TOUR": {
+    "LAUNCHER": {
+      "ARIA_LABEL": "Abrir setup guiado",
+      "PROGRESS_LABEL": "{done} de {total} etapas concluídas",
+      "PULSE_HINT": "Começar"
+    },
+    "PANEL": {
+      "TITLE": "Configure o UniverZAP",
+      "SUBTITLE": "{done} de {total} etapas concluídas",
+      "INTRO": "Conecte o WhatsApp, convide seu time e conheça a Athenas — sua assistente IA.",
+      "START_TOUR": "Iniciar tour guiado",
+      "RESUME_TOUR": "Continuar tour",
+      "RETAKE_TOUR": "Refazer tour",
+      "DISMISS": "Dispensar",
+      "ALL_DONE_TITLE": "Tudo pronto!",
+      "ALL_DONE_BODY": "O UniverZAP está totalmente configurado. Sua primeira conversa vai aparecer na caixa de entrada.",
+      "FINISH": "Finalizar onboarding",
+      "STEPS": {
+        "INBOX": {
+          "TITLE": "Conecte um canal WhatsApp",
+          "DESCRIPTION": "Conecte seu primeiro número de WhatsApp para receber mensagens dos clientes.",
+          "CTA": "Adicionar caixa de entrada"
+        },
+        "TEAM_MEMBERS": {
+          "TITLE": "Convide seus atendentes",
+          "DESCRIPTION": "Traga seu time — eles vão responder às conversas.",
+          "CTA": "Convidar atendentes"
+        },
+        "TEAM_GROUP": {
+          "TITLE": "Crie um time",
+          "DESCRIPTION": "Agrupe atendentes por departamento para rotear as conversas com inteligência.",
+          "CTA": "Criar time"
+        },
+        "ASSISTANT": {
+          "TITLE": "Configure a Athenas IA",
+          "DESCRIPTION": "Treine sua assistente IA para qualificar leads e responder 24/7.",
+          "CTA": "Criar assistente"
+        },
+        "FIRST_REPLY": {
+          "TITLE": "Envie sua primeira resposta",
+          "DESCRIPTION": "Responda sua primeira conversa para deixar o UniverZAP no ar.",
+          "CTA": "Abrir caixa de entrada"
+        }
+      }
+    },
+    "TOUR": {
+      "WELCOME_TITLE": "Bem-vindo ao UniverZAP",
+      "WELCOME_BODY": "Vamos deixar seu workspace pronto em menos de 5 minutos. Vamos te mostrar exatamente onde clicar.",
+      "WELCOME_CTA": "Iniciar tour",
+      "WELCOME_SKIP": "Pular por agora",
+      "STEP_PROGRESS": "Passo {current} de {total}",
+      "NEXT": "Próximo",
+      "PREVIOUS": "Voltar",
+      "DONE": "Finalizar",
+      "SKIP": "Pular",
+      "EXIT": "Sair do tour",
+      "EXIT_CONFIRM_TITLE": "Sair do tour guiado?",
+      "EXIT_CONFIRM_BODY": "Você pode retomar pelo launcher quando quiser.",
+      "EXIT_CONFIRM_OK": "Sair do tour",
+      "EXIT_CONFIRM_CANCEL": "Continuar",
+      "FINISH_TITLE": "Setup concluído",
+      "FINISH_BODY": "O UniverZAP está no ar. Sua primeira conversa vai aparecer na caixa de entrada.",
+      "FINISH_CTA": "Abrir dashboard"
+    }
+  }
+}
