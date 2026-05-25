@@ -17,7 +17,7 @@ const { accountId } = useAccount();
 const {
   flags,
   score,
-  isComplete,
+  isFullyComplete,
   tourCompletedAt,
   lastStepIndex,
   dismissExplicit,
@@ -57,7 +57,7 @@ const steps = computed(() =>
 const tourLabel = computed(() => {
   // Retake — the user finished the tour AND every readiness task; the button
   // is purely a redo.
-  if (tourCompletedAt.value && isComplete.value) {
+  if (tourCompletedAt.value && isFullyComplete.value) {
     return t('ONBOARDING_TOUR.PANEL.RETAKE_TOUR');
   }
   // Resume — either the tour was completed but readiness regressed, or the
@@ -179,7 +179,7 @@ const dismissPanel = async () => {
 
     <footer class="px-5 py-4 border-t border-n-weak bg-n-alpha-1/30">
       <div
-        v-if="isComplete"
+        v-if="isFullyComplete"
         class="flex flex-col gap-3 items-center text-center"
       >
         <p class="text-sm font-semibold text-n-teal-12 m-0">

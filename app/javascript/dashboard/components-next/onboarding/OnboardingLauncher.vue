@@ -18,6 +18,7 @@ const {
   explicitDismiss,
   refresh,
   resetDismiss,
+  dismissExplicit,
 } = useOnboardingState();
 
 const isPanelOpen = ref(false);
@@ -46,6 +47,8 @@ watch(hasRegressed, regressed => {
 const isVisible = computed(() => {
   if (!isAdmin.value) return false;
   if (isHiddenRoute.value) return false;
+  // Backend `completed` already uses a lenient rule (inbox + assistant, or
+  // any 3 of 5 readiness flags). Once that is true we get out of the way.
   if (isComplete.value && !hasRegressed.value) return false;
   if (explicitDismiss.value && !hasRegressed.value) return false;
   return true;
@@ -60,6 +63,14 @@ const togglePanel = () => {
 const closePanel = () => {
   isPanelOpen.value = false;
 };
+
+// One-click dismiss from the FAB itself. Doesn't open the panel, just sets
+// onboarding_explicit_dismiss=true. The launcher will reappear only if the
+// account's readiness regresses (auto-clear above).
+const dismissFromFab = async event => {
+  event.stopPropagation();
+  await dismissExplicit();
+};
 </script>
 
 <template>
@@ -72,20 +83,37 @@ const closePanel = () => {
       leave-from-class="opacity-100 scale-100"
       leave-to-class="opacity-0 scale-90"
     >
-      <button
+      <div
         v-if="!isPanelOpen"
-        type="button"
         class="fixed bottom-20 ltr:right-4 rtl:left-4 z-50 group"
-        :aria-label="t('ONBOARDING_TOUR.LAUNCHER.ARIA_LABEL')"
-        @click="togglePanel"
       >
+        <!-- Soft pulse ring while the account is fresh (no flags green yet) -->
         <span
           v-if="isFresh"
           class="absolute inset-0 rounded-full bg-n-teal-9/40 motion-safe:animate-ping"
           aria-hidden="true"
         />
-        <span
-          class="relative flex items-center justify-center size-14 rounded-full bg-gradient-to-br from-n-teal-9 to-n-teal-10 text-white shadow-xl ring-1 ring-n-teal-11/50 transition-all duration-200 group-hover:scale-105 group-hover:shadow-2xl group-active:scale-95 cursor-pointer"
+
+        <!-- One-click dismiss — sets onboarding_explicit_dismiss without
+             going through the panel. Revealed on hover so the FAB stays
+             clean at rest. -->
+        <button
+          type="button"
+          class="absolute -top-1.5 -left-1.5 z-20 inline-flex items-center justify-center size-6 rounded-full bg-n-slate-12 dark:bg-n-solid-2 text-white ring-2 ring-n-surface-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cursor-pointer hover:bg-n-ruby-9"
+          :aria-label="t('ONBOARDING_TOUR.LAUNCHER.DISMISS')"
+          :title="t('ONBOARDING_TOUR.LAUNCHER.DISMISS')"
+          @click="dismissFromFab"
+        >
+          <Icon icon="i-lucide-x" class="size-3.5" />
+        </button>
+
+        <!-- Main FAB — solid brand teal so it matches the rest of the dopamine
+             green palette used across the dashboard. -->
+        <button
+          type="button"
+          class="relative flex items-center justify-center size-14 rounded-full bg-n-teal-9 text-white shadow-xl ring-1 ring-n-teal-10/60 transition-all duration-200 group-hover:scale-105 group-hover:bg-n-teal-10 group-hover:shadow-2xl group-active:scale-95 cursor-pointer"
+          :aria-label="t('ONBOARDING_TOUR.LAUNCHER.ARIA_LABEL')"
+          @click="togglePanel"
         >
           <Icon icon="i-lucide-rocket" class="size-6" />
           <span
@@ -93,13 +121,14 @@ const closePanel = () => {
           >
             {{ score.done }}/{{ score.total }}
           </span>
-        </span>
+        </button>
+
         <span
           class="absolute right-full top-1/2 -translate-y-1/2 mr-3 whitespace-nowrap rounded-md bg-n-slate-12 dark:bg-white px-2.5 py-1.5 text-xs font-medium text-white dark:text-n-slate-12 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg"
         >
           {{ t('ONBOARDING_TOUR.LAUNCHER.PULSE_HINT') }}
         </span>
-      </button>
+      </div>
     </Transition>
 
     <OnboardingPanel v-if="isPanelOpen" @close="closePanel" />

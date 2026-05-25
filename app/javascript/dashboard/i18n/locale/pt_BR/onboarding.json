@@ -35,7 +35,8 @@
     "LAUNCHER": {
       "ARIA_LABEL": "Abrir setup guiado",
       "PROGRESS_LABEL": "{done} de {total} etapas concluídas",
-      "PULSE_HINT": "Começar"
+      "PULSE_HINT": "Começar",
+      "DISMISS": "Ocultar onboarding"
     },
     "PANEL": {
       "TITLE": "Configure o UniverZAP",

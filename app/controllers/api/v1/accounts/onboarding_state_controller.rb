@@ -10,12 +10,22 @@ class Api::V1::Accounts::OnboardingStateController < Api::V1::Accounts::BaseCont
   private
 
   def cache_key
-    "onboarding_state:account_#{Current.account.id}:v2"
+    "onboarding_state:account_#{Current.account.id}:v3"
   end
 
+  # The launcher hides as soon as the tenant looks "configured enough":
+  # any 3 of the 5 readiness signals are green, OR the two essentials
+  # (inbox + assistant) are both green. This avoids haunting accounts
+  # that simply never invited a teammate or created a Team group.
   def build_state
     flags = readiness_flags
-    flags.merge(completed: flags.values.all?)
+    flags.merge(completed: completed?(flags))
+  end
+
+  def completed?(flags)
+    return true if flags[:has_inbox] && flags[:has_assistant]
+
+    flags.values.count { |value| value } >= 3
   end
 
   def readiness_flags

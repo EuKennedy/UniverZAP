@@ -12,6 +12,10 @@ const flags = ref({
   has_assistant: false,
   has_first_reply: false,
 });
+// Mirror of the backend `completed` flag — it uses a lenient rule (any 3 of
+// the 5 readiness signals, or inbox + assistant) so accounts that already
+// look configured don't get haunted by the launcher.
+const completedFromApi = ref(false);
 const customAttrs = ref({});
 const isLoaded = ref(false);
 const isLoading = ref(false);
@@ -29,8 +33,9 @@ async function refresh({ force = false } = {}) {
   lastError.value = null;
   try {
     const { data } = await OnboardingStateAPI.get();
-    const { custom_attributes: attrs, ...readiness } = data;
+    const { custom_attributes: attrs, completed, ...readiness } = data;
     flags.value = readiness;
+    completedFromApi.value = Boolean(completed);
     customAttrs.value = attrs || {};
     isLoaded.value = true;
     lastFetchedAt = Date.now();
@@ -54,7 +59,14 @@ export function useOnboardingState() {
     };
   });
 
-  const isComplete = computed(() => score.value.done === score.value.total);
+  // `isComplete` follows the backend signal — once the tenant has the
+  // essentials (inbox + assistant) or any 3 readiness flags green, we
+  // consider onboarding done and the FAB hides. The panel's progress bar
+  // still walks all 5 so the user can finish what they want.
+  const isComplete = computed(() => completedFromApi.value);
+  const isFullyComplete = computed(
+    () => score.value.done === score.value.total
+  );
   const isFresh = computed(() => score.value.done === 0);
 
   const tourCompletedAt = computed(
@@ -96,6 +108,7 @@ export function useOnboardingState() {
     flags,
     score,
     isComplete,
+    isFullyComplete,
     isFresh,
     isLoaded,
     isLoading,
