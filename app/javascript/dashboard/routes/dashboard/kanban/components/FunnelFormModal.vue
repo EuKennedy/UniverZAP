@@ -18,6 +18,8 @@ const AUTOMATION_KEYS = [
   'sync_task_conversation_assignees',
   'auto_resolve_conversation_on_task_close',
   'auto_win_task_on_conversation_resolve',
+  'notify_on_task_stage_change',
+  'tag_conversation_with_stage',
 ];
 
 const { t } = useI18n();

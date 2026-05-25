@@ -41,12 +41,13 @@ class Kanban::AutomationService
     end
 
     def handle_task_stage_changed(task)
-      return unless task.funnel.automation_enabled?('auto_resolve_conversation_on_task_close')
-      return unless CLOSED_STAGE_STATUSES.include?(task.funnel_stage&.status_type.to_s)
+      funnel = task.funnel
+      stage = task.funnel_stage
+      return if funnel.blank? || stage.blank?
 
-      task.conversations.where.not(status: Conversation.statuses[:resolved]).find_each do |conversation|
-        conversation.update(status: :resolved)
-      end
+      auto_resolve_if_closed(task, funnel, stage)
+      notify_conversations_of_stage(task, funnel, stage)
+      tag_conversations_with_stage(task, funnel, stage)
     end
 
     def handle_task_assignees_changed(task)
@@ -71,6 +72,53 @@ class Kanban::AutomationService
     end
 
     private
+
+    def auto_resolve_if_closed(task, funnel, stage)
+      return unless funnel.automation_enabled?('auto_resolve_conversation_on_task_close')
+      return unless CLOSED_STAGE_STATUSES.include?(stage.status_type.to_s)
+
+      task.conversations.where.not(status: Conversation.statuses[:resolved]).find_each do |conversation|
+        conversation.update(status: :resolved)
+      end
+    end
+
+    def notify_conversations_of_stage(task, funnel, stage)
+      return unless funnel.automation_enabled?('notify_on_task_stage_change')
+
+      content = I18n.t(
+        'kanban.activity.stage_changed',
+        funnel: funnel.name,
+        stage: stage.name,
+        task: task.title.to_s.truncate(60),
+        default: "Kanban: \"#{task.title.to_s.truncate(60)}\" moved to \"#{stage.name}\" in #{funnel.name}."
+      )
+
+      task.conversations.find_each do |conversation|
+        ::Conversations::ActivityMessageJob.perform_later(
+          conversation,
+          account_id: conversation.account_id,
+          inbox_id: conversation.inbox_id,
+          message_type: :activity,
+          content: content
+        )
+      end
+    end
+
+    def tag_conversations_with_stage(task, funnel, stage)
+      return unless funnel.automation_enabled?('tag_conversation_with_stage')
+
+      stage_label = "kanban-#{stage.name.to_s.parameterize}"
+      return if stage_label.blank? || stage_label == 'kanban-'
+
+      task.conversations.find_each do |conversation|
+        labels = conversation.label_list.to_a.uniq
+        next if labels.include?(stage_label)
+
+        # Drop any previous kanban-* label so only the current stage tag sticks.
+        labels = labels.reject { |label| label.to_s.start_with?('kanban-') }
+        conversation.update(label_list: labels + [stage_label])
+      end
+    end
 
     def eligible_funnels_for_inbox(conversation)
       Funnel.joins(:funnel_inboxes)

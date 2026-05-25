@@ -110,6 +110,14 @@
         "AUTO_WIN_TASK_ON_CONVERSATION_RESOLVE": {
           "LABEL": "Move task to first won stage on conversation resolve",
           "HINT": "Resolving a conversation moves its task to the first won stage."
+        },
+        "NOTIFY_ON_TASK_STAGE_CHANGE": {
+          "LABEL": "Post activity on conversation when task changes stage",
+          "HINT": "Each stage change appends an activity message to the linked conversations — handy for an audit trail."
+        },
+        "TAG_CONVERSATION_WITH_STAGE": {
+          "LABEL": "Tag conversation with current stage",
+          "HINT": "Applies a \"kanban-<stage>\" label to the conversation and removes the previous one so only the current stage tag sticks."
         }
       }
     },

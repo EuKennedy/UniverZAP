@@ -110,6 +110,14 @@
         "AUTO_WIN_TASK_ON_CONVERSATION_RESOLVE": {
           "LABEL": "Mover tarefa para primeira etapa de ganho ao resolver conversa",
           "HINT": "Resolver uma conversa move a tarefa para a primeira etapa de ganho."
+        },
+        "NOTIFY_ON_TASK_STAGE_CHANGE": {
+          "LABEL": "Postar atividade na conversa quando tarefa mudar de etapa",
+          "HINT": "Cada mudança de etapa gera uma mensagem de atividade nas conversas vinculadas — bom pra rastro de auditoria."
+        },
+        "TAG_CONVERSATION_WITH_STAGE": {
+          "LABEL": "Etiquetar conversa com a etapa atual",
+          "HINT": "Aplica o rótulo \"kanban-<etapa>\" na conversa e remove o anterior, mantendo apenas a etapa corrente."
         }
       }
     },

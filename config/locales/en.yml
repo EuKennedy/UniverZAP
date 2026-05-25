@@ -31,6 +31,9 @@
 
 en:
   hello: 'Hello world'
+  kanban:
+    activity:
+      stage_changed: 'Kanban: "%{task}" moved to "%{stage}" in %{funnel}.'
   inbox:
     reauthorization:
       success: 'Channel reauthorized successfully'
