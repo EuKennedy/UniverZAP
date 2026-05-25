@@ -34,6 +34,29 @@ class KanbanTasksAPI extends ApiClient {
       `${this.baseUrl()}/conversations/${conversationId}/kanban_tasks`
     );
   }
+
+  // Subtasks reuse the regular create/update/destroy endpoints; the only
+  // wrinkle is `parent_task_id` in the payload. funnel_id is required by
+  // the create route, so we always thread the parent's funnel through.
+  createSubtask({ parentTaskId, funnelId, funnelStageId, title }) {
+    return axios.post(`${this.baseUrl()}/funnels/${funnelId}/kanban_tasks`, {
+      kanban_task: {
+        title,
+        parent_task_id: parentTaskId,
+        funnel_stage_id: funnelStageId,
+      },
+    });
+  }
+
+  toggleSubtask(id, completedAt) {
+    return axios.patch(`${this.url}/${id}`, {
+      kanban_task: { completed_at: completedAt },
+    });
+  }
+
+  destroySubtask(id) {
+    return axios.delete(`${this.url}/${id}`);
+  }
 }
 
 export default new KanbanTasksAPI();

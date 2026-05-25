@@ -94,13 +94,25 @@ class KanbanTask < ApplicationRecord
   end
 
   def associations_payload
+    subtasks_loaded = subtasks.to_a
+    completed_count = subtasks_loaded.count { |s| s.completed_at.present? }
     {
       assignees: assignees.map { |u| { id: u.id, name: u.name, avatar_url: u.avatar_url } },
       labels: task_labels.map { |l| { id: l.id, title: l.title, color: l.color } },
       conversations: conversations.map { |c| { id: c.id, display_id: c.display_id, status: c.status, inbox_id: c.inbox_id } },
       contacts: contacts.map { |c| { id: c.id, name: c.name, email: c.email, phone_number: c.phone_number, thumbnail: c.avatar_url } },
-      subtasks_count: subtasks.size,
-      subtasks_completed_count: subtasks.where.not(completed_at: nil).count
+      subtasks: subtasks_loaded.map { |s| subtask_payload(s) },
+      subtasks_count: subtasks_loaded.size,
+      subtasks_completed_count: completed_count
+    }
+  end
+
+  def subtask_payload(subtask)
+    {
+      id: subtask.id,
+      title: subtask.title,
+      position: subtask.position,
+      completed_at: subtask.completed_at&.to_i
     }
   end
 

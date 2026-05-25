@@ -2,7 +2,9 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMapGetter } from 'dashboard/composables/store';
+import { useAlert } from 'dashboard/composables';
 import ContactAPI from 'dashboard/api/contacts';
+import KanbanTasksAPI from 'dashboard/api/kanbanTasks';
 
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -49,6 +51,7 @@ const form = reactive({
   funnel_stage_id: null,
   start_date: '',
   due_date: '',
+  estimate_minutes: null,
   assignee_ids: [],
   label_ids: [],
   contact_ids: [],
@@ -60,6 +63,18 @@ const contactResults = ref([]);
 const contactSearchOpen = ref(false);
 const contactSearching = ref(false);
 let searchTimer = null;
+
+// Subtasks live in their own reactive list. We sync from props.task whenever
+// the parent task changes (modal open / outside update) but otherwise own the
+// list locally — every mutation re-renders the checklist optimistically and
+// reconciles with the API response.
+const subtasks = ref([]);
+const subtaskDraft = ref('');
+const subtaskBusy = ref(null); // 'new' | <subtask_id> | null
+
+const subtasksDoneCount = computed(
+  () => subtasks.value.filter(s => s.completed_at).length
+);
 
 watch(
   () => [props.task, props.funnel, props.defaultStageId],
@@ -75,13 +90,78 @@ watch(
       null;
     form.start_date = dateToInput(t2?.start_date);
     form.due_date = dateToInput(t2?.due_date);
+    form.estimate_minutes = t2?.estimate_minutes ?? null;
     form.assignee_ids = (t2?.assignees || []).map(a => a.id);
     form.label_ids = (t2?.labels || []).map(l => l.id);
     form.contact_ids = (t2?.contacts || []).map(c => c.id);
     selectedContacts.value = [...(t2?.contacts || [])];
+    subtasks.value = [...(t2?.subtasks || [])];
+    subtaskDraft.value = '';
   },
   { immediate: true }
 );
+
+const onCreateSubtask = async () => {
+  const title = subtaskDraft.value.trim();
+  if (!title || !props.task || subtaskBusy.value) return;
+  subtaskBusy.value = 'new';
+  try {
+    const { data } = await KanbanTasksAPI.createSubtask({
+      parentTaskId: props.task.id,
+      funnelId: props.funnel.id,
+      funnelStageId: props.task.funnel_stage_id,
+      title,
+    });
+    const created = data?.data || data;
+    if (created?.id) {
+      subtasks.value = [
+        ...subtasks.value,
+        {
+          id: created.id,
+          title: created.title,
+          position: created.position,
+          completed_at: created.completed_at,
+        },
+      ];
+    }
+    subtaskDraft.value = '';
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.TASK.FORM.SUBTASK_ERROR'));
+  } finally {
+    subtaskBusy.value = null;
+  }
+};
+
+const onToggleSubtask = async subtask => {
+  if (subtaskBusy.value) return;
+  subtaskBusy.value = subtask.id;
+  const nextCompletedAt = subtask.completed_at
+    ? null
+    : Math.floor(Date.now() / 1000);
+  try {
+    await KanbanTasksAPI.toggleSubtask(subtask.id, nextCompletedAt);
+    subtasks.value = subtasks.value.map(s =>
+      s.id === subtask.id ? { ...s, completed_at: nextCompletedAt } : s
+    );
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.TASK.FORM.SUBTASK_ERROR'));
+  } finally {
+    subtaskBusy.value = null;
+  }
+};
+
+const onDeleteSubtask = async subtask => {
+  if (subtaskBusy.value) return;
+  subtaskBusy.value = subtask.id;
+  try {
+    await KanbanTasksAPI.destroySubtask(subtask.id);
+    subtasks.value = subtasks.value.filter(s => s.id !== subtask.id);
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.TASK.FORM.SUBTASK_ERROR'));
+  } finally {
+    subtaskBusy.value = null;
+  }
+};
 
 const isEdit = computed(() => Boolean(props.task));
 const stages = computed(() => props.funnel?.stages || []);
@@ -154,6 +234,10 @@ const onSubmit = () => {
     funnel_stage_id: form.funnel_stage_id,
     start_date: inputToTs(form.start_date),
     due_date: inputToTs(form.due_date),
+    estimate_minutes:
+      form.estimate_minutes && form.estimate_minutes > 0
+        ? Number(form.estimate_minutes)
+        : null,
     assignee_ids: form.assignee_ids,
     label_ids: form.label_ids,
     contact_ids: form.contact_ids,
@@ -404,7 +488,7 @@ const onSubmit = () => {
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-3 gap-3">
         <div class="flex flex-col gap-1.5">
           <label class="text-sm font-medium text-n-slate-12">
             {{ t('KANBAN.TASK.FORM.START_LABEL') }}
@@ -424,6 +508,26 @@ const onSubmit = () => {
             type="date"
             class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand"
           />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-n-slate-12">
+            {{ t('KANBAN.TASK.FORM.ESTIMATE_LABEL') }}
+          </label>
+          <div
+            class="flex items-center gap-1 px-3 py-2 rounded-md border border-n-weak bg-n-background focus-within:border-n-brand"
+          >
+            <input
+              v-model.number="form.estimate_minutes"
+              type="number"
+              min="0"
+              step="15"
+              :placeholder="t('KANBAN.TASK.FORM.ESTIMATE_PLACEHOLDER')"
+              class="flex-1 bg-transparent text-sm text-n-slate-12 focus:outline-none tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            <span class="text-xs text-n-slate-10">
+              {{ t('KANBAN.TASK.FORM.ESTIMATE_UNIT') }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -474,6 +578,90 @@ const onSubmit = () => {
           </button>
         </div>
       </fieldset>
+
+      <section
+        v-if="isEdit"
+        class="flex flex-col gap-2 p-4 rounded-xl bg-n-alpha-1 ring-1 ring-inset ring-n-weak"
+      >
+        <header class="flex items-center justify-between gap-2">
+          <label
+            class="text-[11px] font-semibold text-n-slate-11 uppercase tracking-wider"
+          >
+            {{ t('KANBAN.TASK.FORM.SUBTASKS_LABEL') }}
+          </label>
+          <span
+            v-if="subtasks.length"
+            class="text-[11px] text-n-slate-10 tabular-nums"
+          >
+            {{ subtasksDoneCount }}/{{ subtasks.length }}
+          </span>
+        </header>
+
+        <ul v-if="subtasks.length" class="flex flex-col gap-1">
+          <li
+            v-for="subtask in subtasks"
+            :key="subtask.id"
+            class="group flex items-center gap-2 px-2.5 py-2 rounded-md bg-n-solid-1 ring-1 ring-n-weak transition-colors hover:ring-n-slate-7"
+          >
+            <button
+              type="button"
+              class="size-4 rounded-md ring-1 ring-n-slate-7 inline-flex items-center justify-center transition-all duration-150 cursor-pointer"
+              :class="
+                subtask.completed_at
+                  ? 'bg-n-teal-9 ring-n-teal-9 text-white'
+                  : 'hover:ring-n-teal-9 hover:bg-n-teal-3/30'
+              "
+              :aria-pressed="Boolean(subtask.completed_at)"
+              :disabled="subtaskBusy === subtask.id"
+              @click="onToggleSubtask(subtask)"
+            >
+              <span v-if="subtask.completed_at" class="i-lucide-check size-3" />
+            </button>
+            <span
+              class="flex-1 text-[13px] text-n-slate-12 truncate"
+              :class="{
+                'line-through opacity-50': subtask.completed_at,
+              }"
+            >
+              {{ subtask.title }}
+            </span>
+            <button
+              type="button"
+              class="opacity-0 group-hover:opacity-100 size-6 rounded-md grid place-content-center text-n-slate-10 hover:text-n-ruby-11 hover:bg-n-alpha-2 transition-all duration-150 cursor-pointer"
+              :aria-label="t('KANBAN.TASK.FORM.SUBTASK_REMOVE')"
+              :disabled="subtaskBusy === subtask.id"
+              @click="onDeleteSubtask(subtask)"
+            >
+              <span class="i-lucide-trash-2 size-3.5" />
+            </button>
+          </li>
+        </ul>
+
+        <div
+          class="flex items-center gap-2 px-2.5 py-2 rounded-md bg-n-solid-1 ring-1 ring-n-weak focus-within:ring-n-brand"
+        >
+          <span
+            class="i-lucide-plus size-3.5 text-n-slate-10 flex-shrink-0"
+            aria-hidden="true"
+          />
+          <input
+            v-model="subtaskDraft"
+            type="text"
+            :placeholder="t('KANBAN.TASK.FORM.SUBTASK_PLACEHOLDER')"
+            class="flex-1 bg-transparent text-[13px] text-n-slate-12 placeholder:text-n-slate-10 focus:outline-none"
+            :disabled="subtaskBusy === 'new'"
+            @keydown.enter.prevent="onCreateSubtask"
+          />
+          <button
+            type="button"
+            class="text-[11px] font-semibold text-n-teal-11 hover:text-n-teal-12 disabled:opacity-50 transition-colors cursor-pointer"
+            :disabled="!subtaskDraft.trim() || subtaskBusy === 'new'"
+            @click="onCreateSubtask"
+          >
+            {{ t('KANBAN.TASK.FORM.SUBTASK_ADD') }}
+          </button>
+        </div>
+      </section>
 
       <footer
         class="sticky bottom-0 -mx-7 -mb-6 px-7 py-4 bg-n-surface-1/95 backdrop-blur-md border-t border-n-weak flex items-center justify-between gap-2 z-10"
