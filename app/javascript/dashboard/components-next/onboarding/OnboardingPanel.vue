@@ -47,9 +47,8 @@ const steps = computed(() =>
   buildStepCatalog({ t, flags: flags.value }).map(step => ({
     ...step,
     onClick: () => {
-      const path = step.route(accountId.value);
       emit('close');
-      router.push(path);
+      router.push(step.route(accountId.value));
     },
   }))
 );

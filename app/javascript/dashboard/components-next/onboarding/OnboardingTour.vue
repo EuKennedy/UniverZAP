@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { useWindowSize } from '@vueuse/core';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import confetti from 'canvas-confetti';
@@ -14,7 +15,14 @@ import OnboardingFullscreenStep from './OnboardingFullscreenStep.vue';
 const { t } = useI18n();
 const router = useRouter();
 const { accountId } = useAccount();
-const { flags, markTourCompleted, refresh } = useOnboardingState();
+const { flags, lastStepIndex, markTourCompleted, refresh, setLastStepIndex } =
+  useOnboardingState();
+const { width: viewportWidth } = useWindowSize();
+
+// Mobile spotlights from driver.js are unreliable on narrow viewports — the
+// popover collides with the highlighted target. Fall back to a fullscreen
+// step on phones (< 768px) so we keep the storytelling intact.
+const isMobileViewport = computed(() => viewportWidth.value < 768);
 
 // Engine state
 const driverInstance = ref(null);
@@ -92,6 +100,7 @@ const handleFinish = async () => {
   cleanupDriver();
   isFullscreenStep.value = false;
   currentStepConfig.value = null;
+  await setLastStepIndex(0);
   await markTourCompleted();
   await refresh({ force: true });
   emitter.emit(ONBOARDING_TOUR_EVENTS.COMPLETED);
@@ -111,6 +120,7 @@ const handleExit = () => {
 // move the driver to it.
 const goToStep = async index => {
   currentStepIndex.value = index;
+  setLastStepIndex(index);
   emitter.emit(ONBOARDING_TOUR_EVENTS.STEP_CHANGED, {
     index,
     total: activeSteps.value.length,
@@ -123,9 +133,17 @@ const goToStep = async index => {
   const step = activeSteps.value[index];
   currentStepConfig.value = step;
 
-  if (step.fullscreen) {
+  // Fullscreen branch covers welcome/finish steps and any anchored step on
+  // mobile, where the driver.js popover would collide with the target.
+  if (step.fullscreen || isMobileViewport.value) {
     isFullscreenStep.value = true;
     cleanupDriver();
+    if (step.navigateTo) {
+      const target = step.navigateTo(accountId.value);
+      if (router.currentRoute.value.name !== target.name) {
+        await router.push(target);
+      }
+    }
     return;
   }
 
@@ -133,13 +151,13 @@ const goToStep = async index => {
 
   if (step.navigateTo) {
     const target = step.navigateTo(accountId.value);
-    if (router.currentRoute.value.path !== target) {
+    if (router.currentRoute.value.name !== target.name) {
       await router.push(target);
     }
   }
 
   const selector = `[data-onboarding="${step.dataOnboarding}"]`;
-  const element = await waitForElement(selector);
+  const element = await waitForElement(selector, 10000);
   if (!element) {
     // Target never appeared — gracefully advance instead of breaking the tour.
     await goToStep(index + 1);
@@ -194,8 +212,14 @@ const goToStep = async index => {
 };
 
 const startTour = async () => {
-  currentStepIndex.value = 0;
-  await goToStep(0);
+  // Resume where the user left off — but never beyond the available steps
+  // (active list shrinks as readiness flags flip).
+  const resumeIndex = Math.min(
+    Math.max(lastStepIndex.value || 0, 0),
+    Math.max(activeSteps.value.length - 1, 0)
+  );
+  currentStepIndex.value = resumeIndex;
+  await goToStep(resumeIndex);
 };
 
 const handlePrimary = () => {

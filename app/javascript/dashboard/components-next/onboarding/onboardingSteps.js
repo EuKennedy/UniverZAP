@@ -1,6 +1,8 @@
 // Shared catalog used by both the panel (checklist) and the tour (driver.js
 // step config). Keep the keys and the readiness `flag` mapping in sync with
-// the OnboardingStateController on the backend.
+// the OnboardingStateController on the backend. Routes are returned as
+// vue-router `{ name, params }` location descriptors so we never have to
+// hardcode dashboard URLs in two places.
 
 export const ONBOARDING_TOUR_EVENTS = Object.freeze({
   START: 'onboarding-tour:start',
@@ -9,9 +11,6 @@ export const ONBOARDING_TOUR_EVENTS = Object.freeze({
   COMPLETED: 'onboarding-tour:completed',
 });
 
-// Each panel step maps a readiness flag to a deep-link inside the dashboard.
-// Routes returned from `route(accountId)` are passed to vue-router via
-// `router.push(path)`.
 export const buildStepCatalog = ({ t, flags }) => [
   {
     key: 'inbox',
@@ -20,7 +19,10 @@ export const buildStepCatalog = ({ t, flags }) => [
     description: t('ONBOARDING_TOUR.PANEL.STEPS.INBOX.DESCRIPTION'),
     cta: t('ONBOARDING_TOUR.PANEL.STEPS.INBOX.CTA'),
     done: flags.has_inbox,
-    route: accountId => `/app/accounts/${accountId}/settings/inboxes/new`,
+    route: accountId => ({
+      name: 'settings_inbox_new',
+      params: { accountId },
+    }),
   },
   {
     key: 'team_members',
@@ -29,7 +31,7 @@ export const buildStepCatalog = ({ t, flags }) => [
     description: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_MEMBERS.DESCRIPTION'),
     cta: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_MEMBERS.CTA'),
     done: flags.has_team_members,
-    route: accountId => `/app/accounts/${accountId}/agents/new`,
+    route: accountId => ({ name: 'agent_list', params: { accountId } }),
   },
   {
     key: 'team_group',
@@ -38,7 +40,10 @@ export const buildStepCatalog = ({ t, flags }) => [
     description: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_GROUP.DESCRIPTION'),
     cta: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_GROUP.CTA'),
     done: flags.has_team_group,
-    route: accountId => `/app/accounts/${accountId}/settings/teams/new`,
+    route: accountId => ({
+      name: 'settings_teams_new',
+      params: { accountId },
+    }),
   },
   {
     key: 'assistant',
@@ -47,7 +52,10 @@ export const buildStepCatalog = ({ t, flags }) => [
     description: t('ONBOARDING_TOUR.PANEL.STEPS.ASSISTANT.DESCRIPTION'),
     cta: t('ONBOARDING_TOUR.PANEL.STEPS.ASSISTANT.CTA'),
     done: flags.has_assistant,
-    route: accountId => `/app/accounts/${accountId}/athenas/wizard`,
+    route: accountId => ({
+      name: 'athenas_assistant_wizard',
+      params: { accountId },
+    }),
   },
   {
     key: 'first_reply',
@@ -56,14 +64,15 @@ export const buildStepCatalog = ({ t, flags }) => [
     description: t('ONBOARDING_TOUR.PANEL.STEPS.FIRST_REPLY.DESCRIPTION'),
     cta: t('ONBOARDING_TOUR.PANEL.STEPS.FIRST_REPLY.CTA'),
     done: flags.has_first_reply,
-    route: accountId => `/app/accounts/${accountId}/dashboard`,
+    route: accountId => ({ name: 'home', params: { accountId } }),
   },
 ];
 
 // Driver.js tour: anchored to stable data attributes on the dashboard chrome.
-// Each step exposes `dataOnboarding` so we can add `data-onboarding="..."`
-// to the target element (sidebar nav buttons, primary CTAs). The tour
-// engine queries `[data-onboarding="<key>"]` at runtime.
+// `dataOnboarding` matches the value passed to `data-onboarding="..."` on the
+// target element. `navigateTo` is a vue-router location descriptor (same
+// shape as the panel routes) so the tour pre-navigates when a step lives on
+// a different page.
 export const buildTourSteps = ({ t }) => [
   {
     key: 'welcome',
@@ -89,7 +98,10 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.INBOX.DESCRIPTION'),
     side: 'right',
     align: 'start',
-    navigateTo: accountId => `/app/accounts/${accountId}/settings/inboxes/new`,
+    navigateTo: accountId => ({
+      name: 'settings_inbox_list',
+      params: { accountId },
+    }),
   },
   {
     key: 'agents-nav',
@@ -99,7 +111,7 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_MEMBERS.DESCRIPTION'),
     side: 'right',
     align: 'start',
-    navigateTo: accountId => `/app/accounts/${accountId}/settings/agents/new`,
+    navigateTo: accountId => ({ name: 'agent_list', params: { accountId } }),
   },
   {
     key: 'teams-nav',
@@ -109,7 +121,10 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_GROUP.DESCRIPTION'),
     side: 'right',
     align: 'start',
-    navigateTo: accountId => `/app/accounts/${accountId}/settings/teams/new`,
+    navigateTo: accountId => ({
+      name: 'settings_teams_list',
+      params: { accountId },
+    }),
   },
   {
     key: 'athenas-nav',
@@ -119,7 +134,10 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.ASSISTANT.DESCRIPTION'),
     side: 'right',
     align: 'start',
-    navigateTo: accountId => `/app/accounts/${accountId}/athenas`,
+    navigateTo: accountId => ({
+      name: 'athenas_assistants_index',
+      params: { accountId },
+    }),
   },
   {
     key: 'finish',
