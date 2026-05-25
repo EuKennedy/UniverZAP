@@ -19,6 +19,7 @@ const {
   score,
   isComplete,
   tourCompletedAt,
+  lastStepIndex,
   dismissExplicit,
   markTourCompleted,
   refresh,
@@ -54,9 +55,17 @@ const steps = computed(() =>
 );
 
 const tourLabel = computed(() => {
-  if (!tourCompletedAt.value) return t('ONBOARDING_TOUR.PANEL.START_TOUR');
-  if (!isComplete.value) return t('ONBOARDING_TOUR.PANEL.RESUME_TOUR');
-  return t('ONBOARDING_TOUR.PANEL.RETAKE_TOUR');
+  // Retake — the user finished the tour AND every readiness task; the button
+  // is purely a redo.
+  if (tourCompletedAt.value && isComplete.value) {
+    return t('ONBOARDING_TOUR.PANEL.RETAKE_TOUR');
+  }
+  // Resume — either the tour was completed but readiness regressed, or the
+  // user exited mid-tour and we have a non-zero saved step.
+  if (tourCompletedAt.value || lastStepIndex.value > 0) {
+    return t('ONBOARDING_TOUR.PANEL.RESUME_TOUR');
+  }
+  return t('ONBOARDING_TOUR.PANEL.START_TOUR');
 });
 
 const startTour = () => {
