@@ -19,21 +19,33 @@ class Api::V1::Accounts::OnboardingStateController < Api::V1::Accounts::BaseCont
   end
 
   def readiness_flags
-    account = Current.account
     {
-      has_inbox: account.inboxes.exists?,
-      has_team_members: account.account_users.count > 1,
-      has_team_group: account.teams.exists?,
-      has_assistant: assistant_with_prompt?(account),
-      has_first_reply: account.messages.outgoing.where(sender_type: 'User').exists?
+      has_inbox: inbox_present?,
+      has_team_members: team_members_present?,
+      has_team_group: team_group_present?,
+      has_assistant: assistant_present?,
+      has_first_reply: first_reply_present?
     }
   end
 
-  def assistant_with_prompt?(account)
-    account.ai_assistants
-           .where.not(system_prompt: [nil, ''])
-           .where.not('system_prompt LIKE ?', '%Assistente padrão criado automaticamente%')
-           .exists?
+  def inbox_present?
+    Current.account.inboxes.exists?
+  end
+
+  def team_members_present?
+    Current.account.account_users.count > 1
+  end
+
+  def team_group_present?
+    Current.account.teams.exists?
+  end
+
+  def assistant_present?
+    Current.account.ai_assistants.where.not(system_prompt: [nil, '']).exists?
+  end
+
+  def first_reply_present?
+    Current.account.messages.outgoing.where(sender_type: 'User').exists?
   end
 
   def onboarding_attrs
