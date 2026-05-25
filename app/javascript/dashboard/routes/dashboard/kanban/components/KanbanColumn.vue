@@ -9,6 +9,7 @@ import KanbanCard from './KanbanCard.vue';
 const props = defineProps({
   stage: { type: Object, required: true },
   tasks: { type: Array, required: true },
+  funnelName: { type: String, default: '' },
   canMutate: { type: Boolean, default: true },
 });
 
@@ -29,6 +30,36 @@ const STATUS_BADGE = {
 };
 
 const statusBadge = computed(() => STATUS_BADGE[props.stage.status_type]);
+
+// Header icon mirrors the stage status — gives the operator a quick visual
+// anchor before they even read the stage name.
+const STATUS_ICON = {
+  won: 'i-lucide-trophy',
+  lost: 'i-lucide-x-circle',
+  active: 'i-lucide-circle-dot',
+};
+const statusIcon = computed(
+  () => STATUS_ICON[props.stage.status_type] || 'i-lucide-circle'
+);
+
+// Translate the stage's hex into rgba(...) variants so the header pill /
+// translucent backgrounds can ride a single source of truth without
+// hardcoding palettes per stage.
+const tintedColor = computed(() => {
+  const hex = props.stage.color || '#64748b';
+  const rgb = hex
+    .replace('#', '')
+    .match(/.{2}/g)
+    ?.map(part => parseInt(part, 16));
+  if (!rgb || rgb.length !== 3) return null;
+  const [r, g, b] = rgb;
+  return {
+    solid: `rgb(${r}, ${g}, ${b})`,
+    soft: `rgba(${r}, ${g}, ${b}, 0.16)`,
+    softer: `rgba(${r}, ${g}, ${b}, 0.08)`,
+    ring: `rgba(${r}, ${g}, ${b}, 0.4)`,
+  };
+});
 
 // vuedraggable mutates its bound array directly. We forward the raw event
 // up to the board so it can dispatch the API move; the optimistic local
@@ -69,37 +100,50 @@ const onChange = event => {
     />
 
     <header
-      class="sticky top-0 z-10 flex items-center gap-2 px-3.5 pt-4 pb-2.5 rounded-t-2xl backdrop-blur-md"
+      class="sticky top-0 z-10 flex items-center gap-2 px-3 pt-3.5 pb-3 rounded-t-2xl backdrop-blur-md"
       :style="{
-        background: `linear-gradient(to bottom, ${stage.color}10, transparent)`,
+        background: `linear-gradient(to bottom, ${tintedColor?.softer}, transparent)`,
       }"
     >
+      <!-- ClickUp-style colored pill: icon + uppercase label, tinted from stage.color -->
       <span
-        class="size-2.5 rounded-full flex-shrink-0 ring-2 ring-n-solid-1 shadow-[0_0_8px]"
+        class="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-md text-[10.5px] font-bold uppercase tracking-[0.12em] truncate ring-1 ring-inset"
         :style="{
-          backgroundColor: stage.color,
-          boxShadow: `0 0 8px ${stage.color}66`,
+          background: tintedColor?.soft,
+          color: tintedColor?.solid,
+          borderColor: tintedColor?.ring,
         }"
-      />
-      <h2
-        class="flex-1 text-[13px] font-semibold text-n-slate-12 truncate tracking-tight"
         :title="stage.name"
       >
+        <span
+          :class="statusIcon"
+          class="size-3 flex-shrink-0"
+          aria-hidden="true"
+        />
         {{ stage.name }}
-      </h2>
+      </span>
+      <span
+        class="text-[12px] tabular-nums font-semibold text-n-slate-11 ml-0.5"
+      >
+        {{ tasks.length }}
+      </span>
       <span
         v-if="statusBadge"
-        class="px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider font-bold"
+        class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold"
         :class="statusBadge.cls"
       >
         {{ t(statusBadge.label) }}
       </span>
-      <span
-        class="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-md text-[11px] tabular-nums font-bold bg-n-solid-1 ring-1 ring-inset ring-n-weak"
-        :style="{ color: stage.color }"
+      <span class="flex-1" aria-hidden="true" />
+      <button
+        v-if="canMutate"
+        type="button"
+        class="inline-flex items-center justify-center size-6 rounded-md text-n-slate-10 hover:text-n-slate-12 hover:bg-n-alpha-2 transition-colors duration-150 cursor-pointer"
+        :aria-label="t('KANBAN.COLUMN.ADD_TASK')"
+        @click="emit('addTask', stage)"
       >
-        {{ tasks.length }}
-      </span>
+        <span class="i-lucide-plus size-4" />
+      </button>
     </header>
 
     <draggable
@@ -117,7 +161,12 @@ const onChange = event => {
       @change="onChange"
     >
       <template #item="{ element: task }">
-        <KanbanCard :task="task" @click="emit('cardClick', task)" />
+        <KanbanCard
+          :task="task"
+          :funnel-name="funnelName"
+          :stage-color="stage.color"
+          @click="emit('cardClick', task)"
+        />
       </template>
       <template #footer>
         <div

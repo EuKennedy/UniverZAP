@@ -482,6 +482,7 @@ const goToSettings = () => {
           :key="stage.id"
           :stage="stage"
           :tasks="tasksByStageFiltered(stage.id)"
+          :funnel-name="funnel?.name || ''"
           :can-mutate="canMutate"
           @card-click="onCardClick"
           @task-moved="onTaskMoved"

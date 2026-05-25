@@ -213,6 +213,9 @@
       "ADD_TASK": "Adicionar tarefa"
     },
     "CARD": {
+      "IN_FUNNEL": "Em",
+      "HAS_DESCRIPTION": "Possui descrição",
+      "SUBTASKS": "subtarefas",
       "DUE_TODAY": "Vence hoje",
       "DUE_TOMORROW": "Vence amanhã",
       "DUE_YESTERDAY": "Venceu ontem",

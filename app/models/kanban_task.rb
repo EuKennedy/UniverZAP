@@ -35,7 +35,20 @@ class KanbanTask < ApplicationRecord
   has_many :kanban_task_contacts, dependent: :destroy
   has_many :contacts, through: :kanban_task_contacts
 
+  # Self-referential subtask hierarchy. Root cards live in stages; subtasks
+  # carry a parent_task_id and are rendered inside the parent's drawer.
+  belongs_to :parent_task, class_name: 'KanbanTask', optional: true,
+                           inverse_of: :subtasks
+  has_many :subtasks,
+           -> { order(:position, :id) },
+           class_name: 'KanbanTask',
+           foreign_key: :parent_task_id,
+           dependent: :destroy,
+           inverse_of: :parent_task
+
   enum priority: { none: 0, low: 1, medium: 2, high: 3, urgent: 4 }, _prefix: :priority
+
+  scope :root_tasks, -> { where(parent_task_id: nil) }
 
   validates :title, presence: true, length: { maximum: 255 }
   validates :description, length: { maximum: 5000 }, allow_blank: true
@@ -68,10 +81,13 @@ class KanbanTask < ApplicationRecord
       account_id: account_id,
       funnel_id: funnel_id,
       funnel_stage_id: funnel_stage_id,
+      parent_task_id: parent_task_id,
       title: title,
       description: description,
       priority: priority,
       position: position,
+      estimate_minutes: estimate_minutes,
+      completed_at: completed_at&.to_i,
       start_date: start_date&.to_i,
       due_date: due_date&.to_i
     }
@@ -82,7 +98,9 @@ class KanbanTask < ApplicationRecord
       assignees: assignees.map { |u| { id: u.id, name: u.name, avatar_url: u.avatar_url } },
       labels: task_labels.map { |l| { id: l.id, title: l.title, color: l.color } },
       conversations: conversations.map { |c| { id: c.id, display_id: c.display_id, status: c.status, inbox_id: c.inbox_id } },
-      contacts: contacts.map { |c| { id: c.id, name: c.name, email: c.email, phone_number: c.phone_number, thumbnail: c.avatar_url } }
+      contacts: contacts.map { |c| { id: c.id, name: c.name, email: c.email, phone_number: c.phone_number, thumbnail: c.avatar_url } },
+      subtasks_count: subtasks.size,
+      subtasks_completed_count: subtasks.where.not(completed_at: nil).count
     }
   end
 

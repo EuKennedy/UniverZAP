@@ -6,8 +6,9 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
   def index
     @tasks = policy_scope(Current.account.kanban_tasks)
              .where(funnel_id: @funnel.id)
+             .root_tasks
              .ordered_in_stage
-             .includes(:assignees, :task_labels, :contacts, :conversations, :funnel_stage)
+             .includes(:assignees, :task_labels, :contacts, :conversations, :funnel_stage, :subtasks)
   end
 
   def show; end
@@ -75,7 +76,8 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
   def permitted_params
     params.require(:kanban_task).permit(
       :title, :description, :priority, :position,
-      :start_date, :due_date, :funnel_stage_id
+      :start_date, :due_date, :funnel_stage_id,
+      :parent_task_id, :estimate_minutes, :completed_at
     )
   end
 

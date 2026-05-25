@@ -213,6 +213,9 @@
       "ADD_TASK": "Add task"
     },
     "CARD": {
+      "IN_FUNNEL": "In",
+      "HAS_DESCRIPTION": "Has description",
+      "SUBTASKS": "subtasks",
       "DUE_TODAY": "Due today",
       "DUE_TOMORROW": "Due tomorrow",
       "DUE_YESTERDAY": "Due yesterday",
