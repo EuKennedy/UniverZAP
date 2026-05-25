@@ -45,7 +45,7 @@ class Api::V1::Accounts::OnboardingStateController < Api::V1::Accounts::BaseCont
   end
 
   def first_reply_present?
-    Current.account.messages.outgoing.where(sender_type: 'User').exists?
+    Current.account.messages.outgoing.exists?(sender_type: 'User')
   end
 
   def onboarding_attrs

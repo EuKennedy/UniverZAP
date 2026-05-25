@@ -18,6 +18,7 @@ const props = defineProps({
   activeOn: { type: Array, default: () => [] },
   children: { type: Array, default: undefined },
   getterKeys: { type: Object, default: () => ({}) },
+  dataOnboarding: { type: String, default: null },
 });
 
 const {
@@ -241,6 +242,7 @@ watch(
             'text-n-slate-11 hover:bg-n-alpha-2': !isActive && !hasActiveChild,
           }"
           :title="label"
+          :data-onboarding="dataOnboarding || undefined"
           @click="hasChildren ? handleCollapsedClick() : undefined"
         >
           <Icon v-if="icon" :icon="icon" class="size-4" />
@@ -269,6 +271,7 @@ watch(
         :has-active-child="hasActiveChild"
         :expandable="hasChildren"
         :is-expanded="isExpanded"
+        :data-onboarding="dataOnboarding || undefined"
         @toggle="toggleTrigger"
       />
       <ul

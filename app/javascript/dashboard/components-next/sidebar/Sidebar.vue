@@ -228,6 +228,7 @@ const menuItems = computed(() => {
       name: 'Conversation',
       label: t('SIDEBAR.CONVERSATIONS'),
       icon: 'i-lucide-message-circle',
+      dataOnboarding: 'sidebar-conversations',
       children: [
         {
           name: 'All',
@@ -329,6 +330,7 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.ATHENAS_AI'),
       icon: 'i-lucide-brain-circuit',
       to: accountScopedRoute('athenas_assistants_index'),
+      dataOnboarding: 'athenas-nav',
       activeOn: [
         'athenas_assistants_index',
         'athenas_assistant_wizard',
