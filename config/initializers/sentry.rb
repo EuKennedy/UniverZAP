@@ -4,8 +4,6 @@
 # leaves the process. Default PII is now off so request headers / IPs are
 # only included when the redactor approves them.
 
-# rubocop:disable Metrics/BlockLength
-
 if ENV['SENTRY_DSN'].present?
   SENTRY_SENSITIVE_KEYS = %w[
     password new_password old_password password_confirmation password_hash
@@ -17,7 +15,7 @@ if ENV['SENTRY_DSN'].present?
   ].freeze
 
   SENTRY_PII_PATTERNS = [
-    [%r{[\w.+\-]+@[\w\-]+\.[\w.\-]+}i, '[REDACTED_EMAIL]'],
+    [/[\w.+\-]+@[\w\-]+\.[\w.\-]+/i, '[REDACTED_EMAIL]'],
     [/\b\d{2,3}\s?9?\d{4}-?\d{4}\b/, '[REDACTED_PHONE]'],
     [/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/, '[REDACTED_CPF]'],
     [%r{\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b}, '[REDACTED_CNPJ]']
@@ -57,12 +55,14 @@ if ENV['SENTRY_DSN'].present?
     request.data = sentry_scrub(request.data) if request.data
   end
 
+  def sentry_filter_breadcrumb(breadcrumb)
+    breadcrumb.message = sentry_redact_string(breadcrumb.message) if breadcrumb.message
+    breadcrumb.data = sentry_scrub(breadcrumb.data) if breadcrumb.data
+  end
+
   def sentry_filter_event(event)
     event.message = sentry_redact_string(event.message) if event.message
-    event.breadcrumbs&.each do |breadcrumb|
-      breadcrumb.message = sentry_redact_string(breadcrumb.message) if breadcrumb.message
-      breadcrumb.data = sentry_scrub(breadcrumb.data) if breadcrumb.data
-    end
+    event.breadcrumbs&.each { |breadcrumb| sentry_filter_breadcrumb(breadcrumb) }
     event.extra = sentry_scrub(event.extra) if event.extra
     event.contexts = sentry_scrub(event.contexts) if event.contexts
   end
@@ -99,4 +99,3 @@ if ENV['SENTRY_DSN'].present?
   end
 end
 
-# rubocop:enable Metrics/BlockLength
