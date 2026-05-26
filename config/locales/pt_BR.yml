@@ -21,6 +21,14 @@ pt_BR:
   kanban:
     activity:
       stage_changed: 'Kanban: "%{task}" movida para "%{stage}" em %{funnel}.'
+  lgpd:
+    deletion_mailer:
+      scheduled:
+        subject: '[UniverZAP] Sua exclusão de conta foi agendada'
+      cancelled:
+        subject: '[UniverZAP] Exclusão de conta cancelada'
+      purged:
+        subject: '[UniverZAP] Sua conta foi excluída permanentemente'
   inbox:
     reauthorization:
       success: 'Canal reautenticado com sucesso'

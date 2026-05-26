@@ -34,6 +34,14 @@ en:
   kanban:
     activity:
       stage_changed: 'Kanban: "%{task}" moved to "%{stage}" in %{funnel}.'
+  lgpd:
+    deletion_mailer:
+      scheduled:
+        subject: '[UniverZAP] Your account deletion has been scheduled'
+      cancelled:
+        subject: '[UniverZAP] Account deletion cancelled'
+      purged:
+        subject: '[UniverZAP] Your account has been permanently deleted'
   inbox:
     reauthorization:
       success: 'Channel reauthorized successfully'
