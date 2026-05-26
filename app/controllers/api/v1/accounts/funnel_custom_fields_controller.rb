@@ -24,9 +24,10 @@ class Api::V1::Accounts::FunnelCustomFieldsController < Api::V1::Accounts::BaseC
 
   def reorder
     ids = Array(params[:ordered_ids]).map(&:to_i)
+    fields_by_id = @funnel.custom_fields.where(id: ids).index_by(&:id)
     FunnelCustomField.transaction do
       ids.each_with_index do |id, index|
-        @funnel.custom_fields.where(id: id).update_all(position: index + 1)
+        fields_by_id[id]&.update!(position: index + 1)
       end
     end
     head :ok
