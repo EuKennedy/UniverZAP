@@ -1,6 +1,6 @@
 class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseController
-  before_action :fetch_funnel, only: [:index, :create]
-  before_action :fetch_task, except: [:index, :create]
+  before_action :fetch_funnel, only: [:index, :create, :export]
+  before_action :fetch_task, except: [:index, :create, :export]
   before_action :check_authorization
 
   def index
@@ -12,6 +12,20 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
   end
 
   def show; end
+
+  # CSV export — devolve as tasks-raiz do funil em formato planilha pra
+  # análise offline. Mantém a mesma ordenação do board.
+  def export
+    tasks = policy_scope(Current.account.kanban_tasks)
+            .where(funnel_id: @funnel.id)
+            .root_tasks
+            .ordered_in_stage
+            .includes(:funnel_stage, :assignees, :task_labels, :contacts, :conversations)
+    send_data Kanban::CsvExportService.new(tasks, @funnel).call,
+              type: 'text/csv',
+              disposition: 'attachment',
+              filename: "univerzap-funnel-#{@funnel.id}-#{Time.current.to_i}.csv"
+  end
 
   def create
     stage = @funnel.funnel_stages.find(permitted_params.fetch(:funnel_stage_id))

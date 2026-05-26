@@ -286,7 +286,11 @@ Rails.application.routes.draw do
                 post :reorder
               end
             end
-            resources :kanban_tasks, only: [:index, :create]
+            resources :kanban_tasks, only: [:index, :create] do
+              collection do
+                get :export
+              end
+            end
           end
 
           resources :kanban_tasks, only: [:show, :update, :destroy] do

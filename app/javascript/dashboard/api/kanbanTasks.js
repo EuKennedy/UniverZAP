@@ -73,6 +73,13 @@ class KanbanTasksAPI extends ApiClient {
   stopTimer(taskId) {
     return axios.post(`${this.url}/${taskId}/time_entries/stop`);
   }
+
+  exportCsv(funnelId) {
+    return axios.get(
+      `${this.baseUrl()}/funnels/${funnelId}/kanban_tasks/export`,
+      { responseType: 'blob' }
+    );
+  }
 }
 
 export default new KanbanTasksAPI();

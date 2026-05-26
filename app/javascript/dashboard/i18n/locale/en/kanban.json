@@ -23,6 +23,8 @@
       "NOT_FOUND": "Funnel not found.",
       "NEW_TASK": "New task",
       "SETTINGS": "Settings",
+      "EXPORT_CSV": "Export CSV",
+      "EXPORT_ERROR": "Could not export the CSV.",
       "NO_STAGES_TITLE": "No stages configured",
       "NO_STAGES_DESCRIPTION": "Add stages from settings to start placing tasks on the board.",
       "OPEN_SETTINGS": "Open settings",

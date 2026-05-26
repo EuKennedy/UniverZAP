@@ -51,6 +51,8 @@
         "CLEAR": "Limpar filtros"
       },
       "SETTINGS": "Configurações",
+      "EXPORT_CSV": "Exportar CSV",
+      "EXPORT_ERROR": "Não foi possível exportar o CSV.",
       "NO_STAGES_TITLE": "Sem etapas configuradas",
       "NO_STAGES_DESCRIPTION": "Adicione etapas nas configurações para começar a posicionar tarefas no quadro.",
       "OPEN_SETTINGS": "Abrir configurações"

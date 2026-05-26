@@ -178,6 +178,21 @@ const conversationsCount = computed(
   () => (props.task.conversations || []).length
 );
 
+// Native-title fallback summarising linked conversations on hover. Sales
+// reps see channel + last activity without opening the drawer.
+const conversationsTooltip = computed(() => {
+  const conversations = props.task.conversations || [];
+  if (!conversations.length) return '';
+  return conversations
+    .slice(0, 5)
+    .map(conv => {
+      const channel = conv.inbox_name || `Inbox #${conv.inbox_id}`;
+      const status = conv.status ? ` · ${conv.status}` : '';
+      return `#${conv.display_id} — ${channel}${status}`;
+    })
+    .join('\n');
+});
+
 const labelsVisible = computed(() => (props.task.labels || []).slice(0, 4));
 const labelsExtra = computed(() =>
   Math.max(0, (props.task.labels || []).length - 4)
@@ -265,7 +280,8 @@ const labelsExtra = computed(() =>
         />
         <span
           v-if="conversationsCount"
-          class="inline-flex items-center gap-1 text-[11px]"
+          v-tooltip.top="conversationsTooltip"
+          class="inline-flex items-center gap-1 text-[11px] cursor-help"
         >
           <Icon icon="i-lucide-message-square" class="size-3" />
           {{ conversationsCount }}

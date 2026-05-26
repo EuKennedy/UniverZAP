@@ -222,12 +222,27 @@ const onChange = event => {
       <template #footer>
         <div
           v-if="!tasks.length"
-          class="flex flex-col items-center justify-center gap-2 py-10 px-4 rounded-xl border border-dashed border-n-weak select-none"
+          class="group/empty flex flex-col items-center justify-center gap-2 py-8 px-4 rounded-xl border border-dashed border-n-weak/70 select-none transition-colors hover:border-n-teal-7/60 hover:bg-n-teal-3/5"
         >
-          <span class="i-lucide-inbox size-5 text-n-slate-10" />
-          <p class="text-[11px] text-n-slate-10 text-center leading-tight">
+          <span
+            class="inline-flex items-center justify-center size-9 rounded-full bg-n-alpha-1 ring-1 ring-inset ring-n-weak"
+            :style="{ color: stage.color }"
+          >
+            <span class="i-lucide-sparkles size-4" />
+          </span>
+          <p
+            class="text-[11px] text-n-slate-10 text-center leading-tight max-w-[180px]"
+          >
             {{ t('KANBAN.COLUMN.EMPTY') }}
           </p>
+          <button
+            v-if="canMutate"
+            type="button"
+            class="opacity-0 group-hover/empty:opacity-100 transition-opacity duration-150 text-[11px] font-semibold text-n-teal-11 hover:text-n-teal-12 cursor-pointer"
+            @click="emit('addTask', stage)"
+          >
+            + {{ t('KANBAN.COLUMN.ADD_TASK') }}
+          </button>
         </div>
       </template>
     </draggable>

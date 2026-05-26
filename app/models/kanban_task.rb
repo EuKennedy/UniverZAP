@@ -153,7 +153,9 @@ class KanbanTask < ApplicationRecord
       id: conversation.id,
       display_id: conversation.display_id,
       status: conversation.status,
-      inbox_id: conversation.inbox_id
+      inbox_id: conversation.inbox_id,
+      inbox_name: conversation.inbox&.name,
+      last_activity_at: conversation.last_activity_at&.to_i
     }
   end
 

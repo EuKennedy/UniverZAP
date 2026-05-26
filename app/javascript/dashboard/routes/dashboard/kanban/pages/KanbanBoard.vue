@@ -13,6 +13,7 @@ import TaskFormModal from '../components/TaskFormModal.vue';
 import KanbanTaskDrawer from '../components/KanbanTaskDrawer.vue';
 import KanbanBulkActionBar from '../components/KanbanBulkActionBar.vue';
 import KanbanSavedViews from '../components/KanbanSavedViews.vue';
+import KanbanTasksAPI from 'dashboard/api/kanbanTasks';
 
 const props = defineProps({
   funnelId: { type: [String, Number], required: true },
@@ -67,6 +68,29 @@ const groupBy = ref('none');
 const selectedTaskIds = ref(new Set());
 const inlineEditingTaskId = ref(null);
 const showBulkDeleteConfirm = ref(false);
+const isExportingCsv = ref(false);
+
+// CSV export — gera download client-side a partir do blob retornado
+// pelo endpoint. URL é revogada em seguida pra não vazar memória.
+const onExportCsv = async () => {
+  if (isExportingCsv.value) return;
+  isExportingCsv.value = true;
+  try {
+    const { data } = await KanbanTasksAPI.exportCsv(props.funnelId);
+    const url = window.URL.createObjectURL(
+      new Blob([data], { type: 'text/csv' })
+    );
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `univerzap-funnel-${props.funnelId}-${Date.now()}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.BOARD.EXPORT_ERROR'));
+  } finally {
+    isExportingCsv.value = false;
+  }
+};
 
 const agentsList = useMapGetter('agents/getAgents');
 const labelsList = useMapGetter('labels/getLabels');
@@ -653,6 +677,15 @@ const goToSettings = () => {
             @click="openCreateTask(stages[0])"
           />
           <Button
+            icon="i-lucide-download"
+            size="sm"
+            faded
+            slate
+            :aria-label="t('KANBAN.BOARD.EXPORT_CSV')"
+            :is-loading="isExportingCsv"
+            @click="onExportCsv"
+          />
+          <Button
             v-if="isAdmin"
             icon="i-lucide-settings-2"
             size="sm"
@@ -876,18 +909,117 @@ const goToSettings = () => {
 
     <section
       v-else-if="!stages.length"
-      class="flex-1 flex flex-col items-center justify-center gap-3 px-8 text-center"
+      class="flex-1 flex flex-col items-center justify-center gap-5 px-8 py-16 text-center"
     >
-      <div
-        class="size-14 rounded-2xl bg-n-alpha-1 flex items-center justify-center"
-      >
-        <span class="i-lucide-layers size-6 text-n-slate-10" />
+      <!-- Hero illustration — animated stage cards floating against a teal
+           gradient glow. Stage colors mimic a real funnel coming alive. -->
+      <div class="relative size-44">
+        <span
+          class="absolute inset-0 rounded-full bg-gradient-to-br from-n-teal-9/20 via-n-teal-9/5 to-transparent blur-3xl"
+          aria-hidden="true"
+        />
+        <svg
+          viewBox="0 0 200 200"
+          class="relative size-44 drop-shadow-[0_12px_40px_rgba(20,184,166,0.25)]"
+          aria-hidden="true"
+        >
+          <rect
+            x="22"
+            y="40"
+            width="44"
+            height="112"
+            rx="10"
+            fill="#14b8a6"
+            opacity="0.18"
+          />
+          <rect
+            x="78"
+            y="55"
+            width="44"
+            height="100"
+            rx="10"
+            fill="#14b8a6"
+            opacity="0.35"
+          />
+          <rect
+            x="134"
+            y="70"
+            width="44"
+            height="80"
+            rx="10"
+            fill="#14b8a6"
+            opacity="0.6"
+          />
+          <rect
+            x="30"
+            y="55"
+            width="28"
+            height="6"
+            rx="3"
+            fill="#5eead4"
+            opacity="0.9"
+          />
+          <rect
+            x="30"
+            y="68"
+            width="20"
+            height="4"
+            rx="2"
+            fill="#5eead4"
+            opacity="0.7"
+          />
+          <rect
+            x="86"
+            y="70"
+            width="28"
+            height="6"
+            rx="3"
+            fill="#5eead4"
+            opacity="0.9"
+          />
+          <rect
+            x="86"
+            y="83"
+            width="22"
+            height="4"
+            rx="2"
+            fill="#5eead4"
+            opacity="0.7"
+          />
+          <rect
+            x="142"
+            y="85"
+            width="28"
+            height="6"
+            rx="3"
+            fill="#5eead4"
+            opacity="0.9"
+          />
+          <rect
+            x="142"
+            y="98"
+            width="18"
+            height="4"
+            rx="2"
+            fill="#5eead4"
+            opacity="0.7"
+          />
+          <circle cx="178" cy="44" r="8" fill="#14b8a6" />
+          <path
+            d="M174 44 L177 47 L182 41"
+            stroke="#062927"
+            stroke-width="2"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </div>
-      <div class="flex flex-col gap-1 max-w-sm">
-        <h2 class="text-base font-medium text-n-slate-12">
+      <div class="flex flex-col gap-2 max-w-sm">
+        <h2 class="text-xl font-semibold text-n-slate-12 tracking-tight m-0">
           {{ t('KANBAN.BOARD.NO_STAGES_TITLE') }}
         </h2>
-        <p class="text-sm text-n-slate-11">
+        <p class="text-sm text-n-slate-11 leading-relaxed m-0">
           {{ t('KANBAN.BOARD.NO_STAGES_DESCRIPTION') }}
         </p>
       </div>
