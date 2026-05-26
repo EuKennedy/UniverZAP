@@ -17,6 +17,11 @@ json.role resource.active_account_user&.role
 json.ui_settings resource.ui_settings
 json.uid resource.uid
 json.type resource.type
+# LGPD §8 — front-end's LegalReAcceptBanner reads these to decide if the
+# user still needs to accept the current terms/privacy versions.
+json.accepted_terms_version resource.accepted_terms_version
+json.accepted_privacy_version resource.accepted_privacy_version
+json.accepted_at resource.accepted_at
 json.accounts do
   json.array! resource.account_users do |account_user|
     json.id account_user.account_id
