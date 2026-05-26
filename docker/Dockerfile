@@ -159,4 +159,16 @@ COPY --from=pre-builder /app/.git_sha /app/.git_sha
 
 WORKDIR /app
 
+# Ensure the boot script is executable inside the runtime image. Coolify
+# (and any vanilla docker run) will exec this entrypoint, which waits for
+# Postgres, runs pending migrations on production deploys and only then
+# launches the Rails server. Without this, fresh schema changes (e.g.
+# kanban_task_activities) never reach the live database and any code path
+# touching the missing tables 500s in production.
+RUN chmod +x /app/docker/entrypoints/rails.sh /app/docker/entrypoints/vite.sh \
+  && chmod +x /app/docker/entrypoints/helpers/pg_database_url.rb || true
+
+ENTRYPOINT ["docker/entrypoints/rails.sh"]
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
+
 EXPOSE 3000

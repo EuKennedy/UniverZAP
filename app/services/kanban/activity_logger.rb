@@ -74,8 +74,16 @@ class Kanban::ActivityLogger
       write(task, user, action: 'labels_changed', summary: 'Labels updated.')
     end
 
+    # Activity rows are an observability nice-to-have. Failing to write one
+    # must never roll back the parent task save — most commonly this fires
+    # when a node hasn't picked up the latest kanban migrations yet
+    # (PG::UndefinedTable on kanban_task_activities). Log + swallow so the
+    # UI keeps working and we can find the issue in Sentry.
     def write(task, user, attrs)
       task.activities.create!(attrs.merge(user: user))
+    rescue ActiveRecord::StatementInvalid, ActiveRecord::RecordInvalid => e
+      Rails.logger.warn("[Kanban::ActivityLogger] skipped #{attrs[:action]} for task=#{task.id}: #{e.class} #{e.message}")
+      ChatwootExceptionTracker.new(e, user: user, account: task.account).capture_exception if defined?(ChatwootExceptionTracker)
     end
 
     def truncate(value)
