@@ -40,8 +40,13 @@
     },
     "PANEL": {
       "TITLE": "Set up UniverZAP",
+      "EYEBROW": "Quick start",
+      "GREETING": "Let's launch your workspace",
+      "GREETING_NAMED": "Let's go, {name}",
       "SUBTITLE": "{done} of {total} steps complete",
       "INTRO": "Connect WhatsApp, invite your team and meet Athenas — your AI assistant.",
+      "TIME_LEFT": "~{mins} min left",
+      "DONE_LABEL": "Completed",
       "START_TOUR": "Start guided tour",
       "RESUME_TOUR": "Continue tour",
       "RETAKE_TOUR": "Retake tour",
@@ -74,6 +79,21 @@
           "TITLE": "Send your first reply",
           "DESCRIPTION": "Reply to your first conversation to mark UniverZAP as live.",
           "CTA": "Open inbox"
+        },
+        "KANBAN": {
+          "TITLE": "Build your sales pipeline",
+          "DESCRIPTION": "Use Kanban to track every lead from first message to closed deal.",
+          "CTA": "Open Kanban"
+        },
+        "CONTACTS": {
+          "TITLE": "Your customer book",
+          "DESCRIPTION": "Every contact and conversation lives here — segment, tag and reach them in seconds.",
+          "CTA": "Open contacts"
+        },
+        "REPORTS": {
+          "TITLE": "Measure what matters",
+          "DESCRIPTION": "Track response time, SLA, CSAT and pipeline health in real time.",
+          "CTA": "View reports"
         }
       }
     },
@@ -87,6 +107,7 @@
       "PREVIOUS": "Back",
       "DONE": "Finish",
       "SKIP": "Skip",
+      "CLICK_HINT": "Click the highlighted area to continue",
       "EXIT": "Exit tour",
       "EXIT_CONFIRM_TITLE": "Exit guided tour?",
       "EXIT_CONFIRM_BODY": "You can resume from the launcher anytime.",

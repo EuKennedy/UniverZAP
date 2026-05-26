@@ -417,6 +417,7 @@ const menuItems = computed(() => {
       name: 'Contacts',
       label: t('SIDEBAR.CONTACTS'),
       icon: 'i-lucide-contact',
+      dataOnboarding: 'contacts-nav',
       children: [
         {
           name: 'All Contacts',
@@ -497,6 +498,7 @@ const menuItems = computed(() => {
       name: 'Reports',
       label: t('SIDEBAR.REPORTS'),
       icon: 'i-lucide-chart-spline',
+      dataOnboarding: 'reports-nav',
       children: [
         {
           name: 'Report Overview',

@@ -1,8 +1,8 @@
-// Shared catalog used by both the panel (checklist) and the tour (driver.js
-// step config). Keep the keys and the readiness `flag` mapping in sync with
-// the OnboardingStateController on the backend. Routes are returned as
-// vue-router `{ name, params }` location descriptors so we never have to
-// hardcode dashboard URLs in two places.
+// Shared catalog used by both the panel (checklist) and the tour
+// (custom Spotlight component). Keep the keys and the readiness `flag`
+// mapping in sync with `OnboardingStateController` on the backend.
+// Routes are returned as vue-router `{ name, params }` location
+// descriptors so we never have to hardcode dashboard URLs twice.
 
 export const ONBOARDING_TOUR_EVENTS = Object.freeze({
   START: 'onboarding-tour:start',
@@ -68,11 +68,10 @@ export const buildStepCatalog = ({ t, flags }) => [
   },
 ];
 
-// Driver.js tour: anchored to stable data attributes on the dashboard chrome.
-// `dataOnboarding` matches the value passed to `data-onboarding="..."` on the
-// target element. `navigateTo` is a vue-router location descriptor (same
-// shape as the panel routes) so the tour pre-navigates when a step lives on
-// a different page.
+// Guided spotlight tour: each step anchors to a stable `data-onboarding`
+// attribute on the dashboard chrome. `clickToAdvance` opts the step into
+// auto-advance when the user actually clicks the highlighted target.
+// `navigateTo` pre-navigates when a step lives on a different page.
 export const buildTourSteps = ({ t }) => [
   {
     key: 'welcome',
@@ -89,6 +88,7 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.FIRST_REPLY.DESCRIPTION'),
     side: 'right',
     align: 'start',
+    clickToAdvance: true,
   },
   {
     key: 'add-inbox',
@@ -98,6 +98,7 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.INBOX.DESCRIPTION'),
     side: 'right',
     align: 'start',
+    clickToAdvance: true,
     navigateTo: accountId => ({
       name: 'settings_inbox_list',
       params: { accountId },
@@ -111,6 +112,7 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_MEMBERS.DESCRIPTION'),
     side: 'right',
     align: 'start',
+    clickToAdvance: true,
     navigateTo: accountId => ({ name: 'agent_list', params: { accountId } }),
   },
   {
@@ -121,6 +123,7 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_GROUP.DESCRIPTION'),
     side: 'right',
     align: 'start',
+    clickToAdvance: true,
     navigateTo: accountId => ({
       name: 'settings_teams_list',
       params: { accountId },
@@ -134,10 +137,46 @@ export const buildTourSteps = ({ t }) => [
     body: t('ONBOARDING_TOUR.PANEL.STEPS.ASSISTANT.DESCRIPTION'),
     side: 'right',
     align: 'start',
+    clickToAdvance: true,
     navigateTo: accountId => ({
       name: 'athenas_assistants_index',
       params: { accountId },
     }),
+  },
+  {
+    key: 'kanban-nav',
+    dataOnboarding: 'kanban-nav',
+    title: t('ONBOARDING_TOUR.PANEL.STEPS.KANBAN.TITLE'),
+    body: t('ONBOARDING_TOUR.PANEL.STEPS.KANBAN.DESCRIPTION'),
+    side: 'right',
+    align: 'start',
+    clickToAdvance: true,
+    navigateTo: accountId => ({
+      name: 'kanban_overview',
+      params: { accountId },
+    }),
+  },
+  {
+    key: 'contacts-nav',
+    dataOnboarding: 'contacts-nav',
+    title: t('ONBOARDING_TOUR.PANEL.STEPS.CONTACTS.TITLE'),
+    body: t('ONBOARDING_TOUR.PANEL.STEPS.CONTACTS.DESCRIPTION'),
+    side: 'right',
+    align: 'start',
+    clickToAdvance: true,
+    navigateTo: accountId => ({
+      name: 'contacts_dashboard_index',
+      params: { accountId },
+    }),
+  },
+  {
+    key: 'reports-nav',
+    dataOnboarding: 'reports-nav',
+    title: t('ONBOARDING_TOUR.PANEL.STEPS.REPORTS.TITLE'),
+    body: t('ONBOARDING_TOUR.PANEL.STEPS.REPORTS.DESCRIPTION'),
+    side: 'right',
+    align: 'start',
+    clickToAdvance: true,
   },
   {
     key: 'finish',

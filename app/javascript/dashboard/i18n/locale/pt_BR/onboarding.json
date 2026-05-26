@@ -40,8 +40,13 @@
     },
     "PANEL": {
       "TITLE": "Configure o UniverZAP",
+      "EYEBROW": "Início rápido",
+      "GREETING": "Vamos lançar seu workspace",
+      "GREETING_NAMED": "Bora, {name}",
       "SUBTITLE": "{done} de {total} etapas concluídas",
       "INTRO": "Conecte o WhatsApp, convide seu time e conheça a Athenas — sua assistente IA.",
+      "TIME_LEFT": "~{mins} min restantes",
+      "DONE_LABEL": "Concluído",
       "START_TOUR": "Iniciar tour guiado",
       "RESUME_TOUR": "Continuar tour",
       "RETAKE_TOUR": "Refazer tour",
@@ -74,6 +79,21 @@
           "TITLE": "Envie sua primeira resposta",
           "DESCRIPTION": "Responda sua primeira conversa para deixar o UniverZAP no ar.",
           "CTA": "Abrir caixa de entrada"
+        },
+        "KANBAN": {
+          "TITLE": "Monte seu funil de vendas",
+          "DESCRIPTION": "Use o Kanban para acompanhar cada lead, da primeira mensagem ao fechamento.",
+          "CTA": "Abrir Kanban"
+        },
+        "CONTACTS": {
+          "TITLE": "Sua carteira de clientes",
+          "DESCRIPTION": "Cada contato e conversa vive aqui — segmente, etiquete e fale com eles em segundos.",
+          "CTA": "Abrir contatos"
+        },
+        "REPORTS": {
+          "TITLE": "Meça o que importa",
+          "DESCRIPTION": "Acompanhe tempo de resposta, SLA, CSAT e saúde do funil em tempo real.",
+          "CTA": "Ver relatórios"
         }
       }
     },
@@ -87,6 +107,7 @@
       "PREVIOUS": "Voltar",
       "DONE": "Finalizar",
       "SKIP": "Pular",
+      "CLICK_HINT": "Clique na área destacada para continuar",
       "EXIT": "Sair do tour",
       "EXIT_CONFIRM_TITLE": "Sair do tour guiado?",
       "EXIT_CONFIRM_BODY": "Você pode retomar pelo launcher quando quiser.",
