@@ -46,6 +46,12 @@ Rails.application.routes.draw do
   end
 
   get '/health', to: 'health#show'
+
+  # LGPD public surfaces — versioned via Legal::Versions, no auth.
+  get '/termos', to: 'legal#terms'
+  get '/privacidade', to: 'legal#privacy'
+  get '/terms', to: 'legal#terms'
+  get '/privacy', to: 'legal#privacy'
   get '/api', to: 'api#index'
   namespace :api, defaults: { format: 'json' } do
     namespace :v1 do
@@ -469,6 +475,10 @@ Rails.application.routes.draw do
           put :set_active_account
           post :resend_confirmation
           post :reset_access_token
+          # LGPD Art. 18 — direitos do titular
+          post :accept_terms
+          get :lgpd_export
+          delete :lgpd_delete
         end
 
         # MFA routes

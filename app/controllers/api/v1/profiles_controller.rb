@@ -43,6 +43,36 @@ class Api::V1::ProfilesController < Api::BaseController
     @user.reload
   end
 
+  # LGPD Art. 8º — registra aceite explícito da versão atual de termos +
+  # privacidade. Front-end manda { terms_version, privacy_version } e o
+  # backend grava o par + timestamp.
+  def accept_terms
+    @user.update!(
+      accepted_terms_version: params[:terms_version] || Legal::Versions::TERMS,
+      accepted_privacy_version: params[:privacy_version] || Legal::Versions::PRIVACY,
+      accepted_at: Time.current
+    )
+    head :ok
+  end
+
+  # LGPD Art. 18 V (portabilidade) — exporta um JSON com todos os dados
+  # diretos do titular. Conversation/Message payload é resumido por volume.
+  def lgpd_export
+    payload = Lgpd::UserExportService.new(@user).call
+    send_data payload.to_json,
+              type: 'application/json',
+              disposition: 'attachment',
+              filename: "univerzap-export-#{@user.id}-#{Time.current.to_i}.json"
+  end
+
+  # LGPD Art. 18 VI (eliminação) — apaga o User e tudo que é ON DELETE
+  # CASCADE. Workspaces órfãos (último admin saindo) ficam intactos: o
+  # operador faz transferência manual antes via /super_admin.
+  def lgpd_delete
+    Lgpd::UserDeleteService.new(@user).call
+    head :ok
+  end
+
   private
 
   def set_user

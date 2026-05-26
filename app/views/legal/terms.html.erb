@@ -1,0 +1,59 @@
+<% @page_title = 'Termos de Uso' %>
+<%= render 'layout' do %>
+<h1>Termos de Uso</h1>
+<p class="meta">Versão <%= @version %> · publicada em <%= Date.parse(@version).strftime('%d/%m/%Y') %></p>
+
+<h2>1. Aceitação</h2>
+<p>Ao criar uma conta, conectar uma caixa de entrada ou utilizar qualquer recurso da plataforma <strong>UniverZAP</strong> ("Plataforma"), você concorda com estes Termos e com a <a href="/privacidade">Política de Privacidade</a>. Caso não concorde, não utilize a Plataforma.</p>
+
+<h2>2. Descrição do serviço</h2>
+<p>A UniverZAP é uma plataforma SaaS multi-tenant para gestão de conversas via WhatsApp Business API, e-mail, Instagram, formulários web e canais semelhantes, com automações, assistentes de IA (Athenas) e funis Kanban. O escopo exato é definido pelo plano contratado.</p>
+
+<h2>3. Conta e responsabilidades</h2>
+<ul>
+  <li>Você é responsável por manter as credenciais (senha, 2FA, tokens API) em sigilo.</li>
+  <li>Atividades realizadas com sua conta são consideradas suas.</li>
+  <li>Você garante que os dados de terceiros importados (contatos, mensagens) foram coletados com base legal adequada (LGPD Art. 7º).</li>
+  <li>Conteúdo enviado deve respeitar a legislação brasileira, os Termos do WhatsApp Business e as políticas de cada canal integrado.</li>
+</ul>
+
+<h2>4. Risco operacional (canais de terceiros)</h2>
+<p>A Plataforma orquestra integrações com WhatsApp, Meta, Instagram, e-mail e outros canais. A continuidade desses canais depende dos respectivos provedores. <strong>A UniverZAP não garante</strong> que números de WhatsApp não serão banidos pelo Meta, que API limits não serão impostos ou que provedores não mudarão suas regras unilateralmente.</p>
+
+<h2>5. Pagamento e renovação</h2>
+<p>Os planos são cobrados conforme contratado via Univercart (operador de pagamento). Inadimplência por mais de 7 dias suspende o acesso. Acesso pode ser reativado com regularização.</p>
+
+<h2>6. Disponibilidade</h2>
+<p>O serviço é fornecido "como está" (as-is). Nos comprometemos com melhor esforço de uptime, mas sem SLA contratual salvo plano enterprise específico.</p>
+
+<h2>7. Limitação de responsabilidade</h2>
+<p>Salvo dolo ou culpa grave, a responsabilidade total da UniverZAP em qualquer disputa fica limitada ao valor pago pelo cliente nos últimos 12 meses.</p>
+
+<h2>8. Encerramento</h2>
+<p>O cliente pode encerrar a conta a qualquer momento via dashboard (Conta → Excluir conta — Art. 18 VI da LGPD). A UniverZAP pode encerrar contas que violem estes termos, com notificação prévia salvo em casos de fraude ou ilegalidade.</p>
+
+<h2>9. Alterações</h2>
+<p>Estes Termos são versionados (vide changelog). Mudanças materiais disparam re-aceite ativo no dashboard.</p>
+
+<h2>10. Foro</h2>
+<p>Foro contratual: Belo Horizonte / MG. Lei aplicável: brasileira.</p>
+
+<h2>11. Contato</h2>
+<p>Dúvidas: <a href="mailto:suporte@univerbeauty.com.br">suporte@univerbeauty.com.br</a></p>
+
+<section class="changelog">
+  <h3>Histórico de versões</h3>
+  <ul>
+    <% @changelog.each do |entry| %>
+      <li>
+        <strong><%= entry[:version] %></strong> (<%= entry[:date] %>)
+        <ul>
+          <% entry[:highlights].each do |h| %>
+            <li><%= h %></li>
+          <% end %>
+        </ul>
+      </li>
+    <% end %>
+  </ul>
+</section>
+<% end %>

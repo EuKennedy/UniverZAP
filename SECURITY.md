@@ -1,3 +1,26 @@
+# Security policy
+
+> **UniverZAP fork** — esta política se aplica ao código em produção em
+> `*.univerzap.cloud`. A política upstream do Chatwoot vale para releases
+> oficiais em `chatwoot/chatwoot`.
+
+## Canal preferencial UniverZAP
+
+- E-mail: `security@univerbeauty.com.br`
+- Resposta esperada: confirmação em até 48 horas; plano de mitigação em
+  até 14 dias para severidade crítica.
+- Detalhes operacionais e mapeamento LGPD em
+  [`docs/security/lgpd-compliance.md`](docs/security/lgpd-compliance.md).
+
+## Divulgação coordenada
+
+90 dias entre reporte e divulgação pública. Reduzido em caso de
+zero-day explorado in-the-wild. Não abrir issues públicas para vulns.
+
+---
+
+## Upstream Chatwoot policy
+
 Chatwoot is looking forward to working with security researchers worldwide to keep Chatwoot and our users safe. If you have found an issue in our systems/applications, please reach out to us.
 
 ## Reporting a Vulnerability
