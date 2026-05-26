@@ -1,30 +1,37 @@
 # Compat shim: devise_token_auth 1.2.5 still calls `resource_class(mapping)`
-# from `SetUserByToken#set_user_by_token`, but devise 4.9.4's
-# Devise::Controllers::Helpers#resource_class is defined with zero arguments.
-# The mismatch surfaces every time a non-API controller (SuperAdmin sign-in
-# page, the cookie/legal pages, etc.) accidentally triggers the helper —
-# Rails returns 500 with `ArgumentError (wrong number of arguments (given 1,
-# expected 0))`.
+# from its `SetUserByToken#set_user_by_token` concern, but devise 4.9.4's
+# helpers (both `DeviseController#resource_class` and
+# `Devise::Controllers::Helpers#resource_class`) are now defined with zero
+# arguments. The mismatch surfaces every time a Devise-based controller
+# outside the JSON API stack (SuperAdmin sign-in, /favicon, legal pages)
+# triggers the helper — Rails returns 500 with
+# `ArgumentError (wrong number of arguments (given 1, expected 0))` before
+# the action even runs.
 #
-# We widen the helper so it tolerates either calling convention:
-#   - no args  → original devise lookup (`devise_mapping.to`)
+# We widen both definitions so they accept either calling convention:
+#   - no args  → original devise behaviour (`devise_mapping.to`)
 #   - a Symbol → resolve the configured Devise mapping for that scope
-# This keeps devise's contract intact for happy-path callers while making
-# devise_token_auth's optimistic `resource_class(mapping)` calls work.
-Rails.application.config.to_prepare do
-  helpers = Devise::Controllers::Helpers
-  already_patched = helpers.instance_method(:resource_class).arity != 0
-  unless already_patched
-    helpers.module_eval do
-      alias_method :_zero_arg_resource_class, :resource_class
+#
+# Applied at `after_initialize` so devise gems are guaranteed loaded; the
+# patch is idempotent (no-op if the method already accepts an argument), so
+# a future devise upgrade that fixes this upstream will not collide.
+Rails.application.config.after_initialize do
+  patch = lambda do |target, instance_method_name|
+    method = target.instance_method(instance_method_name)
+    next if method.arity != 0 # already widened
 
-      def resource_class(mapping = nil)
+    original = method
+    target.module_eval do
+      define_method(instance_method_name) do |mapping = nil|
         if mapping
           devise_mapping = Devise.mappings[mapping]
-          return devise_mapping.to if devise_mapping
+          next devise_mapping.to if devise_mapping
         end
-        _zero_arg_resource_class
+        original.bind(self).call
       end
     end
   end
+
+  patch.call(Devise::Controllers::Helpers, :resource_class) if defined?(Devise::Controllers::Helpers)
+  patch.call(DeviseController, :resource_class) if defined?(DeviseController)
 end

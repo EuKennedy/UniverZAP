@@ -9,6 +9,14 @@ class SuperAdmin::ApplicationController < Administrate::ApplicationController
   include ActionView::Context
   include SuperAdmin::NavigationHelper
 
+  # SuperAdmin authenticates against the SuperAdmin model — not the API
+  # User scope. devise_token_auth's `set_user_by_token` is included via
+  # ApplicationController for the dashboard API, but it calls
+  # `resource_class(mapping)` which is incompatible with devise 4.9.4 (arity
+  # mismatch → 500 before the login form even renders). Skipping it here
+  # keeps the SuperAdmin tree on plain Devise.
+  skip_before_action :set_user_by_token, raise: false
+
   helper_method :render_vue_component, :settings_open?, :settings_pages
   # authenticiation done via devise : SuperAdmin Model
   before_action :authenticate_super_admin!

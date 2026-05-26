@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class SuperAdmin::Devise::SessionsController < Devise::SessionsController
+  # SuperAdmin login lives outside the dashboard API auth stack. Skip the
+  # devise_token_auth filter so its `resource_class(mapping)` call cannot
+  # collide with devise 4.9.4's zero-arg helper signature.
+  skip_before_action :set_user_by_token, raise: false
+
   def new
     self.resource = resource_class.new(sign_in_params)
   end
