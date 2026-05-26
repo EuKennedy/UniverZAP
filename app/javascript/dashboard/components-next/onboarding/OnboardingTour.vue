@@ -69,7 +69,7 @@ const fireConfetti = () => {
   if (reduced) return;
   const duration = 1500;
   const end = Date.now() + duration;
-  const colors = ['#14b8a6', '#5eead4', '#0d9488', '#f1f5f4'];
+  const colors = ['#13CB8D', '#60E8B8', '#0FA873', '#f1f5f4'];
   (function frame() {
     confetti({
       particleCount: 4,
@@ -259,11 +259,11 @@ onBeforeUnmount(() => {
    globally (no scoped) because driver mounts its popover at body root. */
 .univerzap-tour-popover {
   background: rgb(20 27 26) !important;
-  border: 1px solid rgba(20, 184, 166, 0.35) !important;
+  border: 1px solid rgba(19, 203, 141, 0.35) !important;
   border-radius: 16px !important;
   box-shadow:
     0 24px 60px -20px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(20, 184, 166, 0.15) !important;
+    0 0 0 1px rgba(19, 203, 141, 0.15) !important;
   color: #f1f5f4 !important;
   padding: 18px 20px !important;
   max-width: 360px !important;
@@ -303,14 +303,14 @@ onBeforeUnmount(() => {
     box-shadow 0.15s ease;
 }
 .univerzap-tour-popover .driver-popover-next-btn {
-  background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
-  color: #062927 !important;
+  background: linear-gradient(135deg, #13CB8D, #0FA873) !important;
+  color: #062E20 !important;
   border: none !important;
   text-shadow: none !important;
 }
 .univerzap-tour-popover .driver-popover-next-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px -8px rgba(20, 184, 166, 0.55) !important;
+  box-shadow: 0 8px 24px -8px rgba(19, 203, 141, 0.55) !important;
 }
 .univerzap-tour-popover .driver-popover-prev-btn {
   background: transparent !important;
@@ -339,7 +339,7 @@ onBeforeUnmount(() => {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #14b8a6;
+  color: #13CB8D;
   margin-bottom: 8px;
 }
 </style>

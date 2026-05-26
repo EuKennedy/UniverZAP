@@ -944,7 +944,7 @@ const goToSettings = () => {
         />
         <svg
           viewBox="0 0 200 200"
-          class="relative size-44 drop-shadow-[0_12px_40px_rgba(20,184,166,0.25)]"
+          class="relative size-44 drop-shadow-[0_12px_40px_rgba(19, 203, 141,0.25)]"
           aria-hidden="true"
         >
           <rect
@@ -953,7 +953,7 @@ const goToSettings = () => {
             width="44"
             height="112"
             rx="10"
-            fill="#14b8a6"
+            fill="#13CB8D"
             opacity="0.18"
           />
           <rect
@@ -962,7 +962,7 @@ const goToSettings = () => {
             width="44"
             height="100"
             rx="10"
-            fill="#14b8a6"
+            fill="#13CB8D"
             opacity="0.35"
           />
           <rect
@@ -971,7 +971,7 @@ const goToSettings = () => {
             width="44"
             height="80"
             rx="10"
-            fill="#14b8a6"
+            fill="#13CB8D"
             opacity="0.6"
           />
           <rect
@@ -980,7 +980,7 @@ const goToSettings = () => {
             width="28"
             height="6"
             rx="3"
-            fill="#5eead4"
+            fill="#60E8B8"
             opacity="0.9"
           />
           <rect
@@ -989,7 +989,7 @@ const goToSettings = () => {
             width="20"
             height="4"
             rx="2"
-            fill="#5eead4"
+            fill="#60E8B8"
             opacity="0.7"
           />
           <rect
@@ -998,7 +998,7 @@ const goToSettings = () => {
             width="28"
             height="6"
             rx="3"
-            fill="#5eead4"
+            fill="#60E8B8"
             opacity="0.9"
           />
           <rect
@@ -1007,7 +1007,7 @@ const goToSettings = () => {
             width="22"
             height="4"
             rx="2"
-            fill="#5eead4"
+            fill="#60E8B8"
             opacity="0.7"
           />
           <rect
@@ -1016,7 +1016,7 @@ const goToSettings = () => {
             width="28"
             height="6"
             rx="3"
-            fill="#5eead4"
+            fill="#60E8B8"
             opacity="0.9"
           />
           <rect
@@ -1025,13 +1025,13 @@ const goToSettings = () => {
             width="18"
             height="4"
             rx="2"
-            fill="#5eead4"
+            fill="#60E8B8"
             opacity="0.7"
           />
-          <circle cx="178" cy="44" r="8" fill="#14b8a6" />
+          <circle cx="178" cy="44" r="8" fill="#13CB8D" />
           <path
             d="M174 44 L177 47 L182 41"
-            stroke="#062927"
+            stroke="#062E20"
             stroke-width="2"
             fill="none"
             stroke-linecap="round"

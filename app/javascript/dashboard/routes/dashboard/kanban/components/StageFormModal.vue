@@ -19,7 +19,7 @@ const COLOR_SWATCHES = [
   '#EF4444',
   '#8B5CF6',
   '#EC4899',
-  '#14B8A6',
+  '#13CB8D',
 ];
 
 const STATUS_TYPES = ['active', 'won', 'lost'];
