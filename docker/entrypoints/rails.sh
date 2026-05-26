@@ -30,5 +30,17 @@ do
   sleep 2;
 done
 
+# Run pending migrations on boot. We rely on Rails' own migration version
+# tracking so it's safe even when multiple Rails replicas race the same
+# deploy. Set RUN_DB_MIGRATIONS=false to disable per-container (e.g. for
+# the Sidekiq replica when running multi-process deploys).
+if [ "${RAILS_ENV:-development}" != "development" ] && [ "${RUN_DB_MIGRATIONS:-true}" = "true" ]; then
+  echo "Running database migrations (RAILS_ENV=$RAILS_ENV)..."
+  bundle exec rails db:migrate || {
+    echo "Database migrations failed. Aborting boot.";
+    exit 1;
+  }
+fi
+
 # Execute the main process of the container
 exec "$@"

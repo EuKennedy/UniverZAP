@@ -14,6 +14,7 @@ const {
   score,
   isComplete,
   isFresh,
+  isLoaded,
   tourCompletedAt,
   explicitDismiss,
   refresh,
@@ -47,12 +48,20 @@ watch(hasRegressed, regressed => {
 const isVisible = computed(() => {
   if (!isAdmin.value) return false;
   if (isHiddenRoute.value) return false;
+  // Avoid the initial flash: don't render until the backend has answered
+  // at least once. Otherwise score defaults to 0/5 and the FAB flickers in
+  // before isComplete settles.
+  if (!isLoaded.value) return false;
   // Backend `completed` already uses a lenient rule (inbox + assistant, or
   // any 3 of 5 readiness flags). Once that is true we get out of the way.
   if (isComplete.value && !hasRegressed.value) return false;
   if (explicitDismiss.value && !hasRegressed.value) return false;
   return true;
 });
+
+// Only pulse for genuinely fresh accounts — once anything is configured we
+// stop the animation so the FAB doesn't keep "spamming" the user.
+const shouldPulse = computed(() => isLoaded.value && isFresh.value);
 
 const togglePanel = () => {
   isPanelOpen.value = !isPanelOpen.value;
@@ -87,9 +96,11 @@ const dismissFromFab = async event => {
         v-if="!isPanelOpen"
         class="fixed bottom-20 ltr:right-4 rtl:left-4 z-50 group"
       >
-        <!-- Soft pulse ring while the account is fresh (no flags green yet) -->
+        <!-- Soft pulse ring only while the account is genuinely fresh and the
+             readiness payload has actually loaded. Avoids spamming a pulse
+             while the API call is in flight. -->
         <span
-          v-if="isFresh"
+          v-if="shouldPulse"
           class="absolute inset-0 rounded-full bg-n-teal-9/40 motion-safe:animate-ping"
           aria-hidden="true"
         />
