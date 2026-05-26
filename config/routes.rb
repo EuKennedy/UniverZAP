@@ -479,6 +479,7 @@ Rails.application.routes.draw do
           post :accept_terms
           get :lgpd_export
           delete :lgpd_delete
+          post :lgpd_cancel_delete
         end
 
         # MFA routes

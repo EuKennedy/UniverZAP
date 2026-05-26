@@ -65,11 +65,23 @@ class Api::V1::ProfilesController < Api::BaseController
               filename: "univerzap-export-#{@user.id}-#{Time.current.to_i}.json"
   end
 
-  # LGPD Art. 18 VI (eliminação) — apaga o User e tudo que é ON DELETE
-  # CASCADE. Workspaces órfãos (último admin saindo) ficam intactos: o
-  # operador faz transferência manual antes via /super_admin.
+  # LGPD Art. 18 VI (eliminação) — agenda a exclusão para daqui 30 dias.
+  # Exige a senha atual e dispara email de confirmação. O purge final
+  # ocorre via cron Lgpd::PurgeExpiredUsersJob. Usuário pode cancelar
+  # via POST :lgpd_cancel_delete enquanto a janela estiver aberta.
   def lgpd_delete
-    Lgpd::UserDeleteService.new(@user).call
+    Lgpd::ScheduleDeletionService.new(@user, current_password: params[:current_password]).call
+    render json: { scheduled_for_deletion_at: @user.scheduled_for_deletion_at }
+  rescue Lgpd::ScheduleDeletionService::InvalidPassword
+    render json: { error: 'invalid_password' }, status: :unauthorized
+  end
+
+  # LGPD Art. 18 IX — revoga a solicitação de exclusão enquanto ainda
+  # estiver dentro da janela de retenção.
+  def lgpd_cancel_delete
+    cancelled = Lgpd::CancelDeletionService.new(@user).call
+    return render json: { error: 'no_pending_deletion' }, status: :not_found unless cancelled
+
     head :ok
   end
 

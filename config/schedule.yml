@@ -33,6 +33,18 @@ remove_stale_contact_inboxes_job.rb:
   class: 'Internal::RemoveStaleContactInboxesJob'
   queue: scheduled_jobs
 
+# LGPD Art. 18 VI — purga final 30 dias após scheduled_for_deletion_at.
+lgpd_purge_expired_users_job:
+  cron: '15 3 * * *'
+  class: 'Lgpd::PurgeExpiredUsersJob'
+  queue: scheduled_jobs
+
+# Limpa dedup rows de webhooks Univercart > 90 dias.
+lgpd_purge_processed_webhook_events_job:
+  cron: '30 3 * * *'
+  class: 'Lgpd::PurgeProcessedWebhookEventsJob'
+  queue: scheduled_jobs
+
 # executed daily at 2230 UTC
 # which is our lowest traffic time
 remove_stale_redis_keys_job.rb:

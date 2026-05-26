@@ -3,17 +3,19 @@ class Lgpd::UserDeleteService
     @user = user
   end
 
-  # LGPD Art. 18 VI — elimina o titular e seus vínculos diretos. Devise
-  # confirma o destroy; cascades em FKs cuidam de message_threads /
-  # notifications / etc. Workspaces órfãos (último admin saindo) ficam
-  # intactos: operador faz transferência via super_admin antes.
+  # LGPD Art. 18 VI — purga final do titular. Chamado pelo cron
+  # Lgpd::PurgeExpiredUsersJob depois da janela de retenção de 30 dias.
+  # Anonimiza audits, destrói o User + cascades de FK, e dispara o email
+  # de confirmação.
   def call
+    final_email = @user.email
     ActiveRecord::Base.transaction do
       anonymize_audits
       @user.account_users.destroy_all
       @user.access_token&.destroy
       @user.destroy!
     end
+    Lgpd::DeletionMailer.purged(final_email).deliver_later
   end
 
   private

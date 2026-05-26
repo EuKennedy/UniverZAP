@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<body style="font-family: -apple-system, sans-serif; color:#0f172a;">
+  <h2>Olá <%= @user.name %>,</h2>
+  <p>
+    Recebemos sua solicitação de exclusão de conta no UniverZAP, conforme
+    o Art. 18 VI da LGPD.
+  </p>
+  <p>
+    Sua conta será <strong>permanentemente excluída em
+    <%= @scheduled_at.strftime('%d/%m/%Y') %></strong> (30 dias a partir
+    de hoje). Durante esse período você pode cancelar entrando no
+    dashboard.
+  </p>
+  <p>
+    Se você não solicitou isso, faça login imediatamente e cancele a
+    exclusão. Caso contrário, todos os seus dados pessoais serão apagados
+    e <strong>não poderão ser recuperados</strong>.
+  </p>
+  <p>Dúvidas: <a href="mailto:privacidade@univerbeauty.com.br">privacidade@univerbeauty.com.br</a></p>
+</body>
+</html>

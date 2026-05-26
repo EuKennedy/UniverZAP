@@ -113,6 +113,17 @@ class Rack::Attack
     req.ip if req.path_without_extentions == '/auth/password' && req.post?
   end
 
+  ### LGPD endpoints — 1/day per IP. Export ships the full profile so
+  ### scrapers should never hit it more than once a day; delete is
+  ### irreversible, so we want a hard ceiling regardless of authentication.
+  throttle('lgpd_export/ip', limit: 1, period: 1.day) do |req|
+    req.ip if req.path_without_extentions == '/api/v1/profile/lgpd_export' && req.get?
+  end
+
+  throttle('lgpd_delete/ip', limit: 1, period: 1.day) do |req|
+    req.ip if req.path_without_extentions == '/api/v1/profile/lgpd_delete' && req.delete?
+  end
+
   throttle('reset_password/email', limit: 5, period: 1.hour) do |req|
     if req.path_without_extentions == '/auth/password' && req.post?
       email = req.params['email'].presence || ActionDispatch::Request.new(req.env).params['email'].presence
