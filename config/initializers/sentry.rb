@@ -3,6 +3,9 @@
 # string through PII regexes (email / phone / CPF / CNPJ) before the event
 # leaves the process. Default PII is now off so request headers / IPs are
 # only included when the redactor approves them.
+
+# rubocop:disable Metrics/BlockLength
+
 if ENV['SENTRY_DSN'].present?
   SENTRY_SENSITIVE_KEYS = %w[
     password new_password old_password password_confirmation password_hash
@@ -14,10 +17,10 @@ if ENV['SENTRY_DSN'].present?
   ].freeze
 
   SENTRY_PII_PATTERNS = [
-    [/[\w.+\-]+@[\w\-]+\.[\w.\-]+/i, '[REDACTED_EMAIL]'],
+    [%r{[\w.+\-]+@[\w\-]+\.[\w.\-]+}i, '[REDACTED_EMAIL]'],
     [/\b\d{2,3}\s?9?\d{4}-?\d{4}\b/, '[REDACTED_PHONE]'],
     [/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/, '[REDACTED_CPF]'],
-    [/\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/, '[REDACTED_CNPJ]']
+    [%r{\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b}, '[REDACTED_CNPJ]']
   ].freeze
 
   def sentry_redact_string(value)
@@ -28,22 +31,60 @@ if ENV['SENTRY_DSN'].present?
     end
   end
 
+  def sentry_scrub_hash(value, depth)
+    value.each_with_object({}) do |(key, val), acc|
+      acc[key] = if SENTRY_SENSITIVE_KEYS.include?(key.to_s.downcase)
+                   '[Filtered]'
+                 else
+                   sentry_scrub(val, depth + 1)
+                 end
+    end
+  end
+
   def sentry_scrub(value, depth = 0)
     return value if depth > 5
+    return sentry_redact_string(value) if value.is_a?(String)
+    return value.map { |item| sentry_scrub(item, depth + 1) } if value.is_a?(Array)
+    return sentry_scrub_hash(value, depth) if value.is_a?(Hash)
 
-    case value
-    when String then sentry_redact_string(value)
-    when Array then value.map { |item| sentry_scrub(item, depth + 1) }
-    when Hash
-      value.each_with_object({}) do |(key, val), acc|
-        acc[key] = if SENTRY_SENSITIVE_KEYS.include?(key.to_s.downcase)
-                     '[Filtered]'
-                   else
-                     sentry_scrub(val, depth + 1)
-                   end
-      end
-    else value
+    value
+  end
+
+  def sentry_filter_request(request)
+    request.headers&.each_key do |header|
+      request.headers[header] = '[Filtered]' if %w[Cookie cookie Authorization authorization X-Api-Key x-api-key].include?(header)
     end
+    request.data = sentry_scrub(request.data) if request.data
+  end
+
+  def sentry_filter_event(event)
+    event.message = sentry_redact_string(event.message) if event.message
+    event.breadcrumbs&.each do |breadcrumb|
+      breadcrumb.message = sentry_redact_string(breadcrumb.message) if breadcrumb.message
+      breadcrumb.data = sentry_scrub(breadcrumb.data) if breadcrumb.data
+    end
+    event.extra = sentry_scrub(event.extra) if event.extra
+    event.contexts = sentry_scrub(event.contexts) if event.contexts
+  end
+
+  def sentry_filter_exception(event)
+    event.exception&.values&.each do |exc| # rubocop:disable Style/HashEachMethods
+      exc.value = sentry_redact_string(exc.value) if exc.value
+    end
+  end
+
+  def sentry_filter_user(user)
+    user.delete(:email)
+    user.delete(:username)
+    user.delete(:ip_address)
+  end
+
+  def sentry_before_send(event, _hint)
+    sentry_filter_request(event.request) if event.request
+    sentry_filter_event(event)
+    sentry_filter_exception(event)
+    sentry_filter_user(event.user) if event.user
+    event
   end
 
   Sentry.init do |config|
@@ -51,42 +92,11 @@ if ENV['SENTRY_DSN'].present?
     config.enabled_environments = %w[staging production]
     config.traces_sample_rate = 0.1 if ENV['ENABLE_SENTRY_TRANSACTIONS']
     config.excluded_exceptions += ['Rack::Timeout::RequestTimeoutException', 'MutexApplicationJob::LockAcquisitionError']
-
-    # LGPD: never send default PII (IP, headers, etc) — the before_send
-    # below scrubs anything PII that slips into a breadcrumb or extra.
+    # LGPD: never send default PII (IP, headers, etc) — sentry_before_send
+    # scrubs anything PII that slips into a breadcrumb or extra.
     config.send_default_pii = false
-
-    config.before_send = lambda do |event, _hint|
-      event.request&.tap do |req|
-        req.headers&.tap do |headers|
-          %w[Cookie cookie Authorization authorization X-Api-Key x-api-key].each do |header|
-            headers[header] = '[Filtered]' if headers.key?(header)
-          end
-        end
-        req.data = sentry_scrub(req.data) if req.data
-      end
-
-      event.tap do |evt|
-        evt.message = sentry_redact_string(evt.message) if evt.message
-        evt.breadcrumbs&.each do |breadcrumb|
-          breadcrumb.message = sentry_redact_string(breadcrumb.message) if breadcrumb.message
-          breadcrumb.data = sentry_scrub(breadcrumb.data) if breadcrumb.data
-        end
-        evt.extra = sentry_scrub(evt.extra) if evt.extra
-        evt.contexts = sentry_scrub(evt.contexts) if evt.contexts
-      end
-
-      event.exception&.values&.each do |exc|
-        exc.value = sentry_redact_string(exc.value) if exc.value
-      end
-
-      event.user&.tap do |user|
-        user.delete(:email)
-        user.delete(:username)
-        user.delete(:ip_address)
-      end
-
-      event
-    end
+    config.before_send = method(:sentry_before_send)
   end
 end
+
+# rubocop:enable Metrics/BlockLength

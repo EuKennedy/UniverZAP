@@ -24,6 +24,8 @@ import CopilotLauncher from 'dashboard/components-next/copilot/CopilotLauncher.v
 import CopilotContainer from 'dashboard/components/copilot/AthenasCopilotContainer.vue';
 import OnboardingLauncher from 'dashboard/components-next/onboarding/OnboardingLauncher.vue';
 import OnboardingTour from 'dashboard/components-next/onboarding/OnboardingTour.vue';
+import CookieConsentBanner from 'dashboard/components-next/legal/CookieConsentBanner.vue';
+import LegalReAcceptBanner from 'dashboard/components-next/legal/LegalReAcceptBanner.vue';
 
 import MobileSidebarLauncher from 'dashboard/components-next/sidebar/MobileSidebarLauncher.vue';
 import { useCallsStore } from 'dashboard/stores/calls';
@@ -41,6 +43,8 @@ export default {
     MobileSidebarLauncher,
     OnboardingLauncher,
     OnboardingTour,
+    CookieConsentBanner,
+    LegalReAcceptBanner,
   },
   setup() {
     const upgradePageRef = ref(null);
@@ -168,6 +172,8 @@ export default {
         <CopilotContainer />
         <OnboardingLauncher />
         <OnboardingTour />
+        <CookieConsentBanner />
+        <LegalReAcceptBanner />
         <FloatingCallWidget v-if="hasActiveCall || hasIncomingCall" />
       </template>
       <AddAccountModal

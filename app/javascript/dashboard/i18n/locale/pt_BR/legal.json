@@ -1,0 +1,22 @@
+{
+  "LEGAL": {
+    "COOKIES": {
+      "TITLE": "Cookies neste site",
+      "BODY": "Usamos cookies estritamente necessários para autenticar sua sessão e cookies opcionais para melhorar o produto. Você decide quais aceitar.",
+      "LEARN_MORE": "Saiba mais",
+      "ESSENTIAL": "Apenas essenciais",
+      "ACCEPT_ALL": "Aceitar todos"
+    },
+    "RE_ACCEPT": {
+      "TITLE": "Atualizamos nossos termos",
+      "BODY": "Publicamos uma nova versão dos Termos de Uso e da Política de Privacidade. Leia abaixo e confirme para continuar usando o UniverZAP.",
+      "READ_TERMS": "Ler Termos de Uso",
+      "READ_PRIVACY": "Ler Política de Privacidade",
+      "CTA": "Li e aceito a nova versão",
+      "SAVING": "Salvando…",
+      "HINT": "Conforme Lei 13.709/2018 (LGPD), Art. 8º.",
+      "SUCCESS": "Aceite registrado.",
+      "ERROR": "Não foi possível registrar o aceite. Tente novamente."
+    }
+  }
+}
