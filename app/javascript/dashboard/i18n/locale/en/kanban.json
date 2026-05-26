@@ -33,6 +33,15 @@
         "OVERDUE": "Overdue",
         "RATE": "· {n}%"
       },
+      "SWIMLANES": {
+        "TITLE": "Group by",
+        "NONE": "No grouping",
+        "ASSIGNEE": "Assignee",
+        "PRIORITY": "Priority",
+        "LABEL": "Label",
+        "UNASSIGNED": "Unassigned",
+        "EMPTY": "No tasks match the current swimlanes."
+      },
       "FILTER": {
         "ALL": "All",
         "ALL_ASSIGNEES": "All assignees",

@@ -29,6 +29,15 @@
         "OVERDUE": "Atrasadas",
         "RATE": "· {n}%"
       },
+      "SWIMLANES": {
+        "TITLE": "Agrupar por",
+        "NONE": "Sem agrupar",
+        "ASSIGNEE": "Atendente",
+        "PRIORITY": "Prioridade",
+        "LABEL": "Etiqueta",
+        "UNASSIGNED": "Sem responsável",
+        "EMPTY": "Nenhuma tarefa nas raias atuais."
+      },
       "FILTER": {
         "ALL": "Tudo",
         "ALL_ASSIGNEES": "Todos atendentes",

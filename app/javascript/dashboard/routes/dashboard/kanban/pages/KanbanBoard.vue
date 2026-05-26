@@ -56,6 +56,12 @@ const labelFilter = ref(null); // null | label title
 const dueFilter = ref('all'); // 'all' | 'overdue' | 'today' | 'week' | 'none'
 const hasConversationFilter = ref(false);
 
+// Swimlanes — when set, the board renders one horizontal lane per group key
+// (assignee / priority / label). 'none' falls back to the classic single-row
+// layout. Lane membership is computed live from the same filtered task list.
+const GROUP_BY_OPTIONS = ['none', 'assignee', 'priority', 'label'];
+const groupBy = ref('none');
+
 // Bulk select state. We model it as a Set so adds/removes are O(1) and the
 // child columns can do `Set.has(taskId)` for the selection ring.
 const selectedTaskIds = ref(new Set());
@@ -120,17 +126,82 @@ const matchesFilters = task => {
   return true;
 };
 
+const matchesSearch = task => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return true;
+  const title = (task.title || '').toLowerCase();
+  const contactName = (task.contacts?.[0]?.name || '').toLowerCase();
+  return title.includes(q) || contactName.includes(q);
+};
+
 const tasksByStageFiltered = stageId => {
   const all = tasksByStage(stageId) || [];
-  const q = search.value.trim().toLowerCase();
+  return all.filter(task => matchesFilters(task) && matchesSearch(task));
+};
+
+// Lane membership helpers — a task can map to 0..N lanes depending on the
+// group key. Labels are multi-valued; assignees default to "Unassigned" when
+// empty so nothing falls off the board.
+const UNASSIGNED_KEY = '__unassigned__';
+
+const taskLaneKeys = task => {
+  if (groupBy.value === 'assignee') {
+    const ids = (task.assignees || []).map(a => a.id);
+    return ids.length ? ids.map(id => `agent:${id}`) : [UNASSIGNED_KEY];
+  }
+  if (groupBy.value === 'priority') {
+    return [`priority:${task.priority || 'none'}`];
+  }
+  if (groupBy.value === 'label') {
+    const titles = (task.labels || []).map(l => l.title);
+    return titles.length
+      ? titles.map(title => `label:${title}`)
+      : [UNASSIGNED_KEY];
+  }
+  return [];
+};
+
+const tasksByStageInLane = (stageId, laneKey) => {
+  const all = tasksByStage(stageId) || [];
   return all.filter(task => {
-    if (!matchesFilters(task)) return false;
-    if (!q) return true;
-    const title = (task.title || '').toLowerCase();
-    const contactName = (task.contacts?.[0]?.name || '').toLowerCase();
-    return title.includes(q) || contactName.includes(q);
+    if (!matchesFilters(task) || !matchesSearch(task)) return false;
+    return taskLaneKeys(task).includes(laneKey);
   });
 };
+
+function laneLabel(key, sampleTask) {
+  if (key === UNASSIGNED_KEY) return t('KANBAN.BOARD.SWIMLANES.UNASSIGNED');
+  if (key.startsWith('agent:')) {
+    const id = Number(key.slice('agent:'.length));
+    const found = (sampleTask.assignees || []).find(a => a.id === id);
+    return found?.name || `#${id}`;
+  }
+  if (key.startsWith('priority:')) {
+    const value = key.slice('priority:'.length);
+    return t(`KANBAN.PRIORITY.${value.toUpperCase()}`);
+  }
+  if (key.startsWith('label:')) return key.slice('label:'.length);
+  return key;
+}
+
+const lanes = computed(() => {
+  if (groupBy.value === 'none') return [];
+  const allTasks = stages.value
+    .flatMap(s => tasksByStage(s.id) || [])
+    .filter(task => matchesFilters(task) && matchesSearch(task));
+  const seen = new Map();
+  allTasks.forEach(task => {
+    taskLaneKeys(task).forEach(key => {
+      if (!seen.has(key)) {
+        seen.set(key, { key, label: laneLabel(key, task), count: 0 });
+      }
+      seen.get(key).count += 1;
+    });
+  });
+  return Array.from(seen.values()).sort((a, b) =>
+    a.label.localeCompare(b.label)
+  );
+});
 
 const clearAllFilters = () => {
   search.value = '';
@@ -763,6 +834,17 @@ const goToSettings = () => {
         @apply="applySavedView"
       />
 
+      <!-- Group by (swimlanes) -->
+      <select
+        v-model="groupBy"
+        class="px-2.5 py-1.5 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak text-[11px] font-medium text-n-slate-12 focus:outline-none focus:ring-n-teal-7 cursor-pointer"
+        :title="t('KANBAN.BOARD.SWIMLANES.TITLE')"
+      >
+        <option v-for="opt in GROUP_BY_OPTIONS" :key="opt" :value="opt">
+          {{ t(`KANBAN.BOARD.SWIMLANES.${opt.toUpperCase()}`) }}
+        </option>
+      </select>
+
       <button
         v-if="activeFilterCount > 0 || search"
         type="button"
@@ -818,8 +900,12 @@ const goToSettings = () => {
       />
     </section>
 
-    <section v-else class="flex-1 overflow-x-auto overflow-y-hidden">
-      <div class="flex items-stretch gap-4 px-7 py-5 h-full min-w-min">
+    <section v-else class="flex-1 overflow-auto">
+      <!-- Classic single-row layout. -->
+      <div
+        v-if="groupBy === 'none'"
+        class="flex items-stretch gap-4 px-7 py-5 h-full min-w-min"
+      >
         <KanbanColumn
           v-for="stage in stages"
           :key="stage.id"
@@ -837,6 +923,56 @@ const goToSettings = () => {
           @task-moved="onTaskMoved"
           @add-task="openCreateTask"
         />
+      </div>
+
+      <!-- Swimlanes layout — one horizontal row of columns per group key. -->
+      <div v-else class="flex flex-col gap-6 px-7 py-5 min-w-min">
+        <article
+          v-for="lane in lanes"
+          :key="lane.key"
+          class="flex flex-col gap-3"
+        >
+          <header
+            class="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak sticky left-0 max-w-fit"
+          >
+            <span
+              class="inline-flex items-center justify-center size-6 rounded-md bg-n-teal-3 text-n-teal-11 text-[10px] font-bold uppercase tracking-wider"
+            >
+              <span class="i-lucide-rows-3 size-3.5" aria-hidden="true" />
+            </span>
+            <span class="text-[12px] font-semibold text-n-slate-12 truncate">
+              {{ lane.label }}
+            </span>
+            <span class="text-[11px] tabular-nums text-n-slate-11 font-medium">
+              {{ lane.count }}
+            </span>
+          </header>
+          <div class="flex items-stretch gap-4">
+            <KanbanColumn
+              v-for="stage in stages"
+              :key="`${lane.key}-${stage.id}`"
+              :stage="stage"
+              :tasks="tasksByStageInLane(stage.id, lane.key)"
+              :funnel-name="funnel?.name || ''"
+              :can-mutate="canMutate"
+              :selected-task-ids="selectedTaskIds"
+              :inline-editing-task-id="inlineEditingTaskId"
+              @card-click="onCardClick"
+              @card-select="onCardSelect"
+              @card-title-edit="onCardTitleEdit"
+              @card-title-submit="onCardTitleSubmit"
+              @card-title-cancel="onCardTitleCancel"
+              @task-moved="onTaskMoved"
+              @add-task="openCreateTask"
+            />
+          </div>
+        </article>
+        <p
+          v-if="!lanes.length"
+          class="text-center text-sm text-n-slate-11 py-12"
+        >
+          {{ t('KANBAN.BOARD.SWIMLANES.EMPTY') }}
+        </p>
       </div>
     </section>
 
