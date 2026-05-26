@@ -19,6 +19,7 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
     assignees_changed = apply_associations(@task)
     @task.save!
     Kanban::AutomationService.handle_task_assignees_changed(@task) if assignees_changed
+    Kanban::ActivityLogger.log_created(@task, Current.user)
   end
 
   def update
@@ -27,9 +28,19 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
       @task.funnel_stage = stage
     end
     @task.assign_attributes(permitted_params.except(:funnel_stage_id))
+    previous_assignee_ids = @task.assignee_ids.dup
+    previous_label_ids = @task.task_label_ids.dup
     assignees_changed = apply_associations(@task)
+    snapshot = @task.changes
     @task.save!
     Kanban::AutomationService.handle_task_assignees_changed(@task) if assignees_changed
+    Kanban::ActivityLogger.log_changes(
+      @task,
+      Current.user,
+      snapshot,
+      previous_assignee_ids: previous_assignee_ids,
+      previous_label_ids: previous_label_ids
+    )
   end
 
   def destroy

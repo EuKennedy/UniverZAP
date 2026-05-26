@@ -1,5 +1,12 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
@@ -264,6 +271,106 @@ const serializeCustomValues = () =>
       value: customFieldValues.value[field.id] ?? null,
     }))
     .filter(entry => entry.value !== null && entry.value !== '');
+
+// ---------------------------------------------------------------------------
+// Time tracking — single in-flight timer per task. We poll the elapsed time
+// locally with a setInterval while a timer is open, but the source of truth
+// is the server-side started_at on the active entry.
+// ---------------------------------------------------------------------------
+const timeEntries = ref([]);
+const activeTimer = ref(null);
+const totalTrackedSeconds = ref(0);
+const timerBusy = ref(false);
+const nowTick = ref(Math.floor(Date.now() / 1000));
+let nowInterval = null;
+
+const liveSeconds = computed(() => {
+  if (!activeTimer.value) return 0;
+  return Math.max(0, nowTick.value - activeTimer.value.started_at);
+});
+
+const formatDuration = totalSeconds => {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h) return `${h}h${m.toString().padStart(2, '0')}m`;
+  if (m) return `${m}m${sec.toString().padStart(2, '0')}s`;
+  return `${sec}s`;
+};
+
+const loadTimeData = async () => {
+  if (!props.task) return;
+  try {
+    const { data } = await KanbanTasksAPI.fetchTimeEntries(props.task.id);
+    timeEntries.value = data || [];
+    activeTimer.value =
+      timeEntries.value.find(entry => !entry.ended_at) || null;
+    totalTrackedSeconds.value = timeEntries.value
+      .filter(entry => entry.ended_at)
+      .reduce((sum, entry) => sum + (entry.duration_seconds || 0), 0);
+  } catch {
+    // best effort — drawer stays usable even if timer endpoint is down
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Activity feed — fetched on open, refreshed after every mutation the drawer
+// performs locally (timer, subtask, etc).
+// ---------------------------------------------------------------------------
+const activities = ref([]);
+
+const loadActivities = async () => {
+  if (!props.task) return;
+  try {
+    const { data } = await KanbanTasksAPI.fetchActivities(props.task.id);
+    activities.value = data || [];
+  } catch {
+    // best effort
+  }
+};
+
+const onToggleTimer = async () => {
+  if (timerBusy.value || !props.task) return;
+  timerBusy.value = true;
+  try {
+    if (activeTimer.value) {
+      await KanbanTasksAPI.stopTimer(props.task.id);
+    } else {
+      await KanbanTasksAPI.startTimer(props.task.id);
+    }
+    await loadTimeData();
+    await loadActivities();
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.TASK.FORM.TIMER_ERROR'));
+  } finally {
+    timerBusy.value = false;
+  }
+};
+
+const formatActivityTimestamp = ts => {
+  if (!ts) return '';
+  const date = new Date(ts * 1000);
+  return date.toLocaleString();
+};
+
+onMounted(() => {
+  loadTimeData();
+  loadActivities();
+  nowInterval = setInterval(() => {
+    nowTick.value = Math.floor(Date.now() / 1000);
+  }, 1000);
+});
+onBeforeUnmount(() => {
+  if (nowInterval) clearInterval(nowInterval);
+});
+watch(
+  () => props.task?.id,
+  () => {
+    loadTimeData();
+    loadActivities();
+  }
+);
 
 const onSubmit = () => {
   if (!isValid.value) return;
@@ -789,6 +896,119 @@ const onSubmit = () => {
             {{ t('KANBAN.TASK.FORM.SUBTASK_ADD') }}
           </button>
         </div>
+      </section>
+
+      <!-- Time tracking -->
+      <section
+        v-if="isEdit"
+        class="flex flex-col gap-3 p-4 rounded-xl bg-n-alpha-1 ring-1 ring-inset ring-n-weak"
+      >
+        <header class="flex items-center justify-between gap-2">
+          <label
+            class="text-[11px] font-semibold text-n-slate-11 uppercase tracking-wider"
+          >
+            {{ t('KANBAN.TASK.FORM.TIME_TITLE') }}
+          </label>
+          <span class="text-[11px] tabular-nums text-n-slate-11">
+            {{ t('KANBAN.TASK.FORM.TIME_TOTAL') }}:
+            <span class="text-n-slate-12 font-semibold">
+              {{ formatDuration(totalTrackedSeconds + liveSeconds) }}
+            </span>
+          </span>
+        </header>
+        <button
+          type="button"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg ring-1 transition-colors cursor-pointer"
+          :class="
+            activeTimer
+              ? 'bg-n-ruby-3 ring-n-ruby-6 text-n-ruby-11 hover:bg-n-ruby-4'
+              : 'bg-n-teal-3 ring-n-teal-6 text-n-teal-11 hover:bg-n-teal-4'
+          "
+          :disabled="timerBusy"
+          @click="onToggleTimer"
+        >
+          <span
+            class="size-3.5"
+            :class="activeTimer ? 'i-lucide-square' : 'i-lucide-play'"
+            aria-hidden="true"
+          />
+          <span class="text-[12px] font-semibold">
+            {{
+              activeTimer
+                ? t('KANBAN.TASK.FORM.TIMER_STOP', {
+                    elapsed: formatDuration(liveSeconds),
+                  })
+                : t('KANBAN.TASK.FORM.TIMER_START')
+            }}
+          </span>
+        </button>
+        <ul
+          v-if="timeEntries.filter(e => e.ended_at).length"
+          class="flex flex-col gap-1 max-h-32 overflow-y-auto"
+        >
+          <li
+            v-for="entry in timeEntries.filter(e => e.ended_at).slice(0, 5)"
+            :key="entry.id"
+            class="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-n-solid-1 ring-1 ring-n-weak/60 text-[11.5px] text-n-slate-11"
+          >
+            <span
+              class="i-lucide-clock-3 size-3 text-n-slate-10"
+              aria-hidden="true"
+            />
+            <span class="flex-1 truncate">{{ entry.user_name || '—' }}</span>
+            <span class="tabular-nums font-medium text-n-slate-12">
+              {{ formatDuration(entry.duration_seconds) }}
+            </span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Activity feed -->
+      <section
+        v-if="isEdit"
+        class="flex flex-col gap-3 p-4 rounded-xl bg-n-alpha-1 ring-1 ring-inset ring-n-weak"
+      >
+        <header class="flex items-center justify-between gap-2">
+          <label
+            class="text-[11px] font-semibold text-n-slate-11 uppercase tracking-wider"
+          >
+            {{ t('KANBAN.TASK.FORM.ACTIVITY_TITLE') }}
+          </label>
+          <span
+            v-if="activities.length"
+            class="text-[11px] text-n-slate-10 tabular-nums"
+          >
+            {{ activities.length }}
+          </span>
+        </header>
+        <p
+          v-if="!activities.length"
+          class="text-[12px] text-n-slate-11 text-center py-3"
+        >
+          {{ t('KANBAN.TASK.FORM.ACTIVITY_EMPTY') }}
+        </p>
+        <ol
+          v-else
+          class="relative flex flex-col gap-3 max-h-64 overflow-y-auto pl-4 before:absolute before:left-1.5 before:top-1.5 before:bottom-1.5 before:w-px before:bg-n-weak"
+        >
+          <li
+            v-for="activity in activities"
+            :key="activity.id"
+            class="relative flex flex-col gap-0.5"
+          >
+            <span
+              class="absolute -left-3.5 top-1 size-2 rounded-full bg-n-teal-9 ring-2 ring-n-surface-1"
+              aria-hidden="true"
+            />
+            <p class="text-[12px] text-n-slate-12 m-0">
+              {{ activity.summary }}
+            </p>
+            <p class="text-[10.5px] text-n-slate-10 m-0">
+              {{ activity.user_name || t('KANBAN.TASK.FORM.ACTIVITY_SYSTEM') }}
+              · {{ formatActivityTimestamp(activity.created_at) }}
+            </p>
+          </li>
+        </ol>
       </section>
 
       <footer

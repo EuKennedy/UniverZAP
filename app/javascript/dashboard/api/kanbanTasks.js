@@ -57,6 +57,22 @@ class KanbanTasksAPI extends ApiClient {
   destroySubtask(id) {
     return axios.delete(`${this.url}/${id}`);
   }
+
+  fetchActivities(taskId) {
+    return axios.get(`${this.url}/${taskId}/activities`);
+  }
+
+  fetchTimeEntries(taskId) {
+    return axios.get(`${this.url}/${taskId}/time_entries`);
+  }
+
+  startTimer(taskId) {
+    return axios.post(`${this.url}/${taskId}/time_entries/start`);
+  }
+
+  stopTimer(taskId) {
+    return axios.post(`${this.url}/${taskId}/time_entries/stop`);
+  }
 }
 
 export default new KanbanTasksAPI();

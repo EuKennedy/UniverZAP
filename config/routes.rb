@@ -289,6 +289,13 @@ Rails.application.routes.draw do
               post :attach_conversation
               delete :detach_conversation
             end
+            resources :kanban_task_activities, only: [:index], path: 'activities'
+            resources :kanban_task_time_entries, only: [:index], path: 'time_entries' do
+              collection do
+                post :start
+                post :stop
+              end
+            end
           end
 
           resources :notifications, only: [:index, :update, :destroy] do

@@ -40,6 +40,18 @@ class KanbanTask < ApplicationRecord
            dependent: :destroy,
            inverse_of: :kanban_task
 
+  has_many :time_entries,
+           -> { order(started_at: :desc) },
+           class_name: 'KanbanTaskTimeEntry',
+           dependent: :destroy,
+           inverse_of: :kanban_task
+
+  has_many :activities,
+           -> { order(created_at: :desc) },
+           class_name: 'KanbanTaskActivity',
+           dependent: :destroy,
+           inverse_of: :kanban_task
+
   # Self-referential subtask hierarchy. Root cards live in stages; subtasks
   # carry a parent_task_id and are rendered inside the parent's drawer.
   belongs_to :parent_task, class_name: 'KanbanTask', optional: true,
@@ -103,7 +115,11 @@ class KanbanTask < ApplicationRecord
   end
 
   def custom_values_payload
-    { custom_values: custom_values.map(&:push_event_data) }
+    {
+      custom_values: custom_values.map(&:push_event_data),
+      total_tracked_seconds: time_entries.where.not(ended_at: nil).sum(:duration_seconds),
+      active_time_entry: time_entries.find_by(ended_at: nil)&.push_event_data
+    }
   end
 
   def relations_payload
