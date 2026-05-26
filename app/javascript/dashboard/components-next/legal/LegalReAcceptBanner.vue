@@ -29,30 +29,29 @@ const needsReAccept = computed(() => {
   return false;
 });
 
+/* global axios */
 const accept = async () => {
   if (isBusy.value) return;
   isBusy.value = true;
   try {
-    const response = await fetch('/api/v1/profile/accept_terms', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        terms_version: LEGAL_VERSIONS.terms,
-        privacy_version: LEGAL_VERSIONS.privacy,
-      }),
+    // Use the global axios so the request rides the dashboard's auth
+    // interceptor (devise_token_auth headers + CSRF). Plain fetch() bypassed
+    // those headers and the API rejected with 401.
+    await axios.post('/api/v1/profile/accept_terms', {
+      terms_version: LEGAL_VERSIONS.terms,
+      privacy_version: LEGAL_VERSIONS.privacy,
     });
-    if (!response.ok) throw new Error('accept_terms failed');
     if (currentUser.value) {
       currentUser.value.accepted_terms_version = LEGAL_VERSIONS.terms;
       currentUser.value.accepted_privacy_version = LEGAL_VERSIONS.privacy;
     }
     useAlert(t('LEGAL.RE_ACCEPT.SUCCESS'));
   } catch (error) {
-    useAlert(error?.message || t('LEGAL.RE_ACCEPT.ERROR'));
+    useAlert(
+      error?.response?.data?.message ||
+        error?.message ||
+        t('LEGAL.RE_ACCEPT.ERROR')
+    );
   } finally {
     isBusy.value = false;
   }
