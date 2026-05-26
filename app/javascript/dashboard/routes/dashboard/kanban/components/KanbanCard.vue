@@ -205,16 +205,23 @@ const labelsExtra = computed(() =>
     :class="selected ? 'ring-2 !ring-n-teal-9 bg-n-teal-3/20' : 'ring-n-weak'"
     @click="onClick"
   >
-    <!-- Selection checkbox: revealed on hover or when a selection batch is
-         already open. Click never propagates to the card body. -->
+    <!-- Selection checkbox: revealed on hover or while a selection batch is
+         open. Visually distinguishes three states — checked (filled teal +
+         check), available (hollow teal ring once a batch is active) and
+         resting (faint ring, hover-only). The old class combined "selected"
+         and "selectionActive" so every card showed a filled checkbox the
+         moment any task in the board was selected. Click never propagates
+         to the card body. -->
     <button
       type="button"
-      class="absolute top-2 right-2 z-10 size-5 rounded-md ring-1 ring-n-slate-7 bg-n-solid-1/95 inline-flex items-center justify-center transition-opacity duration-150 cursor-pointer"
-      :class="
-        selected || selectionActive
-          ? 'opacity-100 ring-n-teal-9 bg-n-teal-9 text-white'
-          : 'opacity-0 group-hover:opacity-100 hover:ring-n-teal-9'
-      "
+      class="absolute top-2 right-2 z-10 size-5 rounded-md inline-flex items-center justify-center transition-all duration-150 cursor-pointer"
+      :class="[
+        selected
+          ? 'opacity-100 ring-1 ring-n-teal-9 bg-n-teal-9 text-white'
+          : selectionActive
+            ? 'opacity-100 ring-1 ring-n-teal-9/60 bg-n-solid-1/95 hover:bg-n-teal-3/30'
+            : 'opacity-0 group-hover:opacity-100 ring-1 ring-n-slate-7 bg-n-solid-1/95 hover:ring-n-teal-9',
+      ]"
       :aria-pressed="selected"
       :aria-label="selected ? 'Deselect task' : 'Select task'"
       @click="onCheckboxClick"

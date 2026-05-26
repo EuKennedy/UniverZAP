@@ -209,11 +209,17 @@ export const mutations = {
   },
 
   [types.ADD_KANBAN_TASK](_state, { funnelId, task }) {
-    const list = _state.recordsByFunnel[Number(funnelId)] || [];
-    _state.recordsByFunnel = {
-      ..._state.recordsByFunnel,
-      [Number(funnelId)]: [...list, task],
-    };
+    // ActionCable broadcasts `kanban_task.created` from the server's
+    // after_save hook BEFORE the originating POST response resolves on the
+    // client. The realtime path already inserted the task via
+    // EDIT_KANBAN_TASK, so a naïve `[...list, task]` here produced a
+    // duplicate card. Replace-in-place if the id is already in the list.
+    const fid = Number(funnelId);
+    const list = _state.recordsByFunnel[fid] || [];
+    const idx = list.findIndex(t => t.id === task.id);
+    const next = idx === -1 ? [...list, task] : list.slice();
+    if (idx !== -1) next.splice(idx, 1, task);
+    _state.recordsByFunnel = { ..._state.recordsByFunnel, [fid]: next };
   },
 
   [types.EDIT_KANBAN_TASK](_state, task) {
