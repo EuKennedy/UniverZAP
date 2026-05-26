@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -8,14 +8,52 @@ const props = defineProps({
 const emit = defineEmits(['close', 'update:show']);
 
 const panelRef = ref(null);
+let lastFocusedBeforeOpen = null;
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'textarea:not([disabled])',
+  'select:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+const focusableElements = () => {
+  if (!panelRef.value) return [];
+  return Array.from(panelRef.value.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+    el => !el.hasAttribute('aria-hidden') && el.offsetParent !== null
+  );
+};
 
 const closeDrawer = () => {
   emit('update:show', false);
   emit('close');
 };
 
-const handleEsc = event => {
-  if (event.key === 'Escape' && props.show) closeDrawer();
+// LGPD/A11y: trap Tab inside the drawer while open. Returning focus to the
+// trigger after close keeps screen-reader users anchored.
+const handleKeydown = event => {
+  if (!props.show) return;
+  if (event.key === 'Escape') {
+    closeDrawer();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+
+  const items = focusableElements();
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  const active = document.activeElement;
+
+  if (event.shiftKey && active === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+  }
 };
 
 const handleBackdrop = event => {
@@ -23,20 +61,28 @@ const handleBackdrop = event => {
 };
 
 // Lock background scroll while the drawer is mounted so the desktop board
-// doesn't shift behind the panel.
+// doesn't shift behind the panel. On open we also remember the previously
+// focused element + push focus into the panel for a11y.
 watch(
   () => props.show,
   visible => {
-    if (visible) document.body.classList.add('kanban-drawer-open');
-    else document.body.classList.remove('kanban-drawer-open');
+    if (visible) {
+      lastFocusedBeforeOpen = document.activeElement;
+      document.body.classList.add('kanban-drawer-open');
+      nextTick(() => focusableElements()[0]?.focus());
+    } else {
+      document.body.classList.remove('kanban-drawer-open');
+      lastFocusedBeforeOpen?.focus?.();
+      lastFocusedBeforeOpen = null;
+    }
   }
 );
 
 onMounted(() => {
-  document.addEventListener('keydown', handleEsc);
+  document.addEventListener('keydown', handleKeydown);
 });
 onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleEsc);
+  document.removeEventListener('keydown', handleKeydown);
   document.body.classList.remove('kanban-drawer-open');
 });
 </script>

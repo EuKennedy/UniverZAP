@@ -70,6 +70,19 @@ const inlineEditingTaskId = ref(null);
 const showBulkDeleteConfirm = ref(false);
 const isExportingCsv = ref(false);
 
+// Screen-reader announcement channel. Bulk actions, drag completion and
+// the CSV export all write here so AT users hear what happened without
+// monitoring the floating action bar visually.
+const ariaAnnouncement = ref('');
+const announce = message => {
+  ariaAnnouncement.value = '';
+  // Trigger an actual DOM mutation so the polite live region fires even
+  // when the same string is repeated back-to-back.
+  setTimeout(() => {
+    ariaAnnouncement.value = message;
+  }, 30);
+};
+
 // CSV export — gera download client-side a partir do blob retornado
 // pelo endpoint. URL é revogada em seguida pra não vazar memória.
 const onExportCsv = async () => {
@@ -441,6 +454,7 @@ const onBulkMove = async stageId => {
       )
     );
     useAlert(t('KANBAN.BULK.MOVE_SUCCESS', { count: ids.length }));
+    announce(t('KANBAN.BULK.MOVE_SUCCESS', { count: ids.length }));
     clearSelection();
   } catch (error) {
     useAlert(error?.message || t('KANBAN.BULK.ERROR'));
@@ -460,6 +474,7 @@ const onBulkAssign = async agentId => {
       )
     );
     useAlert(t('KANBAN.BULK.ASSIGN_SUCCESS', { count: ids.length }));
+    announce(t('KANBAN.BULK.ASSIGN_SUCCESS', { count: ids.length }));
     clearSelection();
   } catch (error) {
     useAlert(error?.message || t('KANBAN.BULK.ERROR'));
@@ -487,6 +502,7 @@ const confirmBulkDelete = async () => {
       )
     );
     useAlert(t('KANBAN.BULK.DELETE_SUCCESS', { count: ids.length }));
+    announce(t('KANBAN.BULK.DELETE_SUCCESS', { count: ids.length }));
     clearSelection();
   } catch (error) {
     useAlert(error?.message || t('KANBAN.BULK.ERROR'));
@@ -554,6 +570,12 @@ const onTaskMoved = async ({ taskId, stageId, position }) => {
       funnelStageId: stageId,
       position,
     });
+    const stageName = stages.value.find(s => s.id === Number(stageId))?.name;
+    if (stageName) {
+      announce(
+        t('KANBAN.BOARD.DRAG_ANNOUNCE', { title: task.title, stage: stageName })
+      );
+    }
   } catch (error) {
     useAlert(error?.message || t('KANBAN.TASK.MOVE_ERROR'));
     await loadTasks();
@@ -673,6 +695,7 @@ const goToSettings = () => {
             size="sm"
             solid
             blue
+            data-onboarding="kanban-add-task"
             :label="t('KANBAN.BOARD.NEW_TASK')"
             @click="openCreateTask(stages[0])"
           />
@@ -870,6 +893,7 @@ const goToSettings = () => {
       <!-- Group by (swimlanes) -->
       <select
         v-model="groupBy"
+        data-onboarding="kanban-group-by"
         class="px-2.5 py-1.5 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak text-[11px] font-medium text-n-slate-12 focus:outline-none focus:ring-n-teal-7 cursor-pointer"
         :title="t('KANBAN.BOARD.SWIMLANES.TITLE')"
       >
@@ -1117,6 +1141,11 @@ const goToSettings = () => {
       @delete="requestBulkDelete"
       @clear="clearSelection"
     />
+
+    <!-- Polite ARIA announcement channel for bulk + drag actions. -->
+    <div aria-live="polite" aria-atomic="true" class="sr-only">
+      {{ ariaAnnouncement }}
+    </div>
 
     <woot-delete-modal
       v-model:show="showBulkDeleteConfirm"

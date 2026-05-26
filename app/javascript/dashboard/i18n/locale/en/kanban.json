@@ -25,6 +25,7 @@
       "SETTINGS": "Settings",
       "EXPORT_CSV": "Export CSV",
       "EXPORT_ERROR": "Could not export the CSV.",
+      "DRAG_ANNOUNCE": "{title} moved to {stage}.",
       "NO_STAGES_TITLE": "No stages configured",
       "NO_STAGES_DESCRIPTION": "Add stages from settings to start placing tasks on the board.",
       "OPEN_SETTINGS": "Open settings",

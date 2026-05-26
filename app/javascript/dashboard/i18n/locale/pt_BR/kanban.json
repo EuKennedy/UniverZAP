@@ -53,6 +53,7 @@
       "SETTINGS": "Configurações",
       "EXPORT_CSV": "Exportar CSV",
       "EXPORT_ERROR": "Não foi possível exportar o CSV.",
+      "DRAG_ANNOUNCE": "{title} movida para {stage}.",
       "NO_STAGES_TITLE": "Sem etapas configuradas",
       "NO_STAGES_DESCRIPTION": "Adicione etapas nas configurações para começar a posicionar tarefas no quadro.",
       "OPEN_SETTINGS": "Abrir configurações"

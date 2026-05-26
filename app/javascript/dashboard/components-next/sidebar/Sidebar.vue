@@ -318,6 +318,7 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.KANBAN'),
       icon: 'i-lucide-kanban-square',
       to: accountScopedRoute('kanban_overview'),
+      dataOnboarding: 'kanban-nav',
       activeOn: [
         'kanban_overview',
         'kanban_board',
