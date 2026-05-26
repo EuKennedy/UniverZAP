@@ -8,11 +8,13 @@ import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
 
 import draggable from 'vuedraggable';
+import FunnelCustomFieldsAPI from 'dashboard/api/funnelCustomFields';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'next/icon/Icon.vue';
 import FunnelFormModal from '../components/FunnelFormModal.vue';
 import StageFormModal from '../components/StageFormModal.vue';
+import CustomFieldFormModal from '../components/CustomFieldFormModal.vue';
 
 const props = defineProps({
   funnelId: { type: [String, Number], required: true },
@@ -42,7 +44,7 @@ const stagePendingDelete = ref(null);
 // Tab state — defaults to the General tab so admins land on the most-used
 // surface. `automations` is a roadmap placeholder until the stage trigger
 // engine lands.
-const TABS = ['general', 'stages', 'automations'];
+const TABS = ['general', 'stages', 'custom_fields', 'automations'];
 const activeTab = ref('general');
 const setTab = key => {
   if (TABS.includes(key)) activeTab.value = key;
@@ -166,6 +168,90 @@ const confirmDeleteStage = async () => {
 // Keep the local draft in sync whenever the canonical stages change
 // (initial load, modal updates, websocket pushes).
 watch(stages, syncStagesDraft, { immediate: true });
+
+// ---------------------------------------------------------------------------
+// Custom fields tab — owns its own list/modal lifecycle. The board re-fetches
+// the funnel after CRUD so kanban_tasks payload picks the new schema up too.
+// ---------------------------------------------------------------------------
+const customFields = ref([]);
+const showCustomFieldModal = ref(false);
+const editingCustomField = ref(null);
+const showDeleteCustomFieldModal = ref(false);
+const customFieldPendingDelete = ref(null);
+
+const loadCustomFields = async () => {
+  try {
+    const { data } = await FunnelCustomFieldsAPI.list(props.funnelId);
+    customFields.value = data || [];
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR'));
+  }
+};
+
+const openCreateCustomField = () => {
+  editingCustomField.value = null;
+  showCustomFieldModal.value = true;
+};
+const openEditCustomField = field => {
+  editingCustomField.value = field;
+  showCustomFieldModal.value = true;
+};
+const closeCustomFieldModal = () => {
+  showCustomFieldModal.value = false;
+  editingCustomField.value = null;
+};
+
+const handleCustomFieldSubmit = async payload => {
+  try {
+    if (editingCustomField.value) {
+      await FunnelCustomFieldsAPI.update(
+        props.funnelId,
+        editingCustomField.value.id,
+        payload
+      );
+      useAlert(t('KANBAN.CUSTOM_FIELDS.UPDATE_SUCCESS'));
+    } else {
+      await FunnelCustomFieldsAPI.create(props.funnelId, payload);
+      useAlert(t('KANBAN.CUSTOM_FIELDS.CREATE_SUCCESS'));
+    }
+    closeCustomFieldModal();
+    await loadCustomFields();
+    await store.dispatch('funnels/show', Number(props.funnelId));
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR'));
+  }
+};
+
+const requestDeleteCustomField = field => {
+  customFieldPendingDelete.value = field;
+  showDeleteCustomFieldModal.value = true;
+};
+const cancelDeleteCustomField = () => {
+  customFieldPendingDelete.value = null;
+  showDeleteCustomFieldModal.value = false;
+};
+const confirmDeleteCustomField = async () => {
+  const field = customFieldPendingDelete.value;
+  if (!field) return;
+  try {
+    await FunnelCustomFieldsAPI.destroy(props.funnelId, field.id);
+    useAlert(t('KANBAN.CUSTOM_FIELDS.DELETE_SUCCESS'));
+    cancelDeleteCustomField();
+    await loadCustomFields();
+    await store.dispatch('funnels/show', Number(props.funnelId));
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR'));
+  }
+};
+
+watch(
+  () => props.funnelId,
+  () => loadCustomFields(),
+  { immediate: true }
+);
+
+const fieldTypeLabel = type =>
+  t(`KANBAN.CUSTOM_FIELDS.TYPES.${String(type).toUpperCase()}`);
 
 const openDeleteFunnel = () => {
   showDeleteFunnelModal.value = true;
@@ -429,6 +515,90 @@ const STATUS_BADGE = {
 
     <section
       v-if="funnel"
+      v-show="activeTab === 'custom_fields'"
+      class="flex flex-col gap-6 max-w-3xl px-6 py-6"
+    >
+      <article
+        class="flex flex-col gap-4 p-5 rounded-xl bg-n-solid-1 border border-n-weak"
+      >
+        <header class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-1 min-w-0">
+            <h2 class="text-sm font-medium text-n-slate-12">
+              {{ t('KANBAN.CUSTOM_FIELDS.TITLE') }}
+            </h2>
+            <p class="text-xs text-n-slate-11 leading-relaxed">
+              {{ t('KANBAN.CUSTOM_FIELDS.SUBTITLE') }}
+            </p>
+          </div>
+          <Button
+            icon="i-lucide-plus"
+            size="xs"
+            :label="t('KANBAN.CUSTOM_FIELDS.NEW')"
+            @click="openCreateCustomField"
+          />
+        </header>
+
+        <p
+          v-if="!customFields.length"
+          class="text-sm text-n-slate-11 py-4 text-center"
+        >
+          {{ t('KANBAN.CUSTOM_FIELDS.EMPTY') }}
+        </p>
+        <ul v-else class="flex flex-col gap-1.5">
+          <li
+            v-for="field in customFields"
+            :key="field.id"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-n-weak bg-n-background hover:border-n-slate-7 transition-colors"
+          >
+            <Icon
+              :icon="
+                {
+                  text: 'i-lucide-text',
+                  number: 'i-lucide-hash',
+                  date: 'i-lucide-calendar',
+                  single_select: 'i-lucide-list',
+                  multi_select: 'i-lucide-list-checks',
+                }[field.field_type] || 'i-lucide-text'
+              "
+              class="size-4 text-n-slate-11 flex-shrink-0"
+            />
+            <span class="flex-1 text-sm text-n-slate-12 truncate">
+              {{ field.name }}
+            </span>
+            <span
+              class="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium bg-n-alpha-2 text-n-slate-11"
+            >
+              {{ fieldTypeLabel(field.field_type) }}
+            </span>
+            <span
+              v-if="field.required"
+              class="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium bg-n-ruby-3 text-n-ruby-11"
+            >
+              {{ t('KANBAN.CUSTOM_FIELDS.REQUIRED') }}
+            </span>
+            <Button
+              icon="i-lucide-pen-line"
+              size="xs"
+              ghost
+              slate
+              :aria-label="t('KANBAN.CUSTOM_FIELDS.EDIT')"
+              @click="openEditCustomField(field)"
+            />
+            <Button
+              icon="i-lucide-trash-2"
+              size="xs"
+              ghost
+              ruby
+              :aria-label="t('KANBAN.CUSTOM_FIELDS.DELETE')"
+              @click="requestDeleteCustomField(field)"
+            />
+          </li>
+        </ul>
+      </article>
+    </section>
+
+    <section
+      v-if="funnel"
       v-show="activeTab === 'automations'"
       class="flex flex-col gap-6 max-w-3xl px-6 py-6"
     >
@@ -483,6 +653,29 @@ const STATUS_BADGE = {
       :message-value="stagePendingDelete?.name"
       :confirm-text="t('KANBAN.STAGE.DELETE')"
       :reject-text="t('KANBAN.STAGE.CANCEL')"
+    />
+
+    <woot-modal
+      v-model:show="showCustomFieldModal"
+      :on-close="closeCustomFieldModal"
+    >
+      <CustomFieldFormModal
+        v-if="showCustomFieldModal"
+        :field="editingCustomField"
+        @submit="handleCustomFieldSubmit"
+        @close="closeCustomFieldModal"
+      />
+    </woot-modal>
+
+    <woot-delete-modal
+      v-model:show="showDeleteCustomFieldModal"
+      :on-close="cancelDeleteCustomField"
+      :on-confirm="confirmDeleteCustomField"
+      :title="t('KANBAN.CUSTOM_FIELDS.DELETE_CONFIRM_TITLE')"
+      :message="t('KANBAN.CUSTOM_FIELDS.DELETE_CONFIRM_MESSAGE')"
+      :message-value="customFieldPendingDelete?.name"
+      :confirm-text="t('KANBAN.CUSTOM_FIELDS.DELETE')"
+      :reject-text="t('KANBAN.CUSTOM_FIELDS.CANCEL')"
     />
 
     <woot-delete-modal

@@ -275,6 +275,11 @@ Rails.application.routes.draw do
                 post :reorder
               end
             end
+            resources :funnel_custom_fields, only: [:index, :show, :create, :update, :destroy] do
+              collection do
+                post :reorder
+              end
+            end
             resources :kanban_tasks, only: [:index, :create]
           end
 

@@ -86,7 +86,31 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
     apply_ids(task, param: :label_ids, setter: :task_label_ids, source: Current.account.labels)
     apply_ids(task, param: :conversation_ids, setter: :conversation_ids, source: Current.account.conversations)
     apply_ids(task, param: :contact_ids, setter: :contact_ids, source: Current.account.contacts)
+    apply_custom_values(task) if params[:kanban_task].key?(:custom_values)
     assignees_changed
+  end
+
+  def apply_custom_values(task)
+    fields = task.funnel.custom_fields.index_by(&:id)
+    Array(params[:kanban_task][:custom_values]).each do |entry|
+      field = fields[entry[:funnel_custom_field_id].to_i]
+      next if field.blank?
+
+      upsert_custom_value(task, field, entry[:value])
+    end
+  end
+
+  def upsert_custom_value(task, field, raw_value)
+    record = task.custom_values.find_or_initialize_by(funnel_custom_field: field)
+    if raw_value.blank?
+      record.destroy if record.persisted?
+      return
+    end
+    record.update!(value: serialize_custom_value(raw_value))
+  end
+
+  def serialize_custom_value(raw_value)
+    raw_value.is_a?(Array) ? raw_value.to_json : raw_value.to_s
   end
 
   def apply_ids(task, param:, setter:, source:)

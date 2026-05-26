@@ -35,6 +35,11 @@ class KanbanTask < ApplicationRecord
   has_many :kanban_task_contacts, dependent: :destroy
   has_many :contacts, through: :kanban_task_contacts
 
+  has_many :custom_values,
+           class_name: 'KanbanTaskCustomValue',
+           dependent: :destroy,
+           inverse_of: :kanban_task
+
   # Self-referential subtask hierarchy. Root cards live in stages; subtasks
   # carry a parent_task_id and are rendered inside the parent's drawer.
   belongs_to :parent_task, class_name: 'KanbanTask', optional: true,
@@ -94,7 +99,11 @@ class KanbanTask < ApplicationRecord
   end
 
   def associations_payload
-    relations_payload.merge(subtasks_payload)
+    relations_payload.merge(subtasks_payload).merge(custom_values_payload)
+  end
+
+  def custom_values_payload
+    { custom_values: custom_values.map(&:push_event_data) }
   end
 
   def relations_payload

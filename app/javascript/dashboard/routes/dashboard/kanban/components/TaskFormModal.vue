@@ -225,6 +225,46 @@ const toggleLabel = id => {
   else form.label_ids.splice(idx, 1);
 };
 
+// Custom field values keyed by funnel_custom_field_id. We hydrate from the
+// task's `custom_values` array (server-side payload) on open and convert back
+// into the array shape the API expects on submit.
+const customFieldValues = ref({});
+
+const funnelCustomFields = computed(() => props.funnel?.custom_fields || []);
+
+watch(
+  () => [props.task, props.funnel],
+  () => {
+    const map = {};
+    (props.task?.custom_values || []).forEach(entry => {
+      map[entry.funnel_custom_field_id] = entry.value;
+    });
+    customFieldValues.value = map;
+  },
+  { immediate: true }
+);
+
+const setCustomFieldValue = (fieldId, value) => {
+  customFieldValues.value = { ...customFieldValues.value, [fieldId]: value };
+};
+
+const toggleMultiSelectChoice = (fieldId, choice) => {
+  const current = customFieldValues.value[fieldId];
+  const arr = Array.isArray(current) ? [...current] : [];
+  const idx = arr.indexOf(choice);
+  if (idx === -1) arr.push(choice);
+  else arr.splice(idx, 1);
+  setCustomFieldValue(fieldId, arr);
+};
+
+const serializeCustomValues = () =>
+  funnelCustomFields.value
+    .map(field => ({
+      funnel_custom_field_id: field.id,
+      value: customFieldValues.value[field.id] ?? null,
+    }))
+    .filter(entry => entry.value !== null && entry.value !== '');
+
 const onSubmit = () => {
   if (!isValid.value) return;
   emit('submit', {
@@ -241,6 +281,7 @@ const onSubmit = () => {
     assignee_ids: form.assignee_ids,
     label_ids: form.label_ids,
     contact_ids: form.contact_ids,
+    custom_values: serializeCustomValues(),
   });
 };
 </script>
@@ -578,6 +619,93 @@ const onSubmit = () => {
           </button>
         </div>
       </fieldset>
+
+      <section
+        v-if="funnelCustomFields.length"
+        class="flex flex-col gap-3 p-4 rounded-xl bg-n-alpha-1 ring-1 ring-inset ring-n-weak"
+      >
+        <header class="flex items-center justify-between gap-2">
+          <label
+            class="text-[11px] font-semibold text-n-slate-11 uppercase tracking-wider"
+          >
+            {{ t('KANBAN.CUSTOM_FIELDS.TITLE') }}
+          </label>
+        </header>
+        <div
+          v-for="field in funnelCustomFields"
+          :key="field.id"
+          class="flex flex-col gap-1.5"
+        >
+          <label
+            class="text-[12px] font-medium text-n-slate-12 flex items-center gap-1"
+          >
+            {{ field.name }}
+            <span
+              v-if="field.required"
+              class="text-n-ruby-11"
+              aria-hidden="true"
+            >
+              *
+            </span>
+          </label>
+          <input
+            v-if="field.field_type === 'text'"
+            type="text"
+            :value="customFieldValues[field.id] || ''"
+            class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand"
+            @input="setCustomFieldValue(field.id, $event.target.value)"
+          />
+          <input
+            v-else-if="field.field_type === 'number'"
+            type="number"
+            :value="customFieldValues[field.id] || ''"
+            class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand tabular-nums"
+            @input="setCustomFieldValue(field.id, $event.target.value)"
+          />
+          <input
+            v-else-if="field.field_type === 'date'"
+            type="date"
+            :value="customFieldValues[field.id] || ''"
+            class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand"
+            @input="setCustomFieldValue(field.id, $event.target.value)"
+          />
+          <select
+            v-else-if="field.field_type === 'single_select'"
+            :value="customFieldValues[field.id] || ''"
+            class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand"
+            @change="setCustomFieldValue(field.id, $event.target.value)"
+          >
+            <option value="">—</option>
+            <option
+              v-for="choice in field.options?.choices || []"
+              :key="choice"
+              :value="choice"
+            >
+              {{ choice }}
+            </option>
+          </select>
+          <div
+            v-else-if="field.field_type === 'multi_select'"
+            class="flex flex-wrap gap-1.5"
+          >
+            <button
+              v-for="choice in field.options?.choices || []"
+              :key="choice"
+              type="button"
+              class="px-2.5 py-1 rounded-full text-[12px] border transition-colors"
+              :class="
+                Array.isArray(customFieldValues[field.id]) &&
+                customFieldValues[field.id].includes(choice)
+                  ? 'border-n-brand bg-n-brand/10 text-n-slate-12'
+                  : 'border-n-weak text-n-slate-11 hover:border-n-slate-7'
+              "
+              @click="toggleMultiSelectChoice(field.id, choice)"
+            >
+              {{ choice }}
+            </button>
+          </div>
+        </div>
+      </section>
 
       <section
         v-if="isEdit"

@@ -12,6 +12,7 @@ import KanbanColumn from '../components/KanbanColumn.vue';
 import TaskFormModal from '../components/TaskFormModal.vue';
 import KanbanTaskDrawer from '../components/KanbanTaskDrawer.vue';
 import KanbanBulkActionBar from '../components/KanbanBulkActionBar.vue';
+import KanbanSavedViews from '../components/KanbanSavedViews.vue';
 
 const props = defineProps({
   funnelId: { type: [String, Number], required: true },
@@ -149,6 +150,30 @@ const activeFilterCount = computed(() => {
   if (hasConversationFilter.value) n += 1;
   return n;
 });
+
+// Snapshot of every filter that a saved view should restore. Kept as a
+// plain object so persistence stays simple JSON.
+const currentFilters = computed(() => ({
+  priority: priorityFilter.value,
+  assignee_id: assigneeFilter.value,
+  label: labelFilter.value,
+  due: dueFilter.value,
+  has_conversation: hasConversationFilter.value,
+  search: search.value,
+}));
+
+const applySavedView = filters => {
+  if (!filters) return;
+  if (filters.priority !== undefined) priorityFilter.value = filters.priority;
+  if (filters.assignee_id !== undefined)
+    assigneeFilter.value = filters.assignee_id;
+  if (filters.label !== undefined) labelFilter.value = filters.label;
+  if (filters.due !== undefined) dueFilter.value = filters.due;
+  if (filters.has_conversation !== undefined) {
+    hasConversationFilter.value = Boolean(filters.has_conversation);
+  }
+  if (filters.search !== undefined) search.value = filters.search;
+};
 
 const boardStats = computed(() => {
   const stagesList = stages.value;
@@ -730,6 +755,13 @@ const goToSettings = () => {
         <span class="i-lucide-message-square size-3.5" aria-hidden="true" />
         {{ t('KANBAN.BOARD.FILTER.HAS_CONVERSATION') }}
       </button>
+
+      <KanbanSavedViews
+        :funnel-id="props.funnelId"
+        :current-filters="currentFilters"
+        :active-filter-count="activeFilterCount"
+        @apply="applySavedView"
+      />
 
       <button
         v-if="activeFilterCount > 0 || search"

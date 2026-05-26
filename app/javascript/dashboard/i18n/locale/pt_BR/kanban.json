@@ -66,6 +66,7 @@
       "TABS": {
         "GENERAL": "Geral",
         "STAGES": "Etapas",
+        "CUSTOM_FIELDS": "Campos",
         "AUTOMATIONS": "Automações"
       },
       "AUTOMATIONS_TITLE": "Automações por etapa",
@@ -234,6 +235,53 @@
       "ADD_TASK": "Adicionar tarefa",
       "WIP_OVER": "Acima do limite",
       "WIP_OVER_TOOLTIP": "Limite recomendado é {limit}."
+    },
+    "CUSTOM_FIELDS": {
+      "TITLE": "Campos personalizados",
+      "SUBTITLE": "Crie campos extras (texto, número, data, seleção) que aparecem em cada tarefa do funil.",
+      "EMPTY": "Nenhum campo ainda. Adicione o primeiro para começar.",
+      "NEW": "Novo campo",
+      "EDIT": "Editar",
+      "DELETE": "Excluir",
+      "REQUIRED": "Obrigatório",
+      "NEW_TITLE": "Novo campo personalizado",
+      "EDIT_TITLE": "Editar campo personalizado",
+      "DESCRIPTION": "Campos personalizados aparecem no formulário de tarefa deste funil.",
+      "CREATE": "Criar",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "DELETE_CONFIRM_TITLE": "Excluir campo personalizado?",
+      "DELETE_CONFIRM_MESSAGE": "Os valores preenchidos serão removidos de todas as tarefas. Esta ação não pode ser desfeita.",
+      "CREATE_SUCCESS": "Campo criado.",
+      "UPDATE_SUCCESS": "Campo atualizado.",
+      "DELETE_SUCCESS": "Campo excluído.",
+      "SAVE_ERROR": "Não foi possível salvar o campo.",
+      "FORM": {
+        "NAME_LABEL": "Nome",
+        "NAME_PLACEHOLDER": "Ex: Valor estimado",
+        "TYPE_LABEL": "Tipo",
+        "CHOICES_LABEL": "Opções",
+        "CHOICE_PLACEHOLDER": "Adicione uma opção…",
+        "ADD_CHOICE": "Adicionar",
+        "REQUIRED_LABEL": "Tornar obrigatório ao criar tarefa"
+      },
+      "TYPES": {
+        "TEXT": "Texto",
+        "NUMBER": "Número",
+        "DATE": "Data",
+        "SINGLE_SELECT": "Seleção única",
+        "MULTI_SELECT": "Múltipla escolha"
+      }
+    },
+    "VIEWS": {
+      "LABEL": "Visões",
+      "TITLE": "Visões salvas",
+      "EMPTY": "Nenhuma visão ainda. Configure filtros e salve a primeira.",
+      "SAVE_CURRENT": "Salvar visão atual",
+      "NAME_PLACEHOLDER": "Ex: Minhas atrasadas",
+      "SAVE": "Salvar",
+      "DELETE": "Excluir visão",
+      "NEEDS_FILTER": "Aplique pelo menos um filtro para salvar."
     },
     "BULK": {
       "LABEL": "Ações em massa",

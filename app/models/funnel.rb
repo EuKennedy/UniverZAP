@@ -32,6 +32,11 @@ class Funnel < ApplicationRecord
   has_many :funnel_agents, dependent: :destroy
   has_many :agents, through: :funnel_agents, source: :user
   has_many :kanban_tasks, dependent: :destroy
+  has_many :custom_fields,
+           -> { ordered },
+           class_name: 'FunnelCustomField',
+           dependent: :destroy,
+           inverse_of: :funnel
 
   validates :name, presence: true, length: { maximum: 120 }
   validates :description, length: { maximum: 2000 }, allow_blank: true
@@ -57,6 +62,7 @@ class Funnel < ApplicationRecord
       agent_ids: agent_ids,
       tasks_count: kanban_tasks.count,
       stages: funnel_stages.ordered.map(&:push_event_data),
+      custom_fields: custom_fields.map(&:push_event_data),
       created_at: created_at.to_i,
       updated_at: updated_at.to_i
     }
