@@ -1,7 +1,20 @@
 class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseController
   before_action :fetch_funnel, only: [:index, :create, :export]
   before_action :fetch_task, except: [:index, :create, :export]
-  before_action :check_authorization
+  before_action :authorize_action
+
+  # Pundit's default `check_authorization` constantises the controller name
+  # ("KanbanTask"). The KanbanTaskPolicy needs the funnel for list/create
+  # actions (no record yet) and the task itself for member actions; passing
+  # the class makes `record.funnel` blow up with NoMethodError on the class.
+  def authorize_action
+    case action_name
+    when 'index', 'create', 'export'
+      authorize(@funnel, :show?, policy_class: FunnelPolicy)
+    else
+      authorize(@task)
+    end
+  end
 
   def index
     @tasks = policy_scope(Current.account.kanban_tasks)
@@ -87,7 +100,6 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
 
   def fetch_funnel
     @funnel = Current.account.funnels.find(params[:funnel_id])
-    authorize(@funnel, :show?)
   end
 
   def fetch_task

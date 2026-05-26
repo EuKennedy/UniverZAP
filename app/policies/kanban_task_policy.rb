@@ -34,7 +34,12 @@ class KanbanTaskPolicy < ApplicationPolicy
   private
 
   def funnel_visible?
-    return false if record&.funnel.blank?
+    # Member actions pass a KanbanTask instance, so we can check the parent
+    # funnel directly. List/create actions hit `authorize(@funnel, ...)` in
+    # the controller — they never reach this branch. Bail out safely if the
+    # record is a class (older callers) so we don't 500 on `Class#funnel`.
+    return false unless record.is_a?(KanbanTask)
+    return false if record.funnel.blank?
 
     FunnelPolicy.new(@user_context, record.funnel).show?
   end
