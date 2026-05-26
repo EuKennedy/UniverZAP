@@ -1,5 +1,11 @@
 class Api::BaseController < ApplicationController
   include AccessTokenAuthHelper
+  # Univercart subscription gating only makes sense for authenticated
+  # dashboard users — never for SuperAdmin, devise mail templates, public
+  # widget endpoints, etc. The concern is included here (instead of in
+  # ApplicationController) so its `if: :user_signed_in?` callback can't
+  # accidentally trigger `current_user` on controllers outside the API.
+  include UnivercartSubscriptionGuard
   respond_to :json
   before_action :authenticate_access_token!, if: :authenticate_by_access_token?
   before_action :validate_bot_access_token!, if: :authenticate_by_access_token?
