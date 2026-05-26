@@ -98,4 +98,3 @@ if ENV['SENTRY_DSN'].present?
     config.before_send = method(:sentry_before_send)
   end
 end
-
