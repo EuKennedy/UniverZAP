@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import {
   format,
   formatDistanceToNowStrict,
@@ -10,10 +11,10 @@ import {
 } from 'date-fns';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import Icon from 'next/icon/Icon.vue';
+import { useAccount } from 'dashboard/composables/useAccount';
 
 const props = defineProps({
   task: { type: Object, required: true },
-  funnelName: { type: String, default: '' },
   stageColor: { type: String, default: '' },
   selected: { type: Boolean, default: false },
   selectionActive: { type: Boolean, default: false },
@@ -27,6 +28,21 @@ const emit = defineEmits([
   'titleSubmit',
   'titleCancel',
 ]);
+
+const router = useRouter();
+const { accountId } = useAccount();
+
+const openContact = (contact, event) => {
+  event.stopPropagation();
+  if (!contact?.id) return;
+  // The contact page lists every conversation for that contact and exposes
+  // the "Open conversation" CTA, so this is the fastest jump from a card
+  // into the chat thread the rep cares about.
+  router.push({
+    name: 'contacts_edit',
+    params: { accountId: accountId.value, contactId: contact.id },
+  });
+};
 
 const onClick = event => {
   // While a selection batch is open, plain clicks toggle membership instead
@@ -264,15 +280,6 @@ const labelsExtra = computed(() =>
       </h3>
     </header>
 
-    <!-- Funnel subtitle -->
-    <p
-      v-if="funnelName"
-      class="text-[11px] text-n-slate-11 m-0 truncate pl-1.5"
-    >
-      {{ t('KANBAN.CARD.IN_FUNNEL') }}
-      <span class="text-n-teal-11 font-medium">{{ funnelName }}</span>
-    </p>
-
     <!-- Meta rows: each only renders when there's a value, ClickUp-style -->
     <div class="flex flex-col gap-1.5 pl-1.5">
       <!-- Description hint + conversation count -->
@@ -395,25 +402,34 @@ const labelsExtra = computed(() =>
       </div>
     </div>
 
-    <!-- Primary contact footer — kept as a separate visual block so the
-         operator sees who's on the other side without opening the drawer. -->
+    <!-- Primary contact footer — clickable chip that takes the rep straight
+         to the contact's profile (and conversation list) in a single tap.
+         Stops propagation so it doesn't trip the card click handler. -->
     <footer
       v-if="primaryContact"
       class="flex items-center gap-2 pt-2 pl-1.5 mt-0.5 border-t border-n-weak/50"
     >
-      <Avatar
-        :src="primaryContact.thumbnail || primaryContact.avatar_url"
-        :name="primaryContact.name"
-        :size="22"
-        rounded-full
-        class="ring-1 ring-n-weak"
-      />
-      <span class="text-[11px] text-n-slate-12 font-medium truncate min-w-0">
-        {{ primaryContact.name }}
-      </span>
+      <button
+        type="button"
+        class="group/contact flex items-center gap-2 flex-1 min-w-0 rounded-md -ml-1 px-1 py-1 transition-colors hover:bg-n-teal-3/30 cursor-pointer"
+        @click="openContact(primaryContact, $event)"
+      >
+        <Avatar
+          :src="primaryContact.thumbnail || primaryContact.avatar_url"
+          :name="primaryContact.name"
+          :size="22"
+          rounded-full
+          class="ring-1 ring-n-weak"
+        />
+        <span
+          class="text-[11px] font-medium truncate min-w-0 text-n-slate-12 group-hover/contact:text-n-teal-11 transition-colors"
+        >
+          {{ primaryContact.name }}
+        </span>
+      </button>
       <span
         v-if="extraContacts"
-        class="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-n-alpha-2 text-[10px] font-semibold text-n-slate-11"
+        class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-n-alpha-2 text-[10px] font-semibold text-n-slate-11"
       >
         +{{ extraContacts }}
       </span>

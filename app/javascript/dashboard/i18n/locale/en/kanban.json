@@ -319,6 +319,7 @@
     },
     "CARD": {
       "IN_FUNNEL": "In",
+      "MORE_CONTACTS": "more",
       "HAS_DESCRIPTION": "Has description",
       "SUBTASKS": "subtasks",
       "DUE_TODAY": "Due today",

@@ -9,7 +9,6 @@ import KanbanCard from './KanbanCard.vue';
 const props = defineProps({
   stage: { type: Object, required: true },
   tasks: { type: Array, required: true },
-  funnelName: { type: String, default: '' },
   canMutate: { type: Boolean, default: true },
   selectedTaskIds: { type: Set, default: () => new Set() },
   inlineEditingTaskId: { type: [Number, null], default: null },
@@ -207,7 +206,6 @@ const onChange = event => {
       <template #item="{ element: task }">
         <KanbanCard
           :task="task"
-          :funnel-name="funnelName"
           :stage-color="stage.color"
           :selected="selectedTaskIds.has(task.id)"
           :selection-active="selectionActive"
