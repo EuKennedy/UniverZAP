@@ -11,7 +11,7 @@ class Ai::Training < ApplicationRecord
   validates :title, presence: true, length: { maximum: 180 }
   validates :source_type, inclusion: { in: SOURCE_TYPES }
   validates :category, inclusion: { in: CATEGORIES }, allow_blank: true
-  validates :status, inclusion: { in: STATUSES }
+  validates :status, presence: true, inclusion: { in: STATUSES }
 
   before_save :compute_char_count
 
