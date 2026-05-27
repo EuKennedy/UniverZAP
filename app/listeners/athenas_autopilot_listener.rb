@@ -36,6 +36,15 @@ class AthenasAutopilotListener < BaseListener
     return false if stop_words.empty?
 
     body = message.content.to_s.downcase
-    stop_words.any? { |word| body.include?(word.to_s.downcase) }
+    matched = stop_words.find { |word| body.include?(word.to_s.downcase) }
+    return false unless matched
+
+    # Emit a single log line per trigger so security/compliance can see
+    # exactly which stop word silenced the autopilot for which message.
+    Rails.logger.info(
+      "[Athenas guardrail] stop_word=#{matched.inspect} silenced autopilot " \
+      "assistant=#{assistant.id} message=#{message.id} conversation=#{message.conversation_id}"
+    )
+    true
   end
 end

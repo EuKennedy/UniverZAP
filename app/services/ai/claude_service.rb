@@ -52,12 +52,29 @@ class Ai::ClaudeService
   end
 
   def perform_request(api_key, payload)
-    HTTParty.post(
-      "#{API_BASE}/v1/messages",
-      headers: headers(api_key),
-      body: payload.to_json,
-      timeout: 30
-    )
+    # Exponential backoff on transient failures (timeouts, 5xx, rate limit).
+    # Three quick attempts — 0s, ~0.5s, ~1.5s — keeps the user-perceived
+    # latency tolerable while soaking up Anthropic blips.
+    attempts = 0
+    max_attempts = 3
+    begin
+      attempts += 1
+      response = HTTParty.post(
+        "#{API_BASE}/v1/messages",
+        headers: headers(api_key),
+        body: payload.to_json,
+        timeout: 30
+      )
+      retryable = response.code >= 500 || response.code == 429
+      raise Net::ReadTimeout if retryable && attempts < max_attempts
+
+      response
+    rescue Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNRESET, HTTParty::Error => e
+      raise e if attempts >= max_attempts
+
+      sleep(0.5 * (2**(attempts - 1)))
+      retry
+    end
   end
 
   def headers(api_key)
@@ -72,7 +89,12 @@ class Ai::ClaudeService
     duration_ms = ((Time.zone.now - started_at) * 1000).to_i
     unless response.success?
       log_failed(payload: payload, response: response, duration_ms: duration_ms, conversation: conversation, phase: phase)
-      raise Error, "Claude API #{response.code}: #{response.body.to_s.truncate(400)}"
+      # Surface only the upstream message field — the full body can echo
+      # user prompts or stray request headers and would otherwise leak
+      # straight into the dashboard alert.
+      parsed_err = (response.parsed_response.is_a?(Hash) ? response.parsed_response : {})['error'] || {}
+      message = parsed_err['message'].presence || "HTTP #{response.code}"
+      raise Error, "Claude API #{response.code}: #{message.to_s.truncate(200)}"
     end
     parsed = response.parsed_response
     log_success(payload: payload, parsed: parsed, duration_ms: duration_ms, conversation: conversation, phase: phase)
