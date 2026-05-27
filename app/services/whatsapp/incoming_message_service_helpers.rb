@@ -72,6 +72,15 @@ module Whatsapp::IncomingMessageServiceHelpers
   def lock_message_source_id!
     return false if messages_data.blank?
 
-    Whatsapp::MessageDedupLock.new(messages_data.first[:id]).acquire!
+    @message_dedup_lock = Whatsapp::MessageDedupLock.new(messages_data.first[:id])
+    @message_dedup_lock.acquire!
+  end
+
+  # Release the dedup lock when persistence aborts. The next webhook
+  # delivery (Meta retries within seconds, WAHA every minute) then has
+  # a fresh slot to retry — instead of being shut out for a full day
+  # by a stale Redis key.
+  def release_message_lock!
+    @message_dedup_lock&.release!
   end
 end

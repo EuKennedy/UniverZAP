@@ -1,6 +1,16 @@
 class Webhooks::WahaEventsJob < ApplicationJob
   queue_as :default
 
+  # Without an explicit retry budget every transient failure (DB
+  # rollback, Redis connection blip, WAHA hand-off race) silently
+  # dropped the inbound message — the rescue blocks below used to
+  # swallow the exception so Sidekiq considered the job successful
+  # and never retried. We now re-raise from the handlers and let
+  # Sidekiq's exponential-backoff retry the whole job. Five attempts
+  # over ~30 seconds covers brief deploy windows without piling jobs
+  # up for hours when the upstream is genuinely down.
+  retry_on StandardError, wait: :polynomially_longer, attempts: 5
+
   def perform(event)
     event = event.with_indifferent_access
     session_name = event[:session]
@@ -48,7 +58,11 @@ class Webhooks::WahaEventsJob < ApplicationJob
       outgoing_echo: payload[:fromMe] == true
     ).perform
   rescue StandardError => e
+    # Log + re-raise so `retry_on` re-queues the job. The previous
+    # behaviour silently dropped the message and we lost contacts
+    # every time WAHA fired during a deploy window.
     Rails.logger.error("[WAHA events] message handling failed: #{e.message}\n#{e.backtrace.first(5).join("\n")}")
+    raise
   end
 
   def handle_ack(inbox, event)
@@ -60,6 +74,7 @@ class Webhooks::WahaEventsJob < ApplicationJob
     message.update(status: status) if status
   rescue StandardError => e
     Rails.logger.error("[WAHA events] ack handling failed: #{e.message}")
+    raise
   end
 
   def find_ack_message(inbox, payload)
@@ -86,6 +101,7 @@ class Webhooks::WahaEventsJob < ApplicationJob
     end
   rescue StandardError => e
     Rails.logger.error("[WAHA events] session status failed: #{e.message}")
+    raise
   end
 
   def ack_status(ack)

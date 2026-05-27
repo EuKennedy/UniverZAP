@@ -5,7 +5,14 @@
 ---
 :verbose: false
 :concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 10) %>
-:timeout: 25
+# 60s shutdown drain lets long-running incoming-message jobs commit
+# their DB transaction before Sidekiq hard-kills them. The previous
+# 25s window matched Coolify's default grace period exactly, so any
+# job that needed >25s (media download + Athenas autopilot trigger
+# + contact creation) was SIGKILLed mid-transaction and the inbound
+# WhatsApp message was lost. Pair with Coolify `stop_grace_period`
+# (set to 70s or higher in the service spec) for a clean handover.
+:timeout: <%= ENV.fetch("SIDEKIQ_SHUTDOWN_TIMEOUT", 60).to_i %>
 :max_retries: 3
 
 # Sidekiq will run this file through ERB when reading it so you can

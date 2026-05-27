@@ -35,6 +35,18 @@ class Whatsapp::IncomingMessageBaseService
     return if find_message_by_source_id(messages_data.first[:id])
     return unless lock_message_source_id!
 
+    persist_inbound_message!
+  rescue StandardError
+    # Release the dedup lock so a retry can actually process the message.
+    # Without this every crash between acquire! and a successful commit
+    # would leave the Redis key set for its full TTL and the next webhook
+    # delivery would silently skip the message — that's exactly how
+    # WAHA-backed accounts lost contacts after redeploys.
+    release_message_lock!
+    raise
+  end
+
+  def persist_inbound_message!
     set_contact
     return unless @contact
     return if @contact.blocked? && !outgoing_echo
