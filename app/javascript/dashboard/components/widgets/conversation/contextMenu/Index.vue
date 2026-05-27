@@ -16,6 +16,7 @@ const MENU = {
   MARK_AS_READ: 'mark-as-read',
   MARK_AS_UNREAD: 'mark-as-unread',
   PRIORITY: 'priority',
+  PIN: 'pin',
   STATUS: 'status',
   SNOOZE: 'snooze',
   AGENT: 'agent',
@@ -53,6 +54,10 @@ export default {
       type: String,
       default: null,
     },
+    pinnedAt: {
+      type: Number,
+      default: null,
+    },
     conversationLabels: {
       type: Array,
       default: () => [],
@@ -69,6 +74,7 @@ export default {
   emits: [
     'updateConversation',
     'assignPriority',
+    'togglePin',
     'markAsUnread',
     'markAsRead',
     'assignAgent',
@@ -165,6 +171,16 @@ export default {
         icon: 'delete',
         label: this.$t('CONVERSATION.CARD_CONTEXT_MENU.DELETE'),
       },
+      pinOption: {
+        key: MENU.PIN,
+        icon: 'arrow-up-outline',
+        label: this.$t('CONVERSATION.CARD_CONTEXT_MENU.PIN'),
+      },
+      unpinOption: {
+        key: MENU.PIN,
+        icon: 'arrow-down-outline',
+        label: this.$t('CONVERSATION.CARD_CONTEXT_MENU.UNPIN'),
+      },
       openInNewTabOption: {
         key: MENU.OPEN_NEW_TAB,
         icon: 'open',
@@ -235,6 +251,9 @@ export default {
     },
     assignPriority(priority) {
       this.$emit('assignPriority', priority);
+    },
+    togglePin() {
+      this.$emit('togglePin');
     },
     deleteConversation() {
       this.$emit('deleteConversation', this.chatId);
@@ -317,8 +336,16 @@ export default {
       <hr class="m-1 rounded border-b border-n-weak dark:border-n-weak" />
     </template>
     <template
-      v-if="isAllowed([MENU.PRIORITY, MENU.LABEL, MENU.AGENT, MENU.TEAM])"
+      v-if="
+        isAllowed([MENU.PIN, MENU.PRIORITY, MENU.LABEL, MENU.AGENT, MENU.TEAM])
+      "
     >
+      <MenuItem
+        v-if="isAllowed([MENU.PIN])"
+        :option="pinnedAt ? unpinOption : pinOption"
+        variant="icon"
+        @click.stop="togglePin"
+      />
       <MenuItemWithSubmenu
         v-if="isAllowed([MENU.PRIORITY])"
         :option="priorityConfig"

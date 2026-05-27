@@ -106,6 +106,11 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     head :ok
   end
 
+  def toggle_pin
+    @conversation.toggle_pin!
+    render json: { pinned_at: @conversation.pinned_at&.to_i }
+  end
+
   def toggle_typing_status
     typing_status_manager = ::Conversations::TypingStatusManager.new(@conversation, Current.user, params)
     typing_status_manager.toggle_typing_status

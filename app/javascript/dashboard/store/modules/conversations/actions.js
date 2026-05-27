@@ -549,6 +549,30 @@ const actions = {
     }
   },
 
+  // Pinned conversations float to the top of every sorted inbox list
+  // server-side. We optimistically flip the timestamp locally so the
+  // row jumps immediately, then patch with the canonical value the API
+  // returns. Failures roll back the local edit.
+  togglePin: async ({ commit }, { conversationId }) => {
+    const optimisticPinnedAt = Math.floor(Date.now() / 1000);
+    commit(types.UPDATE_CONVERSATION, {
+      id: conversationId,
+      pinned_at: optimisticPinnedAt,
+    });
+    try {
+      const { data } = await ConversationApi.togglePin({ conversationId });
+      commit(types.UPDATE_CONVERSATION, {
+        id: conversationId,
+        pinned_at: data.pinned_at,
+      });
+    } catch (error) {
+      commit(types.UPDATE_CONVERSATION, {
+        id: conversationId,
+        pinned_at: null,
+      });
+    }
+  },
+
   setCurrentChatPriority({ commit }, { priority, conversationId }) {
     commit(types.ASSIGN_PRIORITY, { priority, conversationId });
   },

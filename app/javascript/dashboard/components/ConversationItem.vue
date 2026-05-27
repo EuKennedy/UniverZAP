@@ -172,6 +172,14 @@ const onAssignPriority = priority => {
   closeContextMenu();
 };
 
+// Pin/unpin dispatches straight to the store — keeps the optimistic UI
+// update + rollback logic in one place instead of round-tripping
+// through the ChatList parent.
+const onTogglePin = () => {
+  store.dispatch('togglePin', { conversationId: props.source.id });
+  closeContextMenu();
+};
+
 const onDeleteConversation = () => {
   deleteConversation(props.source.id);
   closeContextMenu();
@@ -225,6 +233,7 @@ const onDeleteConversation = () => {
       :status="source.status"
       :inbox-id="inbox.id"
       :priority="source.priority"
+      :pinned-at="source.pinned_at"
       :chat-id="source.id"
       :has-unread-messages="source.unread_count > 0"
       :conversation-labels="source.labels"
@@ -237,6 +246,7 @@ const onDeleteConversation = () => {
       @mark-as-unread="onMarkAsUnread"
       @mark-as-read="onMarkAsRead"
       @assign-priority="onAssignPriority"
+      @toggle-pin="onTogglePin"
       @delete-conversation="onDeleteConversation"
       @close="closeContextMenu"
     />

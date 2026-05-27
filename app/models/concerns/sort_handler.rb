@@ -2,24 +2,31 @@ module SortHandler
   extend ActiveSupport::Concern
 
   class_methods do
+    # Pinned conversations float to the very top regardless of the
+    # active sort. We prepend a stable `pinned_at IS NULL` clause to
+    # every sort so a pinned chat always sits above unpinned peers
+    # without changing existing sort semantics for the rest of the
+    # list. Among multiple pinned chats, most-recently-pinned wins.
+    PINNED_FIRST_PREFIX = 'pinned_at IS NULL, pinned_at DESC'.freeze
+
     def sort_on_last_activity_at(sort_direction = :desc)
-      order(last_activity_at: sort_direction)
+      order(generate_sql_query("#{PINNED_FIRST_PREFIX}, last_activity_at #{sort_direction.to_s.upcase}"))
     end
 
     def sort_on_created_at(sort_direction = :asc)
-      order(created_at: sort_direction)
+      order(generate_sql_query("#{PINNED_FIRST_PREFIX}, created_at #{sort_direction.to_s.upcase}"))
     end
 
     def sort_on_priority(sort_direction = :desc)
-      order(generate_sql_query("priority #{sort_direction.to_s.upcase} NULLS LAST, last_activity_at DESC"))
+      order(generate_sql_query("#{PINNED_FIRST_PREFIX}, priority #{sort_direction.to_s.upcase} NULLS LAST, last_activity_at DESC"))
     end
 
     def sort_on_priority_created_at(sort_direction = :desc)
-      order(generate_sql_query("priority #{sort_direction.to_s.upcase} NULLS LAST, created_at ASC"))
+      order(generate_sql_query("#{PINNED_FIRST_PREFIX}, priority #{sort_direction.to_s.upcase} NULLS LAST, created_at ASC"))
     end
 
     def sort_on_waiting_since(sort_direction = :asc)
-      order(generate_sql_query("(waiting_since IS NULL), waiting_since #{sort_direction.to_s.upcase}, created_at ASC"))
+      order(generate_sql_query("#{PINNED_FIRST_PREFIX}, (waiting_since IS NULL), waiting_since #{sort_direction.to_s.upcase}, created_at ASC"))
     end
 
     def last_messaged_conversations

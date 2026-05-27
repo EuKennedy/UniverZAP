@@ -164,6 +164,8 @@
       "ASSIGN_LABEL": "Atribuir etiqueta",
       "AGENTS_LOADING": "Carregando atendentes...",
       "ASSIGN_TEAM": "Atribuir time",
+      "PIN": "Fixar no topo",
+      "UNPIN": "Desafixar do topo",
       "DELETE": "Excluir conversa",
       "OPEN_IN_NEW_TAB": "Abrir em nova aba",
       "COPY_LINK": "Copiar link da conversa",

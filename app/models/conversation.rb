@@ -166,6 +166,13 @@ class Conversation < ApplicationRecord
     save
   end
 
+  # Pin = float the conversation to the top of every sorted list for
+  # every agent in the account. Storing the timestamp gives us a free
+  # ordering among multiple pinned chats (most recent on top).
+  def toggle_pin!
+    update!(pinned_at: pinned_at.present? ? nil : Time.current)
+  end
+
   def bot_handoff!
     update(waiting_since: Time.current) if waiting_since.blank?
     open!
