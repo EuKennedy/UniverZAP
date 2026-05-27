@@ -22,9 +22,17 @@ class Ai::ClaudeService
     api_key = @assistant&.resolved_anthropic_key
     raise Error, 'Anthropic API key not configured' if api_key.blank?
 
-    Ai::QuotaService.check!(account: @account) if @account.present?
-
     payload = build_payload(messages, system, overrides)
+    if @account.present?
+      # Cap the worst-case cost pre-flight using `max_tokens` from the
+      # payload. The actual invocation is debited post-flight against
+      # real usage so customers never pay for tokens Claude didn't emit.
+      Ai::QuotaService.check!(
+        account: @account,
+        model: payload[:model],
+        max_output_tokens: payload[:max_tokens]
+      )
+    end
     started_at = Time.zone.now
     response = perform_request(api_key, payload)
     track(response: response, payload: payload, started_at: started_at, conversation: conversation, phase: phase)
@@ -112,7 +120,7 @@ class Ai::ClaudeService
     usage = parsed['usage'] || {}
     input_tokens = usage['input_tokens'].to_i
     output_tokens = usage['output_tokens'].to_i
-    Ai::Invocation.create!(
+    invocation = Ai::Invocation.create!(
       ai_assistant: @assistant,
       account: @account,
       conversation_id: conversation&.id,
@@ -126,8 +134,31 @@ class Ai::ClaudeService
       duration_ms: duration_ms,
       status: 'success'
     )
+    # Debit the operator's BRL balance against the actual tokens Claude
+    # reported. We swallow ledger errors so a billing hiccup never
+    # eats the chat reply — the alert still goes to logs.
+    debit_credits(invocation, payload[:model], input_tokens, output_tokens)
   rescue StandardError => e
     Rails.logger.error("[Athenas] invocation logging failed: #{e.message}")
+  end
+
+  def debit_credits(invocation, model, input_tokens, output_tokens)
+    return if @account.blank?
+
+    cents = Ai::PricingCalculator.cost_cents_brl(
+      model: model,
+      input_tokens: input_tokens,
+      output_tokens: output_tokens
+    )
+    return if cents.zero?
+
+    Ai::CreditLedger.new(@account).debit!(
+      invocation: invocation,
+      cents_brl: cents,
+      description: "Claude #{model} #{input_tokens}+#{output_tokens} tokens"
+    )
+  rescue StandardError => e
+    Rails.logger.error("[Athenas] credit debit failed account=#{@account&.id}: #{e.message}")
   end
 
   def log_failed(payload:, response:, duration_ms:, conversation:, phase:)

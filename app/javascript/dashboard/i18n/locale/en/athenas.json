@@ -170,5 +170,63 @@
         "CTA": "Invite"
       }
     }
+  },
+  "ATHENAS_CREDITS": {
+    "MODAL": {
+      "EYEBROW_EXHAUSTED": "Athenas Credits",
+      "EYEBROW_WARN": "Heads up",
+      "EYEBROW_MANUAL": "Athenas Credits",
+      "TITLE_EXHAUSTED": "Your Athenas credits are out",
+      "TITLE_WARN": "Your Athenas credits are running low",
+      "TITLE_MANUAL": "Top up your Athenas credits",
+      "SUBTITLE_EXHAUSTED": "Pick a package below to keep Athenas answering customers 24/7. Credits never expire and activate within minutes.",
+      "SUBTITLE_WARN": "You have R$ {balance} left. Top up now so Athenas never stops mid-conversation.",
+      "SUBTITLE_MANUAL": "Current balance: R$ {balance}. Choose how much to add — bigger packages get bonus credit.",
+      "CLOSE": "Close",
+      "META": {
+        "BALANCE": "Current balance",
+        "BURN_RATE": "Daily usage",
+        "DAYS_REMAINING": "Days remaining",
+        "DAYS": "days"
+      },
+      "CARD": {
+        "ONE_TIME": "one-time",
+        "BONUS": "+{bonus} bonus credit",
+        "NO_BONUS": "Entry package",
+        "CONVERSATIONS_SONNET": "conversations with Sonnet (deeper)",
+        "CONVERSATIONS_HAIKU": "conversations with Haiku (faster)",
+        "DAYS": "days at your current usage",
+        "NEVER_EXPIRES": "Credits never expire",
+        "CTA": "Buy via Univercart"
+      },
+      "BADGE": {
+        "POPULAR": "Most popular",
+        "BEST_VALUE": "Best value"
+      },
+      "FOOTER": {
+        "TRUST": "Secure checkout via Univercart",
+        "AUTO_CREDIT": "Credit activates in 1–2 minutes after payment"
+      }
+    },
+    "BANNER": {
+      "CTA": "Top up now",
+      "WARN_80": {
+        "TITLE": "Athenas credits running low",
+        "BODY": "You have R$ {balance} left ({percent}% of your starter pack). Top up to keep autopilot answering."
+      },
+      "WARN_95": {
+        "TITLE": "Athenas credits almost gone",
+        "BODY": "Only R$ {balance} left ({percent}%). Top up before Athenas stops mid-conversation."
+      },
+      "EXHAUSTED": {
+        "TITLE": "Athenas credits exhausted",
+        "BODY": "Top up to keep your AI assistant answering customers 24/7."
+      }
+    },
+    "METER": {
+      "ARIA_LABEL": "Athenas balance — R$ {balance}. Click to top up.",
+      "TOOLTIP_BALANCE": "Athenas balance · R$ {balance}",
+      "TOOLTIP_DAYS": "~{days} days at current usage"
+    }
   }
 }

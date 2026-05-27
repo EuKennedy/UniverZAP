@@ -93,6 +93,7 @@ class Account < ApplicationRecord
   has_many :ai_invocations, dependent: :destroy, class_name: 'Ai::Invocation'
   has_many :ai_chat_threads, dependent: :destroy, class_name: 'Ai::ChatThread'
   has_many :ai_chat_messages, dependent: :destroy, class_name: 'Ai::ChatMessage'
+  has_many :ai_credit_ledger_entries, dependent: :destroy, class_name: 'Ai::CreditLedgerEntry'
   has_many :inboxes, dependent: :destroy_async
   has_many :labels, dependent: :destroy_async
   has_many :line_channels, dependent: :destroy_async, class_name: '::Channel::Line'

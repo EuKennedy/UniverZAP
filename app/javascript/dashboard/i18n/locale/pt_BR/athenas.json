@@ -170,5 +170,63 @@
         "CTA": "Convidar"
       }
     }
+  },
+  "ATHENAS_CREDITS": {
+    "MODAL": {
+      "EYEBROW_EXHAUSTED": "Créditos Athenas",
+      "EYEBROW_WARN": "Atenção",
+      "EYEBROW_MANUAL": "Créditos Athenas",
+      "TITLE_EXHAUSTED": "Seus créditos Athenas acabaram",
+      "TITLE_WARN": "Seus créditos Athenas estão acabando",
+      "TITLE_MANUAL": "Recarregue seus créditos Athenas",
+      "SUBTITLE_EXHAUSTED": "Escolha um pacote abaixo para continuar atendendo seus clientes 24/7. Créditos não expiram e ativam em poucos minutos.",
+      "SUBTITLE_WARN": "Restam R$ {balance}. Recarregue agora para a Athenas não parar no meio de uma conversa.",
+      "SUBTITLE_MANUAL": "Saldo atual: R$ {balance}. Escolha quanto adicionar — pacotes maiores vêm com bônus.",
+      "CLOSE": "Fechar",
+      "META": {
+        "BALANCE": "Saldo atual",
+        "BURN_RATE": "Consumo diário",
+        "DAYS_REMAINING": "Dias restantes",
+        "DAYS": "dias"
+      },
+      "CARD": {
+        "ONE_TIME": "única",
+        "BONUS": "+{bonus} de bônus",
+        "NO_BONUS": "Pacote de entrada",
+        "CONVERSATIONS_SONNET": "atendimentos com Sonnet (mais inteligente)",
+        "CONVERSATIONS_HAIKU": "atendimentos com Haiku (mais rápido)",
+        "DAYS": "dias no seu ritmo atual",
+        "NEVER_EXPIRES": "Créditos nunca expiram",
+        "CTA": "Comprar via Univercart"
+      },
+      "BADGE": {
+        "POPULAR": "Mais popular",
+        "BEST_VALUE": "Melhor valor"
+      },
+      "FOOTER": {
+        "TRUST": "Checkout seguro via Univercart",
+        "AUTO_CREDIT": "Crédito ativa em 1 a 2 minutos após o pagamento"
+      }
+    },
+    "BANNER": {
+      "CTA": "Recarregar",
+      "WARN_80": {
+        "TITLE": "Créditos Athenas baixos",
+        "BODY": "Restam R$ {balance} ({percent}% do seu pacote inicial). Recarregue para manter o autopiloto respondendo."
+      },
+      "WARN_95": {
+        "TITLE": "Créditos Athenas quase acabando",
+        "BODY": "Restam apenas R$ {balance} ({percent}%). Recarregue antes da Athenas parar no meio de uma conversa."
+      },
+      "EXHAUSTED": {
+        "TITLE": "Créditos Athenas esgotados",
+        "BODY": "Recarregue para manter sua IA atendendo os clientes 24/7."
+      }
+    },
+    "METER": {
+      "ARIA_LABEL": "Saldo Athenas — R$ {balance}. Clique para recarregar.",
+      "TOOLTIP_BALANCE": "Saldo Athenas · R$ {balance}",
+      "TOOLTIP_DAYS": "~{days} dias no ritmo atual"
+    }
   }
 }

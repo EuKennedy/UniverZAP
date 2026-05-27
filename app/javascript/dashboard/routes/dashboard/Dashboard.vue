@@ -24,8 +24,12 @@ import CopilotLauncher from 'dashboard/components-next/copilot/CopilotLauncher.v
 import CopilotContainer from 'dashboard/components/copilot/AthenasCopilotContainer.vue';
 import OnboardingLauncher from 'dashboard/components-next/onboarding/OnboardingLauncher.vue';
 import OnboardingTour from 'dashboard/components-next/onboarding/OnboardingTour.vue';
+import AthenasCreditsModal from 'dashboard/components-next/athenas/AthenasCreditsModal.vue';
+import AthenasCreditsBanner from 'dashboard/components-next/athenas/AthenasCreditsBanner.vue';
+import AthenasCreditsMeter from 'dashboard/components-next/athenas/AthenasCreditsMeter.vue';
 import CookieConsentBanner from 'dashboard/components-next/legal/CookieConsentBanner.vue';
 import LegalReAcceptBanner from 'dashboard/components-next/legal/LegalReAcceptBanner.vue';
+import { useAthenasCredits } from 'dashboard/composables/useAthenasCredits';
 
 import MobileSidebarLauncher from 'dashboard/components-next/sidebar/MobileSidebarLauncher.vue';
 import { useCallsStore } from 'dashboard/stores/calls';
@@ -43,6 +47,9 @@ export default {
     MobileSidebarLauncher,
     OnboardingLauncher,
     OnboardingTour,
+    AthenasCreditsModal,
+    AthenasCreditsBanner,
+    AthenasCreditsMeter,
     CookieConsentBanner,
     LegalReAcceptBanner,
   },
@@ -52,6 +59,11 @@ export default {
     const { accountId } = useAccount();
     const { width: windowWidth } = useWindowSize();
     const callsStore = useCallsStore();
+    // Kick off the Athenas credits fetch on dashboard mount so the
+    // meter chip + banner render with real data instead of zeros, and
+    // so a 402 from any subsequent AI call lands on a populated store.
+    const { refresh: refreshAthenasCredits } = useAthenasCredits();
+    refreshAthenasCredits();
 
     return {
       uiSettings,
@@ -172,6 +184,9 @@ export default {
         <CopilotContainer />
         <OnboardingLauncher />
         <OnboardingTour />
+        <AthenasCreditsMeter />
+        <AthenasCreditsBanner />
+        <AthenasCreditsModal />
         <CookieConsentBanner />
         <LegalReAcceptBanner />
         <FloatingCallWidget v-if="hasActiveCall || hasIncomingCall" />

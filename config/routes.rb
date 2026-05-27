@@ -381,6 +381,7 @@ Rails.application.routes.draw do
             resources :chat_threads, only: [:index, :show, :create, :update, :destroy] do
               resources :chat_messages, only: [:index, :create]
             end
+            resource :credits, only: [:show]
           end
 
           namespace :whatsapp do
