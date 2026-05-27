@@ -71,7 +71,11 @@ Rails.application.routes.draw do
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
-          resource :onboarding_state, only: [:show]
+          # `resource :onboarding_state` maps to OnboardingStatesController by Rails
+          # convention, but the controller file uses the singular form
+          # (OnboardingStateController). Pin the controller explicitly so requests
+          # don't blow up with `uninitialized constant Api::V1::Accounts::OnboardingStatesController`.
+          resource :onboarding_state, only: [:show], controller: 'onboarding_state'
           namespace :captain do
             resource :preferences, only: [:show, :update]
             resources :assistants do
