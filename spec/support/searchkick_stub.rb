@@ -17,10 +17,11 @@
 # Production behaviour is untouched: this file is only required from
 # `rails_helper.rb`, never in development or production boot paths.
 # Touching `.name` forces Zeitwerk to materialise the constant before we
-# patch it; a bare `Message` reference would trigger a Lint/Void warning.
-_message_class = Message.name && Message
-unless _message_class.respond_to?(:searchkick_index) || _message_class.method_defined?(:reindex)
-  _message_class.class_eval do
+# patch it; the local binding consumes the value so the file body is
+# never just a "void" reference to a constant.
+message_class = Message.name && Message
+unless message_class.respond_to?(:searchkick_index) || message_class.method_defined?(:reindex)
+  message_class.class_eval do
     def reindex(*)
       true
     end

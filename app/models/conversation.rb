@@ -61,13 +61,44 @@ class Conversation < ApplicationRecord
   include SortHandler
   include PushDataHelper
 
-  # Float pinned conversations above every other row regardless of which
-  # sort the operator picked. Encapsulated as a `sort_prefix` override on
-  # SortHandler so Mention (and any other future SortHandler consumer)
-  # keeps its existing ordering — only Conversation has a `pinned_at`
-  # column to honour.
-  def self.sort_prefix
-    'pinned_at IS NULL, pinned_at DESC, '
+  # Override SortHandler's sort scopes so pinned conversations float to
+  # the top of every list regardless of which sort the operator picked.
+  # All column references are qualified with the `conversations.` table
+  # name — without that, the DISTINCT auto-promotion of ORDER BY terms
+  # exposes ambiguity against any join that brings in another
+  # `last_activity_at` column (mentions, messages-grouped views, etc).
+  class << self
+    def sort_on_last_activity_at(sort_direction = :desc)
+      order(pinned_order_sql("conversations.last_activity_at #{sort_direction.to_s.upcase}"))
+    end
+
+    def sort_on_created_at(sort_direction = :asc)
+      order(pinned_order_sql("conversations.created_at #{sort_direction.to_s.upcase}"))
+    end
+
+    def sort_on_priority(sort_direction = :desc)
+      order(pinned_order_sql("conversations.priority #{sort_direction.to_s.upcase} NULLS LAST, conversations.last_activity_at DESC"))
+    end
+
+    def sort_on_priority_created_at(sort_direction = :desc)
+      order(pinned_order_sql("conversations.priority #{sort_direction.to_s.upcase} NULLS LAST, conversations.created_at ASC"))
+    end
+
+    def sort_on_waiting_since(sort_direction = :asc)
+      order(pinned_order_sql(
+              "(conversations.waiting_since IS NULL), conversations.waiting_since #{sort_direction.to_s.upcase}, conversations.created_at ASC"
+            ))
+    end
+
+    private
+
+    def pinned_order_sql(suffix)
+      Arel::Nodes::SqlLiteral.new(
+        sanitize_sql_for_order(
+          "conversations.pinned_at IS NULL, conversations.pinned_at DESC, #{suffix}"
+        )
+      )
+    end
   end
   include ConversationMuteHelpers
 
