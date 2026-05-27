@@ -82,9 +82,12 @@ class Ai::Assistant < ApplicationRecord
       created_at: created_at.to_i,
       updated_at: updated_at.to_i,
       stats: {
-        trainings_count: trainings.size,
-        intents_count: intents.size,
-        invocations_count: invocations.size
+        # Prefer the per-row counts injected by `index` (left_joins + select)
+        # so we stay zero-query in list responses. Fall back to `.count` for
+        # member actions / show pages where the eager counts are absent.
+        trainings_count: attributes['trainings_count']&.to_i || trainings.count,
+        intents_count: attributes['intents_count']&.to_i || intents.count,
+        invocations_count: attributes['invocations_count']&.to_i || invocations.count
       }
     }
   end

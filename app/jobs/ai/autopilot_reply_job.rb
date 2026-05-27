@@ -11,12 +11,22 @@ class Ai::AutopilotReplyJob < ApplicationJob
     conversation = message.conversation
     # NOTE: the listener already gated on ai_mode='autopilot'. Autopilot
     # intentionally overrides a human assignee when the conversation opted in.
-    return if rate_limited?(conversation, assistant)
+    #
+    # Wrap the rate-limit check + outgoing message in a single transaction
+    # with a row lock on the conversation. Without the lock, two concurrent
+    # jobs (e.g. two inbound messages within the same window) can both pass
+    # the count check before either has written its reply, blowing past
+    # `max_messages_per_minute` and triggering the loop-prevention rules
+    # downstream.
+    Conversation.transaction do
+      conversation.lock!
+      return if rate_limited?(conversation, assistant)
 
-    reply_text = generate_reply_text(conversation, assistant)
-    return if reply_text.blank?
+      reply_text = generate_reply_text(conversation, assistant)
+      return if reply_text.blank?
 
-    send_outgoing(conversation, assistant, reply_text)
+      send_outgoing(conversation, assistant, reply_text)
+    end
   rescue Ai::ClaudeService::Error => e
     Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
   end

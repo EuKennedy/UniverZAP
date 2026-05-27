@@ -22,14 +22,23 @@ class Api::V1::Accounts::Ai::RewritesController < Api::V1::Accounts::BaseControl
   def resolve_conversation
     return nil if params[:conversation_display_id].blank?
 
-    Current.account.conversations.find_by(display_id: params[:conversation_display_id])
+    conv = Current.account.conversations.find_by(display_id: params[:conversation_display_id])
+    return nil if conv.blank?
+
+    # Reading the conversation's transcript is implicit in any rewrite that
+    # uses it as context — apply the same Pundit gate.
+    authorize(conv, :show?)
+    conv
   end
 
   def resolve_assistant(conversation)
     return Current.account.ai_assistants.active.find(params[:ai_assistant_id]) if params[:ai_assistant_id].present?
 
+    # Deterministic fallback chain — last hop sorts by id so the picked
+    # assistant is reproducible across requests instead of relying on
+    # `.first` (insertion order from the DB).
     conversation&.ai_assistant ||
       conversation&.inbox&.ai_assistant ||
-      Current.account.ai_assistants.active.first
+      Current.account.ai_assistants.active.order(:id).first
   end
 end
