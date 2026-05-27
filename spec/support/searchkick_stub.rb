@@ -8,18 +8,18 @@
 # example that fires the `reindex_for_search` after_commit callback
 # would otherwise blow up with `NoMethodError`.
 #
-# We stub the instance method as a no-op only when Searchkick didn't
-# install its own; production behaviour is untouched because there
-# Searchkick provides the real implementation.
+# We stub the instance method via RSpec mocks on every example so the
+# stub survives Zeitwerk reloads between specs (a class-level
+# `define_method` in `before(:suite)` gets dropped when the autoloader
+# unloads Message). Production behaviour is untouched because there
+# Searchkick provides the real implementation and the `next if`
+# guard skips the stub entirely.
 RSpec.configure do |config|
-  config.before(:suite) do
+  config.before(:each) do
     next if defined?(Searchkick) && Message.respond_to?(:searchkick_index)
-    next if Message.method_defined?(:reindex)
 
-    Message.class_eval do
-      def reindex(*)
-        true
-      end
-    end
+    # rubocop:disable RSpec/AnyInstance
+    allow_any_instance_of(Message).to receive(:reindex).and_return(true)
+    # rubocop:enable RSpec/AnyInstance
   end
 end

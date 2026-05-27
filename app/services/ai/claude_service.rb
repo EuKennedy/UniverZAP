@@ -133,7 +133,10 @@ class Ai::ClaudeService
     Rails.logger.error("[Athenas] invocation logging failed: #{e.message}")
   end
 
-  def record_invocation(payload:, usage:, duration_ms:, conversation:, phase:, input_tokens:, output_tokens:)
+  # Keyword args read fine here so we keep the surface; the parameter
+  # list cop fires at 7/5 but every name carries real meaning for the
+  # invocation log row — a single options hash would be worse.
+  def record_invocation(payload:, usage:, duration_ms:, conversation:, phase:, input_tokens:, output_tokens:) # rubocop:disable Metrics/ParameterLists
     Ai::Invocation.create!(
       ai_assistant: @assistant,
       account: @account,
