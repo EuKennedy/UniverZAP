@@ -64,8 +64,16 @@ class Account < ApplicationRecord
   has_many :macros, dependent: :destroy_async
   has_many :campaigns, dependent: :destroy_async
   has_many :canned_responses, dependent: :destroy_async
-  has_many :funnels, dependent: :destroy_async
-  has_many :kanban_tasks, dependent: :destroy_async
+  # UniverZAP additions intentionally use `:destroy` (synchronous) instead
+  # of `:destroy_async`. The volume per account is small (funnels: 1–5,
+  # kanban_tasks: hundreds at most, AI tables: 1–10), and a synchronous
+  # cascade is what lets `account.destroy` succeed in test + super-admin
+  # flows without tripping the FK constraint on tables that get
+  # auto-seeded for every account (e.g. the default Athenas assistant).
+  # DeleteObjectJob still pre-purges these via #heavy_associations, so
+  # for large accounts the sync destroy is effectively a no-op.
+  has_many :funnels, dependent: :destroy
+  has_many :kanban_tasks, dependent: :destroy
   has_many :categories, dependent: :destroy_async, class_name: '::Category'
   has_many :contacts, dependent: :destroy_async
   has_many :conversations, dependent: :destroy_async
@@ -79,12 +87,12 @@ class Account < ApplicationRecord
   has_many :instagram_channels, dependent: :destroy_async, class_name: '::Channel::Instagram'
   has_many :tiktok_channels, dependent: :destroy_async, class_name: '::Channel::Tiktok'
   has_many :hooks, dependent: :destroy_async, class_name: 'Integrations::Hook'
-  has_many :ai_assistants, dependent: :destroy_async, class_name: 'Ai::Assistant'
-  has_many :ai_trainings, dependent: :destroy_async, class_name: 'Ai::Training'
-  has_many :ai_intents, dependent: :destroy_async, class_name: 'Ai::Intent'
-  has_many :ai_invocations, dependent: :destroy_async, class_name: 'Ai::Invocation'
-  has_many :ai_chat_threads, dependent: :destroy_async, class_name: 'Ai::ChatThread'
-  has_many :ai_chat_messages, dependent: :destroy_async, class_name: 'Ai::ChatMessage'
+  has_many :ai_assistants, dependent: :destroy, class_name: 'Ai::Assistant'
+  has_many :ai_trainings, dependent: :destroy, class_name: 'Ai::Training'
+  has_many :ai_intents, dependent: :destroy, class_name: 'Ai::Intent'
+  has_many :ai_invocations, dependent: :destroy, class_name: 'Ai::Invocation'
+  has_many :ai_chat_threads, dependent: :destroy, class_name: 'Ai::ChatThread'
+  has_many :ai_chat_messages, dependent: :destroy, class_name: 'Ai::ChatMessage'
   has_many :inboxes, dependent: :destroy_async
   has_many :labels, dependent: :destroy_async
   has_many :line_channels, dependent: :destroy_async, class_name: '::Channel::Line'

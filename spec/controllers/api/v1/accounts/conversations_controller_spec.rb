@@ -68,11 +68,15 @@ RSpec.describe 'Conversations API', type: :request do
 
         expect(response).to have_http_status(:success)
         body = JSON.parse(response.body, symbolize_names: true)
-        # Under UniverZAP semantics every conversation that still has a
-        # waiting_since timestamp (or never received a first reply) is
-        # unattended, so the attended-then-still-waiting one is included.
+        # meta[:all_count] is computed against the base inbox-member set
+        # BEFORE the conversation_type filter is applied, so all three
+        # conversations show up there. The payload is the post-filter
+        # list — only the two genuinely unattended ones survive the
+        # UniverZAP `unattended` scope (no first reply OR waiting_since
+        # populated), so the attended conversation with no waiting_since
+        # is excluded.
         expect(body[:data][:meta][:all_count]).to eq(3)
-        expect(body[:data][:payload].count).to eq(3)
+        expect(body[:data][:payload].count).to eq(2)
       end
     end
   end
