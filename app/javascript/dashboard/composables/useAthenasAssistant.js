@@ -5,9 +5,24 @@ import AthenasAssistantsAPI from 'dashboard/api/athenas';
 /**
  * Shared reactive state for the currently-active Athenas assistant.
  * Keyed by conversation id so that overriding the assistant in one
- * conversation does not bleed into the next.
+ * conversation does not bleed into the next. A `globalDefault` slot
+ * captures picks made before any conversation is selected (e.g. when
+ * the agent opens the copilot panel directly from the sidebar). The
+ * default is persisted in localStorage so reps don't have to re-pick
+ * Élisa after a page reload.
  */
+const GLOBAL_DEFAULT_KEY = 'univerzap.athenas.default_assistant_id';
 const overridesByConversation = ref({});
+const globalDefaultAssistantId = ref(
+  (() => {
+    try {
+      const raw = window.localStorage.getItem(GLOBAL_DEFAULT_KEY);
+      return raw ? Number(raw) || raw : null;
+    } catch (_) {
+      return null;
+    }
+  })()
+);
 const assistants = ref([]);
 const isLoadingAssistants = ref(false);
 const lastFetchedAccountId = ref(null);
@@ -31,8 +46,19 @@ export function useAthenasAssistant() {
     return overridesByConversation.value[conversationId.value] || null;
   });
 
+  // Resolution order: per-conversation override → inbox default → user's
+  // last manual pick (persisted) → first active assistant in the account.
+  // The last-resort fallback lets the chip in the copilot panel work even
+  // when no inbox / conversation has been bound to an assistant yet —
+  // before this fix, picking Élisa from the chip was a silent no-op when
+  // the panel was opened outside a conversation.
   const activeAssistantId = computed(
-    () => overrideAssistantId.value || inboxAssistantId.value || null
+    () =>
+      overrideAssistantId.value ||
+      inboxAssistantId.value ||
+      globalDefaultAssistantId.value ||
+      assistants.value[0]?.id ||
+      null
   );
 
   const activeAssistant = computed(() => {
@@ -41,11 +67,23 @@ export function useAthenasAssistant() {
   });
 
   const setAssistant = id => {
-    if (!conversationId.value) return;
-    overridesByConversation.value = {
-      ...overridesByConversation.value,
-      [conversationId.value]: id,
-    };
+    // Always remember the pick as the global default so repeated opens of
+    // the panel land on the same assistant. When a conversation is active
+    // we also record a per-conversation override so swapping in another
+    // assistant for a single chat doesn't pollute the default.
+    globalDefaultAssistantId.value = id;
+    try {
+      window.localStorage.setItem(GLOBAL_DEFAULT_KEY, String(id));
+    } catch (_) {
+      /* localStorage unavailable — fall back to in-memory only. */
+    }
+
+    if (conversationId.value) {
+      overridesByConversation.value = {
+        ...overridesByConversation.value,
+        [conversationId.value]: id,
+      };
+    }
   };
 
   const clearOverride = () => {

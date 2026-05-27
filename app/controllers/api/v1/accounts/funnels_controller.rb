@@ -1,6 +1,21 @@
 class Api::V1::Accounts::FunnelsController < Api::V1::Accounts::BaseController
   before_action :fetch_funnel, except: [:index, :create]
-  before_action :check_authorization
+  before_action :authorize_action
+
+  # Api::BaseController#check_authorization hands the class to Pundit
+  # (`authorize(Funnel)`). FunnelPolicy#member_access? calls
+  # `record.funnel_agents`, which blows up with NoMethodError on the class
+  # and turns every show / update / destroy into a 500. Use the fetched
+  # instance for member actions; index/create still authorize against the
+  # class since policy_scope is enough for the list and admin-only create.
+  def authorize_action
+    case action_name
+    when 'index', 'create'
+      authorize(Funnel)
+    else
+      authorize(@funnel)
+    end
+  end
 
   def index
     @funnels = policy_scope(Current.account.funnels).ordered.includes(:funnel_stages)
