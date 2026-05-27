@@ -76,6 +76,13 @@ class Funnel < ApplicationRecord
 
   def assign_position
     return if position.present? && position.positive?
+    # The before_validation callback fires before `belongs_to :account`
+    # raises its presence error, so during shoulda-matcher introspection
+    # (and any other code path that builds a Funnel without an account
+    # set) `account` is `nil`. Bailing out keeps validation reachable
+    # so the real error surfaces — "Account must exist" — instead of a
+    # NoMethodError that masks it.
+    return if account.nil?
 
     self.position = (account.funnels.maximum(:position) || 0) + 1
   end

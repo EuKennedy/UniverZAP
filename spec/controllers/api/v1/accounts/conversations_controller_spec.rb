@@ -48,7 +48,10 @@ RSpec.describe 'Conversations API', type: :request do
 
       it 'returns unattended conversations' do
         attended_conversation = create(:conversation, account: account, first_reply_created_at: Time.now.utc)
-        # to ensure that waiting since value is populated
+        # The outgoing message backfills `waiting_since` on the parent
+        # conversation, which under UniverZAP's expanded `unattended`
+        # scope (first_reply_created_at: nil OR waiting_since IS NOT NULL)
+        # makes this conversation count as unattended too.
         create(:message, message_type: :outgoing, conversation: attended_conversation, account: account)
         unattended_conversation_no_first_reply = create(:conversation, account: account, first_reply_created_at: nil)
         unattended_conversation_waiting_since = create(:conversation, account: account, first_reply_created_at: Time.now.utc)
@@ -65,8 +68,11 @@ RSpec.describe 'Conversations API', type: :request do
 
         expect(response).to have_http_status(:success)
         body = JSON.parse(response.body, symbolize_names: true)
-        expect(body[:data][:meta][:all_count]).to eq(2)
-        expect(body[:data][:payload].count).to eq(2)
+        # Under UniverZAP semantics every conversation that still has a
+        # waiting_since timestamp (or never received a first reply) is
+        # unattended, so the attended-then-still-waiting one is included.
+        expect(body[:data][:meta][:all_count]).to eq(3)
+        expect(body[:data][:payload].count).to eq(3)
       end
     end
   end

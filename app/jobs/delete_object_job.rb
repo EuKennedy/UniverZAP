@@ -16,8 +16,14 @@ class DeleteObjectJob < ApplicationJob
   private
 
   def heavy_associations
+    # UniverZAP additions (ai_assistants, funnels, kanban_tasks) declare
+    # `dependent: :destroy_async` on Account so their FK rows survive
+    # past the parent `destroy!` call and trigger PG foreign-key
+    # violations. Pre-purging them synchronously here matches how the
+    # legacy heavy children (conversations, contacts, inboxes,
+    # reporting_events) are handled.
     {
-      Account => %i[conversations contacts inboxes reporting_events],
+      Account => %i[conversations contacts inboxes reporting_events ai_assistants funnels kanban_tasks],
       Inbox => %i[conversations contact_inboxes reporting_events]
     }.freeze
   end

@@ -106,11 +106,15 @@ describe ConversationFinder do
 
       it 'returns the correct meta' do
         result = conversation_finder.perform
+        # UniverZAP added attendance-state counters (waiting / in_attendance)
+        # so the finder emits two extra keys alongside the upstream four.
         expect(result[:count]).to eq({
                                        mine_count: 2,
                                        assigned_count: 3,
                                        unassigned_count: 1,
-                                       all_count: 4
+                                       all_count: 4,
+                                       waiting_count: 4,
+                                       in_attendance_count: 0
                                      })
       end
     end
@@ -201,11 +205,14 @@ describe ConversationFinder do
 
       it 'returns the correct counts' do
         result = conversation_finder.perform_meta_only
+        # UniverZAP added attendance-state counters (waiting / in_attendance).
         expect(result[:count]).to eq({
                                        mine_count: 2,
                                        assigned_count: 3,
                                        unassigned_count: 1,
-                                       all_count: 4
+                                       all_count: 4,
+                                       waiting_count: 4,
+                                       in_attendance_count: 0
                                      })
       end
 
