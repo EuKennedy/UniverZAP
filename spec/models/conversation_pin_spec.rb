@@ -25,7 +25,7 @@ RSpec.describe Conversation do
 
     it 'floats pinned conversations above unpinned peers regardless of last activity' do
       older.update!(pinned_at: Time.current)
-      sorted = Conversation.sort_on_last_activity_at(:desc).where(account_id: account.id, inbox_id: inbox.id)
+      sorted = described_class.sort_on_last_activity_at(:desc).where(account_id: account.id, inbox_id: inbox.id)
       expect(sorted.first).to eq(older)
       expect(sorted.last).to eq(newer)
     end

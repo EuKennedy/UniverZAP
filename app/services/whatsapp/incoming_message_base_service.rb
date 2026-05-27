@@ -1,6 +1,7 @@
 # Mostly modeled after the intial implementation of the service based on 360 Dialog
 # https://docs.360dialog.com/whatsapp-api/whatsapp-api/media
 # https://developers.facebook.com/docs/whatsapp/api/media/
+# rubocop:disable Metrics/ClassLength
 class Whatsapp::IncomingMessageBaseService
   include ::Whatsapp::IncomingMessageServiceHelpers
 
@@ -241,3 +242,4 @@ class Whatsapp::IncomingMessageBaseService
     @contact.name == phone_number || @contact.name == formatted_phone_number
   end
 end
+# rubocop:enable Metrics/ClassLength
