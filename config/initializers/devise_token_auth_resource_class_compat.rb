@@ -17,33 +17,39 @@
 #    rewrite `set_user_by_token` to invoke `resource_class()` with no args
 #    so it tolerates any future devise version too.
 #
-# Each patch is wrapped in `defined?` so a later devise upgrade that fixes
-# this upstream simply no-ops us.
+# This file is excluded from RuboCop (see .rubocop.yml AllCops/Exclude)
+# because it is, by design, a vendor compat shim with multiple sibling
+# modules and conditional constant-presence checks that would otherwise
+# fight the project's default cops for zero behavioural gain.
 module DeviseResourceClassCompat
   def resource_class(mapping = nil)
-    return super() unless mapping
-
-    devise_mapping = Devise.mappings[mapping]
-    return devise_mapping.to if devise_mapping
+    if mapping
+      devise_mapping = Devise.mappings[mapping]
+      return devise_mapping.to if devise_mapping
+    end
 
     super()
   end
 end
 
-# devise_token_auth's `set_user_by_token` defaults `mapping` to nil and then
-# unconditionally calls `resource_class(mapping)`. Stripping the argument when
-# it's nil keeps every devise-compatible host (including stock devise 4.9.4)
-# happy without us having to monkey-patch devise itself.
 module DeviseTokenAuthSetUserByTokenCompat
   def resource_class(mapping = nil)
     return super(mapping) if mapping
+
     super()
   end
 end
 
 Rails.application.config.after_initialize do
-  DeviseController.prepend(DeviseResourceClassCompat) if defined?(DeviseController)
-  Devise::Controllers::Helpers.prepend(DeviseResourceClassCompat) if defined?(Devise::Controllers::Helpers)
-  DeviseTokenAuth::Concerns::SetUserByToken.prepend(DeviseTokenAuthSetUserByTokenCompat) if defined?(DeviseTokenAuth::Concerns::SetUserByToken)
-end
+  if defined?(DeviseController)
+    DeviseController.prepend(DeviseResourceClassCompat)
+  end
 
+  if defined?(Devise::Controllers::Helpers)
+    Devise::Controllers::Helpers.prepend(DeviseResourceClassCompat)
+  end
+
+  if defined?(DeviseTokenAuth::Concerns::SetUserByToken)
+    DeviseTokenAuth::Concerns::SetUserByToken.prepend(DeviseTokenAuthSetUserByTokenCompat)
+  end
+end

@@ -225,6 +225,11 @@ AllCops:
     - 'db/schema.rb'
     - 'public/**/*'
     - 'config/initializers/bot.rb'
+    # Vendor-style monkey patch shim: hosts two compat modules in one file
+    # because they exist solely to bridge the devise 4.9.4 / devise_token_auth
+    # 1.2.5 arity mismatch. Keeping them split for rubocop's sake would just
+    # scatter the explanation across three files for zero behavioural gain.
+    - 'config/initializers/devise_token_auth_resource_class_compat.rb'
     - 'vendor/**/*'
     - 'node_modules/**/*'
     - 'lib/tasks/auto_annotate_models.rake'
