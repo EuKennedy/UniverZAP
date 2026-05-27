@@ -68,14 +68,24 @@ export const buildStepCatalog = ({ t, flags }) => [
   },
 ];
 
-// Guided spotlight tour: each step anchors to a stable `data-onboarding`
-// attribute on the dashboard chrome. `clickToAdvance` opts the step into
-// auto-advance when the user actually clicks the highlighted target.
-// `navigateTo` pre-navigates when a step lives on a different page.
+// Guided spotlight tour. Each step anchors to a stable `data-onboarding`
+// attribute on the dashboard chrome. Knobs:
+//
+// - `chapter`     storytelling label shown as the eyebrow above the title
+//                 ("Chapter 2 · Inbox setup"). Groups the journey into
+//                 ClickUp-style acts so the user senses progress.
+// - `clickToAdvance` opts the step into auto-advance when the user actually
+//                 clicks the highlighted target.
+// - `navigateTo`  pre-navigates when a step lives on a different page.
+// - `voice`       optional override for the SpeechSynthesis narrator (off
+//                 by default; falls back to `body` if missing).
+// - `selectors`   fallback CSS selectors if the `data-onboarding` attribute
+//                 is absent (theme overrides, A/B test variants, etc.).
 export const buildTourSteps = ({ t }) => [
   {
     key: 'welcome',
     fullscreen: true,
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.WELCOME'),
     title: t('ONBOARDING_TOUR.TOUR.WELCOME_TITLE'),
     body: t('ONBOARDING_TOUR.TOUR.WELCOME_BODY'),
     primaryLabel: t('ONBOARDING_TOUR.TOUR.WELCOME_CTA'),
@@ -84,6 +94,7 @@ export const buildTourSteps = ({ t }) => [
   {
     key: 'sidebar-conversations',
     dataOnboarding: 'sidebar-conversations',
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.INBOX'),
     title: t('ONBOARDING_TOUR.PANEL.STEPS.FIRST_REPLY.TITLE'),
     body: t('ONBOARDING_TOUR.PANEL.STEPS.FIRST_REPLY.DESCRIPTION'),
     side: 'right',
@@ -94,6 +105,7 @@ export const buildTourSteps = ({ t }) => [
     key: 'add-inbox',
     dataOnboarding: 'add-inbox',
     requireFlag: 'has_inbox',
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.INBOX'),
     title: t('ONBOARDING_TOUR.PANEL.STEPS.INBOX.TITLE'),
     body: t('ONBOARDING_TOUR.PANEL.STEPS.INBOX.DESCRIPTION'),
     side: 'right',
@@ -108,6 +120,7 @@ export const buildTourSteps = ({ t }) => [
     key: 'agents-nav',
     dataOnboarding: 'agents-nav',
     requireFlag: 'has_team_members',
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.TEAM'),
     title: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_MEMBERS.TITLE'),
     body: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_MEMBERS.DESCRIPTION'),
     side: 'right',
@@ -119,6 +132,7 @@ export const buildTourSteps = ({ t }) => [
     key: 'teams-nav',
     dataOnboarding: 'teams-nav',
     requireFlag: 'has_team_group',
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.TEAM'),
     title: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_GROUP.TITLE'),
     body: t('ONBOARDING_TOUR.PANEL.STEPS.TEAM_GROUP.DESCRIPTION'),
     side: 'right',
@@ -133,6 +147,7 @@ export const buildTourSteps = ({ t }) => [
     key: 'athenas-nav',
     dataOnboarding: 'athenas-nav',
     requireFlag: 'has_assistant',
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.AI'),
     title: t('ONBOARDING_TOUR.PANEL.STEPS.ASSISTANT.TITLE'),
     body: t('ONBOARDING_TOUR.PANEL.STEPS.ASSISTANT.DESCRIPTION'),
     side: 'right',
@@ -146,6 +161,7 @@ export const buildTourSteps = ({ t }) => [
   {
     key: 'kanban-nav',
     dataOnboarding: 'kanban-nav',
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.PIPELINE'),
     title: t('ONBOARDING_TOUR.PANEL.STEPS.KANBAN.TITLE'),
     body: t('ONBOARDING_TOUR.PANEL.STEPS.KANBAN.DESCRIPTION'),
     side: 'right',
@@ -159,6 +175,7 @@ export const buildTourSteps = ({ t }) => [
   {
     key: 'contacts-nav',
     dataOnboarding: 'contacts-nav',
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.CONTACTS'),
     title: t('ONBOARDING_TOUR.PANEL.STEPS.CONTACTS.TITLE'),
     body: t('ONBOARDING_TOUR.PANEL.STEPS.CONTACTS.DESCRIPTION'),
     side: 'right',
@@ -172,6 +189,7 @@ export const buildTourSteps = ({ t }) => [
   {
     key: 'reports-nav',
     dataOnboarding: 'reports-nav',
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.REPORTS'),
     title: t('ONBOARDING_TOUR.PANEL.STEPS.REPORTS.TITLE'),
     body: t('ONBOARDING_TOUR.PANEL.STEPS.REPORTS.DESCRIPTION'),
     side: 'right',
@@ -181,6 +199,7 @@ export const buildTourSteps = ({ t }) => [
   {
     key: 'finish',
     fullscreen: true,
+    chapter: t('ONBOARDING_TOUR.TOUR.CHAPTER.FINISH'),
     title: t('ONBOARDING_TOUR.TOUR.FINISH_TITLE'),
     body: t('ONBOARDING_TOUR.TOUR.FINISH_BODY'),
     primaryLabel: t('ONBOARDING_TOUR.TOUR.FINISH_CTA'),

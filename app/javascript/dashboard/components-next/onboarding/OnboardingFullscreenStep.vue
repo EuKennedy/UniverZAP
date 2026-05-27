@@ -10,9 +10,11 @@ const props = defineProps({
   secondaryLabel: { type: String, default: '' },
   step: { type: Number, default: 1 },
   total: { type: Number, default: 1 },
+  chapter: { type: String, default: '' },
+  voiceEnabled: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['primary', 'secondary']);
+const emit = defineEmits(['primary', 'secondary', 'toggleVoice']);
 const { t } = useI18n();
 </script>
 
@@ -31,6 +33,35 @@ const { t } = useI18n();
           class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-n-teal-9 via-n-teal-10 to-n-teal-9"
         />
 
+        <!-- Voice toggle — top-right corner. Opt-in narration. Persisted in
+             localStorage by OnboardingTour. -->
+        <button
+          type="button"
+          class="absolute top-4 right-4 inline-flex items-center justify-center size-9 rounded-full transition-colors cursor-pointer"
+          :class="
+            voiceEnabled
+              ? 'bg-n-teal-9/15 text-n-teal-11 hover:bg-n-teal-9/25'
+              : 'bg-n-alpha-2 text-n-slate-11 hover:text-n-slate-12 hover:bg-n-alpha-3'
+          "
+          :aria-pressed="voiceEnabled"
+          :aria-label="
+            voiceEnabled
+              ? t('ONBOARDING_TOUR.TOUR.VOICE_OFF')
+              : t('ONBOARDING_TOUR.TOUR.VOICE_ON')
+          "
+          :title="
+            voiceEnabled
+              ? t('ONBOARDING_TOUR.TOUR.VOICE_OFF')
+              : t('ONBOARDING_TOUR.TOUR.VOICE_ON')
+          "
+          @click="emit('toggleVoice')"
+        >
+          <Icon
+            :icon="voiceEnabled ? 'i-lucide-volume-2' : 'i-lucide-volume-x'"
+            class="size-4"
+          />
+        </button>
+
         <div class="px-10 pt-10 pb-8 flex flex-col items-center text-center">
           <span
             class="inline-flex items-center justify-center size-16 rounded-full bg-gradient-to-br from-n-teal-9 to-n-teal-10 text-white shadow-xl mb-6"
@@ -39,7 +70,13 @@ const { t } = useI18n();
           </span>
 
           <p
-            class="text-[11px] font-semibold uppercase tracking-[0.18em] text-n-teal-11 mb-3"
+            v-if="props.chapter"
+            class="text-[11px] font-bold uppercase tracking-[0.18em] text-n-teal-11 mb-2"
+          >
+            {{ props.chapter }}
+          </p>
+          <p
+            class="text-[11px] font-semibold uppercase tracking-[0.18em] text-n-slate-10 mb-3"
           >
             {{
               t('ONBOARDING_TOUR.TOUR.STEP_PROGRESS', {

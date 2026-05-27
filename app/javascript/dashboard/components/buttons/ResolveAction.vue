@@ -20,6 +20,7 @@ import ButtonGroup from 'dashboard/components-next/buttonGroup/ButtonGroup.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
 import ConversationKanbanAttachModal from 'dashboard/components-next/ConversationKanbanAttach/ConversationKanbanAttachModal.vue';
+import ConversationKanbanViewerModal from 'dashboard/components-next/ConversationKanbanAttach/ConversationKanbanViewerModal.vue';
 import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
 
 const store = useStore();
@@ -37,8 +38,11 @@ const openDropdown = () => toggleDropdown(true);
 
 const currentChat = computed(() => getters.getSelectedChat.value);
 
-// UniverZAP: Kanban attach modal + Autopilot dropdown
+// UniverZAP: Kanban attach modal + read-only viewer + Autopilot dropdown.
+// Viewer is mounted lazily — v-if + ref keeps the funnel/tasks fetch out of
+// the conversation header until the operator actually peeks at the board.
 const showKanbanModal = ref(false);
+const showKanbanViewerModal = ref(false);
 const [showAutopilotMenu, toggleAutopilotMenu] = useToggle();
 const closeAutopilotMenu = () => toggleAutopilotMenu(false);
 
@@ -62,6 +66,13 @@ const openKanbanModal = () => {
 };
 const closeKanbanModal = () => {
   showKanbanModal.value = false;
+};
+const openKanbanViewerModal = () => {
+  showKanbanViewerModal.value = true;
+  closeDropdown();
+};
+const closeKanbanViewerModal = () => {
+  showKanbanViewerModal.value = false;
 };
 
 const openAutopilotMenu = async () => {
@@ -267,6 +278,15 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
       no-animation
       @click="openKanbanModal"
     />
+    <Button
+      :label="t('CONVERSATION.HEADER.VIEW_KANBAN')"
+      icon="i-lucide-eye"
+      size="sm"
+      color="slate"
+      faded
+      no-animation
+      @click="openKanbanViewerModal"
+    />
     <div class="relative">
       <Button
         :label="t('CONVERSATION.HEADER.AUTOPILOT')"
@@ -418,6 +438,11 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
       :show="showKanbanModal"
       :conversation="currentChat"
       @close="closeKanbanModal"
+    />
+    <ConversationKanbanViewerModal
+      v-if="showKanbanViewerModal"
+      :show="showKanbanViewerModal"
+      @close="closeKanbanViewerModal"
     />
   </div>
 </template>

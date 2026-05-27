@@ -34,10 +34,28 @@ const { accountId } = useAccount();
 
 const openContact = (contact, event) => {
   event.stopPropagation();
+  event.preventDefault();
   if (!contact?.id) return;
-  // The contact page lists every conversation for that contact and exposes
-  // the "Open conversation" CTA, so this is the fastest jump from a card
-  // into the chat thread the rep cares about.
+  // Preferred jump: if the task is linked to a conversation we land the
+  // rep directly in that thread — that's the chat they actually want.
+  // The previous link sent everyone to the contact's index page, which
+  // for power users with many open chats was the wrong context.
+  const linkedConversation =
+    (props.task.conversations || []).find(
+      c => (c.contact_id ?? null) === contact.id
+    ) || (props.task.conversations || [])[0];
+  if (linkedConversation?.display_id) {
+    router.push({
+      name: 'inbox_conversation',
+      params: {
+        accountId: accountId.value,
+        conversation_id: linkedConversation.display_id,
+      },
+    });
+    return;
+  }
+  // Fallback: contact's profile (lists every conversation for that
+  // contact + "Open conversation" CTA).
   router.push({
     name: 'contacts_edit',
     params: { accountId: accountId.value, contactId: contact.id },
@@ -162,9 +180,12 @@ const hasDescription = computed(() =>
   Boolean(props.task.description && props.task.description.trim())
 );
 
-const primaryContact = computed(() => (props.task.contacts || [])[0] || null);
-const extraContacts = computed(() =>
-  Math.max(0, (props.task.contacts || []).length - 1)
+// Up-to-3 contact avatars shown inline as a small clickable stack next to
+// the assignees. Each avatar is its own button — clicks open the chat for
+// that contact, the rest of the card stays clickable for the drawer.
+const visibleContacts = computed(() => (props.task.contacts || []).slice(0, 3));
+const extraContactsInline = computed(() =>
+  Math.max(0, (props.task.contacts || []).length - 3)
 );
 
 const visibleAssignees = computed(() =>
@@ -302,7 +323,36 @@ const labelsExtra = computed(() =>
         </span>
       </div>
 
-      <!-- Assignees stack -->
+      <!-- Contacts stack — clickable per avatar (sends rep into that
+           contact's conversation). Kept separate from assignees so the rest
+           of the card stays clickable for the drawer. -->
+      <div v-if="visibleContacts.length" class="flex items-center -space-x-1.5">
+        <button
+          v-for="contact in visibleContacts"
+          :key="contact.id"
+          v-tooltip.top="contact.name"
+          type="button"
+          class="rounded-full ring-2 ring-n-solid-1 transition-transform duration-200 ease-out hover:translate-y-[-1px] hover:z-10 hover:ring-n-teal-9 focus:outline-none focus-visible:ring-n-teal-9 cursor-pointer"
+          :aria-label="t('KANBAN.CARD.OPEN_CONTACT', { name: contact.name })"
+          @click="openContact(contact, $event)"
+          @mousedown.stop
+        >
+          <Avatar
+            :src="contact.thumbnail || contact.avatar_url"
+            :name="contact.name"
+            :size="22"
+            rounded-full
+          />
+        </button>
+        <span
+          v-if="extraContactsInline"
+          class="inline-flex items-center justify-center size-[22px] rounded-full bg-n-alpha-2 ring-2 ring-n-solid-1 text-[10px] font-semibold text-n-slate-11"
+        >
+          +{{ extraContactsInline }}
+        </span>
+      </div>
+
+      <!-- Assignees stack (display-only) -->
       <div
         v-if="visibleAssignees.length"
         class="flex items-center -space-x-1.5"
@@ -401,39 +451,6 @@ const labelsExtra = computed(() =>
         </span>
       </div>
     </div>
-
-    <!-- Primary contact footer — clickable chip that takes the rep straight
-         to the contact's profile (and conversation list) in a single tap.
-         Stops propagation so it doesn't trip the card click handler. -->
-    <footer
-      v-if="primaryContact"
-      class="flex items-center gap-2 pt-2 pl-1.5 mt-0.5 border-t border-n-weak/50"
-    >
-      <button
-        type="button"
-        class="group/contact flex items-center gap-2 flex-1 min-w-0 rounded-md -ml-1 px-1 py-1 transition-colors hover:bg-n-teal-3/30 cursor-pointer"
-        @click="openContact(primaryContact, $event)"
-      >
-        <Avatar
-          :src="primaryContact.thumbnail || primaryContact.avatar_url"
-          :name="primaryContact.name"
-          :size="22"
-          rounded-full
-          class="ring-1 ring-n-weak"
-        />
-        <span
-          class="text-[11px] font-medium truncate min-w-0 text-n-slate-12 group-hover/contact:text-n-teal-11 transition-colors"
-        >
-          {{ primaryContact.name }}
-        </span>
-      </button>
-      <span
-        v-if="extraContacts"
-        class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-n-alpha-2 text-[10px] font-semibold text-n-slate-11"
-      >
-        +{{ extraContacts }}
-      </span>
-    </footer>
   </article>
 </template>
 

@@ -17,6 +17,7 @@ const {
   isLoaded,
   tourCompletedAt,
   explicitDismiss,
+  lastStepIndex,
   refresh,
   resetDismiss,
   dismissExplicit,
@@ -59,6 +60,20 @@ const isVisible = computed(() => {
 // Only pulse for genuinely fresh accounts — once anything is configured
 // we stop the animation so the FAB doesn't keep "spamming" the user.
 const shouldPulse = computed(() => isLoaded.value && isFresh.value);
+
+// Smart tooltip copy — Clean install gets "Get started", users mid-journey
+// get a "Continue · Step 3" prompt that signals progress + nudges resume.
+// `hasRegressed` keeps the FAB sticky after the user undid something, so
+// surfacing the step number there is what they need to refocus.
+const tooltipLabel = computed(() => {
+  if (hasRegressed.value) return t('ONBOARDING_TOUR.LAUNCHER.REGRESSED_HINT');
+  if (lastStepIndex.value > 0 || score.value.done > 0) {
+    return t('ONBOARDING_TOUR.LAUNCHER.RESUME_HINT', {
+      step: Math.max(lastStepIndex.value + 1, score.value.done + 1),
+    });
+  }
+  return t('ONBOARDING_TOUR.LAUNCHER.PULSE_HINT');
+});
 
 // SVG progress ring around the rocket FAB. r=26 → C ≈ 163.36. We round
 // to one decimal so the dash math stays stable across renders.
@@ -179,11 +194,12 @@ const dismissFromFab = async event => {
         </button>
 
         <!-- Tooltip — uses the same brand teal accent and only renders on
-             hover so the FAB stays uncluttered for power users. -->
+             hover so the FAB stays uncluttered for power users. Copy
+             switches to a resume hint once the user has any progress. -->
         <span
           class="absolute right-full top-1/2 -translate-y-1/2 mr-3 whitespace-nowrap rounded-md bg-n-slate-12 dark:bg-white px-2.5 py-1.5 text-xs font-medium text-white dark:text-n-slate-12 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg"
         >
-          {{ t('ONBOARDING_TOUR.LAUNCHER.PULSE_HINT') }}
+          {{ tooltipLabel }}
         </span>
       </div>
     </Transition>

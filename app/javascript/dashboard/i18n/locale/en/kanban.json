@@ -331,7 +331,8 @@
       "ADDED_MINUTES": "Added {n}m ago",
       "ADDED_HOURS": "Added {n}h ago",
       "ADDED_DAYS": "Added {n}d ago",
-      "ADDED_MONTHS": "Added {n}mo ago"
+      "ADDED_MONTHS": "Added {n}mo ago",
+      "OPEN_CONTACT": "Open {name}'s conversation"
     }
   }
 }

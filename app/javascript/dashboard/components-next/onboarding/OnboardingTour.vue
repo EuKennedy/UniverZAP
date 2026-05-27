@@ -28,6 +28,17 @@ const currentStepIndex = ref(0);
 const currentTarget = ref(null);
 const isFullscreen = ref(false);
 
+// Voice opt-in is persisted across sessions so the operator's preference
+// sticks. Default is OFF — narration without explicit consent feels
+// invasive.
+const VOICE_LS_KEY = 'univerzap.onboarding.voice';
+const voiceEnabled = ref(false);
+try {
+  voiceEnabled.value = window.localStorage.getItem(VOICE_LS_KEY) === '1';
+} catch (_) {
+  /* noop — SSR or privacy-mode storage */
+}
+
 const allSteps = computed(() => buildTourSteps({ t }));
 
 // Skip steps whose readiness flag is already satisfied — never make the
@@ -56,6 +67,31 @@ const waitForElement = (selector, timeout = 5000) =>
     tick();
   });
 
+// Per-step micro-celebration when the user actually clicks the target.
+// Smaller than the full-blown finish burst — feels rewarding without
+// breaking flow. Honors prefers-reduced-motion.
+const fireMicroConfetti = anchor => {
+  if (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    return;
+  }
+  const rect = anchor?.getBoundingClientRect?.();
+  const x = rect ? (rect.left + rect.width / 2) / window.innerWidth : 0.5;
+  const y = rect ? (rect.top + rect.height / 2) / window.innerHeight : 0.5;
+  confetti({
+    particleCount: 18,
+    spread: 60,
+    startVelocity: 30,
+    gravity: 1.2,
+    scalar: 0.7,
+    ticks: 70,
+    origin: { x, y },
+    colors: ['#13CB8D', '#60E8B8', '#0FA873'],
+  });
+};
+
 const fireConfetti = () => {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const colors = ['#13CB8D', '#60E8B8', '#0FA873', '#f1f5f4'];
@@ -79,7 +115,53 @@ const fireConfetti = () => {
   })();
 };
 
+// Tailwind utility classes layered on the live target during a step so it
+// pops above the dark backdrop. Adds transition first, then the visual
+// classes on the next frame so the browser animates the change instead
+// of snapping to the new state.
+const FOCUS_TRANSITION_CLASSES = [
+  'motion-safe:transition-all',
+  'motion-safe:duration-500',
+  'motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]',
+];
+const FOCUS_VISUAL_CLASSES = [
+  'ring-4',
+  'ring-n-teal-9/60',
+  'shadow-2xl',
+  'shadow-n-teal-9/30',
+  'rounded-xl',
+  'scale-[1.02]',
+];
+
+let lastFocusedEl = null;
+const removeTargetFocus = el => {
+  if (!el) return;
+  el.classList.remove(...FOCUS_VISUAL_CLASSES);
+  window.setTimeout(() => {
+    el.classList.remove(...FOCUS_TRANSITION_CLASSES);
+  }, 500);
+};
+const applyTargetFocus = el => {
+  if (!el) return;
+  el.classList.add(...FOCUS_TRANSITION_CLASSES);
+  requestAnimationFrame(() => {
+    el.classList.add(...FOCUS_VISUAL_CLASSES);
+  });
+};
+
+watch(currentTarget, (next, prev) => {
+  if (prev && prev !== next) removeTargetFocus(prev);
+  if (next) {
+    lastFocusedEl = next;
+    applyTargetFocus(next);
+  } else {
+    lastFocusedEl = null;
+  }
+});
+
 const teardown = () => {
+  if (lastFocusedEl) removeTargetFocus(lastFocusedEl);
+  lastFocusedEl = null;
   isActive.value = false;
   currentTarget.value = null;
   isFullscreen.value = false;
@@ -137,8 +219,25 @@ const goToStep = async index => {
     }
   }
 
-  const selector = `[data-onboarding="${step.dataOnboarding}"]`;
-  const element = await waitForElement(selector, 10000);
+  // Try the canonical `data-onboarding` attribute first, then fall back to
+  // any selectors the step declared. The fallback list lets enterprise
+  // overlays or A/B variants ship a different DOM without breaking the
+  // tour.
+  const candidates = [
+    step.dataOnboarding && `[data-onboarding="${step.dataOnboarding}"]`,
+    ...(step.selectors || []),
+  ].filter(Boolean);
+  // Sequential fallback chain — we *want* to await each candidate in order
+  // before trying the next so the canonical selector wins when present.
+  // Using a counter-driven while keeps the airbnb `no-restricted-syntax`
+  // (no for-of) and `no-await-in-loop` rules happy via inline disable.
+  let element = null;
+  let idx = 0;
+  while (idx < candidates.length && !element) {
+    // eslint-disable-next-line no-await-in-loop
+    element = await waitForElement(candidates[idx], 8000);
+    idx += 1;
+  }
   if (!element) {
     // Target never appeared — gracefully advance instead of breaking the tour.
     await goToStep(index + 1);
@@ -152,13 +251,23 @@ const handlePrev = () => goToStep(Math.max(0, currentStepIndex.value - 1));
 const handleSkip = () => exitTour();
 
 // User actually clicked the highlighted target — let the UI react for a
-// beat, then advance. This is the "do it once, learn forever" pattern
-// ClickUp / Stripe Atlas use.
+// beat, fire a small celebration, then advance. This is the "do it once,
+// learn forever" pattern ClickUp / Stripe Atlas use.
 const handleTargetClick = () => {
   const idx = currentStepIndex.value;
+  fireMicroConfetti(currentTarget.value);
   setTimeout(() => {
     if (currentStepIndex.value === idx) goToStep(idx + 1);
   }, 650);
+};
+
+const toggleVoice = () => {
+  voiceEnabled.value = !voiceEnabled.value;
+  try {
+    window.localStorage.setItem(VOICE_LS_KEY, voiceEnabled.value ? '1' : '0');
+  } catch (_) {
+    /* noop */
+  }
 };
 
 const startTour = async () => {
@@ -197,12 +306,14 @@ onBeforeUnmount(() => {
     :target="currentTarget"
     :title="currentStep.title"
     :body="currentStep.body"
+    :chapter="currentStep.chapter || ''"
     :side="currentStep.side || 'right'"
     :step="currentStepIndex + 1"
     :total="activeSteps.length"
     :primary-label="t('ONBOARDING_TOUR.TOUR.NEXT')"
     :prev-label="t('ONBOARDING_TOUR.TOUR.PREVIOUS')"
     :skip-label="t('ONBOARDING_TOUR.TOUR.SKIP')"
+    :voice-enabled="voiceEnabled"
     :hint="
       currentStep.clickToAdvance ? t('ONBOARDING_TOUR.TOUR.CLICK_HINT') : ''
     "
@@ -221,7 +332,10 @@ onBeforeUnmount(() => {
     "
     :step="currentStepIndex + 1"
     :total="activeSteps.length"
+    :chapter="currentStep.chapter || ''"
+    :voice-enabled="voiceEnabled"
     @primary="handleNext"
     @secondary="handleSkip"
+    @toggle-voice="toggleVoice"
   />
 </template>

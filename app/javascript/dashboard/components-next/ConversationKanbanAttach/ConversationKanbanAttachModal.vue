@@ -104,7 +104,7 @@ const attach = async stage => {
 <template>
   <woot-modal
     :show="props.show"
-    size="full"
+    size="xlarge"
     :on-close="close"
     @update:show="value => !value && close()"
   >

@@ -109,6 +109,14 @@ onMounted(() => {
       @apply max-w-[80%] w-[56.25rem];
     }
 
+    // Wider variant — used by the Kanban attach + viewer modals so the
+    // operator can read multi-column boards without leaving the chat
+    // context. Sits between `medium` and `fullWidth`; keeps a tasteful
+    // margin so the conversation sidebar peeks through.
+    &.xlarge {
+      @apply max-w-[94vw] w-[94vw] max-h-[90vh] h-[90vh] rounded-2xl;
+    }
+
     // .content-box {
     //   @apply h-auto p-0;
     // }

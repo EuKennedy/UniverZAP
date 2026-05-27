@@ -92,6 +92,7 @@
       "REOPEN_ACTION": "Reopen",
       "OPEN_ACTION": "Open",
       "MOVE_TO_KANBAN": "Move to Kanban",
+      "VIEW_KANBAN": "View Kanban",
       "AUTOPILOT": "Autopilot",
       "MORE_ACTIONS": "More actions",
       "OPEN": "More",
@@ -272,6 +273,20 @@
       "DONE": "Attached",
       "SUCCESS": "Attached to {stage}",
       "ERROR": "Could not attach to Kanban"
+    },
+    "KANBAN_VIEWER": {
+      "TITLE": "Kanban overview",
+      "SUBTITLE": "Peek at every funnel without leaving the conversation.",
+      "CLOSE": "Close",
+      "FUNNELS": "Funnels",
+      "LOADING": "Loading funnels…",
+      "LOADING_TASKS": "Loading tasks…",
+      "EMPTY_TITLE": "No funnels yet",
+      "EMPTY": "Create your first funnel in Kanban settings to start tracking pipeline.",
+      "NO_STAGES": "This funnel has no stages.",
+      "STAGE_EMPTY": "No tasks in this stage.",
+      "SUMMARY": "Pipeline",
+      "TASKS": "tasks"
     },
     "AUTOPILOT": {
       "MENU_TITLE": "Athenas autopilot",

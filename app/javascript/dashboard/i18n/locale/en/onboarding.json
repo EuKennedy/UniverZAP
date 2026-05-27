@@ -36,6 +36,8 @@
       "ARIA_LABEL": "Open guided setup",
       "PROGRESS_LABEL": "{done} of {total} steps complete",
       "PULSE_HINT": "Get started",
+      "RESUME_HINT": "Continue · step {step}",
+      "REGRESSED_HINT": "Finish what you undid",
       "DISMISS": "Hide onboarding"
     },
     "PANEL": {
@@ -115,7 +117,19 @@
       "EXIT_CONFIRM_CANCEL": "Keep going",
       "FINISH_TITLE": "Setup complete",
       "FINISH_BODY": "UniverZAP is live. Your first conversation will appear in the inbox.",
-      "FINISH_CTA": "Open dashboard"
+      "FINISH_CTA": "Open dashboard",
+      "VOICE_ON": "Enable narration",
+      "VOICE_OFF": "Mute narration",
+      "CHAPTER": {
+        "WELCOME": "Chapter 01 · Welcome",
+        "INBOX": "Chapter 02 · Inbox",
+        "TEAM": "Chapter 03 · Team",
+        "AI": "Chapter 04 · Athenas AI",
+        "PIPELINE": "Chapter 05 · Pipeline",
+        "CONTACTS": "Chapter 06 · Contacts",
+        "REPORTS": "Chapter 07 · Reports",
+        "FINISH": "Chapter 08 · Launch"
+      }
     }
   }
 }
