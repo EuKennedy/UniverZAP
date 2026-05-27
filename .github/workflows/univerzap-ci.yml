@@ -18,6 +18,7 @@ jobs:
   lint-ruby:
     name: Lint Ruby (RuboCop)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
@@ -29,6 +30,7 @@ jobs:
   lint-frontend:
     name: Lint Frontend (ESLint)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -39,11 +41,151 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm eslint
 
+  frontend-tests:
+    name: Frontend tests (Vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run Vitest
+        run: pnpm run test:coverage
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: coverage/
+
+  backend-tests:
+    name: Backend specs (rspec)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        ci_node_total: [8]
+        ci_node_index: [0, 1, 2, 3, 4, 5, 6, 7]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ''
+          POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --mount type=tmpfs,destination=/var/lib/postgresql/data
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Strip enterprise code — same approach as run_foss_spec.yml. The
+      # enterprise tree needs licensed dependencies we don't ship here.
+      - name: Strip enterprise code
+        run: |
+          rm -rf enterprise
+          rm -rf spec/enterprise
+
+      - name: Create database
+        run: bundle exec rake db:create
+
+      - name: Load schema
+        run: bundle exec rake db:schema:load
+
+      # Round-robin spec distribution across the matrix. Slow specs get
+      # spread evenly instead of all landing on one node.
+      - name: Run backend tests (parallelized)
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: |
+          SPEC_FILES=($(find spec -name '*_spec.rb' | sort))
+          TESTS=""
+          for i in "${!SPEC_FILES[@]}"; do
+            if [ $(( i % ${{ matrix.ci_node_total }} )) -eq ${{ matrix.ci_node_index }} ]; then
+              TESTS="$TESTS ${SPEC_FILES[$i]}"
+            fi
+          done
+          if [ -n "$TESTS" ]; then
+            bundle exec rspec --profile=10 --format progress --format json --out tmp/rspec_results.json $TESTS
+          fi
+
+      - name: Upload rspec results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rspec-results-${{ matrix.ci_node_index }}
+          path: tmp/rspec_results.json
+          if-no-files-found: ignore
+
+      - name: Upload rails log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rails-log-${{ matrix.ci_node_index }}
+          path: log
+
+  # Aggregator job — gives branch protection one stable required-check
+  # name regardless of how many matrix shards backend-tests fans into.
+  ci-pass:
+    name: CI pass
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [lint-ruby, lint-frontend, frontend-tests, backend-tests]
+    if: always()
+    steps:
+      - name: Ensure all required jobs succeeded
+        run: |
+          if [ "${{ needs.lint-ruby.result }}" != "success" ] || \
+             [ "${{ needs.lint-frontend.result }}" != "success" ] || \
+             [ "${{ needs.frontend-tests.result }}" != "success" ] || \
+             [ "${{ needs.backend-tests.result }}" != "success" ]; then
+            echo "One or more required jobs failed"
+            echo "lint-ruby:      ${{ needs.lint-ruby.result }}"
+            echo "lint-frontend:  ${{ needs.lint-frontend.result }}"
+            echo "frontend-tests: ${{ needs.frontend-tests.result }}"
+            echo "backend-tests:  ${{ needs.backend-tests.result }}"
+            exit 1
+          fi
+          echo "All required jobs succeeded."
+
   build-and-push:
     name: Build & publish Docker image to GHCR
     runs-on: ubuntu-latest
-    # Only push to the registry on real branch pushes — not PRs from forks.
-    if: github.event_name == 'push'
+    timeout-minutes: 45
+    # Only push to the registry on real branch pushes — not PRs from forks
+    # — and only after the lint + test gate passes. PRs from forks build
+    # via the existing `test_docker_build.yml` workflow without pushing.
+    needs: [ci-pass]
+    if: github.event_name == 'push' && needs.ci-pass.result == 'success'
     steps:
       - uses: actions/checkout@v4
 

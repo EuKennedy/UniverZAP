@@ -6,14 +6,18 @@ import {
 } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useConfig } from 'dashboard/composables/useConfig';
+import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
 import { useI18n } from 'vue-i18n';
 import TasksAPI from 'dashboard/api/captain/tasks';
+import AthenasAssistantsAPI from 'dashboard/api/athenas';
 
 vi.mock('dashboard/composables/store');
 vi.mock('dashboard/composables/useAccount');
 vi.mock('dashboard/composables/useConfig');
+vi.mock('dashboard/composables/useAthenasAssistant');
 vi.mock('vue-i18n');
 vi.mock('dashboard/api/captain/tasks');
+vi.mock('dashboard/api/athenas');
 vi.mock('dashboard/helper/AnalyticsHelper/index', async importOriginal => {
   const actual = await importOriginal();
   actual.default = {
@@ -52,6 +56,12 @@ describe('useCaptain', () => {
     useConfig.mockReturnValue({
       isEnterprise: false,
     });
+    // Athenas assistant picker — the composable returns a reactive ref-like
+    // shape, so we mock activeAssistantId as a value-bearing object that the
+    // implementation reads via `.value`.
+    useAthenasAssistant.mockReturnValue({
+      activeAssistantId: { value: null },
+    });
   });
 
   it('initializes computed properties correctly', async () => {
@@ -64,59 +74,72 @@ describe('useCaptain', () => {
     expect(draftMessage.value).toBe('Draft message');
   });
 
-  it('rewrites content', async () => {
-    TasksAPI.rewrite.mockResolvedValue({
-      data: { message: 'Rewritten content', follow_up_context: { id: 'ctx1' } },
+  it('rewrites content via Athenas', async () => {
+    AthenasAssistantsAPI.rewrite.mockResolvedValue({
+      data: { message: 'Rewritten content' },
     });
 
     const { rewriteContent } = useCaptain();
     const result = await rewriteContent('Original content', 'improve', {});
 
-    expect(TasksAPI.rewrite).toHaveBeenCalledWith(
+    expect(AthenasAssistantsAPI.rewrite).toHaveBeenCalledWith(
       {
         content: 'Original content',
         operation: 'improve',
         conversationId: '123',
+        assistantId: null,
       },
-      undefined
+      { signal: undefined }
     );
+    // followUpContext is always null for Athenas-backed rewrites — the
+    // assistant is stateless on this endpoint, so the UI's follow-up
+    // chain only stays active for the legacy Captain `followUp` method.
     expect(result).toEqual({
       message: 'Rewritten content',
-      followUpContext: { id: 'ctx1' },
+      followUpContext: null,
     });
   });
 
-  it('summarizes conversation', async () => {
-    TasksAPI.summarize.mockResolvedValue({
-      data: { message: 'Summary', follow_up_context: { id: 'ctx2' } },
+  it('summarizes conversation via Athenas', async () => {
+    AthenasAssistantsAPI.summarize.mockResolvedValue({
+      data: { summary: 'Summary' },
     });
 
     const { summarizeConversation } = useCaptain();
     const result = await summarizeConversation({});
 
-    expect(TasksAPI.summarize).toHaveBeenCalledWith('123', undefined);
+    expect(AthenasAssistantsAPI.summarize).toHaveBeenCalledWith('123', {
+      signal: undefined,
+      assistantId: null,
+    });
     expect(result).toEqual({
       message: 'Summary',
-      followUpContext: { id: 'ctx2' },
+      followUpContext: null,
     });
   });
 
-  it('gets reply suggestion', async () => {
-    TasksAPI.replySuggestion.mockResolvedValue({
-      data: { message: 'Reply suggestion', follow_up_context: { id: 'ctx3' } },
+  it('gets reply suggestion via Athenas', async () => {
+    AthenasAssistantsAPI.suggest.mockResolvedValue({
+      data: { suggestion: 'Reply suggestion' },
     });
 
     const { getReplySuggestion } = useCaptain();
     const result = await getReplySuggestion({});
 
-    expect(TasksAPI.replySuggestion).toHaveBeenCalledWith('123', undefined);
+    expect(AthenasAssistantsAPI.suggest).toHaveBeenCalledWith('123', {
+      signal: undefined,
+      assistantId: null,
+    });
     expect(result).toEqual({
       message: 'Reply suggestion',
-      followUpContext: { id: 'ctx3' },
+      followUpContext: null,
     });
   });
 
   it('sends follow-up message', async () => {
+    // Follow-up still uses TasksAPI (Captain legacy path) because the
+    // Athenas API does not expose a follow-up endpoint yet — the legacy
+    // chain is the only one carrying `followUpContext`.
     TasksAPI.followUp.mockResolvedValue({
       data: {
         message: 'Follow-up response',
@@ -145,28 +168,25 @@ describe('useCaptain', () => {
   });
 
   it('processes event and routes to correct method', async () => {
-    TasksAPI.summarize.mockResolvedValue({
-      data: { message: 'Summary' },
+    AthenasAssistantsAPI.summarize.mockResolvedValue({
+      data: { summary: 'Summary' },
     });
-    TasksAPI.replySuggestion.mockResolvedValue({
-      data: { message: 'Reply' },
+    AthenasAssistantsAPI.suggest.mockResolvedValue({
+      data: { suggestion: 'Reply' },
     });
-    TasksAPI.rewrite.mockResolvedValue({
+    AthenasAssistantsAPI.rewrite.mockResolvedValue({
       data: { message: 'Rewritten' },
     });
 
     const { processEvent } = useCaptain();
 
-    // Test summarize
     await processEvent('summarize', '', {});
-    expect(TasksAPI.summarize).toHaveBeenCalled();
+    expect(AthenasAssistantsAPI.summarize).toHaveBeenCalled();
 
-    // Test reply_suggestion
     await processEvent('reply_suggestion', '', {});
-    expect(TasksAPI.replySuggestion).toHaveBeenCalled();
+    expect(AthenasAssistantsAPI.suggest).toHaveBeenCalled();
 
-    // Test rewrite (improve)
     await processEvent('improve', 'content', {});
-    expect(TasksAPI.rewrite).toHaveBeenCalled();
+    expect(AthenasAssistantsAPI.rewrite).toHaveBeenCalled();
   });
 });
