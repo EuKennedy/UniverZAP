@@ -4,13 +4,17 @@
 class AthenasAutopilotListener < BaseListener
   def message_created(event)
     message, = extract_message_and_account(event)
-    return unless eligible?(message)
+    return log_skip(:not_eligible, message) unless eligible?(message)
 
     conversation = message.conversation
     assistant = resolve_assistant(conversation)
-    return unless assistant&.active? && assistant.autopilot_enabled?
-    return if guardrail_triggered?(message, assistant)
+    return log_skip(:no_assistant, message) if assistant.blank?
+    return log_skip(:inactive_assistant, message, assistant) unless assistant.active?
+    return log_skip(:guardrail, message, assistant) if guardrail_triggered?(message, assistant)
 
+    Rails.logger.info(
+      "[Athenas autopilot] enqueue job conv=#{conversation.id} message=#{message.id} assistant=#{assistant.id}"
+    )
     Ai::AutopilotReplyJob.perform_later(message.id, assistant.id)
   end
 
@@ -22,6 +26,14 @@ class AthenasAutopilotListener < BaseListener
     return false if message.private?
 
     true
+  end
+
+  def log_skip(reason, message, assistant = nil)
+    Rails.logger.info(
+      "[Athenas autopilot] skipped reason=#{reason} " \
+      "conv=#{message&.conversation_id} message=#{message&.id} assistant=#{assistant&.id}"
+    )
+    nil
   end
 
   def resolve_assistant(conversation)
