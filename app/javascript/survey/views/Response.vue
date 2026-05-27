@@ -89,6 +89,9 @@ export default {
       this.isLoading = true;
       try {
         const result = await getSurveyDetails({ uuid: this.surveyId });
+        // Pin the locale BEFORE we render any computed strings so the page
+        // never flashes English when the account's locale is pt_BR.
+        this.setLocale(result.data.locale);
         this.logo = result.data.inbox_avatar_url;
         this.inboxName = result.data.inbox_name;
         this.surveyDetails = result?.data?.csat_survey_response;
@@ -98,10 +101,22 @@ export default {
         this.messageContent =
           result.data.content ||
           this.$t('SURVEY.DESCRIPTION', { inboxName: this.inboxName });
-        this.setLocale(result.data.locale);
       } catch (error) {
-        const errorMessage = error?.response?.data?.message;
-        this.errorMessage = errorMessage || this.$t('SURVEY.API.ERROR_MESSAGE');
+        // The CSAT controller responds with `{ error: ... }`, not
+        // `{ message: ... }` — the old check silently fell through to the
+        // generic copy. Read the canonical field first, accept legacy
+        // `.message` for older deploys, then map 404s to the friendlier
+        // "not available yet" copy. The conversation might exist while
+        // the inbox CSAT survey was never enabled, which used to render
+        // a cryptic "Not found" headline to the rated customer.
+        const status = error?.response?.status;
+        const data = error?.response?.data || {};
+        const rawError = data.error || data.message;
+        if (status === 404) {
+          this.errorMessage = this.$t('SURVEY.API.NOT_AVAILABLE');
+        } else {
+          this.errorMessage = rawError || this.$t('SURVEY.API.ERROR_MESSAGE');
+        }
       } finally {
         this.isLoading = false;
       }
