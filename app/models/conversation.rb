@@ -60,6 +60,15 @@ class Conversation < ApplicationRecord
   include UrlHelper
   include SortHandler
   include PushDataHelper
+
+  # Float pinned conversations above every other row regardless of which
+  # sort the operator picked. Encapsulated as a `sort_prefix` override on
+  # SortHandler so Mention (and any other future SortHandler consumer)
+  # keeps its existing ordering — only Conversation has a `pinned_at`
+  # column to honour.
+  def self.sort_prefix
+    'pinned_at IS NULL, pinned_at DESC, '
+  end
   include ConversationMuteHelpers
 
   validates :account_id, presence: true
