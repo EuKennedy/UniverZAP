@@ -55,7 +55,14 @@ class Ai::Assistant < ApplicationRecord
       role: role,
       description: description,
       avatar_url: avatar_url,
-      tone: tone
+      tone: tone,
+      # The dashboard edit screen needs to render the prompt for review,
+      # but the encrypted provider keys should never leave the server in
+      # plaintext — surface a boolean flag instead so the UI can show a
+      # "key configured" badge without leaking the secret itself.
+      system_prompt: system_prompt,
+      has_anthropic_key: encrypted_anthropic_key.present?,
+      has_openai_key: encrypted_openai_key.present?
     }
   end
 
