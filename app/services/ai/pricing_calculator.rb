@@ -4,9 +4,9 @@ class Ai::PricingCalculator
   # single source of truth would be nice once the OSS upstream stabilises
   # but for now it's two short hashes that rarely change.
   COST_PER_MILLION_USD = {
-    'claude-opus-4-5'   => { input: 15.0, output: 75.0 },
-    'claude-sonnet-4-5' => { input: 3.0,  output: 15.0 },
-    'claude-haiku-4-5'  => { input: 0.8,  output: 4.0 }
+    'claude-opus-4-5' => { input: 15.0, output: 75.0 },
+    'claude-sonnet-4-5' => { input: 3.0, output: 15.0 },
+    'claude-haiku-4-5' => { input: 0.8, output: 4.0 }
   }.freeze
 
   # Markup applied on top of the Anthropic invoice. 2x is generous enough

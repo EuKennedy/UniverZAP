@@ -53,7 +53,6 @@ class CreateAiCreditLedger < ActiveRecord::Migration[7.1]
     # of the `find_or_create_by` guard.
     reversible do |dir|
       dir.up do
-        # rubocop:disable Rails/SkipsModelValidations
         Account.find_each do |account|
           existing = ActiveRecord::Base.connection.exec_query(
             'SELECT 1 FROM ai_credit_ledger_entries WHERE account_id = $1 AND kind = $2 LIMIT 1',
@@ -69,7 +68,6 @@ class CreateAiCreditLedger < ActiveRecord::Migration[7.1]
             [account.id, 'grant', 2_500, 'Backfill: R$25 free starter credits']
           )
         end
-        # rubocop:enable Rails/SkipsModelValidations
       end
     end
   end

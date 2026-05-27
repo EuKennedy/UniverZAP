@@ -120,7 +120,21 @@ class Ai::ClaudeService
     usage = parsed['usage'] || {}
     input_tokens = usage['input_tokens'].to_i
     output_tokens = usage['output_tokens'].to_i
-    invocation = Ai::Invocation.create!(
+    invocation = record_invocation(
+      payload: payload, usage: usage, duration_ms: duration_ms,
+      conversation: conversation, phase: phase,
+      input_tokens: input_tokens, output_tokens: output_tokens
+    )
+    # Debit the operator's BRL balance against the actual tokens Claude
+    # reported. We swallow ledger errors so a billing hiccup never eats
+    # the chat reply — the alert still goes to logs.
+    debit_credits(invocation, payload[:model], input_tokens, output_tokens)
+  rescue StandardError => e
+    Rails.logger.error("[Athenas] invocation logging failed: #{e.message}")
+  end
+
+  def record_invocation(payload:, usage:, duration_ms:, conversation:, phase:, input_tokens:, output_tokens:)
+    Ai::Invocation.create!(
       ai_assistant: @assistant,
       account: @account,
       conversation_id: conversation&.id,
@@ -134,12 +148,6 @@ class Ai::ClaudeService
       duration_ms: duration_ms,
       status: 'success'
     )
-    # Debit the operator's BRL balance against the actual tokens Claude
-    # reported. We swallow ledger errors so a billing hiccup never
-    # eats the chat reply — the alert still goes to logs.
-    debit_credits(invocation, payload[:model], input_tokens, output_tokens)
-  rescue StandardError => e
-    Rails.logger.error("[Athenas] invocation logging failed: #{e.message}")
   end
 
   def debit_credits(invocation, model, input_tokens, output_tokens)

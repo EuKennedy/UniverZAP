@@ -90,7 +90,7 @@ class Ai::CreditLedger
         ai_invocation: invocation,
         description: description
       )
-      account.update_columns(
+      account.update_columns( # rubocop:disable Rails/SkipsModelValidations
         token_credit_balance_cents_brl: balance_cents - cents_brl.to_i,
         updated_at: Time.current
       )
@@ -108,7 +108,7 @@ class Ai::CreditLedger
         external_payment_id: external_payment_id.presence,
         description: description || 'Athenas credit purchase'
       )
-      account.update_columns(
+      account.update_columns( # rubocop:disable Rails/SkipsModelValidations
         token_credit_balance_cents_brl: balance_cents + cents_brl.to_i,
         token_credit_lifetime_purchased_cents_brl: lifetime_purchased_cents + cents_brl.to_i,
         updated_at: Time.current
@@ -129,7 +129,7 @@ class Ai::CreditLedger
         amount_cents_brl: grace_amount,
         description: 'One-time grace credit so the first exhaustion never cuts an in-flight conversation'
       )
-      account.update_columns(
+      account.update_columns( # rubocop:disable Rails/SkipsModelValidations
         token_credit_balance_cents_brl: balance_cents + grace_amount,
         token_credit_grace_used: true,
         updated_at: Time.current
