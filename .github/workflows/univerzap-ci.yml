@@ -118,8 +118,17 @@ jobs:
       - name: Create database
         run: bundle exec rake db:create
 
-      - name: Load schema
+      - name: Load schema (OSS baseline)
         run: bundle exec rake db:schema:load
+
+      # Apply UniverZAP-only migrations. db/schema.rb tracks the upstream
+      # Chatwoot snapshot (version 2026_05_07_000000); every funnels /
+      # kanban / Athenas / univercart migration we ship after that needs
+      # to be replayed on top so rspec stops with PendingMigrationError
+      # otherwise. Running `db:migrate` is a no-op when the schema is
+      # already current — safe to keep here permanently.
+      - name: Apply pending UniverZAP migrations
+        run: bundle exec rake db:migrate
 
       # Round-robin spec distribution across the matrix. Slow specs get
       # spread evenly instead of all landing on one node.
