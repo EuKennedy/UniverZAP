@@ -21,10 +21,11 @@
 # this upstream simply no-ops us.
 module DeviseResourceClassCompat
   def resource_class(mapping = nil)
-    if mapping
-      devise_mapping = Devise.mappings[mapping]
-      return devise_mapping.to if devise_mapping
-    end
+    return super() unless mapping
+
+    devise_mapping = Devise.mappings[mapping]
+    return devise_mapping.to if devise_mapping
+
     super()
   end
 end
@@ -41,15 +42,8 @@ module DeviseTokenAuthSetUserByTokenCompat
 end
 
 Rails.application.config.after_initialize do
-  if defined?(DeviseController)
-    DeviseController.prepend(DeviseResourceClassCompat)
-  end
-
-  if defined?(Devise::Controllers::Helpers)
-    Devise::Controllers::Helpers.prepend(DeviseResourceClassCompat)
-  end
-
-  if defined?(DeviseTokenAuth::Concerns::SetUserByToken)
-    DeviseTokenAuth::Concerns::SetUserByToken.prepend(DeviseTokenAuthSetUserByTokenCompat)
-  end
+  DeviseController.prepend(DeviseResourceClassCompat) if defined?(DeviseController)
+  Devise::Controllers::Helpers.prepend(DeviseResourceClassCompat) if defined?(Devise::Controllers::Helpers)
+  DeviseTokenAuth::Concerns::SetUserByToken.prepend(DeviseTokenAuthSetUserByTokenCompat) if defined?(DeviseTokenAuth::Concerns::SetUserByToken)
 end
+
