@@ -51,30 +51,32 @@ class Ai::ClaudeService
     candidates.compact.first
   end
 
+  # Exponential backoff on transient failures (timeouts, 5xx, rate limit).
+  # Three quick attempts — 0s, ~0.5s, ~1.5s — keeps the user-perceived
+  # latency tolerable while soaking up Anthropic blips.
+  RETRYABLE_NET_ERRORS = [Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNRESET, HTTParty::Error].freeze
+  MAX_RETRY_ATTEMPTS = 3
+
   def perform_request(api_key, payload)
-    # Exponential backoff on transient failures (timeouts, 5xx, rate limit).
-    # Three quick attempts — 0s, ~0.5s, ~1.5s — keeps the user-perceived
-    # latency tolerable while soaking up Anthropic blips.
     attempts = 0
-    max_attempts = 3
-    begin
-      attempts += 1
-      response = HTTParty.post(
-        "#{API_BASE}/v1/messages",
-        headers: headers(api_key),
-        body: payload.to_json,
-        timeout: 30
-      )
-      retryable = response.code >= 500 || response.code == 429
-      raise Net::ReadTimeout if retryable && attempts < max_attempts
+    attempts += 1
+    response = post_to_claude(api_key, payload)
+    return response unless retryable_response?(response) && attempts < MAX_RETRY_ATTEMPTS
 
-      response
-    rescue Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNRESET, HTTParty::Error => e
-      raise e if attempts >= max_attempts
+    raise Net::ReadTimeout
+  rescue *RETRYABLE_NET_ERRORS => e
+    raise e if attempts >= MAX_RETRY_ATTEMPTS
 
-      sleep(0.5 * (2**(attempts - 1)))
-      retry
-    end
+    sleep(0.5 * (2**(attempts - 1)))
+    retry
+  end
+
+  def post_to_claude(api_key, payload)
+    HTTParty.post("#{API_BASE}/v1/messages", headers: headers(api_key), body: payload.to_json, timeout: 30)
+  end
+
+  def retryable_response?(response)
+    response.code >= 500 || response.code == 429
   end
 
   def headers(api_key)
