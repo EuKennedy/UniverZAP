@@ -317,11 +317,13 @@ const popoverShiftClass = computed(() => {
             <stop offset="100%" stop-color="#13CB8D" stop-opacity="0" />
           </radialGradient>
         </defs>
-        <!-- Darken everything except the cutout -->
+        <!-- Darken everything except the cutout. Pure black (not slate)
+             so the spotlight reads as a real stage cutout against the
+             dashboard chrome instead of a tinted overlay. -->
         <rect
           :width="vw"
           :height="vh"
-          fill="rgb(2 6 23 / 0.82)"
+          fill="rgb(0 0 0 / 0.92)"
           mask="url(#onboarding-spotlight-mask)"
         />
         <!-- Soft beam glow centered on the target -->

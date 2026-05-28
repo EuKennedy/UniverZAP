@@ -151,7 +151,7 @@ const badgeMeta = badge => {
     >
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-[9995] flex items-center justify-center p-6 bg-n-slate-12/85 backdrop-blur-xl"
+        class="fixed inset-0 z-[9995] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
         role="dialog"
         aria-modal="true"
         :aria-label="headerCopy.title"

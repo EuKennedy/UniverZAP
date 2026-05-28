@@ -70,7 +70,7 @@ const accept = async () => {
     >
       <div
         v-if="needsReAccept"
-        class="fixed inset-0 z-[70] flex items-center justify-center p-6 bg-n-slate-12/85 backdrop-blur-md"
+        class="fixed inset-0 z-[70] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md"
         role="dialog"
         aria-modal="true"
         :aria-label="t('LEGAL.RE_ACCEPT.TITLE')"

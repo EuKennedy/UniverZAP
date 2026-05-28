@@ -323,10 +323,45 @@ const labelsExtra = computed(() =>
         </span>
       </div>
 
-      <!-- Contacts stack — clickable per avatar (sends rep into that
-           contact's conversation). Kept separate from assignees so the rest
-           of the card stays clickable for the drawer. -->
-      <div v-if="visibleContacts.length" class="flex items-center -space-x-1.5">
+      <!-- Contact chip — avatar + name inline (mirrors what the Kanban
+           Viewer modal renders so cards look consistent between the two
+           surfaces). Single avatar carries the name next to it; if the
+           task has more than one contact we keep the legacy stacked
+           avatars and tack a "+N" pill on the end. Each avatar is its
+           own button so clicking opens that contact's conversation
+           without hijacking the rest of the card. -->
+      <div
+        v-if="visibleContacts.length === 1"
+        class="flex items-center gap-1.5 min-w-0"
+      >
+        <button
+          v-tooltip.top="visibleContacts[0].name"
+          type="button"
+          class="flex items-center gap-1.5 min-w-0 rounded-md px-1 py-0.5 -ml-1 transition-colors hover:bg-n-teal-3/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-n-teal-9 cursor-pointer"
+          :aria-label="
+            t('KANBAN.CARD.OPEN_CONTACT', { name: visibleContacts[0].name })
+          "
+          @click="openContact(visibleContacts[0], $event)"
+          @mousedown.stop
+        >
+          <Avatar
+            :src="visibleContacts[0].thumbnail || visibleContacts[0].avatar_url"
+            :name="visibleContacts[0].name"
+            :size="22"
+            rounded-full
+            class="flex-shrink-0 ring-1 ring-n-weak"
+          />
+          <span
+            class="text-[11px] font-medium truncate min-w-0 text-n-slate-12 hover:text-n-teal-11 transition-colors"
+          >
+            {{ visibleContacts[0].name }}
+          </span>
+        </button>
+      </div>
+      <div
+        v-else-if="visibleContacts.length > 1"
+        class="flex items-center -space-x-1.5"
+      >
         <button
           v-for="contact in visibleContacts"
           :key="contact.id"

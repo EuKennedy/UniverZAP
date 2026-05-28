@@ -89,6 +89,7 @@
       "REOPEN_ACTION": "Reabrir",
       "OPEN_ACTION": "Abrir",
       "MOVE_TO_KANBAN": "Mover no Kanban",
+      "VIEW_KANBAN": "Visualizar Kanban",
       "AUTOPILOT": "Autopiloto",
       "MORE_ACTIONS": "Mais ações",
       "OPEN": "Mais",
@@ -270,6 +271,20 @@
       "DONE": "Anexada",
       "SUCCESS": "Anexada em {stage}",
       "ERROR": "Não foi possível anexar no Kanban"
+    },
+    "KANBAN_VIEWER": {
+      "TITLE": "Visão geral do Kanban",
+      "SUBTITLE": "Espie cada funil sem sair da conversa.",
+      "CLOSE": "Fechar",
+      "FUNNELS": "Funis",
+      "LOADING": "Carregando funis…",
+      "LOADING_TASKS": "Carregando tarefas…",
+      "EMPTY_TITLE": "Nenhum funil ainda",
+      "EMPTY": "Crie seu primeiro funil em Configurações do Kanban para começar a acompanhar seu pipeline.",
+      "NO_STAGES": "Esse funil não tem estágios.",
+      "STAGE_EMPTY": "Nenhuma tarefa nesta etapa.",
+      "SUMMARY": "Pipeline",
+      "TASKS": "tarefas"
     },
     "AUTOPILOT": {
       "MENU_TITLE": "Autopiloto Athenas",
