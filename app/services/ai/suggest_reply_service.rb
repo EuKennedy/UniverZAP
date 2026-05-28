@@ -1,5 +1,9 @@
 class Ai::SuggestReplyService
-  HISTORY_LIMIT = 12
+  # Mirrors the autopilot window so suggestion + autopilot see the
+  # same conversation slice. 12 was leaving Claude blind to early
+  # context on longer threads (qualification questions get forgotten
+  # halfway through and the suggested reply restarts the flow).
+  HISTORY_LIMIT = 25
 
   def initialize(conversation:, assistant: nil)
     @conversation = conversation
@@ -38,13 +42,29 @@ class Ai::SuggestReplyService
       "Persona do atendente: #{@assistant.name}, #{@assistant.role}.",
       @assistant.system_prompt.presence,
       tone_instruction,
-      'Leia o histórico abaixo e gere APENAS o texto da resposta que o atendente deve enviar agora. ' \
-      'Não cumprimente novamente se o atendente já cumprimentou. ' \
-      'Não escreva prefixos como "Atendente:", "Resposta:", aspas, ou explicações. ' \
-      'Saída deve ser só o corpo da mensagem em português brasileiro, tom natural, frases curtas. ' \
-      'NÃO use markdown. NÃO se identifique como IA.',
-      knowledge_snippets
+      knowledge_snippets,
+      continuity_rules
     ].compact.join("\n\n")
+  end
+
+  # Continuity guardrails identical to the autopilot path. Without them
+  # Claude greets / re-introduces / re-asks for hair type every turn —
+  # exactly what surfaced in the Lizzon screenshots.
+  def continuity_rules
+    history_has_replies = @conversation.messages
+                                       .where(message_type: :outgoing, private: false)
+                                       .exists?
+    [
+      'REGRAS CRÍTICAS DE CONTINUIDADE (siga literalmente):',
+      ('• Esta é uma conversa em ANDAMENTO. NUNCA reinicie o atendimento.' if history_has_replies),
+      ('• PROIBIDO cumprimentar ou se apresentar de novo se o atendente já falou no histórico.' if history_has_replies),
+      ('• PROIBIDO repetir perguntas já respondidas pelo cliente. Leia o histórico antes de perguntar qualquer coisa.' if history_has_replies),
+      '• Continue exatamente de onde a última mensagem do assistant parou.',
+      '• Use APENAS as mensagens do histórico abaixo como contexto. Não invente histórico que não está visível.',
+      '• Se o cliente trouxe novas informações nesta mensagem, USE-AS imediatamente — não confirme que recebeu, aja.',
+      '• Gere APENAS o corpo da próxima mensagem do atendente. Português brasileiro, frases curtas, sem markdown, sem prefixos, sem aspas, sem se identificar como IA.',
+      '• Se faltar alguma informação que NÃO está no histórico, pergunte UMA coisa por vez de forma natural.'
+    ].compact.join("\n")
   end
 
   def tone_instruction

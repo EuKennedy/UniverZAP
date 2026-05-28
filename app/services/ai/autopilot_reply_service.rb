@@ -35,6 +35,14 @@ class Ai::AutopilotReplyService
   private
 
   def call_claude(messages)
+    # Log the actual context window we're sending so future "the AI
+    # forgot" reports can be triaged from logs instead of guessing.
+    # Roles only — never the content (PII safety on shared logs).
+    Rails.logger.info(
+      "[Athenas autopilot] conv=#{@conversation.display_id} " \
+      "assistant=#{@assistant.id} ctx_msgs=#{messages.length} " \
+      "roles=#{messages.map { |m| m[:role] }.tally}"
+    )
     Ai::ClaudeService.new(assistant: @assistant).chat(
       messages: messages,
       system: build_system_prompt,
@@ -105,13 +113,30 @@ class Ai::AutopilotReplyService
       @assistant.system_prompt.presence,
       tone_instruction,
       knowledge_snippets,
-      'Use APENAS as mensagens recentes abaixo (role user/assistant) como contexto. ' \
-      'Não invente histórico que não está visível. Se o cliente mudar de assunto, acompanhe. ' \
-      'Gere APENAS o corpo da próxima mensagem do atendente. ' \
-      'Português brasileiro, frases curtas, sem markdown, sem prefixos, sem aspas. ' \
-      'NÃO se identifique como IA. Se precisar de algo que não está no contexto, ' \
-      'pergunte ao cliente de forma natural.'
+      continuity_rules
     ].compact.join("\n\n")
+  end
+
+  # Hard rules placed at the END of the system prompt so Claude weighs
+  # them most heavily right before generation. Without these the model
+  # falls back to its "first contact" reflex — re-greeting, re-asking
+  # for hair type, re-introducing the brand — which is exactly what
+  # the Lizzon screenshots surfaced.
+  def continuity_rules
+    history_has_replies = @conversation.messages
+                                       .where(message_type: :outgoing, private: false)
+                                       .exists?
+    [
+      'REGRAS CRÍTICAS DE CONTINUIDADE (siga literalmente):',
+      ('• Esta é uma conversa em ANDAMENTO. NUNCA reinicie o atendimento.' if history_has_replies),
+      ('• PROIBIDO cumprimentar ou se apresentar de novo (nada de "Oi!", "Olá!", "Que bom que você quer conhecer...").' if history_has_replies),
+      ('• PROIBIDO repetir perguntas já respondidas pelo cliente (tipo de fio, química, objetivo, nome, etc.). Leia o histórico antes de perguntar qualquer coisa.' if history_has_replies),
+      '• Continue exatamente de onde a última mensagem do assistant parou.',
+      '• Use APENAS as mensagens recentes (role user/assistant) como contexto. Não invente histórico que não está visível.',
+      '• Se o cliente trouxe novas informações nesta mensagem, USE-AS imediatamente — não confirme que recebeu, aja.',
+      '• Gere APENAS o corpo da próxima mensagem do atendente. Português brasileiro, frases curtas, sem markdown, sem prefixos, sem aspas, sem se identificar como IA.',
+      '• Se faltar alguma informação que NÃO está no histórico, pergunte UMA coisa por vez de forma natural.'
+    ].compact.join("\n")
   end
 
   def tone_instruction
