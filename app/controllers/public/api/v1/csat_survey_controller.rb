@@ -18,7 +18,16 @@ class Public::Api::V1::CsatSurveyController < PublicController
     @conversation = Conversation.find_by!(uuid: params[:id])
   end
 
+  # Lazy-create the input_csat message if the conversation doesn't have
+  # one yet. By default Chatwoot only seeds it when the conversation is
+  # resolved (via `Conversation#mute_or_resolve_csat_survey`), which
+  # blocks operators from sharing the survey URL mid-conversation.
+  # We seed-on-demand instead — same template, no resolve required.
   def set_message
+    @message = @conversation.messages.find_by(content_type: 'input_csat')
+    return if @message.present?
+
+    MessageTemplates::Template::CsatSurvey.new(conversation: @conversation).perform
     @message = @conversation.messages.find_by!(content_type: 'input_csat')
   end
 
