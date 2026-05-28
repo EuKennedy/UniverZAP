@@ -93,7 +93,7 @@ class KanbanApiToken < ApplicationRecord
     expires_at.present? && expires_at <= Time.current
   end
 
-  def has_scope?(scope)
+  def includes_scope?(scope)
     scope = scope.to_s
     scopes.map(&:to_s).include?(scope)
   end

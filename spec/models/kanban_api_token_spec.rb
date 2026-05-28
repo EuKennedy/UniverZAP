@@ -50,11 +50,11 @@ RSpec.describe KanbanApiToken, type: :model do
     end
   end
 
-  describe '#has_scope?' do
+  describe '#includes_scope?' do
     it 'reflects the granted scopes' do
       t = build(:kanban_api_token, scopes: ['read:tasks', 'write:tasks'])
-      expect(t.has_scope?('read:tasks')).to be true
-      expect(t.has_scope?('manage:automations')).to be false
+      expect(t.includes_scope?('read:tasks')).to be true
+      expect(t.includes_scope?('manage:automations')).to be false
     end
   end
 end

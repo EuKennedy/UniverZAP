@@ -38,7 +38,7 @@ class Api::V2::Kanban::BaseController < ActionController::API
   def enforce_scope!
     scope = required_scope_for_action
     return if scope.nil?
-    return if current_token.has_scope?(scope)
+    return if current_token.includes_scope?(scope)
 
     raise ScopeError, "token missing required scope: #{scope}"
   end
