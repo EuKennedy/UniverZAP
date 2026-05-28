@@ -1,6 +1,43 @@
 class Ai::SummarizeService
   HISTORY_LIMIT = 80
 
+  # The summary is consumed by AutopilotReplyService as the "memory" of
+  # facts the customer has shared. A narrative summary loses the
+  # specifics (cabelo cacheado, química sim, objetivo alisamento) —
+  # exactly the things the autopilot must NOT re-ask. So we force
+  # extraction of structured facts FIRST, then a short narrative.
+  # Kept as a frozen constant so the `system_prompt` method stays a
+  # one-liner (avoids Metrics/MethodLength on the heredoc body).
+  SYSTEM_PROMPT = <<~PROMPT.strip.freeze
+    Você analisa conversas de atendimento e extrai os FATOS que o cliente
+    já compartilhou. Esse extrato vira a memória do agente para a próxima
+    resposta — qualquer fato que você omitir, o agente vai perguntar de
+    novo. Seja específico.
+
+    Formato OBRIGATÓRIO (use exatamente esses cabeçalhos, em pt-BR,
+    sem markdown):
+
+    FATOS DO CLIENTE:
+    - <fato 1 exato com a frase do cliente quando relevante>
+    - <fato 2>
+    - <...>
+    (omita esta seção se o cliente ainda não respondeu nada)
+
+    MOTIVO DO CONTATO:
+    <1 frase>
+
+    ESTADO ATUAL:
+    <1 frase descrevendo onde a conversa parou — última pergunta aberta,
+    próximo passo combinado, pendência>
+
+    Regras:
+    - Use as palavras EXATAS do cliente quando possível.
+    - Não invente fatos que não aparecem na conversa.
+    - Não inclua saudações ou suposições.
+    - Máximo 12 linhas no total.
+    - Não se identifique como IA.
+  PROMPT
+
   def initialize(conversation:, assistant: nil)
     @conversation = conversation
     @assistant = assistant || conversation.ai_assistant || conversation.inbox.ai_assistant
@@ -31,40 +68,7 @@ class Ai::SummarizeService
   private
 
   def system_prompt
-    # The summary is consumed by AutopilotReplyService as the "memory"
-    # of facts the customer has shared. A narrative summary loses the
-    # specifics (cabelo cacheado, química sim, objetivo alisamento) —
-    # exactly the things the autopilot must NOT re-ask. So we force
-    # extraction of structured facts FIRST, then a short narrative.
-    <<~PROMPT.strip
-      Você analisa conversas de atendimento e extrai os FATOS que o cliente
-      já compartilhou. Esse extrato vira a memória do agente para a próxima
-      resposta — qualquer fato que você omitir, o agente vai perguntar de
-      novo. Seja específico.
-
-      Formato OBRIGATÓRIO (use exatamente esses cabeçalhos, em pt-BR,
-      sem markdown):
-
-      FATOS DO CLIENTE:
-      - <fato 1 exato com a frase do cliente quando relevante>
-      - <fato 2>
-      - <...>
-      (omita esta seção se o cliente ainda não respondeu nada)
-
-      MOTIVO DO CONTATO:
-      <1 frase>
-
-      ESTADO ATUAL:
-      <1 frase descrevendo onde a conversa parou — última pergunta aberta,
-      próximo passo combinado, pendência>
-
-      Regras:
-      - Use as palavras EXATAS do cliente quando possível.
-      - Não invente fatos que não aparecem na conversa.
-      - Não inclua saudações ou suposições.
-      - Máximo 12 linhas no total.
-      - Não se identifique como IA.
-    PROMPT
+    SYSTEM_PROMPT
   end
 
   def transcript
