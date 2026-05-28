@@ -26,6 +26,14 @@ trigger_imap_email_inboxes_job:
   class: 'Inboxes::FetchImapEmailInboxesJob'
   queue: scheduled_jobs
 
+# Kanban automation engine — scans for tasks that crossed their due_date
+# in the last 15min window and emits `task_overdue` events. Cadence is
+# 5min so the LOOKBACK in the job covers ~3x for delivery slack.
+kanban_automations_overdue_scanner_job:
+  cron: '*/5 * * * *'
+  class: 'Kanban::Automations::OverdueScannerJob'
+  queue: default
+
 # executed daily at 2230 UTC
 # which is our lowest traffic time
 remove_stale_contact_inboxes_job.rb:

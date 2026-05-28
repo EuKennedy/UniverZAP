@@ -318,6 +318,17 @@ Rails.application.routes.draw do
             end
           end
 
+          # Configurable kanban automations — event-driven rule engine
+          # that fires on KanbanTask lifecycle events (created, moved,
+          # assigned, completed, overdue, etc.) and runs an ordered
+          # action chain (send message, move card, webhook, ...).
+          resources :kanban_automations, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              post :test
+              post :run
+            end
+          end
+
           resources :notifications, only: [:index, :update, :destroy] do
             collection do
               post :read_all

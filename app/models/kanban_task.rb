@@ -77,6 +77,11 @@ class KanbanTask < ApplicationRecord
 
   after_create_commit  :run_automation_on_create
   after_update_commit  :run_automation_on_stage_change
+  # Custom rule fan-out (configurable automations). The legacy hardcoded
+  # toggles above still run via Kanban::AutomationService — these new
+  # callbacks emit semantic events that the configurable engine picks up.
+  after_create_commit  :dispatch_task_created_event
+  after_update_commit  :dispatch_task_update_events
 
   scope :ordered_in_stage, -> { order(:position, :id) }
   scope :for_stage, ->(stage_id) { where(funnel_stage_id: stage_id) }
@@ -218,5 +223,47 @@ class KanbanTask < ApplicationRecord
     return unless previous_changes.key?('funnel_stage_id')
 
     Kanban::AutomationService.handle_task_stage_changed(self)
+  end
+
+  # Custom-rule fan-out hooks. These delegate to the configurable
+  # engine — separate from the legacy hardcoded automation service
+  # which still runs via the callbacks above.
+  def dispatch_task_created_event
+    Kanban::Automations::Dispatcher.dispatch(:task_created, self)
+  end
+
+  def dispatch_task_update_events
+    dispatch_stage_change_event if previous_changes.key?('funnel_stage_id')
+    dispatch_funnel_change_event if previous_changes.key?('funnel_id')
+    dispatch_priority_change_event if previous_changes.key?('priority')
+    dispatch_completed_event if just_completed?
+  end
+
+  def dispatch_stage_change_event
+    from_stage, to_stage = previous_changes['funnel_stage_id']
+    Kanban::Automations::Dispatcher.dispatch(:task_moved_to_stage, self,
+                                             from_stage_id: from_stage, to_stage_id: to_stage)
+  end
+
+  def dispatch_funnel_change_event
+    from_funnel, to_funnel = previous_changes['funnel_id']
+    Kanban::Automations::Dispatcher.dispatch(:task_moved_to_funnel, self,
+                                             from_funnel_id: from_funnel, to_funnel_id: to_funnel)
+  end
+
+  def dispatch_priority_change_event
+    from, to = previous_changes['priority']
+    Kanban::Automations::Dispatcher.dispatch(:task_priority_changed, self,
+                                             from_priority: from, to_priority: to)
+  end
+
+  def dispatch_completed_event
+    Kanban::Automations::Dispatcher.dispatch(:task_completed, self)
+  end
+
+  def just_completed?
+    return false unless previous_changes.key?('funnel_stage_id')
+
+    funnel_stage&.status_type.to_s == 'won'
   end
 end

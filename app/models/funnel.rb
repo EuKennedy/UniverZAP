@@ -32,6 +32,7 @@ class Funnel < ApplicationRecord
   has_many :funnel_agents, dependent: :destroy
   has_many :agents, through: :funnel_agents, source: :user
   has_many :kanban_tasks, dependent: :destroy
+  has_many :kanban_automations, dependent: :destroy
   has_many :custom_fields,
            -> { ordered },
            class_name: 'FunnelCustomField',

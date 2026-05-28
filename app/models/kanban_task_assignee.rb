@@ -13,4 +13,12 @@ class KanbanTaskAssignee < ApplicationRecord
   belongs_to :user
 
   validates :user_id, uniqueness: { scope: :kanban_task_id }
+
+  after_create_commit :dispatch_task_assigned_event
+
+  private
+
+  def dispatch_task_assigned_event
+    Kanban::Automations::Dispatcher.dispatch(:task_assigned, kanban_task, user_id: user_id)
+  end
 end
