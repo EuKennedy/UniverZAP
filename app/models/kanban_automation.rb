@@ -89,6 +89,7 @@ class KanbanAutomation < ApplicationRecord
   # debounce logic downstream. Uses `update_columns` to skip callbacks
   # so this can be called from inside the executor without triggering
   # a recursive automation cascade.
+  # rubocop:disable Rails/SkipsModelValidations
   def record_run!
     update_columns(
       run_count: run_count + 1,
@@ -106,6 +107,7 @@ class KanbanAutomation < ApplicationRecord
       updated_at: Time.current
     )
   end
+  # rubocop:enable Rails/SkipsModelValidations
 
   def push_event_data
     {

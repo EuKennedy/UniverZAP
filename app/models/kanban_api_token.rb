@@ -102,6 +102,12 @@ class KanbanApiToken < ApplicationRecord
     update!(revoked_at: Time.current, revoked_by_user_id: by_user&.id)
   end
 
+  # `update_columns` is intentional — we update the timestamp on EVERY
+  # authenticated request (potentially every API call). Going through
+  # validations + callbacks here would re-sign tokens, fire AR
+  # callbacks, and turn a sub-ms write into ~10ms. Skipping is the
+  # correct tradeoff for a write-only counter.
+  # rubocop:disable Rails/SkipsModelValidations
   def track_use!(remote_ip: nil)
     update_columns(
       last_used_at: Time.current,
@@ -109,6 +115,7 @@ class KanbanApiToken < ApplicationRecord
       updated_at: Time.current
     )
   end
+  # rubocop:enable Rails/SkipsModelValidations
 
   def push_event_data
     {

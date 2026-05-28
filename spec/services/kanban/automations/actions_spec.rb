@@ -1,5 +1,6 @@
 require 'rails_helper'
 
+# rubocop:disable RSpec/DescribeClass
 RSpec.describe 'Kanban::Automations::Actions' do
   let(:account)    { create(:account) }
   let(:user)       { create(:user, account: account) }
@@ -155,3 +156,4 @@ RSpec.describe 'Kanban::Automations::Actions' do
     end
   end
 end
+# rubocop:enable RSpec/DescribeClass

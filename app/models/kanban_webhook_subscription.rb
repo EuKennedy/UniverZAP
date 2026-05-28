@@ -54,7 +54,6 @@ class KanbanWebhookSubscription < ApplicationRecord
   validate  :validate_events
 
   scope :active, -> { where(active: true) }
-  scope :subscribed_to, ->(event) { where('events = ?'.dup, [].to_json).or(where('events @> ?', [event].to_json)) }
 
   before_validation :assign_default_secret, on: :create
 
@@ -86,6 +85,10 @@ class KanbanWebhookSubscription < ApplicationRecord
     payload
   end
 
+  # Counter writes only — going through validations + callbacks here
+  # would round-trip the entire payload on every delivery. Skipping is
+  # the correct tradeoff for a high-frequency counter.
+  # rubocop:disable Rails/SkipsModelValidations
   def track_delivery_success!
     update_columns(
       delivery_count: delivery_count + 1,
@@ -102,6 +105,7 @@ class KanbanWebhookSubscription < ApplicationRecord
       updated_at: Time.current
     )
   end
+  # rubocop:enable Rails/SkipsModelValidations
 
   private
 
