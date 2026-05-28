@@ -1,4 +1,4 @@
-class Api::V2::Kanban::TasksController < Api::V2::Kanban::FunnelsController
+class Api::V2::Kanban::TasksController < Api::V2::Kanban::BaseController
   self.required_scope = { read: 'read:tasks', write: 'write:tasks' }
 
   before_action :fetch_task, only: [:show, :update, :destroy, :move]

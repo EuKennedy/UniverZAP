@@ -31,7 +31,7 @@
 # operator pastes, and the `live` segment is reserved for production
 # (vs. future `test` tokens).
 class KanbanApiToken < ApplicationRecord
-  TOKEN_PREFIX = 'zk_live_'
+  TOKEN_PREFIX = 'zk_live_'.freeze
   TOKEN_ENTROPY_BYTES = 24
   AVAILABLE_SCOPES = %w[
     read:funnels  write:funnels

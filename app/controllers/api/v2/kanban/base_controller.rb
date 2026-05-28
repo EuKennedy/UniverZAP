@@ -95,4 +95,27 @@ class Api::V2::Kanban::BaseController < ActionController::API
   def render_unprocessable(error)
     render json: { error: 'unprocessable_entity', errors: error.record.errors.as_json }, status: :unprocessable_entity
   end
+
+  # Shared pagination helpers — every resource controller in the v2
+  # namespace returns the same `{ data, meta }` envelope. Defaults are
+  # page=1 / per_page=25 / capped at 100 so a naïve integration can't
+  # fetch the entire account in one request.
+  def paginate(scope)
+    page = (params[:page] || 1).to_i.clamp(1, 100_000)
+    per = (params[:per_page] || 25).to_i.clamp(1, 100)
+    @_total_count = scope.count
+    @_total_pages = (@_total_count.to_f / per).ceil
+    @_page = page
+    @_per = per
+    scope.offset((page - 1) * per).limit(per)
+  end
+
+  def meta_for(_scope)
+    {
+      page: @_page,
+      per_page: @_per,
+      total: @_total_count,
+      total_pages: @_total_pages
+    }
+  end
 end

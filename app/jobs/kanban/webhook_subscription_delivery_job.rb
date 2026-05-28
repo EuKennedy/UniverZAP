@@ -15,9 +15,9 @@ class Kanban::WebhookSubscriptionDeliveryJob < ApplicationJob
            wait: :exponentially_longer, attempts: 6
 
   TIMEOUT_SECONDS = 10
-  SIGNATURE_HEADER = 'X-UniverZAP-Signature'
-  EVENT_HEADER     = 'X-UniverZAP-Event'
-  ID_HEADER        = 'X-UniverZAP-Delivery-Id'
+  SIGNATURE_HEADER = 'X-UniverZAP-Signature'.freeze
+  EVENT_HEADER     = 'X-UniverZAP-Event'.freeze
+  ID_HEADER        = 'X-UniverZAP-Delivery-Id'.freeze
 
   def perform(subscription_id, event, payload)
     subscription = KanbanWebhookSubscription.find_by(id: subscription_id)

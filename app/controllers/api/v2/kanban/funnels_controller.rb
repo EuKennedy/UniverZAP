@@ -39,26 +39,4 @@ class Api::V2::Kanban::FunnelsController < Api::V2::Kanban::BaseController
   def funnel_params
     params.require(:funnel).permit(:name, :description, :position, automation_settings: {})
   end
-
-  # Pagination helpers shared across the v2 controllers. Defaults to
-  # page 1 / 25 per page. Capped at 100 to stop accidental DOS via a
-  # naive integration that asks for `per_page=10000`.
-  def paginate(scope)
-    page = (params[:page] || 1).to_i.clamp(1, 100_000)
-    per = (params[:per_page] || 25).to_i.clamp(1, 100)
-    @_total_count = scope.count
-    @_total_pages = (@_total_count.to_f / per).ceil
-    @_page = page
-    @_per = per
-    scope.offset((page - 1) * per).limit(per)
-  end
-
-  def meta_for(_scope)
-    {
-      page: @_page,
-      per_page: @_per,
-      total: @_total_count,
-      total_pages: @_total_pages
-    }
-  end
 end

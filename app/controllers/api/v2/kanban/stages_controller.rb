@@ -1,4 +1,4 @@
-class Api::V2::Kanban::StagesController < Api::V2::Kanban::FunnelsController
+class Api::V2::Kanban::StagesController < Api::V2::Kanban::BaseController
   self.required_scope = { read: 'read:funnels', write: 'write:funnels' }
 
   before_action :fetch_funnel_for_stage
