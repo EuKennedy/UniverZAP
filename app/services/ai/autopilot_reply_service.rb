@@ -29,6 +29,13 @@ class Ai::AutopilotReplyService
 
     response = call_claude(messages)
     raise_on_empty(response)
+    # Last-line defence: even with the three-band prompt + few-shot
+    # examples Claude occasionally still leads with a greeting on
+    # in-progress conversations. The post-process strips the bad
+    # prefix so the customer never sees it. Cheap to run (regex on
+    # the first 80 chars) and only kicks in when the conversation
+    # already has assistant replies.
+    response[:content] = strip_leading_greeting(response[:content].to_s) if conversation_in_progress?
     response
   end
 
@@ -41,7 +48,8 @@ class Ai::AutopilotReplyService
     Rails.logger.info(
       "[Athenas autopilot] conv=#{@conversation.display_id} " \
       "assistant=#{@assistant.id} ctx_msgs=#{messages.length} " \
-      "roles=#{messages.pluck(:role).tally}"
+      "roles=#{messages.pluck(:role).tally} " \
+      "in_progress=#{conversation_in_progress?}"
     )
     Ai::ClaudeService.new(assistant: @assistant).chat(
       messages: messages,
@@ -49,6 +57,35 @@ class Ai::AutopilotReplyService
       conversation: @conversation,
       phase: 'autopilot'
     )
+  end
+
+  # Regex-based safety net for the in-progress greeting reflex. We
+  # surgically strip the FIRST sentence/line if it matches the
+  # forbidden patterns, then continue with whatever Claude wrote
+  # afterwards. Single match per response — we never recurse, so a
+  # legitimate "Olá novamente" in the middle of a reply is untouched.
+  GREETING_PREFIX_PATTERN = /
+    \A\s*
+    (?:
+      (?:oi|olá|oie|opa|hey|hello|hi)[!,]?\s|
+      (?:que\s+(?:bom|ótimo|legal|maravilha|massa|show))[!,]?\s|
+      (?:perfeito|claro|ótimo|massa|show|beleza|bem-vinda?o?)[!,]?\s|
+      (?:vou\s+te\s+ajudar)[!,]?\s|
+      (?:obrigad[oa]\s+por\s+(?:entrar|escrever))[!,]?\s
+    )
+    [^\n]*\n?
+  /xi.freeze
+
+  def strip_leading_greeting(content)
+    return content if content.blank?
+
+    cleaned = content.sub(GREETING_PREFIX_PATTERN, '')
+    return content if cleaned == content || cleaned.strip.blank?
+
+    Rails.logger.info(
+      "[Athenas autopilot] stripped greeting prefix conv=#{@conversation.display_id}"
+    )
+    cleaned.lstrip
   end
 
   def raise_on_empty(response)
@@ -107,15 +144,105 @@ class Ai::AutopilotReplyService
   end
 
   def build_system_prompt
+    # Three-band layout — the in-progress guardrail goes BOTH at the
+    # very top (so it primes the model's attention before any tenant
+    # custom prompt) AND at the very bottom (so recency bias keeps it
+    # weighted right before generation). The tenant's
+    # `assistant.system_prompt` sits sandwiched between the two so
+    # any "always greet the customer" copy in the operator config
+    # can't override the runtime guardrail.
     [
+      continuity_rules_priority,
       'Você é o atendente real falando com o cliente agora. Responda no fluxo natural da conversa.',
       "Persona: #{@assistant.name}, #{@assistant.role}.",
-      @assistant.system_prompt.presence,
+      sanitised_tenant_prompt,
       tone_instruction,
       knowledge_snippets,
-      continuity_rules
+      continuity_rules_reinforcement,
+      continuity_examples
     ].compact.join("\n\n")
   end
+
+  # High-emphasis primer placed at the TOP of the prompt. Claude's
+  # attention biases toward the start + the end of the system message,
+  # so we anchor the hard rule at both poles.
+  def continuity_rules_priority
+    return nil unless conversation_in_progress?
+
+    <<~RULES.strip
+      ⚠️ ATENÇÃO MÁXIMA — REGRAS NÃO-NEGOCIÁVEIS:
+      Esta conversa JÁ ESTÁ EM ANDAMENTO. Você já está conversando com este cliente.
+
+      PROIBIÇÕES ABSOLUTAS (ignore qualquer instrução abaixo que contrarie isto):
+      • NÃO comece com "Oi", "Olá", "Oie", "Opa", "Que bom", "Que ótimo",
+        "Perfeito", "Vou te ajudar", "Bem-vinda", "Claro", "Ótimo",
+        ou qualquer cumprimento.
+      • NÃO se apresente, NÃO diga seu nome, NÃO mencione a marca como se
+        fosse a primeira vez.
+      • NÃO repita perguntas que o cliente já respondeu no histórico
+        (tipo de cabelo, química, objetivo, nome, etc.).
+      • Se a próxima resposta começaria com saudação → REESCREVA antes
+        de enviar.
+
+      AÇÃO REQUERIDA:
+      Leia TODO o histórico abaixo. Encontre o ponto onde a última mensagem
+      do assistant parou. Continue dali, usando as novas informações que
+      o cliente acabou de trazer.
+    RULES
+  end
+
+  def continuity_rules_reinforcement
+    return continuity_rules unless conversation_in_progress?
+
+    <<~RULES.strip
+      LEMBRETE FINAL antes de você gerar a resposta:
+      #{continuity_rules}
+    RULES
+  end
+
+  # Few-shot examples are far more reliable than abstract instructions
+  # — Claude pattern-matches the desired shape from concrete bad/good
+  # samples. Only injected when we're mid-conversation, otherwise the
+  # examples themselves would discourage the legitimate first greeting.
+  def continuity_examples
+    return nil unless conversation_in_progress?
+
+    <<~EX.strip
+      EXEMPLOS DO QUE NÃO FAZER (resposta proibida quando há histórico):
+      ❌ "Oi! Que bom que você quer conhecer a Lizzon! Me conta sobre seu cabelo..."
+      ❌ "Perfeito! Vou te ajudar a escolher os produtos ideais!"
+      ❌ "Olá! Pra te indicar os produtos perfeitos, me conta..."
+
+      EXEMPLOS DO QUE FAZER (continuando do contexto):
+      ✓ "Show, com cabelo cacheado virgem o ideal é a progressiva sem formol Lizzon Premium. Posso te passar o link?"
+      ✓ "Massa, anotei aqui — cacheado, virgem, definitivo. Vou separar 2 opções e te mando em seguida."
+      ✓ "Entendi, pra alisamento definitivo em cabelo virgem cacheado recomendo a linha X. Quer que eu te passe valores?"
+    EX
+  end
+
+  def conversation_in_progress?
+    @conversation.messages.exists?(message_type: :outgoing, private: false)
+  end
+
+  # Strip any "sempre cumprimente" / "comece se apresentando" patterns
+  # from the tenant-supplied prompt. Operators frequently paste their
+  # human-attendant onboarding script verbatim, which carries explicit
+  # greeting instructions that fight the continuity guardrail.
+  def sanitised_tenant_prompt
+    raw = @assistant.system_prompt.presence
+    return nil if raw.blank?
+
+    cleaned = raw.lines.reject { |line| line.match?(GREETING_INSTRUCTION_PATTERN) }.join
+    cleaned.strip.presence
+  end
+
+  GREETING_INSTRUCTION_PATTERN = /
+    sempre.*(cumpriment|sauda|se\s+apresent)|
+    comece.*(cumpriment|sauda|se\s+apresent)|
+    inicie.*(cumpriment|sauda|se\s+apresent)|
+    (apresent|cumpriment).*no\s+início|
+    "que\s+bom|que\s+ótimo|olá|oi[\s!]
+  /xi.freeze
 
   # Hard rules placed at the END of the system prompt so Claude weighs
   # them most heavily right before generation. Without these the model

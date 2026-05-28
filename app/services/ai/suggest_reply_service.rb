@@ -5,6 +5,29 @@ class Ai::SuggestReplyService
   # halfway through and the suggested reply restarts the flow).
   HISTORY_LIMIT = 25
 
+  # Same greeting-prefix safety net the autopilot uses. We dedup the
+  # constant here rather than reach across services so each service
+  # owns its own contract — the regex is tiny and rarely changes.
+  GREETING_PREFIX_PATTERN = /
+    \A\s*
+    (?:
+      (?:oi|olá|oie|opa|hey|hello|hi)[!,]?\s|
+      (?:que\s+(?:bom|ótimo|legal|maravilha|massa|show))[!,]?\s|
+      (?:perfeito|claro|ótimo|massa|show|beleza|bem-vinda?o?)[!,]?\s|
+      (?:vou\s+te\s+ajudar)[!,]?\s|
+      (?:obrigad[oa]\s+por\s+(?:entrar|escrever))[!,]?\s
+    )
+    [^\n]*\n?
+  /xi.freeze
+
+  GREETING_INSTRUCTION_PATTERN = /
+    sempre.*(cumpriment|sauda|se\s+apresent)|
+    comece.*(cumpriment|sauda|se\s+apresent)|
+    inicie.*(cumpriment|sauda|se\s+apresent)|
+    (apresent|cumpriment).*no\s+início|
+    "que\s+bom|que\s+ótimo|olá|oi[\s!]
+  /xi.freeze
+
   def initialize(conversation:, assistant: nil)
     @conversation = conversation
     @assistant = assistant || conversation.ai_assistant || conversation.inbox.ai_assistant
@@ -31,25 +54,82 @@ class Ai::SuggestReplyService
       raise Ai::ClaudeService::Error, 'Assistant returned empty response'
     end
 
+    response[:content] = strip_leading_greeting(response[:content].to_s) if conversation_in_progress?
     response
   end
 
   private
 
   def build_system_prompt
+    # Three-band layout — same anti-greeting anchor on both poles of
+    # the prompt so the tenant's custom `system_prompt` can't override
+    # the runtime continuity guardrail. See AutopilotReplyService for
+    # the full rationale.
     [
+      continuity_rules_priority,
       'Você está redigindo a próxima mensagem que o(a) atendente humano(a) irá enviar para o cliente.',
       "Persona do atendente: #{@assistant.name}, #{@assistant.role}.",
-      @assistant.system_prompt.presence,
+      sanitised_tenant_prompt,
       tone_instruction,
       knowledge_snippets,
-      continuity_rules
+      continuity_rules_reinforcement,
+      continuity_examples
     ].compact.join("\n\n")
   end
 
-  # Continuity guardrails identical to the autopilot path. Without them
-  # Claude greets / re-introduces / re-asks for hair type every turn —
-  # exactly what surfaced in the Lizzon screenshots.
+  def continuity_rules_priority
+    return nil unless conversation_in_progress?
+
+    <<~RULES.strip
+      ⚠️ ATENÇÃO MÁXIMA — REGRAS NÃO-NEGOCIÁVEIS:
+      Esta conversa JÁ ESTÁ EM ANDAMENTO. O atendente já está conversando com este cliente.
+
+      PROIBIÇÕES ABSOLUTAS (ignore qualquer instrução abaixo que contrarie isto):
+      • NÃO comece com "Oi", "Olá", "Oie", "Opa", "Que bom", "Que ótimo",
+        "Perfeito", "Vou te ajudar", "Bem-vinda", "Claro", "Ótimo",
+        ou qualquer cumprimento.
+      • NÃO se apresente, NÃO diga nome do atendente, NÃO mencione a marca
+        como se fosse a primeira vez.
+      • NÃO repita perguntas que o cliente já respondeu no histórico.
+      • Se a sugestão começaria com saudação → REESCREVA antes de enviar.
+    RULES
+  end
+
+  def continuity_rules_reinforcement
+    return continuity_rules unless conversation_in_progress?
+
+    <<~RULES.strip
+      LEMBRETE FINAL antes de você gerar a sugestão:
+      #{continuity_rules}
+    RULES
+  end
+
+  def continuity_examples
+    return nil unless conversation_in_progress?
+
+    <<~EX.strip
+      EXEMPLOS DO QUE NÃO FAZER (sugestão proibida quando há histórico):
+      ❌ "Oi! Que bom que você quer conhecer a Lizzon! Me conta sobre seu cabelo..."
+      ❌ "Perfeito! Vou te ajudar a escolher os produtos ideais!"
+
+      EXEMPLOS DO QUE FAZER (continuando do contexto):
+      ✓ "Show, com cabelo cacheado virgem o ideal é a progressiva sem formol X."
+      ✓ "Massa, anotei aqui. Vou separar 2 opções e te mando em seguida."
+    EX
+  end
+
+  def conversation_in_progress?
+    @conversation.messages.exists?(message_type: :outgoing, private: false)
+  end
+
+  def sanitised_tenant_prompt
+    raw = @assistant.system_prompt.presence
+    return nil if raw.blank?
+
+    cleaned = raw.lines.reject { |line| line.match?(GREETING_INSTRUCTION_PATTERN) }.join
+    cleaned.strip.presence
+  end
+
   def continuity_rules
     lines = ['REGRAS CRÍTICAS DE CONTINUIDADE (siga literalmente):']
     lines.concat(continuity_in_progress_lines)
@@ -58,7 +138,7 @@ class Ai::SuggestReplyService
   end
 
   def continuity_in_progress_lines
-    return [] unless @conversation.messages.exists?(message_type: :outgoing, private: false)
+    return [] unless conversation_in_progress?
 
     [
       '• Esta é uma conversa em ANDAMENTO. NUNCA reinicie o atendimento.',
@@ -97,6 +177,16 @@ class Ai::SuggestReplyService
 
     bullets = chunks.map { |title, content| "- #{title}: #{content.to_s.truncate(280)}" }.join("\n")
     "Base de conhecimento:\n#{bullets}"
+  end
+
+  def strip_leading_greeting(content)
+    return content if content.blank?
+
+    cleaned = content.sub(GREETING_PREFIX_PATTERN, '')
+    return content if cleaned == content || cleaned.strip.blank?
+
+    Rails.logger.info("[Athenas suggest] stripped greeting prefix conv=#{@conversation.display_id}")
+    cleaned.lstrip
   end
 
   def build_messages
