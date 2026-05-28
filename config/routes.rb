@@ -80,7 +80,7 @@ Rails.application.routes.draw do
           # convention, but the controller file uses the singular form
           # (OnboardingStateController). Pin the controller explicitly so requests
           # don't blow up with `uninitialized constant Api::V1::Accounts::OnboardingStatesController`.
-          resource :onboarding_state, only: [:show], controller: 'onboarding_state'
+          resource :onboarding_state, only: [:show, :update], controller: 'onboarding_state'
           namespace :captain do
             resource :preferences, only: [:show, :update]
             resources :assistants do

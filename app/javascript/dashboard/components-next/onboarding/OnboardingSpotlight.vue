@@ -36,9 +36,19 @@ const emit = defineEmits(['next', 'prev', 'skip', 'targetClick']);
 
 const { width: vw, height: vh } = useWindowSize();
 
-const PAD_REST = 10;
-const PAD_ZOOM = 36;
-const PAD_INTENSE = 18;
+// Padding values control the cinematic zoom-out → settle pulse the
+// spotlight performs when a new step begins. The mask cuts a window this
+// many pixels larger than the live target so the user can see what's
+// happening underneath while the camera lands.
+//
+// - PAD_ZOOM    initial wide cutout when the step starts (zoom-out)
+// - PAD_REST    settled cutout once `entered` flips true (close zoom-in)
+// - PAD_INTENSE bump the cutout opens up if the user freezes 25s+
+// More aggressive than v1: bigger ZOOM, tighter REST, so the camera move
+// reads as a real "cut" instead of a polite resize.
+const PAD_REST = 8;
+const PAD_ZOOM = 64;
+const PAD_INTENSE = 22;
 const POPOVER_W = 380;
 const POPOVER_H_ESTIMATE = 240;
 const INACTIVITY_MS = 25000;
@@ -287,7 +297,7 @@ const popoverShiftClass = computed(() => {
       <svg
         :width="vw"
         :height="vh"
-        class="absolute inset-0 motion-safe:[&_rect]:transition-all motion-safe:[&_rect]:duration-[600ms] motion-safe:[&_rect]:ease-[cubic-bezier(0.16,1,0.3,1)]"
+        class="absolute inset-0 motion-safe:[&_rect]:transition-all motion-safe:[&_rect]:duration-[800ms] motion-safe:[&_rect]:ease-[cubic-bezier(0.22,1,0.36,1)]"
       >
         <defs>
           <mask id="onboarding-spotlight-mask">

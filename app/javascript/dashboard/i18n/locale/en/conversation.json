@@ -94,6 +94,7 @@
       "MOVE_TO_KANBAN": "Move to Kanban",
       "VIEW_KANBAN": "View Kanban",
       "AUTOPILOT": "Autopilot",
+      "ATHENAS_BALANCE": "Athenas balance: R$ {balance}",
       "ATHENAS_COST_TOOLTIP": "Athenas spent R$ {brl} on this conversation",
       "MORE_ACTIONS": "More actions",
       "OPEN": "More",

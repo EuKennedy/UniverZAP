@@ -7,6 +7,7 @@ import { useAlert } from 'dashboard/composables';
 import AthenasAssistantsAPI from 'dashboard/api/athenas';
 
 import Button from 'dashboard/components-next/button/Button.vue';
+import AthenasBillingPanel from 'dashboard/components-next/athenas/AthenasBillingPanel.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -57,9 +58,12 @@ onMounted(fetchAssistants);
         icon="i-lucide-sparkles"
         :label="t('ATHENAS.LIST.CREATE')"
         size="sm"
+        data-onboarding="athenas-new-assistant"
         @click="goToWizard"
       />
     </header>
+
+    <AthenasBillingPanel data-onboarding="athenas-billing-panel" />
 
     <section v-if="loading" class="flex-1 flex items-center justify-center">
       <span

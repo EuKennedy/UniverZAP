@@ -3,8 +3,10 @@ import OnboardingStateAPI from 'dashboard/api/onboardingState';
 import { useAccount } from 'dashboard/composables/useAccount';
 
 // Module-level singleton so every consumer sees the same reactive state.
-// The launcher, panel, and tour all read these values; persistence helpers
-// only touch them through updateAccount + a re-fetch.
+// The launcher, panel, tour and contextual orchestrator all read these
+// values; persistence helpers route everything through the singleton
+// resource `/onboarding_state` (PATCH) so a backend recompute of
+// `completed`/`regressed_steps` happens on every write.
 const flags = ref({
   has_inbox: false,
   has_team_members: false,
@@ -12,10 +14,15 @@ const flags = ref({
   has_assistant: false,
   has_first_reply: false,
 });
-// Mirror of the backend `completed` flag — it uses a lenient rule (any 3 of
-// the 5 readiness signals, or inbox + assistant) so accounts that already
-// look configured don't get haunted by the launcher.
+// Mirror of the backend `completed` flag — it uses a lenient rule (inbox
+// present) so accounts that already look configured don't get haunted by
+// the launcher.
 const completedFromApi = ref(false);
+// Backend-computed list of readiness flags that were green at the moment
+// the user finished the main tour but have since flipped back to false.
+// Drives the "Finish what you undid" launcher state without us needing to
+// re-derive the diff client-side.
+const regressedStepsFromApi = ref([]);
 const customAttrs = ref({});
 const isLoaded = ref(false);
 const isLoading = ref(false);
@@ -33,9 +40,15 @@ async function refresh({ force = false } = {}) {
   lastError.value = null;
   try {
     const { data } = await OnboardingStateAPI.get();
-    const { custom_attributes: attrs, completed, ...readiness } = data;
+    const {
+      custom_attributes: attrs,
+      completed,
+      regressed_steps: regressed,
+      ...readiness
+    } = data;
     flags.value = readiness;
     completedFromApi.value = Boolean(completed);
+    regressedStepsFromApi.value = Array.isArray(regressed) ? regressed : [];
     customAttrs.value = attrs || {};
     isLoaded.value = true;
     lastFetchedAt = Date.now();
@@ -46,8 +59,35 @@ async function refresh({ force = false } = {}) {
   }
 }
 
+// Persist the onboarding `custom_attributes` patch via the dedicated
+// `PATCH /onboarding_state` endpoint. Returns the fresh state so we keep
+// `regressed_steps` and the cached snapshot in lockstep.
+async function persistPatch(patch) {
+  const next = { ...customAttrs.value, ...patch };
+  customAttrs.value = next;
+  try {
+    const { data } = await OnboardingStateAPI.patch(patch);
+    const {
+      custom_attributes: attrs,
+      completed,
+      regressed_steps: regressed,
+      ...readiness
+    } = data;
+    flags.value = readiness;
+    completedFromApi.value = Boolean(completed);
+    regressedStepsFromApi.value = Array.isArray(regressed) ? regressed : [];
+    customAttrs.value = attrs || {};
+    lastFetchedAt = Date.now();
+  } catch (error) {
+    lastError.value = error;
+  }
+}
+
 export function useOnboardingState() {
-  const { currentAccount, updateAccount } = useAccount();
+  // `useAccount` still exposes a fallback `updateAccount` mutator we keep
+  // around for legacy panels that haven't migrated to the singleton patch
+  // path. Anything onboarding-shaped should go through `persistPatch`.
+  useAccount();
 
   const score = computed(() => {
     const total = Object.keys(flags.value).length;
@@ -60,9 +100,9 @@ export function useOnboardingState() {
   });
 
   // `isComplete` follows the backend signal — once the tenant has the
-  // essentials (inbox + assistant) or any 3 readiness flags green, we
-  // consider onboarding done and the FAB hides. The panel's progress bar
-  // still walks all 5 so the user can finish what they want.
+  // essentials (inbox present) we consider onboarding done and the FAB
+  // hides. The panel's progress bar still walks all 5 so the user can
+  // finish what they want.
   const isComplete = computed(() => completedFromApi.value);
   const isFullyComplete = computed(
     () => score.value.done === score.value.total
@@ -79,30 +119,50 @@ export function useOnboardingState() {
     () => customAttrs.value.onboarding_last_step_index ?? 0
   );
 
-  // Persist `onboarding_*` keys into Account#custom_attributes (JSONB).
-  // Merges with existing custom_attributes to avoid wiping unrelated keys.
-  const persist = async patch => {
-    const base = currentAccount.value?.custom_attributes || {};
-    const next = { ...base, ...customAttrs.value, ...patch };
-    customAttrs.value = next;
-    try {
-      await updateAccount({ custom_attributes: next });
-    } catch (error) {
-      lastError.value = error;
-    }
-  };
+  // Catalogue of contextual mini-tours the user has finished. Stored as a
+  // string[] of tour keys so adding new mini-tours never needs a migration.
+  const completedTours = computed(() =>
+    Array.isArray(customAttrs.value.onboarding_completed_tours)
+      ? customAttrs.value.onboarding_completed_tours
+      : []
+  );
+  const hasSeenContextualTour = key => completedTours.value.includes(key);
 
-  const markTourCompleted = () =>
-    persist({
+  // Server-computed list of readiness flags that flipped red after the
+  // user finished the main tour. The launcher uses this to re-engage with
+  // targeted copy instead of restarting the whole journey.
+  const regressedSteps = computed(() => regressedStepsFromApi.value);
+
+  const markTourCompleted = async () => {
+    // Snapshot the readiness flags at completion time so the backend can
+    // detect regressions later (anything green now that turns red counts).
+    const snapshot = { ...flags.value };
+    await persistPatch({
       onboarding_tour_completed_at: new Date().toISOString(),
       onboarding_explicit_dismiss: false,
+      onboarding_readiness_snapshot: snapshot,
     });
+  };
 
-  const dismissExplicit = () => persist({ onboarding_explicit_dismiss: true });
-  const resetDismiss = () => persist({ onboarding_explicit_dismiss: false });
+  const markContextualTourCompleted = async key => {
+    if (!key) return;
+    const next = Array.from(new Set([...completedTours.value, key]));
+    await persistPatch({ onboarding_completed_tours: next });
+  };
+
+  const resetContextualTour = async key => {
+    if (!key) return;
+    const next = completedTours.value.filter(k => k !== key);
+    await persistPatch({ onboarding_completed_tours: next });
+  };
+
+  const dismissExplicit = () =>
+    persistPatch({ onboarding_explicit_dismiss: true });
+  const resetDismiss = () =>
+    persistPatch({ onboarding_explicit_dismiss: false });
 
   const setLastStepIndex = index =>
-    persist({ onboarding_last_step_index: index });
+    persistPatch({ onboarding_last_step_index: index });
 
   return {
     flags,
@@ -116,8 +176,13 @@ export function useOnboardingState() {
     tourCompletedAt,
     explicitDismiss,
     lastStepIndex,
+    completedTours,
+    regressedSteps,
+    hasSeenContextualTour,
     refresh,
     markTourCompleted,
+    markContextualTourCompleted,
+    resetContextualTour,
     dismissExplicit,
     resetDismiss,
     setLastStepIndex,

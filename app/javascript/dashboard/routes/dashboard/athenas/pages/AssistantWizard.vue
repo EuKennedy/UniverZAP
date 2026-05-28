@@ -270,6 +270,7 @@ const removeTraining = idx => {
             v-model="form.name"
             :label="t('ATHENAS.WIZARD.IDENTITY.NAME_LABEL')"
             :placeholder="t('ATHENAS.WIZARD.IDENTITY.NAME_PLACEHOLDER')"
+            data-onboarding="asst-name"
             autofocus
           />
           <div class="flex flex-col gap-1.5">
@@ -375,7 +376,7 @@ const removeTraining = idx => {
             </div>
           </div>
 
-          <div class="flex flex-col gap-1.5">
+          <div class="flex flex-col gap-1.5" data-onboarding="asst-prompt">
             <label class="text-sm font-medium text-n-slate-12">
               {{ t('ATHENAS.WIZARD.PERSONALITY.PROMPT_LABEL') }}
             </label>
@@ -436,7 +437,11 @@ const removeTraining = idx => {
         </div>
 
         <!-- Step: knowledge -->
-        <div v-if="stepDef.key === 'knowledge'" class="flex flex-col gap-4">
+        <div
+          v-if="stepDef.key === 'knowledge'"
+          class="flex flex-col gap-4"
+          data-onboarding="asst-rag"
+        >
           <div class="grid grid-cols-1 gap-3">
             <div
               v-for="(tr, idx) in trainings"

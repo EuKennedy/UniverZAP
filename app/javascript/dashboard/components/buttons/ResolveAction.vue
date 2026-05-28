@@ -22,11 +22,33 @@ import ConversationResolveAttributesModal from 'dashboard/components-next/Conver
 import ConversationKanbanAttachModal from 'dashboard/components-next/ConversationKanbanAttach/ConversationKanbanAttachModal.vue';
 import ConversationKanbanViewerModal from 'dashboard/components-next/ConversationKanbanAttach/ConversationKanbanViewerModal.vue';
 import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
+import { useAthenasCredits } from 'dashboard/composables/useAthenasCredits';
 
 const store = useStore();
 const getters = useStoreGetters();
 const { t } = useI18n();
 const { checkMissingAttributes } = useConversationRequiredAttributes();
+
+// Athenas saldo chip — replaces the old floating bottom-36 widget so
+// the saldo lives next to "Mover/Visualizar Kanban" instead of
+// hovering over chat content. Click opens the same paywall modal.
+const {
+  balanceCents: athenasBalanceCents,
+  isLoaded: athenasLoaded,
+  status: athenasStatus,
+  openTopUpModal: openAthenasTopUp,
+  refresh: refreshAthenasCredits,
+} = useAthenasCredits();
+const athenasBalanceWhole = computed(() =>
+  Math.floor((athenasBalanceCents.value || 0) / 100)
+);
+const athenasButtonColor = computed(() => {
+  if (athenasStatus.value === 'exhausted') return 'ruby';
+  if (athenasStatus.value === 'warn_95' || athenasStatus.value === 'warn_80')
+    return 'amber';
+  return 'teal';
+});
+refreshAthenasCredits();
 
 const arrowDownButtonRef = ref(null);
 const isLoading = ref(false);
@@ -276,6 +298,7 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
       color="slate"
       faded
       no-animation
+      data-onboarding="conv-move-kanban"
       @click="openKanbanModal"
     />
     <Button
@@ -287,6 +310,21 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
       no-animation
       @click="openKanbanViewerModal"
     />
+    <Button
+      v-if="athenasLoaded"
+      :label="
+        t('CONVERSATION.HEADER.ATHENAS_BALANCE', {
+          balance: athenasBalanceWhole,
+        })
+      "
+      icon="i-lucide-sparkles"
+      size="sm"
+      :color="athenasButtonColor"
+      faded
+      no-animation
+      data-onboarding="conv-athenas-balance"
+      @click="openAthenasTopUp('header_button')"
+    />
     <div class="relative">
       <Button
         :label="t('CONVERSATION.HEADER.AUTOPILOT')"
@@ -296,6 +334,7 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
         :solid="autopilotEnabled"
         :faded="!autopilotEnabled"
         no-animation
+        data-onboarding="conv-autopilot"
         @click="openAutopilotMenu"
       />
       <div
@@ -342,6 +381,7 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
     <ButtonGroup
       class="flex-shrink-0 rounded-lg shadow outline-1 outline"
       :class="!showOpenButton ? 'outline-n-container' : 'outline-transparent'"
+      data-onboarding="conv-resolve-action"
     >
       <Button
         v-if="isOpen"

@@ -24,9 +24,13 @@ import CopilotLauncher from 'dashboard/components-next/copilot/CopilotLauncher.v
 import CopilotContainer from 'dashboard/components/copilot/AthenasCopilotContainer.vue';
 import OnboardingLauncher from 'dashboard/components-next/onboarding/OnboardingLauncher.vue';
 import OnboardingTour from 'dashboard/components-next/onboarding/OnboardingTour.vue';
+import OnboardingContextualOrchestrator from 'dashboard/components-next/onboarding/OnboardingContextualOrchestrator.vue';
 import AthenasCreditsModal from 'dashboard/components-next/athenas/AthenasCreditsModal.vue';
 import AthenasCreditsBanner from 'dashboard/components-next/athenas/AthenasCreditsBanner.vue';
-import AthenasCreditsMeter from 'dashboard/components-next/athenas/AthenasCreditsMeter.vue';
+// `AthenasCreditsMeter.vue` removed from the floating stack — the
+// saldo now lives next to "Mover/Visualizar Kanban" in the
+// conversation header (ResolveAction.vue) so it no longer hovers
+// over chat content.
 import CookieConsentBanner from 'dashboard/components-next/legal/CookieConsentBanner.vue';
 import LegalReAcceptBanner from 'dashboard/components-next/legal/LegalReAcceptBanner.vue';
 import { useAthenasCredits } from 'dashboard/composables/useAthenasCredits';
@@ -47,9 +51,9 @@ export default {
     MobileSidebarLauncher,
     OnboardingLauncher,
     OnboardingTour,
+    OnboardingContextualOrchestrator,
     AthenasCreditsModal,
     AthenasCreditsBanner,
-    AthenasCreditsMeter,
     CookieConsentBanner,
     LegalReAcceptBanner,
   },
@@ -184,7 +188,7 @@ export default {
         <CopilotContainer />
         <OnboardingLauncher />
         <OnboardingTour />
-        <AthenasCreditsMeter />
+        <OnboardingContextualOrchestrator />
         <AthenasCreditsBanner />
         <AthenasCreditsModal />
         <CookieConsentBanner />

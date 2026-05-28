@@ -36,6 +36,8 @@
       "ARIA_LABEL": "Abrir setup guiado",
       "PROGRESS_LABEL": "{done} de {total} etapas concluídas",
       "PULSE_HINT": "Começar",
+      "RESUME_HINT": "Continuar · passo {step}",
+      "REGRESSED_HINT": "Terminar o que ficou pra trás",
       "DISMISS": "Ocultar onboarding"
     },
     "PANEL": {
@@ -115,7 +117,99 @@
       "EXIT_CONFIRM_CANCEL": "Continuar",
       "FINISH_TITLE": "Setup concluído",
       "FINISH_BODY": "O UniverZAP está no ar. Sua primeira conversa vai aparecer na caixa de entrada.",
-      "FINISH_CTA": "Abrir dashboard"
+      "FINISH_CTA": "Abrir dashboard",
+      "VOICE_ON": "Ativar narração",
+      "VOICE_OFF": "Mutar narração",
+      "CHAPTER": {
+        "WELCOME": "Capítulo 01 · Boas-vindas",
+        "INBOX": "Capítulo 02 · Caixa de entrada",
+        "TEAM": "Capítulo 03 · Time",
+        "AI": "Capítulo 04 · Athenas IA",
+        "PIPELINE": "Capítulo 05 · Funil",
+        "CONTACTS": "Capítulo 06 · Contatos",
+        "REPORTS": "Capítulo 07 · Relatórios",
+        "FINISH": "Capítulo 08 · Lançamento"
+      },
+      "STEPS": {
+        "SIDEBAR_CONVERSATIONS": {
+          "TITLE": "Suas conversas vivem aqui",
+          "BODY": "Toda mensagem do WhatsApp aparece nesta caixa. Filtre por agente, time, etiqueta ou status."
+        },
+        "ATHENAS_NAV": {
+          "TITLE": "Conheça a Athenas IA",
+          "BODY": "Sua assistente que qualifica, responde e move conversas para o funil enquanto você dorme."
+        },
+        "ATHENAS_BILLING": {
+          "TITLE": "Seu saldo Athenas",
+          "BODY": "Cada resposta da IA consome um pequeno valor. Recarregue quando quiser, sem assinatura mensal obrigatória."
+        },
+        "KANBAN_FUNNEL": {
+          "TITLE": "Escolha qual funil acompanhar",
+          "BODY": "Crie quantos funis precisar — vendas, pós-venda, recuperação — e alterne entre eles aqui."
+        },
+        "KANBAN_ADD": {
+          "TITLE": "Adicione tarefas ao funil",
+          "BODY": "Cards do Kanban são tarefas — leads, propostas, recuperações. Movimente entre etapas com drag & drop."
+        }
+      }
+    },
+    "CONTEXTUAL": {
+      "CONVERSATION": {
+        "CHAPTER": "Tour da conversa",
+        "ATHENAS_BALANCE": {
+          "TITLE": "Saldo Athenas sempre à vista",
+          "BODY": "Cada resposta da IA desconta deste saldo. Clique aqui para recarregar a qualquer momento."
+        },
+        "RESOLVE": {
+          "TITLE": "Resolver, soneca ou pendente",
+          "BODY": "Quando a conversa terminar, marque como resolvida. Atalho ⌥E mata da fila num toque."
+        },
+        "MOVE_KANBAN": {
+          "TITLE": "Mova para o funil",
+          "BODY": "Toda conversa pode virar uma tarefa no Kanban. Acompanhe o lead até o fechamento sem sair do chat."
+        },
+        "AUTOPILOT": {
+          "TITLE": "Ative o piloto automático",
+          "BODY": "A Athenas assume a conversa, qualifica e te avisa só quando o lead estiver maduro."
+        }
+      },
+      "ATHENAS_HUB": {
+        "CHAPTER": "Tour Athenas IA",
+        "BILLING": {
+          "TITLE": "Seu saldo + pacotes",
+          "BODY": "Recarregue com 1 clique. Quanto maior o pacote, mais bônus a gente devolve em créditos."
+        },
+        "NEW_ASSISTANT": {
+          "TITLE": "Crie sua primeira assistente",
+          "BODY": "Sem código. Em menos de 5 minutos sua Athenas já responde no tom certo, com o conhecimento do seu negócio."
+        }
+      },
+      "ATHENAS_ASSISTANT": {
+        "CHAPTER": "Configurando sua Athenas",
+        "NAME": {
+          "TITLE": "Dê uma identidade",
+          "BODY": "Nome, função e tom. Clientes confiam em assistentes que parecem pessoas, não em bots genéricos."
+        },
+        "PROMPT": {
+          "TITLE": "O prompt é o cérebro",
+          "BODY": "Aqui você ensina como a Athenas deve pensar, falar e o que ela jamais pode prometer. Capricha."
+        },
+        "RAG": {
+          "TITLE": "Base de conhecimento",
+          "BODY": "Suba documentos, FAQs ou catálogo. A Athenas consulta tudo em tempo real para responder com precisão."
+        }
+      },
+      "KANBAN": {
+        "CHAPTER": "Tour do Kanban",
+        "FUNNEL": {
+          "TITLE": "Alterne entre funis",
+          "BODY": "Crie funis de vendas, pós-venda, recuperação. Cada um com etapas próprias e regras próprias."
+        },
+        "ADD": {
+          "TITLE": "Crie cards rápido",
+          "BODY": "Adicione tarefas direto na coluna. Cada card pode estar amarrado a uma conversa ou contato."
+        }
+      }
     }
   }
 }

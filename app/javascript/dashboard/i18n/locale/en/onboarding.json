@@ -129,6 +129,86 @@
         "CONTACTS": "Chapter 06 · Contacts",
         "REPORTS": "Chapter 07 · Reports",
         "FINISH": "Chapter 08 · Launch"
+      },
+      "STEPS": {
+        "SIDEBAR_CONVERSATIONS": {
+          "TITLE": "Your conversations live here",
+          "BODY": "Every WhatsApp message lands in this inbox. Filter by agent, team, label or status."
+        },
+        "ATHENAS_NAV": {
+          "TITLE": "Meet Athenas AI",
+          "BODY": "Your assistant qualifies, replies and routes conversations to the pipeline while you sleep."
+        },
+        "ATHENAS_BILLING": {
+          "TITLE": "Your Athenas balance",
+          "BODY": "Each AI reply burns a tiny credit. Top up whenever you want — no mandatory monthly subscription."
+        },
+        "KANBAN_FUNNEL": {
+          "TITLE": "Pick the funnel you're working",
+          "BODY": "Build as many funnels as you need — sales, post-sale, recovery — and switch between them here."
+        },
+        "KANBAN_ADD": {
+          "TITLE": "Drop tasks into the funnel",
+          "BODY": "Kanban cards are tasks — leads, proposals, recoveries. Drag them across stages as deals move."
+        }
+      }
+    },
+    "CONTEXTUAL": {
+      "CONVERSATION": {
+        "CHAPTER": "Conversation tour",
+        "ATHENAS_BALANCE": {
+          "TITLE": "Athenas balance, always visible",
+          "BODY": "Every AI reply burns from this balance. Click here to top up anytime."
+        },
+        "RESOLVE": {
+          "TITLE": "Resolve, snooze or pend",
+          "BODY": "When the conversation wraps, mark it resolved. ⌥E clears it from the queue in one shot."
+        },
+        "MOVE_KANBAN": {
+          "TITLE": "Move to the funnel",
+          "BODY": "Every chat can become a Kanban task. Follow the lead to the close without leaving the inbox."
+        },
+        "AUTOPILOT": {
+          "TITLE": "Turn on autopilot",
+          "BODY": "Athenas takes the wheel, qualifies the lead and pings you only when it's ripe."
+        }
+      },
+      "ATHENAS_HUB": {
+        "CHAPTER": "Athenas AI tour",
+        "BILLING": {
+          "TITLE": "Your balance + packages",
+          "BODY": "Top up in one click. Bigger packages return bigger bonuses straight to your credit balance."
+        },
+        "NEW_ASSISTANT": {
+          "TITLE": "Spin up your first assistant",
+          "BODY": "No code. In under 5 minutes your Athenas replies in the right tone, with your business knowledge baked in."
+        }
+      },
+      "ATHENAS_ASSISTANT": {
+        "CHAPTER": "Configuring your Athenas",
+        "NAME": {
+          "TITLE": "Give it an identity",
+          "BODY": "Name, role and tone. Customers trust assistants that feel like people, not generic bots."
+        },
+        "PROMPT": {
+          "TITLE": "The prompt is the brain",
+          "BODY": "Here you teach how Athenas should think, talk and what she can never promise. Nail this."
+        },
+        "RAG": {
+          "TITLE": "Knowledge base",
+          "BODY": "Upload docs, FAQs or product catalogues. Athenas consults them in real time for precise answers."
+        }
+      },
+      "KANBAN": {
+        "CHAPTER": "Kanban tour",
+        "FUNNEL": {
+          "TITLE": "Switch between funnels",
+          "BODY": "Build sales, post-sale and recovery funnels. Each one with its own stages and rules."
+        },
+        "ADD": {
+          "TITLE": "Create cards in seconds",
+          "BODY": "Add tasks straight to the column. Each card can be tied to a conversation or a contact."
+        }
       }
     }
   }

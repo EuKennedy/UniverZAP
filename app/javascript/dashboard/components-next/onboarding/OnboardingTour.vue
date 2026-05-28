@@ -7,15 +7,25 @@ import confetti from 'canvas-confetti';
 import { emitter } from 'shared/helpers/mitt';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useOnboardingState } from 'dashboard/composables/useOnboardingState';
-import { ONBOARDING_TOUR_EVENTS, buildTourSteps } from './onboardingSteps';
+import {
+  CONTEXTUAL_TOUR_KEYS,
+  ONBOARDING_TOUR_EVENTS,
+  buildTourSteps,
+} from './onboardingSteps';
 import OnboardingFullscreenStep from './OnboardingFullscreenStep.vue';
 import OnboardingSpotlight from './OnboardingSpotlight.vue';
 
 const { t } = useI18n();
 const router = useRouter();
 const { accountId } = useAccount();
-const { flags, lastStepIndex, markTourCompleted, refresh, setLastStepIndex } =
-  useOnboardingState();
+const {
+  flags,
+  lastStepIndex,
+  markTourCompleted,
+  markContextualTourCompleted,
+  refresh,
+  setLastStepIndex,
+} = useOnboardingState();
 const { width: viewportWidth } = useWindowSize();
 
 // Phones can't host a Floating UI-style popover next to a 200px target
@@ -27,6 +37,15 @@ const isActive = ref(false);
 const currentStepIndex = ref(0);
 const currentTarget = ref(null);
 const isFullscreen = ref(false);
+// `null` for the main tour (default), or a contextual tour key like
+// `conversation_view` while a mini-tour is mid-flight. Finishing a
+// contextual tour writes to `onboarding_completed_tours` so the
+// orchestrator doesn't re-fire it on the next visit.
+const activeContextualKey = ref(null);
+// Steps for the current tour (main tour by default, contextual otherwise).
+// Stored in a ref so the contextual orchestrator can swap the catalogue
+// without remounting the component.
+const tourSteps = ref([]);
 
 // Voice opt-in is persisted across sessions so the operator's preference
 // sticks. Default is OFF — narration without explicit consent feels
@@ -39,17 +58,19 @@ try {
   /* noop — SSR or privacy-mode storage */
 }
 
-const allSteps = computed(() => buildTourSteps({ t }));
-
 // Skip steps whose readiness flag is already satisfied — never make the
 // user re-click a task they've finished. Recomputed reactively because
-// flags can flip while the tour is mid-flight.
-const activeSteps = computed(() =>
-  allSteps.value.filter(step => {
+// flags can flip while the tour is mid-flight. Main tour reads from the
+// authoritative catalogue; contextual tours skip the filter so the
+// orchestrator can re-fire them deliberately.
+const activeSteps = computed(() => {
+  const isMain = activeContextualKey.value === null;
+  return tourSteps.value.filter(step => {
+    if (!isMain) return true;
     if (!step.requireFlag) return true;
     return !flags.value[step.requireFlag];
-  })
-);
+  });
+});
 
 const currentStep = computed(
   () => activeSteps.value[currentStepIndex.value] || null
@@ -168,26 +189,54 @@ const teardown = () => {
 };
 
 const finishTour = async () => {
+  const contextualKey = activeContextualKey.value;
   teardown();
+  if (contextualKey) {
+    activeContextualKey.value = null;
+    tourSteps.value = [];
+    await markContextualTourCompleted(contextualKey);
+    emitter.emit(ONBOARDING_TOUR_EVENTS.CONTEXTUAL_COMPLETED, {
+      key: contextualKey,
+    });
+    return;
+  }
   await setLastStepIndex(0);
   await markTourCompleted();
+  // Main tour also counts as a contextual completion so the orchestrator
+  // doesn't immediately re-fire one of the mini-tours on top of the
+  // finish confetti.
+  await markContextualTourCompleted(CONTEXTUAL_TOUR_KEYS.MAIN);
   await refresh({ force: true });
   emitter.emit(ONBOARDING_TOUR_EVENTS.COMPLETED);
   fireConfetti();
 };
 
 const exitTour = () => {
+  const wasContextual = activeContextualKey.value !== null;
+  const contextualKey = activeContextualKey.value;
   teardown();
-  emitter.emit(ONBOARDING_TOUR_EVENTS.EXIT);
+  if (wasContextual) {
+    activeContextualKey.value = null;
+    tourSteps.value = [];
+  }
+  emitter.emit(ONBOARDING_TOUR_EVENTS.EXIT, {
+    contextual: wasContextual,
+    key: contextualKey,
+  });
 };
 
 const goToStep = async index => {
   if (index < 0) return;
   currentStepIndex.value = index;
-  setLastStepIndex(index);
+  // Only persist progress for the main tour — contextual tours are
+  // ephemeral and rerun if the user explicitly resets them.
+  if (activeContextualKey.value === null) {
+    setLastStepIndex(index);
+  }
   emitter.emit(ONBOARDING_TOUR_EVENTS.STEP_CHANGED, {
     index,
     total: activeSteps.value.length,
+    contextual: activeContextualKey.value,
   });
 
   if (index >= activeSteps.value.length) {
@@ -271,20 +320,36 @@ const toggleVoice = () => {
 };
 
 const startTour = async () => {
+  // Main tour entry — always pulls the canonical catalogue.
+  activeContextualKey.value = null;
+  tourSteps.value = buildTourSteps({ t });
   isActive.value = true;
   const resumeIndex = Math.min(
     Math.max(lastStepIndex.value || 0, 0),
-    Math.max(activeSteps.value.length - 1, 0)
+    Math.max(tourSteps.value.length - 1, 0)
   );
   await goToStep(resumeIndex);
 };
 
+// Contextual tour entry — orchestrator passes a tour key + steps array so
+// we can reuse the same spotlight + popover surfaces without forking the
+// component. Voice narration stays on the same opt-in setting.
+const startContextualTour = async ({ key, steps }) => {
+  if (!key || !Array.isArray(steps) || steps.length === 0) return;
+  activeContextualKey.value = key;
+  tourSteps.value = steps;
+  isActive.value = true;
+  await goToStep(0);
+};
+
 // Smart watcher: if a readiness flag flips true off-tour (e.g. the user
-// added an inbox in another tab) skip past that step automatically.
+// added an inbox in another tab) skip past that step automatically. Only
+// fires for the main tour — contextual flows don't have readiness gating.
 watch(
   () => Object.values(flags.value).join('|'),
   () => {
     if (!isActive.value) return;
+    if (activeContextualKey.value !== null) return;
     const step = currentStep.value;
     if (!step?.requireFlag) return;
     if (flags.value[step.requireFlag]) goToStep(currentStepIndex.value + 1);
@@ -293,9 +358,11 @@ watch(
 
 onMounted(() => {
   emitter.on(ONBOARDING_TOUR_EVENTS.START, startTour);
+  emitter.on(ONBOARDING_TOUR_EVENTS.START_CONTEXTUAL, startContextualTour);
 });
 onBeforeUnmount(() => {
   emitter.off(ONBOARDING_TOUR_EVENTS.START, startTour);
+  emitter.off(ONBOARDING_TOUR_EVENTS.START_CONTEXTUAL, startContextualTour);
   teardown();
 });
 </script>

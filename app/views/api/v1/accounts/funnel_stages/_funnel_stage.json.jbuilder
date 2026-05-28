@@ -5,6 +5,7 @@ json.description stage.description
 json.color stage.color
 json.position stage.position
 json.status_type stage.status_type
+json.wip_limit stage.wip_limit
 json.tasks_count stage.kanban_tasks.count
 json.created_at stage.created_at.to_i
 json.updated_at stage.updated_at.to_i

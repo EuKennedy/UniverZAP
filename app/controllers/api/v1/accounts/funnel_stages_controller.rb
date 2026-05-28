@@ -21,6 +21,15 @@ class Api::V1::Accounts::FunnelStagesController < Api::V1::Accounts::BaseControl
   def destroy
     @stage.destroy!
     head :ok
+  rescue ActiveRecord::DeleteRestrictionError
+    # Stage has `kanban_tasks dependent: :restrict_with_error`, so any
+    # delete with surviving tasks would 500 without this rescue. Return
+    # 422 + an operator-friendly hint instead so the UI can offer
+    # "mova as tarefas para outra etapa".
+    render json: {
+      error: 'stage_has_tasks',
+      message: 'Mova as tarefas desta etapa antes de removê-la.'
+    }, status: :unprocessable_entity
   end
 
   def reorder
