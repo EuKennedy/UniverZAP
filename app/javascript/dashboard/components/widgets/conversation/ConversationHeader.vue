@@ -6,6 +6,7 @@ import { useElementSize } from '@vueuse/core';
 import BackButton from '../BackButton.vue';
 import InboxName from '../InboxName.vue';
 import MoreActions from './MoreActions.vue';
+import ConversationCostChip from 'dashboard/components-next/athenas/ConversationCostChip.vue';
 import Avatar from 'next/avatar/Avatar.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import wootConstants from 'dashboard/constants/globals';
@@ -171,6 +172,10 @@ const copyConversationId = async () => {
         show-extended-info
         :parent-width="width"
         class="hidden md:flex"
+      />
+      <ConversationCostChip
+        :cost-cents-brl="currentChat.athenas_cost_cents_brl || 0"
+        class="hidden md:inline-flex"
       />
       <MoreActions :conversation-id="currentChat.id" />
     </div>

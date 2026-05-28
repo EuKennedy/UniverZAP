@@ -49,6 +49,8 @@ Rails.application.routes.draw do
   # Dedicated Sidekiq readiness probe for external uptime monitors.
   # 200 = workers alive + queue under 60s latency; 503 otherwise.
   get '/health/sidekiq', to: 'health#sidekiq'
+  # Public status page (HTML for humans + JSON for monitors).
+  get '/status', to: 'status#show', as: :status_page
 
   # LGPD public surfaces — versioned via Legal::Versions, no auth.
   get '/termos', to: 'legal#terms'

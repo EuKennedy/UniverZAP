@@ -180,6 +180,23 @@ class Conversation < ApplicationRecord
     additional_attributes&.dig('conversation_language')
   end
 
+  # Cumulative Athenas cost for this conversation in BRL cents. We
+  # aggregate `ai_invocations.cost_usd` (what Anthropic billed us) and
+  # apply the same FX + markup the pricing calculator uses for the
+  # paywall modal. Exposed in the conversation jbuilder so the
+  # dashboard can show a per-conversation "atendimento custou R$X,XX"
+  # chip without an extra round-trip. Returns 0 when no invocations
+  # have run yet — typical for human-only conversations.
+  def athenas_cost_cents_brl
+    total_usd = Ai::Invocation.where(conversation_id: id).sum(:cost_usd).to_f
+    return 0 if total_usd <= 0
+
+    brl = total_usd *
+          Ai::PricingCalculator::USD_TO_BRL_RATE *
+          Ai::PricingCalculator::DEFAULT_MARKUP
+    (brl * Ai::PricingCalculator::CENTS_PER_REAL).round
+  end
+
   # Be aware: The precision of created_at and last_activity_at may differ from Ruby's Time precision.
   # Our DB column (see schema) stores timestamps with second-level precision (no microseconds), so
   # if you assign a Ruby Time with microseconds, the DB will truncate it. This may cause subtle differences

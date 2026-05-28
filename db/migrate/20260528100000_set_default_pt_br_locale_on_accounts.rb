@@ -1,15 +1,19 @@
 class SetDefaultPtBrLocaleOnAccounts < ActiveRecord::Migration[7.1]
-  # Account#locale is an integer enum (LANGUAGES_CONFIG). 16 = pt_BR,
-  # 0 = en. UniverZAP ships exclusively to Brazilian operators, so the
-  # column default flips to pt_BR going forward — every new account is
-  # created with locale=16 unless the caller passes something else
-  # explicitly. Existing rows stay on whatever they had to avoid
-  # surprising tenants who picked a different language manually.
+  # Originally flipped the schema-level default to 16 (pt_BR). Reverted
+  # because upstream Chatwoot specs assert English literal copy
+  # everywhere a conversation activity message is generated, and the
+  # cascade of "Assigned to X by Y" → "Atribuído a X por Y" failures
+  # in CI showed the schema default was the wrong layer to enforce
+  # locale. The UniverZAP-only default still happens at the
+  # application layer via `Connect::SetupController.ensure_user_has_account`
+  # so every Univercart-provisioned account is created with
+  # `locale: 'pt_BR'` explicitly — without forcing the same on every
+  # account factory in the test suite.
   def up
-    change_column_default :accounts, :locale, from: 0, to: 16
+    # no-op
   end
 
   def down
-    change_column_default :accounts, :locale, from: 16, to: 0
+    # no-op
   end
 end
