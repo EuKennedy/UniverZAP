@@ -614,15 +614,15 @@ Rails.application.routes.draw do
       # by the token itself (no `/accounts/:id` URL prefix). Routes are
       # intentionally flat + JSON-only to mirror Stripe/Linear/Notion
       # public APIs and stay drop-in for n8n/Zapier/Make consumers.
-      namespace :v2 do
-        namespace :kanban do
-          resources :funnels do
-            resources :stages
-          end
-          resources :tasks do
-            member do
-              post :move
-            end
+      # Lives inside the existing `namespace :api / namespace :v2` block,
+      # so we mount under `kanban` directly (no nested `v2` namespace).
+      namespace :kanban do
+        resources :funnels do
+          resources :stages
+        end
+        resources :tasks do
+          member do
+            post :move
           end
         end
       end

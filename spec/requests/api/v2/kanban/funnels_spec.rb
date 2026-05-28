@@ -66,7 +66,7 @@ RSpec.describe 'Api::V2::Kanban::Funnels', type: :request do
     it 'is updated on every authenticated request' do
       expect do
         get '/api/v2/kanban/funnels', headers: headers_for.call(read_token)
-      end.to change { read_token.reload.last_used_at }
+      end.to(change { read_token.reload.last_used_at })
     end
   end
 end

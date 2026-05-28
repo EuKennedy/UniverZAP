@@ -7,18 +7,18 @@
 # via `record_error!` so an admin can see what happened in the UI.
 class Kanban::Automations::Executor
   REGISTRY = {
-    'send_message'          => Kanban::Automations::Actions::SendMessage,
-    'assign_user'           => Kanban::Automations::Actions::AssignUser,
-    'unassign_users'        => Kanban::Automations::Actions::UnassignUsers,
-    'move_to_stage'         => Kanban::Automations::Actions::MoveToStage,
-    'move_to_funnel'        => Kanban::Automations::Actions::MoveToFunnel,
-    'add_subtask'           => Kanban::Automations::Actions::AddSubtask,
-    'add_label'             => Kanban::Automations::Actions::AddLabel,
-    'remove_label'          => Kanban::Automations::Actions::RemoveLabel,
-    'set_priority'          => Kanban::Automations::Actions::SetPriority,
-    'set_due_date'          => Kanban::Automations::Actions::SetDueDate,
-    'webhook'               => Kanban::Automations::Actions::Webhook,
-    'resolve_conversation'  => Kanban::Automations::Actions::ResolveConversation
+    'send_message' => Kanban::Automations::Actions::SendMessage,
+    'assign_user' => Kanban::Automations::Actions::AssignUser,
+    'unassign_users' => Kanban::Automations::Actions::UnassignUsers,
+    'move_to_stage' => Kanban::Automations::Actions::MoveToStage,
+    'move_to_funnel' => Kanban::Automations::Actions::MoveToFunnel,
+    'add_subtask' => Kanban::Automations::Actions::AddSubtask,
+    'add_label' => Kanban::Automations::Actions::AddLabel,
+    'remove_label' => Kanban::Automations::Actions::RemoveLabel,
+    'set_priority' => Kanban::Automations::Actions::SetPriority,
+    'set_due_date' => Kanban::Automations::Actions::SetDueDate,
+    'webhook' => Kanban::Automations::Actions::Webhook,
+    'resolve_conversation' => Kanban::Automations::Actions::ResolveConversation
   }.freeze
 
   def self.call(rule:, task:, event_payload: {})

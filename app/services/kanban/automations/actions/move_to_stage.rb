@@ -22,7 +22,7 @@ class Kanban::Automations::Actions::MoveToStage < Kanban::Automations::Actions::
     return if task.funnel_stage_id == stage.id
 
     target_position = params[:position].presence&.to_i ||
-                      (stage.kanban_tasks.maximum(:position) || 0) + 1
+                      ((stage.kanban_tasks.maximum(:position) || 0) + 1)
     task.update!(funnel_stage: stage, position: target_position)
   end
 end

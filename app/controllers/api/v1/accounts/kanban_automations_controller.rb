@@ -80,6 +80,7 @@ class Api::V1::Accounts::KanbanAutomationsController < Api::V1::Accounts::BaseCo
   def permitted_conditions
     raw = params[:kanban_automation][:conditions]
     return {} if raw.blank?
+
     raw = raw.to_unsafe_h if raw.respond_to?(:to_unsafe_h)
     raw.is_a?(Hash) ? raw : {}
   end

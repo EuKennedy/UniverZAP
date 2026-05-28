@@ -54,38 +54,57 @@ class Api::V2::Kanban::TasksController < Api::V2::Kanban::BaseController
     @task = current_account.kanban_tasks.find(params[:id])
   end
 
+  # Filters delegated to small helpers so each method stays under the
+  # AbcSize / Cyclomatic Complexity limits. Same logic, cleaner shape.
   def build_filtered_scope
     scope = current_account.kanban_tasks
+    scope = apply_id_filters(scope)
+    scope = apply_date_filters(scope)
+    scope = apply_search_filters(scope)
+    scope.order(updated_at: :desc)
+  end
+
+  def apply_id_filters(scope)
     scope = scope.where(funnel_id: params[:funnel_id]) if params[:funnel_id].present?
     scope = scope.where(funnel_stage_id: params[:funnel_stage_id]) if params[:funnel_stage_id].present?
-    scope = scope.where(priority: KanbanTask.priorities[params[:priority]]) if KanbanTask.priorities.key?(params[:priority].to_s)
-    scope = scope.where('due_date <= ?', Time.zone.parse(params[:due_before])) if params[:due_before].present?
-    scope = scope.where('due_date >= ?', Time.zone.parse(params[:due_after])) if params[:due_after].present?
+    if KanbanTask.priorities.key?(params[:priority].to_s)
+      scope = scope.where(priority: KanbanTask.priorities[params[:priority]])
+    end
+    scope
+  end
+
+  def apply_date_filters(scope)
+    scope = scope.where(due_date: ..Time.zone.parse(params[:due_before])) if params[:due_before].present?
+    scope = scope.where(due_date: Time.zone.parse(params[:due_after])..) if params[:due_after].present?
+    scope
+  end
+
+  def apply_search_filters(scope)
     scope = scope.joins(:assignees).where(users: { id: params[:assignee_id] }) if params[:assignee_id].present?
     scope = scope.where('title ILIKE ?', "%#{params[:q]}%") if params[:q].present?
-    scope.order(updated_at: :desc)
+    scope
   end
 
   def execute_cross_funnel_move
     target_funnel = current_account.funnels.find(params[:funnel_id])
     target_stage = target_funnel.funnel_stages.find(params[:funnel_stage_id])
-    position = params[:position]&.to_i || (target_stage.kanban_tasks.maximum(:position) || 0) + 1
+    position = params[:position]&.to_i || ((target_stage.kanban_tasks.maximum(:position) || 0) + 1)
     @task.update!(funnel: target_funnel, funnel_stage: target_stage, position: position)
   end
 
   def execute_intra_funnel_move
     stage = @task.funnel.funnel_stages.find(params[:funnel_stage_id])
-    position = params[:position]&.to_i || (stage.kanban_tasks.maximum(:position) || 0) + 1
+    position = params[:position]&.to_i || ((stage.kanban_tasks.maximum(:position) || 0) + 1)
     @task.update!(funnel_stage: stage, position: position)
   end
 
   def task_create_params
     params.require(:task).permit(:title, :description, :priority, :start_date, :due_date,
-                                  :estimate_minutes, :parent_task_id)
+                                 :estimate_minutes, :parent_task_id)
   end
 
   def task_update_params
     params.require(:task).permit(:title, :description, :priority, :start_date, :due_date,
-                                  :estimate_minutes, :completed_at)
+                                 :estimate_minutes, :completed_at)
   end
 end

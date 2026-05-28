@@ -34,8 +34,8 @@ class KanbanApiToken < ApplicationRecord
   TOKEN_PREFIX = 'zk_live_'.freeze
   TOKEN_ENTROPY_BYTES = 24
   AVAILABLE_SCOPES = %w[
-    read:funnels  write:funnels
-    read:tasks    write:tasks
+    read:funnels write:funnels
+    read:tasks write:tasks
     read:webhooks write:webhooks
     manage:automations
   ].freeze
@@ -57,9 +57,9 @@ class KanbanApiToken < ApplicationRecord
   def self.generate!(attrs)
     raw = "#{TOKEN_PREFIX}#{SecureRandom.urlsafe_base64(TOKEN_ENTROPY_BYTES)}"
     token = new(attrs.merge(
-      token_prefix: raw[0, 16],
-      token_digest: digest_for(raw)
-    ))
+                  token_prefix: raw[0, 16],
+                  token_digest: digest_for(raw)
+                ))
     token.raw_token = raw
     token.save!
     token

@@ -70,14 +70,14 @@ class Kanban::Automations::ConditionMatcher
 
   def matches_has_label?(values)
     required = Array(values).map { |v| v.to_s.strip.downcase }
-    titles = task.task_labels.includes(:label).map { |tl| tl.label.title.to_s.downcase }
+    titles = task.task_labels.map { |label| label.title.to_s.downcase }
     (required - titles).empty?
   end
 
   def matches_missing_label?(values)
     required = Array(values).map { |v| v.to_s.strip.downcase }
-    titles = task.task_labels.includes(:label).map { |tl| tl.label.title.to_s.downcase }
-    (required & titles).empty?
+    titles = task.task_labels.map { |label| label.title.to_s.downcase }
+    !required.intersect?(titles)
   end
 
   def matches_stage_id_in?(values)
@@ -89,7 +89,7 @@ class Kanban::Automations::ConditionMatcher
   end
 
   def matches_assignee_id_in?(values)
-    (Array(values).map(&:to_i) & task.assignee_ids).any?
+    Array(values).map(&:to_i).intersect?(task.assignee_ids)
   end
 
   def matches_has_assignee?(expected)

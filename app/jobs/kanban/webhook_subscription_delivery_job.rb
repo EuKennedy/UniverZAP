@@ -37,10 +37,10 @@ class Kanban::WebhookSubscriptionDeliveryJob < ApplicationJob
       subscription.url,
       body: body,
       headers: {
-        'Content-Type'      => 'application/json',
-        EVENT_HEADER        => event,
-        ID_HEADER           => SecureRandom.uuid,
-        SIGNATURE_HEADER    => "sha256=#{sign(subscription.secret, body)}"
+        'Content-Type' => 'application/json',
+        EVENT_HEADER => event,
+        ID_HEADER => SecureRandom.uuid,
+        SIGNATURE_HEADER => "sha256=#{sign(subscription.secret, body)}"
       },
       timeout: TIMEOUT_SECONDS
     )

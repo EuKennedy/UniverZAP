@@ -15,8 +15,8 @@ class Kanban::Automations::Actions::AddLabel < Kanban::Automations::Actions::Bas
       # to be created. Operator can recolour after the fact.
       new_label.color = '#1f93ff'
     end
-    return if task.task_labels.exists?(label_id: label.id)
+    return if task.kanban_task_labels.exists?(label_id: label.id)
 
-    task.task_labels.create!(label: label)
+    task.kanban_task_labels.create!(label: label)
   end
 end

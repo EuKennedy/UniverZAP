@@ -111,7 +111,7 @@ RSpec.describe Api::V1::Accounts::KanbanAutomationsController, type: :request do
   describe 'POST /api/v1/accounts/:id/kanban_automations/:id/run' do
     let(:automation) do
       create(:kanban_automation, account: account, funnel: funnel,
-                                  actions: [{ type: 'set_priority', params: { priority: 'urgent' } }])
+                                 actions: [{ type: 'set_priority', params: { priority: 'urgent' } }])
     end
 
     it 'executes the rule synchronously' do

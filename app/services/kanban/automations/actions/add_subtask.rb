@@ -6,8 +6,8 @@
 #   due_in_hours (Numeric, optional) — relative due-date offset from now
 class Kanban::Automations::Actions::AddSubtask < Kanban::Automations::Actions::Base
   PLACEHOLDERS = {
-    '{{task_title}}'  => ->(task) { task.title.to_s },
-    '{{stage_name}}'  => ->(task) { task.funnel_stage&.name.to_s },
+    '{{task_title}}' => ->(task) { task.title.to_s },
+    '{{stage_name}}' => ->(task) { task.funnel_stage&.name.to_s },
     '{{funnel_name}}' => ->(task) { task.funnel&.name.to_s }
   }.freeze
 

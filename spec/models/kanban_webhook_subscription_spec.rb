@@ -34,8 +34,12 @@ RSpec.describe KanbanWebhookSubscription, type: :model do
     let(:account) { create(:account) }
     let!(:wildcard) { create(:kanban_webhook_subscription, account: account, events: []) }
     let!(:specific) { create(:kanban_webhook_subscription, account: account, events: ['task.created']) }
-    let!(:other)    { create(:kanban_webhook_subscription, account: account, events: ['task.deleted']) }
-    let!(:inactive) { create(:kanban_webhook_subscription, account: account, events: ['task.created'], active: false) }
+
+    before do
+      # Decoy subscriptions — must NOT be returned for `task.created`.
+      create(:kanban_webhook_subscription, account: account, events: ['task.deleted'])
+      create(:kanban_webhook_subscription, account: account, events: ['task.created'], active: false)
+    end
 
     it 'returns wildcard + specific subscribers for the event' do
       result = described_class.for_event(account_id: account.id, event: 'task.created')

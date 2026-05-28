@@ -10,6 +10,6 @@ class Kanban::Automations::Actions::RemoveLabel < Kanban::Automations::Actions::
     label = account.labels.find_by(title: title)
     return if label.nil?
 
-    task.task_labels.where(label_id: label.id).destroy_all
+    task.kanban_task_labels.where(label_id: label.id).destroy_all
   end
 end

@@ -1,6 +1,5 @@
 require 'rails_helper'
 
-# rubocop:disable RSpec/DescribeClass
 RSpec.describe 'Kanban::Automations::Actions' do
   let(:account)    { create(:account) }
   let(:user)       { create(:user, account: account) }
@@ -73,7 +72,7 @@ RSpec.describe 'Kanban::Automations::Actions' do
       foreign_funnel = create(:funnel)
       foreign_stage = create(:funnel_stage, funnel: foreign_funnel)
       action = described_class.new(task: task,
-                                    params: { funnel_id: foreign_funnel.id, stage_id: foreign_stage.id })
+                                   params: { funnel_id: foreign_funnel.id, stage_id: foreign_stage.id })
       expect { action.call }.to raise_error(Kanban::Automations::Actions::Base::ExecutionError, /not on account/)
     end
   end
@@ -96,13 +95,13 @@ RSpec.describe 'Kanban::Automations::Actions' do
   describe Kanban::Automations::Actions::AddLabel do
     it 'creates a label if missing and attaches it' do
       described_class.new(task: task, params: { label: 'Urgent' }).call
-      expect(task.reload.task_labels.map { |tl| tl.label.title }).to include('urgent')
+      expect(task.reload.task_labels.map(&:title)).to include('urgent')
     end
 
     it 'is idempotent' do
       described_class.new(task: task, params: { label: 'Urgent' }).call
       described_class.new(task: task, params: { label: 'Urgent' }).call
-      expect(task.reload.task_labels.count).to eq(1)
+      expect(task.reload.kanban_task_labels.count).to eq(1)
     end
   end
 
@@ -156,4 +155,3 @@ RSpec.describe 'Kanban::Automations::Actions' do
     end
   end
 end
-# rubocop:enable RSpec/DescribeClass

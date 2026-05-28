@@ -29,7 +29,7 @@ RSpec.describe Kanban::Automations::Dispatcher do
       foreign_account = create(:account)
       foreign_funnel  = create(:funnel, account: foreign_account)
       create(:kanban_automation, account: foreign_account, funnel: foreign_funnel,
-                                  event_name: 'task_created', active: true)
+                                 event_name: 'task_created', active: true)
 
       expect do
         described_class.dispatch(:task_created, task)

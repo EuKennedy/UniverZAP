@@ -20,10 +20,17 @@ class Kanban::Automations::Actions::SetDueDate < Kanban::Automations::Actions::B
   end
 
   def resolve_target
-    return Time.current + params[:in_hours].to_f.hours if params[:in_hours].present?
-    return Time.current + params[:in_days].to_f.days if params[:in_days].present?
+    return relative_target if params[:in_hours].present? || params[:in_days].present?
     return Time.zone.parse(params[:at].to_s) if params[:at].present?
 
     nil
+  end
+
+  def relative_target
+    if params[:in_hours].present?
+      Time.current + params[:in_hours].to_f.hours
+    else
+      Time.current + params[:in_days].to_f.days
+    end
   end
 end

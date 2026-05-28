@@ -25,10 +25,15 @@ RSpec.describe Kanban::WebhookSubscriptionDeliveryJob, type: :job do
         .to change { subscription.reload.failure_count }.by(1)
     end
 
-    it 'raises on 5xx so Sidekiq retries' do
+    it 'records failure + retries on 5xx' do
+      # `retry_on HTTParty::Error` catches the raise + schedules a
+      # retry, so `perform_now` won't propagate the exception. Verify
+      # the side-effects instead: failure_count incremented + the job
+      # got re-enqueued.
       stub_request(:post, subscription.url).to_return(status: 502)
       expect { described_class.perform_now(subscription.id, 'task.created', payload) }
-        .to raise_error(HTTParty::Error)
+        .to change { subscription.reload.failure_count }.by(1)
+        .and have_enqueued_job(described_class)
     end
 
     it 'no-ops when the subscription is missing or inactive' do

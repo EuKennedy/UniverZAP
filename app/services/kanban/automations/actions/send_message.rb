@@ -7,10 +7,10 @@
 class Kanban::Automations::Actions::SendMessage < Kanban::Automations::Actions::Base
   PLACEHOLDERS = {
     '{{contact_name}}' => ->(task, conv) { conv.contact&.name || task.contacts.first&.name || '' },
-    '{{task_title}}'   => ->(task, _conv) { task.title.to_s },
-    '{{task_url}}'     => ->(task, _conv) { Kanban::Automations::Actions::SendMessage.kanban_task_url(task) },
-    '{{stage_name}}'   => ->(task, _conv) { task.funnel_stage&.name.to_s },
-    '{{funnel_name}}'  => ->(task, _conv) { task.funnel&.name.to_s }
+    '{{task_title}}' => ->(task, _conv) { task.title.to_s },
+    '{{task_url}}' => ->(task, _conv) { Kanban::Automations::Actions::SendMessage.kanban_task_url(task) },
+    '{{stage_name}}' => ->(task, _conv) { task.funnel_stage&.name.to_s },
+    '{{funnel_name}}' => ->(task, _conv) { task.funnel&.name.to_s }
   }.freeze
 
   def self.kanban_task_url(task)

@@ -39,8 +39,8 @@ RSpec.describe Kanban::Automations::ConditionMatcher do
 
     it 'requires every condition to match (AND semantics)' do
       rule = build(:kanban_automation, conditions: {
-                     'priority_in'   => ['high'],
-                     'stage_id_in'   => [stage.id + 999]
+                     'priority_in' => ['high'],
+                     'stage_id_in' => [stage.id + 999]
                    })
       expect(described_class.matches?(rule: rule, task: task)).to be false
     end

@@ -58,12 +58,16 @@ class KanbanWebhookSubscription < ApplicationRecord
   before_validation :assign_default_secret, on: :create
 
   # Yield active subscriptions on the account that subscribed to this
-  # specific event (or to all events when `events` is an empty array).
+  # specific event (or to all events when `events` is an empty array
+  # i.e. wildcard).
+  #
+  # Postgres can't `=`-compare a jsonb column to a text literal without
+  # an explicit cast, so we use `jsonb_array_length(events) = 0` for the
+  # wildcard match + `events @> '["event"]'` for the specific match.
   def self.for_event(account_id:, event:)
     active
       .where(account_id: account_id)
-      .where('events = ?', '[]')
-      .or(active.where(account_id: account_id).where('events @> ?', [event].to_json))
+      .where('jsonb_array_length(events) = 0 OR events @> ?', [event].to_json)
   end
 
   def push_event_data(include_secret: false)

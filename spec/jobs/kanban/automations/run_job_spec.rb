@@ -7,7 +7,7 @@ RSpec.describe Kanban::Automations::RunJob, type: :job do
   let(:task)       { create(:kanban_task, account: account, funnel: funnel, funnel_stage: stage) }
   let(:rule) do
     create(:kanban_automation, account: account, funnel: funnel,
-                                actions: [{ type: 'set_priority', params: { priority: 'urgent' } }])
+                               actions: [{ type: 'set_priority', params: { priority: 'urgent' } }])
   end
 
   it 'runs the executor for matching rule + task' do
