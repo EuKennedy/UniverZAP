@@ -12,6 +12,7 @@
 #      itself is short (max_tokens already capped by the assistant config).
 #
 # Output shape matches Ai::SuggestReplyService so the job stays drop-in.
+# rubocop:disable Metrics/ClassLength
 class Ai::AutopilotReplyService
   RECENT_WINDOW = 25
   SUMMARY_REFRESH_AFTER = 99_999 # effectively disabled — autopilot relies on recent msgs only
@@ -74,7 +75,7 @@ class Ai::AutopilotReplyService
       (?:obrigad[oa]\s+por\s+(?:entrar|escrever))[!,]?\s
     )
     [^\n]*\n?
-  /xi.freeze
+  /xi
 
   def strip_leading_greeting(content)
     return content if content.blank?
@@ -232,7 +233,7 @@ class Ai::AutopilotReplyService
     raw = @assistant.system_prompt.presence
     return nil if raw.blank?
 
-    cleaned = raw.lines.reject { |line| line.match?(GREETING_INSTRUCTION_PATTERN) }.join
+    cleaned = raw.lines.grep_v(GREETING_INSTRUCTION_PATTERN).join
     cleaned.strip.presence
   end
 
@@ -242,7 +243,7 @@ class Ai::AutopilotReplyService
     inicie.*(cumpriment|sauda|se\s+apresent)|
     (apresent|cumpriment).*no\s+início|
     "que\s+bom|que\s+ótimo|olá|oi[\s!]
-  /xi.freeze
+  /xi
 
   # Hard rules placed at the END of the system prompt so Claude weighs
   # them most heavily right before generation. Without these the model
@@ -321,3 +322,4 @@ class Ai::AutopilotReplyService
     message.incoming? ? 'user' : 'assistant'
   end
 end
+# rubocop:enable Metrics/ClassLength

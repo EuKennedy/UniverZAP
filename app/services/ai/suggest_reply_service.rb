@@ -18,7 +18,7 @@ class Ai::SuggestReplyService
       (?:obrigad[oa]\s+por\s+(?:entrar|escrever))[!,]?\s
     )
     [^\n]*\n?
-  /xi.freeze
+  /xi
 
   GREETING_INSTRUCTION_PATTERN = /
     sempre.*(cumpriment|sauda|se\s+apresent)|
@@ -26,7 +26,7 @@ class Ai::SuggestReplyService
     inicie.*(cumpriment|sauda|se\s+apresent)|
     (apresent|cumpriment).*no\s+início|
     "que\s+bom|que\s+ótimo|olá|oi[\s!]
-  /xi.freeze
+  /xi
 
   def initialize(conversation:, assistant: nil)
     @conversation = conversation
@@ -126,7 +126,7 @@ class Ai::SuggestReplyService
     raw = @assistant.system_prompt.presence
     return nil if raw.blank?
 
-    cleaned = raw.lines.reject { |line| line.match?(GREETING_INSTRUCTION_PATTERN) }.join
+    cleaned = raw.lines.grep_v(GREETING_INSTRUCTION_PATTERN).join
     cleaned.strip.presence
   end
 
