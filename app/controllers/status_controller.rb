@@ -17,7 +17,10 @@ class StatusController < ActionController::Base # rubocop:disable Rails/Applicat
   private
 
   def build_summary
-    db = check(:database) { ActiveRecord::Base.connection.execute('SELECT 1'); 'ok' }
+    db = check(:database) do
+      ActiveRecord::Base.connection.execute('SELECT 1')
+      'ok'
+    end
     redis = check(:redis) { Redis.new(url: ENV.fetch('REDIS_URL', nil)).ping == 'PONG' ? 'ok' : 'down' }
     sidekiq = check(:sidekiq) { sidekiq_state }
 

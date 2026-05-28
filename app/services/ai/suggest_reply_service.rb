@@ -51,27 +51,34 @@ class Ai::SuggestReplyService
   # Claude greets / re-introduces / re-asks for hair type every turn —
   # exactly what surfaced in the Lizzon screenshots.
   def continuity_rules
-    history_has_replies = @conversation.messages.exists?(message_type: :outgoing, private: false)
-    in_progress_lines = if history_has_replies
-                          [
-                            '• Esta é uma conversa em ANDAMENTO. NUNCA reinicie o atendimento.',
-                            '• PROIBIDO cumprimentar ou se apresentar de novo se o atendente já falou no histórico.',
-                            '• PROIBIDO repetir perguntas já respondidas pelo cliente. ' \
-                            'Leia o histórico antes de perguntar qualquer coisa.'
-                          ]
-                        else
-                          []
-                        end
+    lines = ['REGRAS CRÍTICAS DE CONTINUIDADE (siga literalmente):']
+    lines.concat(continuity_in_progress_lines)
+    lines.concat(continuity_base_lines)
+    lines.join("\n")
+  end
+
+  def continuity_in_progress_lines
+    return [] unless @conversation.messages.exists?(message_type: :outgoing, private: false)
+
     [
-      'REGRAS CRÍTICAS DE CONTINUIDADE (siga literalmente):',
-      *in_progress_lines,
+      '• Esta é uma conversa em ANDAMENTO. NUNCA reinicie o atendimento.',
+      '• PROIBIDO cumprimentar ou se apresentar de novo se o atendente já falou no histórico.',
+      '• PROIBIDO repetir perguntas já respondidas pelo cliente. ' \
+      'Leia o histórico antes de perguntar qualquer coisa.'
+    ]
+  end
+
+  def continuity_base_lines
+    [
       '• Continue exatamente de onde a última mensagem do assistant parou.',
-      '• Use APENAS as mensagens do histórico abaixo como contexto. Não invente histórico que não está visível.',
-      '• Se o cliente trouxe novas informações nesta mensagem, USE-AS imediatamente — não confirme que recebeu, aja.',
-      '• Gere APENAS o corpo da próxima mensagem do atendente. Português brasileiro, frases curtas, sem markdown, ' \
-      'sem prefixos, sem aspas, sem se identificar como IA.',
+      '• Use APENAS as mensagens do histórico abaixo como contexto. ' \
+      'Não invente histórico que não está visível.',
+      '• Se o cliente trouxe novas informações nesta mensagem, USE-AS imediatamente — ' \
+      'não confirme que recebeu, aja.',
+      '• Gere APENAS o corpo da próxima mensagem do atendente. Português brasileiro, ' \
+      'frases curtas, sem markdown, sem prefixos, sem aspas, sem se identificar como IA.',
       '• Se faltar alguma informação que NÃO está no histórico, pergunte UMA coisa por vez de forma natural.'
-    ].join("\n")
+    ]
   end
 
   def tone_instruction

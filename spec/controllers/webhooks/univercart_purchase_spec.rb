@@ -6,7 +6,7 @@ RSpec.describe 'Webhooks::UnivercartController#create — purchase.completed', t
   let(:secret) { 'test-univercart-secret' }
   let(:account) { create(:account) }
   let(:user) { create(:user, account: account) }
-  let!(:subscription) do
+  let(:subscription) do
     UnivercartSubscription.create!(
       external_user_id: 'buyer-abc123',
       email: user.email,
@@ -17,6 +17,8 @@ RSpec.describe 'Webhooks::UnivercartController#create — purchase.completed', t
     )
   end
 
+  before { subscription } # materialize for the webhook resolver
+
   around do |example|
     original = ENV.fetch('UNIVERCART_WEBHOOK_SECRET', nil)
     ENV['UNIVERCART_WEBHOOK_SECRET'] = secret
@@ -24,9 +26,14 @@ RSpec.describe 'Webhooks::UnivercartController#create — purchase.completed', t
     ENV['UNIVERCART_WEBHOOK_SECRET'] = original
   end
 
+  # Univercart::Signature expects `t=<ts>,v1=<hex>` where hex is the
+  # HMAC-SHA256 of `"<ts>.<raw_body>"` — NOT a `sha256=<hex>` prefix
+  # like Stripe. Mirror that contract here so the verifier accepts
+  # the test events.
   def sign(body)
-    digest = OpenSSL::HMAC.hexdigest('SHA256', secret, body)
-    "sha256=#{digest}"
+    ts = Time.current.to_i
+    digest = OpenSSL::HMAC.hexdigest('SHA256', secret, "#{ts}.#{body}")
+    "t=#{ts},v1=#{digest}"
   end
 
   def post_event(payload)

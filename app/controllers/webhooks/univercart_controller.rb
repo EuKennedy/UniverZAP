@@ -101,7 +101,7 @@ class Webhooks::UnivercartController < ActionController::API
   # doesn't reach into a controller; either side is fine to edit when we
   # tune the bonus tiers.
   ATHENAS_PACKAGES = {
-    'athenas-tokens-50'  => { credit_cents_brl: 5_000 },
+    'athenas-tokens-50' => { credit_cents_brl: 5_000 },
     'athenas-tokens-100' => { credit_cents_brl: 11_000 },
     'athenas-tokens-150' => { credit_cents_brl: 18_000 }
   }.freeze

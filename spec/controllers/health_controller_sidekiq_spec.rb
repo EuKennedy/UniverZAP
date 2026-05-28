@@ -13,7 +13,7 @@ RSpec.describe 'HealthController#sidekiq', type: :request do
       it 'returns 503 so external monitors page on-call' do
         get '/health/sidekiq'
         expect(response).to have_http_status(:service_unavailable)
-        body = JSON.parse(response.body)
+        body = response.parsed_body
         expect(body['sidekiq']).to eq('down')
       end
     end
@@ -29,7 +29,7 @@ RSpec.describe 'HealthController#sidekiq', type: :request do
       it 'returns 200 with ok status' do
         get '/health/sidekiq'
         expect(response).to have_http_status(:ok)
-        body = JSON.parse(response.body)
+        body = response.parsed_body
         expect(body['sidekiq']).to eq('ok')
       end
     end
@@ -45,7 +45,7 @@ RSpec.describe 'HealthController#sidekiq', type: :request do
       it 'returns 503 to flag a stuck worker' do
         get '/health/sidekiq'
         expect(response).to have_http_status(:service_unavailable)
-        body = JSON.parse(response.body)
+        body = response.parsed_body
         expect(body['sidekiq']).to eq('down')
       end
     end
