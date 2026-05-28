@@ -135,6 +135,10 @@ jobs:
       - name: Run backend tests (parallelized)
         env:
           NODE_OPTIONS: --openssl-legacy-provider
+          # SimpleCov is gated on this env so local rspec runs stay
+          # fast; CI always exports coverage so we can upload the
+          # report as an artifact for inspection.
+          COVERAGE: 'true'
         run: |
           SPEC_FILES=($(find spec -name '*_spec.rb' | sort))
           TESTS=""
@@ -153,6 +157,14 @@ jobs:
         with:
           name: rspec-results-${{ matrix.ci_node_index }}
           path: tmp/rspec_results.json
+          if-no-files-found: ignore
+
+      - name: Upload backend coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-${{ matrix.ci_node_index }}
+          path: coverage/
           if-no-files-found: ignore
 
       - name: Upload rails log on failure

@@ -1,3 +1,9 @@
+# Coverage helper must load BEFORE any application code so SimpleCov
+# can hook into the Ruby tracer. Gated on COVERAGE=true so day-to-day
+# `bundle exec rspec` runs don't slow down with the tracer overhead;
+# CI sets the env var explicitly in `univerzap-ci.yml`.
+require_relative 'coverage_helper' if ENV['COVERAGE'] == 'true'
+
 require 'webmock/rspec'
 
 WebMock.disable_net_connect!(allow_localhost: true)

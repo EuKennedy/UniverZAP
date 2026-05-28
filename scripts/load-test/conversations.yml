@@ -1,0 +1,68 @@
+# Artillery load test for the conversation/messages hot path.
+#
+# Usage:
+#   npm install -g artillery
+#   ARTILLERY_TARGET=https://app.univerzap.cloud \
+#   ARTILLERY_TOKEN=<api_access_token> \
+#   ARTILLERY_ACCOUNT_ID=<account_id> \
+#   artillery run scripts/load-test/conversations.yml
+#
+# What it simulates: a sales rep dashboard with 100 concurrent operators
+# polling for fresh conversations + sending replies. Tune the `arrivalRate`
+# in the `phases` block to match the worst-case minute we want to survive.
+
+config:
+  target: '{{ $processEnvironment.ARTILLERY_TARGET }}'
+  phases:
+    # Ramp-up — 30s warming the connection pool / autoloader before the
+    # real fire. Without it the first percentile is wildly slower than
+    # the steady state and skews the report.
+    - duration: 30
+      arrivalRate: 5
+      name: warm-up
+    # Steady — 100 simultaneous operators, 2 minutes. The realistic
+    # peak for a Brazilian beauty-pro brand during evening promos.
+    - duration: 120
+      arrivalRate: 100
+      name: peak
+    # Spike — 200 operators for 30s to flush out queue saturation.
+    - duration: 30
+      arrivalRate: 200
+      name: spike
+  defaults:
+    headers:
+      api_access_token: '{{ $processEnvironment.ARTILLERY_TOKEN }}'
+      Content-Type: 'application/json'
+
+scenarios:
+  - name: dashboard-conversation-list
+    weight: 6
+    flow:
+      - get:
+          url: '/api/v1/accounts/{{ $processEnvironment.ARTILLERY_ACCOUNT_ID }}/conversations'
+          expect:
+            - statusCode: 200
+
+  - name: athenas-credits-poll
+    weight: 2
+    flow:
+      - get:
+          url: '/api/v1/accounts/{{ $processEnvironment.ARTILLERY_ACCOUNT_ID }}/ai/credits'
+          expect:
+            - statusCode: 200
+
+  - name: status-page-public
+    weight: 1
+    flow:
+      - get:
+          url: '/status.json'
+          expect:
+            - statusCode: [200, 503]
+
+  - name: health-sidekiq
+    weight: 1
+    flow:
+      - get:
+          url: '/health/sidekiq'
+          expect:
+            - statusCode: [200, 503]
