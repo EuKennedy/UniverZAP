@@ -65,9 +65,14 @@ class KanbanWebhookSubscription < ApplicationRecord
   # an explicit cast, so we use `jsonb_array_length(events) = 0` for the
   # wildcard match + `events @> '["event"]'` for the specific match.
   def self.for_event(account_id:, event:)
+    # Explicit parens around the OR clause so SQL operator precedence
+    # doesn't let the second branch leak past the AND chain (active +
+    # account_id) above. Without the parens an OR clause string would
+    # match every record on every account where the event is in the
+    # list, even inactive ones on other tenants.
     active
       .where(account_id: account_id)
-      .where('jsonb_array_length(events) = 0 OR events @> ?', [event].to_json)
+      .where('(jsonb_array_length(events) = 0 OR events @> ?)', [event].to_json)
   end
 
   def push_event_data(include_secret: false)

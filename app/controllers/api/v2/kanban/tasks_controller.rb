@@ -67,9 +67,8 @@ class Api::V2::Kanban::TasksController < Api::V2::Kanban::BaseController
   def apply_id_filters(scope)
     scope = scope.where(funnel_id: params[:funnel_id]) if params[:funnel_id].present?
     scope = scope.where(funnel_stage_id: params[:funnel_stage_id]) if params[:funnel_stage_id].present?
-    if KanbanTask.priorities.key?(params[:priority].to_s)
-      scope = scope.where(priority: KanbanTask.priorities[params[:priority]])
-    end
+    priority_key = params[:priority].to_s
+    scope = scope.where(priority: KanbanTask.priorities[priority_key]) if KanbanTask.priorities.key?(priority_key)
     scope
   end
 
