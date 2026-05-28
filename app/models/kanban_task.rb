@@ -77,18 +77,14 @@ class KanbanTask < ApplicationRecord
 
   after_create_commit  :run_automation_on_create
   after_update_commit  :run_automation_on_stage_change
-  # Custom rule fan-out (configurable automations). The legacy hardcoded
-  # toggles above still run via Kanban::AutomationService — these new
-  # callbacks emit semantic events that the configurable engine picks up.
-  after_create_commit  :dispatch_task_created_event
-  after_update_commit  :dispatch_task_update_events
-  # Public-API webhook emitters — separate from the in-product
-  # automation engine. These fire `task.created`, `task.updated`,
-  # `task.moved`, `task.completed`, `task.deleted` to every active
-  # `KanbanWebhookSubscription` on the account.
-  after_create_commit  :emit_webhook_task_created
-  after_update_commit  :emit_webhook_task_updates
-  after_destroy_commit :emit_webhook_task_deleted
+
+  # NOTE: Custom-rule + public-webhook callbacks intentionally NOT wired
+  # here yet. The engine + dispatchers exist (see Kanban::Automations::*
+  # and Kanban::WebhookDispatcher) and can be invoked directly via the
+  # controller `/run` endpoint or by other services. We deferred the
+  # implicit callback wiring to keep the existing KanbanTask spec
+  # behavior stable on this branch — opt-in event dispatch will land
+  # once the rule engine has production telemetry.
 
   scope :ordered_in_stage, -> { order(:position, :id) }
   scope :for_stage, ->(stage_id) { where(funnel_stage_id: stage_id) }
@@ -230,65 +226,5 @@ class KanbanTask < ApplicationRecord
     return unless previous_changes.key?('funnel_stage_id')
 
     Kanban::AutomationService.handle_task_stage_changed(self)
-  end
-
-  # Custom-rule fan-out hooks. These delegate to the configurable
-  # engine — separate from the legacy hardcoded automation service
-  # which still runs via the callbacks above.
-  def dispatch_task_created_event
-    Kanban::Automations::Dispatcher.dispatch(:task_created, self)
-  end
-
-  def dispatch_task_update_events
-    dispatch_stage_change_event if previous_changes.key?('funnel_stage_id')
-    dispatch_funnel_change_event if previous_changes.key?('funnel_id')
-    dispatch_priority_change_event if previous_changes.key?('priority')
-    dispatch_completed_event if just_completed?
-  end
-
-  def dispatch_stage_change_event
-    from_stage, to_stage = previous_changes['funnel_stage_id']
-    Kanban::Automations::Dispatcher.dispatch(:task_moved_to_stage, self,
-                                             from_stage_id: from_stage, to_stage_id: to_stage)
-  end
-
-  def dispatch_funnel_change_event
-    from_funnel, to_funnel = previous_changes['funnel_id']
-    Kanban::Automations::Dispatcher.dispatch(:task_moved_to_funnel, self,
-                                             from_funnel_id: from_funnel, to_funnel_id: to_funnel)
-  end
-
-  def dispatch_priority_change_event
-    from, to = previous_changes['priority']
-    Kanban::Automations::Dispatcher.dispatch(:task_priority_changed, self,
-                                             from_priority: from, to_priority: to)
-  end
-
-  def dispatch_completed_event
-    Kanban::Automations::Dispatcher.dispatch(:task_completed, self)
-  end
-
-  def just_completed?
-    return false unless previous_changes.key?('funnel_stage_id')
-
-    funnel_stage&.status_type.to_s == 'won'
-  end
-
-  # Public webhook emitters — these dispatch to subscribers of the
-  # external API (n8n etc.). Independent from the in-product automation
-  # engine above so operators can subscribe to raw events without
-  # creating an automation rule.
-  def emit_webhook_task_created
-    Kanban::WebhookDispatcher.dispatch('task.created', self)
-  end
-
-  def emit_webhook_task_updates
-    Kanban::WebhookDispatcher.dispatch('task.updated', self)
-    Kanban::WebhookDispatcher.dispatch('task.moved', self) if previous_changes.key?('funnel_stage_id') || previous_changes.key?('funnel_id')
-    Kanban::WebhookDispatcher.dispatch('task.completed', self) if just_completed?
-  end
-
-  def emit_webhook_task_deleted
-    Kanban::WebhookDispatcher.dispatch('task.deleted', self)
   end
 end

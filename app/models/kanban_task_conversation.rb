@@ -14,15 +14,5 @@ class KanbanTaskConversation < ApplicationRecord
 
   validates :conversation_id, uniqueness: { scope: :kanban_task_id }
 
-  after_create_commit :dispatch_conversation_attached_event
-
-  private
-
-  def dispatch_conversation_attached_event
-    Kanban::Automations::Dispatcher.dispatch(
-      :conversation_attached,
-      kanban_task,
-      conversation_id: conversation_id
-    )
-  end
+  # `conversation_attached` event emission deferred — see KanbanTask comment.
 end
