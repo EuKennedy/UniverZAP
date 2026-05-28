@@ -14,8 +14,15 @@
 # Output shape matches Ai::SuggestReplyService so the job stays drop-in.
 # rubocop:disable Metrics/ClassLength
 class Ai::AutopilotReplyService
-  RECENT_WINDOW = 25
-  SUMMARY_REFRESH_AFTER = 99_999 # effectively disabled — autopilot relies on recent msgs only
+  # Bigger window so customer answers from earlier in the conversation
+  # (hair type, química, objetivo) stay in Claude's view instead of
+  # rolling off after a 25-message burst. The summary block below
+  # carries forward anything older than this window.
+  RECENT_WINDOW = 60
+  # Refresh the rolling summary every 20 new messages past the cache.
+  # Small enough that long conversations don't drift, large enough that
+  # we're not paying for a Summarize call on every autopilot tick.
+  SUMMARY_REFRESH_AFTER = 20
 
   def initialize(conversation:, assistant: nil)
     @conversation = conversation
@@ -27,6 +34,12 @@ class Ai::AutopilotReplyService
 
     messages = build_recent_messages
     raise Ai::ClaudeService::Error, 'Conversation has no messages yet' if messages.empty?
+
+    # Refresh the cached summary BEFORE building the system prompt so
+    # `summary_block` reflects the latest state. `ensure_fresh_summary`
+    # short-circuits when the cache is still fresh, so this is a no-op
+    # on most ticks.
+    ensure_fresh_summary
 
     response = call_claude(messages)
     raise_on_empty(response)
@@ -46,11 +59,17 @@ class Ai::AutopilotReplyService
     # Log the actual context window we're sending so future "the AI
     # forgot" reports can be triaged from logs instead of guessing.
     # Roles only — never the content (PII safety on shared logs).
+    # `summary_chars` is a proxy for "did the memory block get loaded?"
+    # — 0 means the conversation rolled off the window without a cached
+    # summary, which is exactly the failure mode that surfaced as
+    # "Lizzon keeps re-asking the same questions".
     Rails.logger.info(
       "[Athenas autopilot] conv=#{@conversation.display_id} " \
       "assistant=#{@assistant.id} ctx_msgs=#{messages.length} " \
       "roles=#{messages.pluck(:role).tally} " \
-      "in_progress=#{conversation_in_progress?}"
+      "in_progress=#{conversation_in_progress?} " \
+      "summary_chars=#{cached_summary_text.length} " \
+      "window=#{RECENT_WINDOW}"
     )
     Ai::ClaudeService.new(assistant: @assistant).chat(
       messages: messages,
@@ -105,6 +124,11 @@ class Ai::AutopilotReplyService
   def ensure_fresh_summary
     return if summary_fresh?
 
+    total = @conversation.messages.where(message_type: %i[incoming outgoing]).count
+    Rails.logger.info(
+      "[Athenas autopilot] summary refresh conv=#{@conversation.display_id} " \
+      "assistant=#{@assistant.id} total_msgs=#{total}"
+    )
     summary = generate_summary
     return if summary.blank?
 
@@ -152,8 +176,14 @@ class Ai::AutopilotReplyService
     # `assistant.system_prompt` sits sandwiched between the two so
     # any "always greet the customer" copy in the operator config
     # can't override the runtime guardrail.
+    # Summary FIRST (right after the hard guardrail) so the structured
+    # FATOS DO CLIENTE block primes Claude's attention before persona /
+    # tone / tenant prompt. Without this, the model sees pages of
+    # operator instructions and treats the conversation as a cold start,
+    # re-asking the same questions the customer already answered.
     [
       continuity_rules_priority,
+      summary_block,
       'Você é o atendente real falando com o cliente agora. Responda no fluxo natural da conversa.',
       "Persona: #{@assistant.name}, #{@assistant.role}.",
       sanitised_tenant_prompt,
@@ -296,7 +326,15 @@ class Ai::AutopilotReplyService
     text = cached_summary_text
     return nil if text.blank?
 
-    "Resumo do que aconteceu antes nessa conversa (use como contexto, não repita):\n#{text}"
+    # The summarize service is instructed to output a structured block
+    # (FATOS DO CLIENTE / MOTIVO DO CONTATO / ESTADO ATUAL). We just add
+    # a hard-emphasis header so Claude treats this as authoritative
+    # memory — anything here is something the customer ALREADY shared
+    # and must NOT be re-asked.
+    <<~SUMMARY.strip
+      📌 MEMÓRIA DA CONVERSA (use como base — NUNCA pergunte de novo o que está aqui):
+      #{text}
+    SUMMARY
   end
 
   def knowledge_snippets
