@@ -1,5 +1,10 @@
 require 'rails_helper'
 
+# The `permissions :a?, :b? do` block from pundit-matchers is idiomatic
+# but rubocop counts each `it` once per permission listed and flags
+# them as duplicates. We use this pattern deliberately to assert the
+# SAME shape across multiple permissions — disable the noise.
+# rubocop:disable RSpec/RepeatedExample, RSpec/RepeatedDescription
 RSpec.describe TaskPolicy, type: :policy do
   subject { described_class }
 
@@ -70,3 +75,4 @@ RSpec.describe TaskPolicy, type: :policy do
     end
   end
 end
+# rubocop:enable RSpec/RepeatedExample, RSpec/RepeatedDescription

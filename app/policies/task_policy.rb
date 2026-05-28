@@ -8,7 +8,10 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def create?
-    can_mutate?
+    # Any agent in the account can create tasks (assign to self or
+    # others). Stricter gating lives on assign?/complete? for the
+    # actions that change ownership.
+    index?
   end
 
   def update?

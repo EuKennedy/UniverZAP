@@ -23,9 +23,8 @@ class Tasks::Finder
 
   def apply_visibility(scope)
     case @params[:scope].to_s
-    when 'mine'           then scope.assigned_to(@user.id)
-    when 'created_by_me'  then scope.created_by(@user.id)
-    when 'team', 'all'    then scope
+    when 'mine'          then scope.assigned_to(@user.id)
+    when 'created_by_me' then scope.created_by(@user.id)
     else scope
     end
   end

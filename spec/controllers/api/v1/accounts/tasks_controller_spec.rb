@@ -118,7 +118,7 @@ RSpec.describe Api::V1::Accounts::TasksController, type: :request do
     let(:task) { create(:task, account: account, created_by_user: admin) }
 
     it 'sets status=done and completed_at' do
-      travel_to(Time.current) do
+      freeze_time do
         post "/api/v1/accounts/#{account.id}/tasks/#{task.id}/complete",
              headers: admin.create_new_auth_token, as: :json
         task.reload

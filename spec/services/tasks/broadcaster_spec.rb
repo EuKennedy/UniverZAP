@@ -5,7 +5,17 @@ RSpec.describe Tasks::Broadcaster do
   let(:user)    { create(:user, account: account) }
   let(:task)    { create(:task, account: account) }
 
-  before { allow(ActionCable.server).to receive(:broadcast) }
+  # IMPORTANT: `let(:task) { create(:task, ...) }` triggers Task's
+  # `after_create_commit :broadcast_created` callback which calls
+  # `Tasks::Broadcaster.broadcast` once on its own. If we set up the
+  # mock BEFORE the task is created, that callback bumps the spy count
+  # to 1 before the test body even runs, producing false-positive
+  # double-broadcast assertions. Touch `task` FIRST so the real path
+  # runs (no-op with the test cable adapter), THEN install the spy.
+  before do
+    task
+    allow(ActionCable.server).to receive(:broadcast)
+  end
 
   describe '.broadcast' do
     it 'broadcasts to the per-account stream by default' do

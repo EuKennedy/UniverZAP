@@ -24,7 +24,6 @@
 #   index_tasks_on_account_id_and_urgency
 #   index_tasks_on_display_id
 #
-# rubocop:disable Metrics/ClassLength
 class Task < ApplicationRecord
   belongs_to :account
   belongs_to :created_by_user, class_name: 'User', optional: false
@@ -121,12 +120,14 @@ class Task < ApplicationRecord
     end
   end
 
+  ACTIVITY_ACTIONS_BY_ATTR = {
+    'status' => 'status_changed',
+    'due_date' => 'due_date_changed',
+    'completed_at' => 'completed'
+  }.freeze
+
   def activity_action_for(attr)
-    case attr.to_s
-    when 'status'    then 'status_changed'
-    when 'due_date'  then 'due_date_changed'
-    when 'completed_at' then 'completed'
-    end
+    ACTIVITY_ACTIONS_BY_ATTR[attr.to_s]
   end
 
   def broadcast_created
@@ -141,4 +142,3 @@ class Task < ApplicationRecord
     Tasks::Broadcaster.broadcast('task.deleted', self, target: :account, payload: { id: id })
   end
 end
-# rubocop:enable Metrics/ClassLength

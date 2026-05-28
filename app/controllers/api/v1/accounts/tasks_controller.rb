@@ -4,7 +4,6 @@
 # fetches funnel through `Current.account.tasks` so cross-tenant URLs
 # yield 404 instead of leaking shape.
 #
-# rubocop:disable Metrics/ClassLength
 class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
   before_action :fetch_task, except: [:index, :create]
   before_action :authorize_action
@@ -107,4 +106,3 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
     membership.user
   end
 end
-# rubocop:enable Metrics/ClassLength

@@ -15,12 +15,9 @@ class Tasks::Broadcaster
   STREAM_SUFFIX = '_tasks'.freeze
 
   def self.broadcast(event, task, target: :account, user: nil, payload: nil)
-    return if task.blank? || task.account_id.blank?
-    return if target == :user && user.blank?
+    return if blank_target?(task, target, user)
 
-    stream = stream_name(task, target, user)
-    body = { event: event, data: payload || task.push_event_data }
-    ActionCable.server.broadcast(stream, body)
+    do_broadcast(event, task, target, user, payload)
   rescue StandardError => e
     # Broadcaster runs inside after_commit callbacks. A failure here
     # MUST NOT bubble — log and swallow so the user-visible Task
@@ -28,6 +25,19 @@ class Tasks::Broadcaster
     Rails.logger.error(
       "[Tasks::Broadcaster] event=#{event} task=#{task&.id} target=#{target} failed: #{e.message}"
     )
+  end
+
+  def self.blank_target?(task, target, user)
+    return true if task.blank? || task.account_id.blank?
+    return true if target == :user && user.blank?
+
+    false
+  end
+
+  def self.do_broadcast(event, task, target, user, payload)
+    stream = stream_name(task, target, user)
+    body = { event: event, data: payload || task.push_event_data }
+    ActionCable.server.broadcast(stream, body)
   end
 
   def self.stream_name(task, target, user)
