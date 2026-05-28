@@ -30,18 +30,27 @@ class Kanban::Automations::Dispatcher
     return guard_overflow(event_name, task) if depth >= MAX_DEPTH
 
     increment_depth
-    rules = matching_rules(event_name.to_s, task)
+    enqueue_matching_rules(event_name.to_s, task, event_payload)
+  rescue StandardError => e
+    # Dispatcher runs inside an after_commit callback. A failure here
+    # must NOT bubble up and break the source transaction — log and
+    # swallow so the user-visible kanban operation still succeeds.
+    Rails.logger.error("[Kanban automation] dispatch event=#{event_name} task=#{task&.id} failed: #{e.message}")
+  ensure
+    decrement_depth
+  end
+
+  def self.enqueue_matching_rules(event_name, task, event_payload)
+    rules = matching_rules(event_name, task)
     return if rules.empty?
 
     rules.find_each do |rule|
       Kanban::Automations::RunJob.perform_later(
         rule.id,
         task.id,
-        event_payload.deep_stringify_keys
+        (event_payload || {}).deep_stringify_keys
       )
     end
-  ensure
-    decrement_depth
   end
 
   def self.depth

@@ -8,13 +8,21 @@ class Kanban::WebhookDispatcher
     return if resource.blank? || resource.account_id.blank?
     return unless KanbanWebhookSubscription::EVENTS.include?(event.to_s)
 
+    enqueue_deliveries(event.to_s, resource)
+  rescue StandardError => e
+    # Dispatcher runs from after_commit callbacks — swallow + log so a
+    # webhook subscription bug never blocks the source kanban write.
+    Rails.logger.error("[Kanban webhook] dispatch event=#{event} resource=#{resource&.id} failed: #{e.message}")
+  end
+
+  def self.enqueue_deliveries(event, resource)
     payload = build_payload(event, resource)
     subscriptions = KanbanWebhookSubscription.for_event(
       account_id: resource.account_id,
-      event: event.to_s
+      event: event
     )
     subscriptions.find_each do |subscription|
-      Kanban::WebhookSubscriptionDeliveryJob.perform_later(subscription.id, event.to_s, payload)
+      Kanban::WebhookSubscriptionDeliveryJob.perform_later(subscription.id, event, payload)
     end
   end
 
