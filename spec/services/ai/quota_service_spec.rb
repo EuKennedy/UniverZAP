@@ -10,9 +10,9 @@ RSpec.describe Ai::QuotaService do
     context 'when the account has a healthy balance and no daily spend' do
       it 'returns nil and never raises' do
         # Default starter grant covers a normal Sonnet call.
-        expect {
+        expect do
           described_class.check!(account: account, model: 'claude-sonnet-4-5', max_output_tokens: 256)
-        }.not_to raise_error
+        end.not_to raise_error
       end
     end
 
@@ -33,9 +33,9 @@ RSpec.describe Ai::QuotaService do
       end
 
       it 'raises QuotaExhaustedError with reason daily_cap' do
-        expect {
+        expect do
           described_class.check!(account: account, model: 'claude-sonnet-4-5', max_output_tokens: 256)
-        }.to raise_error(Ai::CreditLedger::QuotaExhaustedError) { |error|
+        end.to raise_error(Ai::CreditLedger::QuotaExhaustedError) { |error|
           expect(error.reason).to eq('daily_cap')
         }
       end
@@ -59,9 +59,9 @@ RSpec.describe Ai::QuotaService do
       end
 
       it 'allows the call because per-account override beats env default' do
-        expect {
+        expect do
           described_class.check!(account: account, model: 'claude-sonnet-4-5', max_output_tokens: 256)
-        }.not_to raise_error
+        end.not_to raise_error
       end
     end
 
@@ -74,9 +74,9 @@ RSpec.describe Ai::QuotaService do
       end
 
       it 'raises QuotaExhaustedError with reason balance' do
-        expect {
+        expect do
           described_class.check!(account: account, model: 'claude-sonnet-4-5', max_output_tokens: 256)
-        }.to raise_error(Ai::CreditLedger::QuotaExhaustedError) { |error|
+        end.to raise_error(Ai::CreditLedger::QuotaExhaustedError) { |error|
           expect(error.reason).to eq('balance')
         }
       end
@@ -89,9 +89,9 @@ RSpec.describe Ai::QuotaService do
       end
 
       it 'grants the one-shot grace top-up and lets the call through' do
-        expect {
+        expect do
           described_class.check!(account: account, model: 'claude-haiku-4-5', max_output_tokens: 128)
-        }.not_to raise_error
+        end.not_to raise_error
         expect(account.reload.token_credit_grace_used).to be true
       end
     end

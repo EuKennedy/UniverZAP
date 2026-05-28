@@ -65,9 +65,9 @@ RSpec.describe 'Webhooks::UnivercartController#create — purchase.completed', t
 
     # Univercart retries the same event id → second call must be a no-op.
     payload[:id] = 'evt_p1_retry'
-    expect { post_event(payload) }.not_to change {
+    expect { post_event(payload) }.not_to(change do
       account.reload.token_credit_lifetime_purchased_cents_brl
-    }
+    end)
   end
 
   it 'falls back to amountCents when the productSlug is unknown' do
