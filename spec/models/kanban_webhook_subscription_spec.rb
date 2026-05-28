@@ -2,6 +2,8 @@ require 'rails_helper'
 
 RSpec.describe KanbanWebhookSubscription, type: :model do
   describe 'validations' do
+    subject { build(:kanban_webhook_subscription) }
+
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_presence_of(:url) }
 
