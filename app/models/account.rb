@@ -74,6 +74,7 @@ class Account < ApplicationRecord
   # for large accounts the sync destroy is effectively a no-op.
   has_many :funnels, dependent: :destroy
   has_many :kanban_tasks, dependent: :destroy
+  has_many :tasks, dependent: :destroy
   has_many :kanban_automations, dependent: :destroy
   has_many :kanban_api_tokens, dependent: :destroy
   has_many :kanban_webhook_subscriptions, dependent: :destroy

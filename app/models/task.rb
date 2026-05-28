@@ -1,0 +1,144 @@
+# == Schema Information
+#
+# Table name: tasks
+#
+#  id                  :bigint           not null, primary key
+#  account_id          :bigint           not null
+#  created_by_user_id  :bigint
+#  display_id          :bigint
+#  title               :string           not null
+#  description         :jsonb            not null, default {}
+#  status              :integer          not null, default 0
+#  urgency             :integer          not null, default 0
+#  due_date            :datetime
+#  completed_at        :datetime
+#  notify_assignees    :boolean          not null, default true
+#  custom_attributes   :jsonb            not null, default {}
+#  position            :integer          not null, default 0
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#
+# Indexes:
+#   index_tasks_on_account_id_and_status
+#   index_tasks_on_account_id_and_due_date
+#   index_tasks_on_account_id_and_urgency
+#   index_tasks_on_display_id
+#
+# rubocop:disable Metrics/ClassLength
+class Task < ApplicationRecord
+  belongs_to :account
+  belongs_to :created_by_user, class_name: 'User', optional: false
+
+  has_many :task_assignees, dependent: :destroy
+  has_many :assignees, through: :task_assignees, source: :user
+  has_many :task_comments, dependent: :destroy
+  has_many :task_activities, dependent: :destroy
+
+  enum status: { open: 0, in_progress: 1, blocked: 2, done: 3, cancelled: 4 }, _prefix: :status
+  enum urgency: { none: 0, low: 1, medium: 2, high: 3, urgent: 4 }, _prefix: :urgency
+
+  validates :title, presence: true, length: { maximum: 255 }
+
+  scope :active, -> { where(status: %i[open in_progress]) }
+  scope :overdue, lambda {
+    where.not(due_date: nil)
+         .where('due_date < ?', Time.current)
+         .where.not(status: %i[done cancelled])
+  }
+  scope :assigned_to, lambda { |user_id|
+    joins(:task_assignees).where(task_assignees: { user_id: user_id }).distinct
+  }
+  scope :created_by, ->(user_id) { where(created_by_user_id: user_id) }
+
+  before_create :assign_display_id
+
+  after_create_commit  :log_creation_activity
+  after_create_commit  :broadcast_created
+  after_update_commit  :log_update_activity
+  after_update_commit  :broadcast_updated
+  after_destroy_commit :broadcast_destroyed
+
+  # Full snapshot used by the broadcaster + REST responses. Keep this
+  # cheap: scalars + small association payloads only — anything heavy
+  # (full comment bodies, activity log) is fetched on demand.
+  def push_event_data
+    attributes_payload.merge(association_summary).merge(timestamps_payload)
+  end
+
+  private
+
+  def attributes_payload
+    {
+      id: id,
+      display_id: display_id,
+      account_id: account_id,
+      created_by_user_id: created_by_user_id,
+      title: title,
+      description: description,
+      status: status,
+      urgency: urgency,
+      due_date: due_date&.to_i,
+      completed_at: completed_at&.to_i,
+      notify_assignees: notify_assignees,
+      custom_attributes: custom_attributes,
+      position: position
+    }
+  end
+
+  def association_summary
+    {
+      assignees: assignees.map { |u| assignee_payload(u) },
+      comments_count: task_comments.size,
+      activities_count: task_activities.size
+    }
+  end
+
+  def assignee_payload(user)
+    { id: user.id, name: user.name, avatar_url: user.avatar_url }
+  end
+
+  def timestamps_payload
+    { created_at: created_at.to_i, updated_at: updated_at.to_i }
+  end
+
+  def assign_display_id
+    self.display_id ||= (account.tasks.maximum(:display_id) || 0) + 1
+  end
+
+  def log_creation_activity
+    task_activities.create!(user: created_by_user, action: 'created', payload: { title: title })
+  end
+
+  def log_update_activity
+    diff = previous_changes.except('updated_at')
+    return if diff.empty?
+
+    diff.each_key do |attr|
+      action = activity_action_for(attr)
+      next if action.blank?
+
+      task_activities.create!(action: action, payload: { from: diff[attr][0], to: diff[attr][1] })
+    end
+  end
+
+  def activity_action_for(attr)
+    case attr.to_s
+    when 'status'    then 'status_changed'
+    when 'due_date'  then 'due_date_changed'
+    when 'completed_at' then 'completed'
+    end
+  end
+
+  def broadcast_created
+    Tasks::Broadcaster.broadcast('task.created', self, target: :account)
+  end
+
+  def broadcast_updated
+    Tasks::Broadcaster.broadcast('task.updated', self, target: :account)
+  end
+
+  def broadcast_destroyed
+    Tasks::Broadcaster.broadcast('task.deleted', self, target: :account, payload: { id: id })
+  end
+end
+# rubocop:enable Metrics/ClassLength

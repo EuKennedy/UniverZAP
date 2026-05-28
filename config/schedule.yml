@@ -34,6 +34,14 @@ kanban_automations_overdue_scanner_job:
   class: 'Kanban::Automations::OverdueScannerJob'
   queue: default
 
+# Tasks module — emits per-assignee `task_overdue` Notifications for
+# every Task whose due_date crossed in the last 15min and is not
+# done/cancelled. Cron cadence matches the LOOKBACK exactly.
+tasks_overdue_scanner_job:
+  cron: '*/15 * * * *'
+  class: 'Tasks::OverdueScannerJob'
+  queue: default
+
 # executed daily at 2230 UTC
 # which is our lowest traffic time
 remove_stale_contact_inboxes_job.rb:

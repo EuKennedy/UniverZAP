@@ -36,6 +36,7 @@ class KanbanApiToken < ApplicationRecord
   AVAILABLE_SCOPES = %w[
     read:funnels write:funnels
     read:tasks write:tasks
+    read:user_tasks write:user_tasks
     read:webhooks write:webhooks
     manage:automations
   ].freeze

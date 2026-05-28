@@ -329,6 +329,20 @@ Rails.application.routes.draw do
             end
           end
 
+          # Tasks module (T1) — personal/team task list separate from the
+          # kanban board. Each task ships with assignees, rich-text
+          # description + comments, and an activity log surfaced via the
+          # `:activities` member route.
+          resources :tasks do
+            member do
+              post :assign
+              delete 'assignees/:user_id', action: :unassign
+              post :complete
+              post :comments, action: :add_comment
+              get :activities
+            end
+          end
+
           # Personal-access-style tokens for the public Kanban API
           # (`/api/v2/kanban/*`). Raw value returned ONCE on create —
           # store SHA-256 digest only. Admin-only.
@@ -624,6 +638,17 @@ Rails.application.routes.draw do
           member do
             post :move
           end
+        end
+      end
+
+      # Public Tasks API v2 — same Bearer scheme as the kanban API,
+      # surfaced as flat `/api/v2/tasks/*` routes. Mounted directly
+      # inside `namespace :v2` (no nested namespace) so the URL stays
+      # one segment shorter for the integration audience.
+      resources :tasks, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :assign
+          post :complete
         end
       end
     end

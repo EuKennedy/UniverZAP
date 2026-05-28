@@ -57,4 +57,20 @@ RSpec.describe KanbanApiToken, type: :model do
       expect(t.includes_scope?('manage:automations')).to be false
     end
   end
+
+  describe 'AVAILABLE_SCOPES extended for the Tasks module (T1)' do
+    let(:account) { create(:account) }
+
+    it 'accepts the new user_tasks scopes' do
+      token = described_class.generate!(account: account, name: 't',
+                                        scopes: ['read:user_tasks', 'write:user_tasks'])
+      expect(token).to be_persisted
+      expect(token.includes_scope?('read:user_tasks')).to be true
+      expect(token.includes_scope?('write:user_tasks')).to be true
+    end
+
+    it 'lists read:user_tasks and write:user_tasks in AVAILABLE_SCOPES' do
+      expect(described_class::AVAILABLE_SCOPES).to include('read:user_tasks', 'write:user_tasks')
+    end
+  end
 end
