@@ -11,15 +11,19 @@ class Ai::CreditLedger
   GRACE_MULTIPLIER = 0.10
 
   class QuotaExhaustedError < StandardError
-    def initialize(account:, attempted_cents:, balance_cents:)
+    # `reason` lets the dashboard pick the right paywall copy:
+    #   'balance'    → "Seus créditos acabaram, recarregue"
+    #   'daily_cap'  → "Limite diário atingido, tente amanhã ou aumente o teto"
+    def initialize(account:, attempted_cents:, balance_cents:, reason: 'balance')
       @account = account
       @attempted_cents = attempted_cents
       @balance_cents = balance_cents
-      super("Athenas quota exhausted for account #{account.id}: " \
+      @reason = reason
+      super("Athenas quota exhausted (reason=#{reason}) for account #{account.id}: " \
             "needed #{attempted_cents} cents, balance #{balance_cents} cents")
     end
 
-    attr_reader :account, :attempted_cents, :balance_cents
+    attr_reader :account, :attempted_cents, :balance_cents, :reason
   end
 
   attr_reader :account
