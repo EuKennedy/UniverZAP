@@ -34,16 +34,27 @@ RSpec.describe KanbanWebhookSubscription, type: :model do
     let(:account) { create(:account) }
     let!(:wildcard) { create(:kanban_webhook_subscription, account: account, events: []) }
     let!(:specific) { create(:kanban_webhook_subscription, account: account, events: ['task.created']) }
+    let!(:other_event) { create(:kanban_webhook_subscription, account: account, events: ['task.deleted']) }
+    let!(:inactive) { create(:kanban_webhook_subscription, account: account, events: ['task.created'], active: false) }
 
-    before do
-      # Decoy subscriptions — must NOT be returned for `task.created`.
-      create(:kanban_webhook_subscription, account: account, events: ['task.deleted'])
-      create(:kanban_webhook_subscription, account: account, events: ['task.created'], active: false)
+    it 'includes the wildcard subscriber' do
+      result = described_class.for_event(account_id: account.id, event: 'task.created')
+      expect(result.pluck(:id)).to include(wildcard.id)
     end
 
-    it 'returns wildcard + specific subscribers for the event' do
+    it 'includes the specific subscriber' do
       result = described_class.for_event(account_id: account.id, event: 'task.created')
-      expect(result).to contain_exactly(wildcard, specific)
+      expect(result.pluck(:id)).to include(specific.id)
+    end
+
+    it 'excludes subscribers listening to a different event' do
+      result = described_class.for_event(account_id: account.id, event: 'task.created')
+      expect(result.pluck(:id)).not_to include(other_event.id)
+    end
+
+    it 'excludes inactive subscribers' do
+      result = described_class.for_event(account_id: account.id, event: 'task.created')
+      expect(result.pluck(:id)).not_to include(inactive.id)
     end
   end
 end

@@ -65,12 +65,14 @@ class KanbanWebhookSubscription < ApplicationRecord
   # an explicit cast, so we use `jsonb_array_length(events) = 0` for the
   # wildcard match + `events @> '["event"]'` for the specific match.
   def self.for_event(account_id:, event:)
-    # Use Arel.sql so the OR clause never escapes the surrounding scope.
-    # Two separate scopes joined with `.or` gives Rails-managed parens
-    # and avoids any operator-precedence surprises with raw SQL.
+    # `.or` ensures both branches share the base scope (active +
+    # account) so the OR clause can't leak past it. Each branch uses
+    # an explicit jsonb cast on the right side of the operator so
+    # Postgres never has to guess the parameter type.
     base = active.where(account_id: account_id)
-    base.where(Arel.sql('jsonb_array_length(events) = 0'))
-        .or(base.where('events @> ?', [event].to_json))
+    wildcard = base.where('events = ?::jsonb', '[]')
+    specific = base.where('events @> ?::jsonb', [event].to_json)
+    wildcard.or(specific)
   end
 
   def push_event_data(include_secret: false)

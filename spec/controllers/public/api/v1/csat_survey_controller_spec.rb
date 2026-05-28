@@ -11,11 +11,17 @@ RSpec.describe 'Public Survey Responses API', type: :request do
       expect(data['conversation_id']).to eq conversation.id
     end
 
-    it 'returns not found error for the open conversation' do
+    # UniverZAP: the survey link must work mid-conversation (before
+    # resolve). The controller lazy-seeds the input_csat message if
+    # missing so the operator can share the link any time. This
+    # supersedes the original "404 until resolved" behavior.
+    it 'lazy-seeds the input_csat message on first hit for an open conversation' do
       conversation = create(:conversation)
       create(:message, conversation: conversation, content_type: 'text')
-      get "/public/api/v1/csat_survey/#{conversation.uuid}"
-      expect(response).to have_http_status(:not_found)
+      expect do
+        get "/public/api/v1/csat_survey/#{conversation.uuid}"
+      end.to change { conversation.messages.where(content_type: 'input_csat').count }.from(0).to(1)
+      expect(response).to have_http_status(:success)
     end
   end
 
