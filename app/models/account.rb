@@ -75,6 +75,8 @@ class Account < ApplicationRecord
   has_many :funnels, dependent: :destroy
   has_many :kanban_tasks, dependent: :destroy
   has_many :kanban_automations, dependent: :destroy
+  has_many :kanban_api_tokens, dependent: :destroy
+  has_many :kanban_webhook_subscriptions, dependent: :destroy
   has_many :categories, dependent: :destroy_async, class_name: '::Category'
   has_many :contacts, dependent: :destroy_async
   has_many :conversations, dependent: :destroy_async

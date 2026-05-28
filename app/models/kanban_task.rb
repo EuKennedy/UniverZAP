@@ -82,6 +82,13 @@ class KanbanTask < ApplicationRecord
   # callbacks emit semantic events that the configurable engine picks up.
   after_create_commit  :dispatch_task_created_event
   after_update_commit  :dispatch_task_update_events
+  # Public-API webhook emitters — separate from the in-product
+  # automation engine. These fire `task.created`, `task.updated`,
+  # `task.moved`, `task.completed`, `task.deleted` to every active
+  # `KanbanWebhookSubscription` on the account.
+  after_create_commit  :emit_webhook_task_created
+  after_update_commit  :emit_webhook_task_updates
+  after_destroy_commit :emit_webhook_task_deleted
 
   scope :ordered_in_stage, -> { order(:position, :id) }
   scope :for_stage, ->(stage_id) { where(funnel_stage_id: stage_id) }
@@ -265,5 +272,23 @@ class KanbanTask < ApplicationRecord
     return false unless previous_changes.key?('funnel_stage_id')
 
     funnel_stage&.status_type.to_s == 'won'
+  end
+
+  # Public webhook emitters — these dispatch to subscribers of the
+  # external API (n8n etc.). Independent from the in-product automation
+  # engine above so operators can subscribe to raw events without
+  # creating an automation rule.
+  def emit_webhook_task_created
+    Kanban::WebhookDispatcher.dispatch('task.created', self)
+  end
+
+  def emit_webhook_task_updates
+    Kanban::WebhookDispatcher.dispatch('task.updated', self)
+    Kanban::WebhookDispatcher.dispatch('task.moved', self) if previous_changes.key?('funnel_stage_id') || previous_changes.key?('funnel_id')
+    Kanban::WebhookDispatcher.dispatch('task.completed', self) if just_completed?
+  end
+
+  def emit_webhook_task_deleted
+    Kanban::WebhookDispatcher.dispatch('task.deleted', self)
   end
 end

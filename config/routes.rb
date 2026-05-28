@@ -329,6 +329,24 @@ Rails.application.routes.draw do
             end
           end
 
+          # Personal-access-style tokens for the public Kanban API
+          # (`/api/v2/kanban/*`). Raw value returned ONCE on create —
+          # store SHA-256 digest only. Admin-only.
+          resources :kanban_api_tokens, only: [:index, :show, :create, :destroy] do
+            member do
+              post :revoke
+            end
+          end
+
+          # Outbound webhook subscriptions for the public API. Each
+          # subscription gets a per-row HMAC secret used to sign every
+          # delivery (HTTPSig-style verification on the receiver).
+          resources :kanban_webhook_subscriptions, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              post :test
+            end
+          end
+
           resources :notifications, only: [:index, :update, :destroy] do
             collection do
               post :read_all
@@ -587,6 +605,23 @@ Rails.application.routes.draw do
             collection do
               get :conversation_metrics
               get :grouped_conversation_metrics
+            end
+          end
+        end
+      end
+
+      # Public Kanban API v2 — Bearer-token authenticated, account-scoped
+      # by the token itself (no `/accounts/:id` URL prefix). Routes are
+      # intentionally flat + JSON-only to mirror Stripe/Linear/Notion
+      # public APIs and stay drop-in for n8n/Zapier/Make consumers.
+      namespace :v2 do
+        namespace :kanban do
+          resources :funnels do
+            resources :stages
+          end
+          resources :tasks do
+            member do
+              post :move
             end
           end
         end
