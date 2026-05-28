@@ -143,7 +143,11 @@ class Connect::SetupController < ApplicationController
       password: password,
       password_confirmation: password,
       confirmed_at: Time.current,
-      custom_attributes: univercart_user_attrs(claims)
+      custom_attributes: univercart_user_attrs(claims),
+      # Brazilian customer base — every new self-service user should
+      # land on a pt_BR dashboard. Operator can override later under
+      # Profile → Preferences.
+      ui_settings: { locale: 'pt_BR' }
     )
     user.save!
   end
@@ -166,7 +170,11 @@ class Connect::SetupController < ApplicationController
   def ensure_user_has_account(user, company_name)
     return unless user.accounts.empty?
 
-    account = Account.create!(name: company_name)
+    # Every Univercart-provisioned account is Brazilian by default. The
+    # `locale: 'pt_BR'` ties into Account's enum so SwitchLocale + all
+    # outgoing emails/notifications render in Portuguese without the
+    # operator having to dig into Settings → General.
+    account = Account.create!(name: company_name, locale: 'pt_BR')
     AccountUser.create!(user: user, account: account, role: :administrator)
   end
 end

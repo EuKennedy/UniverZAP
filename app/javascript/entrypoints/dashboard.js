@@ -33,9 +33,14 @@ import { directive as onClickaway } from 'vue3-click-away';
 
 import 'floating-vue/dist/style.css';
 
+// pt_BR is the default for the Brazilian customer base; vue-i18n still
+// falls back to `en` for any key the locale doesn't carry yet so we
+// never render an empty string. The runtime swaps to the user's saved
+// preference (ui_settings.locale) once the dashboard hydrates.
 const i18n = createI18n({
   legacy: false, // https://github.com/intlify/vue-i18n/issues/1902
-  locale: 'en',
+  locale: 'pt_BR',
+  fallbackLocale: 'en',
   messages: i18nMessages,
 });
 
