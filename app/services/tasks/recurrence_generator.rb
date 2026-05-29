@@ -65,7 +65,7 @@ class Tasks::RecurrenceGenerator
 
     child = build_child(parent, next_at)
     copy_assignees(parent, child)
-    child
+    child.reload
   end
 
   private
