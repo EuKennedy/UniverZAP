@@ -17,24 +17,29 @@ class Tasks::WorkloadSnapshot
   # query against `task_assignees`, so the whole table costs 4 queries
   # regardless of how many agents the account has.
   def agents_payload
-    open_counts = count_by_assignee(@account.tasks.active)
-    overdue_counts = count_by_assignee(@account.tasks.overdue)
-    due_today_counts = count_by_assignee(
-      @account.tasks.where(due_date: today_range).where(status: %i[open in_progress])
-    )
-    done_week_counts = count_by_assignee(
-      @account.tasks.where(status: :done, completed_at: week_range)
-    )
+    buckets = count_buckets
+    rows = members.map { |user| agent_row(user, buckets) }
+    rows.sort_by { |row| -row[:open_count] }
+  end
 
-    members.map do |u|
-      {
-        user: { id: u.id, name: u.name, avatar_url: u.avatar_url },
-        open_count: open_counts[u.id] || 0,
-        overdue_count: overdue_counts[u.id] || 0,
-        due_today_count: due_today_counts[u.id] || 0,
-        completed_this_week: done_week_counts[u.id] || 0
-      }
-    end.sort_by { |row| -row[:open_count] }
+  # Four `{ user_id => count }` maps, one bulk query each.
+  def count_buckets
+    {
+      open: count_by_assignee(@account.tasks.active),
+      overdue: count_by_assignee(@account.tasks.overdue),
+      due_today: count_by_assignee(due_today_scope),
+      done_week: count_by_assignee(done_week_scope)
+    }
+  end
+
+  def agent_row(user, buckets)
+    {
+      user: { id: user.id, name: user.name, avatar_url: user.avatar_url },
+      open_count: buckets[:open][user.id] || 0,
+      overdue_count: buckets[:overdue][user.id] || 0,
+      due_today_count: buckets[:due_today][user.id] || 0,
+      completed_this_week: buckets[:done_week][user.id] || 0
+    }
   end
 
   # `User` carries jsonb columns that PG cannot compare for DISTINCT,
@@ -47,6 +52,14 @@ class Tasks::WorkloadSnapshot
   # so multi-assignee tasks correctly contribute to each owner's bucket.
   def count_by_assignee(scope)
     scope.joins(:task_assignees).group('task_assignees.user_id').count
+  end
+
+  def due_today_scope
+    @account.tasks.where(due_date: today_range).where(status: %i[open in_progress])
+  end
+
+  def done_week_scope
+    @account.tasks.where(status: :done, completed_at: week_range)
   end
 
   def totals_payload
