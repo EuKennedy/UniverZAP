@@ -9,12 +9,14 @@ import { useAlert } from 'dashboard/composables';
 
 import draggable from 'vuedraggable';
 import FunnelCustomFieldsAPI from 'dashboard/api/funnelCustomFields';
+import KanbanAutomationsAPI from 'dashboard/api/kanbanAutomations';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'next/icon/Icon.vue';
 import FunnelFormModal from '../components/FunnelFormModal.vue';
 import StageFormModal from '../components/StageFormModal.vue';
 import CustomFieldFormModal from '../components/CustomFieldFormModal.vue';
+import KanbanAutomationFormModal from '../components/KanbanAutomationFormModal.vue';
 
 const props = defineProps({
   funnelId: { type: [String, Number], required: true },
@@ -42,8 +44,9 @@ const showDeleteStageModal = ref(false);
 const stagePendingDelete = ref(null);
 
 // Tab state — defaults to the General tab so admins land on the most-used
-// surface. `automations` is a roadmap placeholder until the stage trigger
-// engine lands.
+// surface. The Automations tab drives the per-funnel rule engine
+// (`KanbanAutomation` model + Kanban::Automations::Executor on the
+// backend).
 const TABS = ['general', 'stages', 'custom_fields', 'automations'];
 const activeTab = ref('general');
 const setTab = key => {
@@ -252,6 +255,111 @@ watch(
 
 const fieldTypeLabel = type =>
   t(`KANBAN.CUSTOM_FIELDS.TYPES.${String(type).toUpperCase()}`);
+
+// ---------------------------------------------------------------------------
+// Automations tab — KanbanAutomation CRUD scoped to this funnel. Toggle is
+// optimistic (revert + alert on failure). Delete + edit reuse the same
+// modal. The backend keeps the funnel_id alongside account-wide rules so
+// the filter is mandatory here.
+// ---------------------------------------------------------------------------
+const automations = ref([]);
+const showAutomationModal = ref(false);
+const editingAutomation = ref(null);
+const showDeleteAutomationModal = ref(false);
+const automationPendingDelete = ref(null);
+const isAutomationsLoading = ref(false);
+
+const loadAutomations = async () => {
+  isAutomationsLoading.value = true;
+  try {
+    const { data } = await KanbanAutomationsAPI.list({
+      funnelId: Number(props.funnelId),
+    });
+    automations.value = Array.isArray(data) ? data : [];
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.AUTOMATIONS.LOAD_ERROR'));
+  } finally {
+    isAutomationsLoading.value = false;
+  }
+};
+
+const openCreateAutomation = () => {
+  editingAutomation.value = null;
+  showAutomationModal.value = true;
+};
+const openEditAutomation = automation => {
+  editingAutomation.value = automation;
+  showAutomationModal.value = true;
+};
+const closeAutomationModal = () => {
+  showAutomationModal.value = false;
+  editingAutomation.value = null;
+};
+
+const handleAutomationSubmit = async payload => {
+  try {
+    if (editingAutomation.value) {
+      await KanbanAutomationsAPI.update(editingAutomation.value.id, payload);
+      useAlert(t('KANBAN.AUTOMATIONS.UPDATE_SUCCESS'));
+    } else {
+      await KanbanAutomationsAPI.create(payload);
+      useAlert(t('KANBAN.AUTOMATIONS.CREATE_SUCCESS'));
+    }
+    closeAutomationModal();
+    await loadAutomations();
+  } catch (error) {
+    useAlert(
+      error?.response?.data?.errors?.join?.(', ') ||
+        error?.message ||
+        t('KANBAN.AUTOMATIONS.SAVE_ERROR')
+    );
+  }
+};
+
+const requestDeleteAutomation = automation => {
+  automationPendingDelete.value = automation;
+  showDeleteAutomationModal.value = true;
+};
+const cancelDeleteAutomation = () => {
+  automationPendingDelete.value = null;
+  showDeleteAutomationModal.value = false;
+};
+const confirmDeleteAutomation = async () => {
+  const automation = automationPendingDelete.value;
+  if (!automation) return;
+  try {
+    await KanbanAutomationsAPI.destroy(automation.id);
+    useAlert(t('KANBAN.AUTOMATIONS.DELETE_SUCCESS'));
+    cancelDeleteAutomation();
+    await loadAutomations();
+  } catch (error) {
+    useAlert(error?.message || t('KANBAN.AUTOMATIONS.SAVE_ERROR'));
+  }
+};
+
+// Optimistic toggle so the switch feels instant. Roll back on failure
+// and surface the API error so the operator knows why.
+const toggleAutomationActive = async automation => {
+  const previous = automation.active;
+  const idx = automations.value.findIndex(a => a.id === automation.id);
+  if (idx === -1) return;
+  automations.value[idx] = { ...automation, active: !previous };
+  try {
+    await KanbanAutomationsAPI.update(automation.id, { active: !previous });
+  } catch (error) {
+    automations.value[idx] = { ...automation, active: previous };
+    useAlert(error?.message || t('KANBAN.AUTOMATIONS.SAVE_ERROR'));
+  }
+};
+
+const eventBadgeLabel = eventName =>
+  t(`KANBAN.AUTOMATIONS.EVENTS.${String(eventName).toUpperCase()}.LABEL`);
+
+watch(
+  () => props.funnelId,
+  () => loadAutomations(),
+  { immediate: true }
+);
 
 const openDeleteFunnel = () => {
   showDeleteFunnelModal.value = true;
@@ -603,26 +711,122 @@ const STATUS_BADGE = {
       class="flex flex-col gap-6 max-w-3xl px-6 py-6"
     >
       <article
-        class="flex flex-col items-center gap-4 p-10 rounded-xl bg-n-solid-1 border border-n-weak text-center"
+        class="flex flex-col gap-4 p-5 rounded-xl bg-n-solid-1 border border-n-weak"
       >
-        <span
-          class="inline-flex items-center justify-center size-12 rounded-full bg-n-teal-3 text-n-teal-11"
+        <header class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-1 min-w-0">
+            <h2 class="text-sm font-medium text-n-slate-12">
+              {{ t('KANBAN.SETTINGS.AUTOMATIONS_TITLE') }}
+            </h2>
+            <p class="text-xs text-n-slate-11 leading-relaxed">
+              {{ t('KANBAN.SETTINGS.AUTOMATIONS_SUBTITLE') }}
+            </p>
+          </div>
+          <Button
+            icon="i-lucide-plus"
+            size="xs"
+            :label="t('KANBAN.AUTOMATIONS.NEW')"
+            @click="openCreateAutomation"
+          />
+        </header>
+
+        <div
+          v-if="isAutomationsLoading"
+          class="flex items-center justify-center py-6"
         >
-          <Icon icon="i-lucide-workflow" class="size-6" />
-        </span>
-        <div class="flex flex-col gap-1 max-w-md">
-          <h2 class="text-sm font-medium text-n-slate-12">
-            {{ t('KANBAN.SETTINGS.AUTOMATIONS_TITLE') }}
-          </h2>
-          <p class="text-xs text-n-slate-11 leading-relaxed">
-            {{ t('KANBAN.SETTINGS.AUTOMATIONS_SUBTITLE') }}
-          </p>
+          <span
+            class="i-lucide-loader-circle size-5 animate-spin text-n-slate-10"
+          />
         </div>
-        <span
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-n-amber-3 text-n-amber-11 text-[10px] font-bold uppercase tracking-wider"
+        <div
+          v-else-if="!automations.length"
+          class="flex flex-col items-center gap-3 py-6 text-center"
         >
-          {{ t('KANBAN.SETTINGS.COMING_SOON') }}
-        </span>
+          <span
+            class="inline-flex items-center justify-center size-10 rounded-full bg-n-teal-3 text-n-teal-11"
+          >
+            <Icon icon="i-lucide-workflow" class="size-5" />
+          </span>
+          <p class="text-xs text-n-slate-11 max-w-sm leading-relaxed">
+            {{ t('KANBAN.AUTOMATIONS.EMPTY') }}
+          </p>
+          <Button
+            faded
+            teal
+            size="xs"
+            :label="t('KANBAN.AUTOMATIONS.NEW')"
+            @click="openCreateAutomation"
+          />
+        </div>
+        <ul v-else class="flex flex-col gap-1.5 list-none m-0 p-0">
+          <li
+            v-for="automation in automations"
+            :key="automation.id"
+            class="flex items-center gap-3 px-3 py-3 rounded-lg border border-n-weak bg-n-background hover:border-n-slate-7 transition-colors"
+          >
+            <span
+              class="size-2 rounded-full flex-shrink-0"
+              :class="
+                automation.active
+                  ? 'bg-n-teal-11 shadow-[0_0_0_2px_rgba(16,185,129,0.18)]'
+                  : 'bg-n-slate-7'
+              "
+            />
+            <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+              <span class="text-sm text-n-slate-12 truncate font-medium">
+                {{ automation.name }}
+              </span>
+              <span class="text-[11px] text-n-slate-11 truncate">
+                {{ eventBadgeLabel(automation.event_name) }}
+                ·
+                {{
+                  t('KANBAN.AUTOMATIONS.ACTION_COUNT', {
+                    n: (automation.actions || []).length,
+                  })
+                }}
+                <template v-if="automation.last_run_at">
+                  ·
+                  {{
+                    t('KANBAN.AUTOMATIONS.LAST_RUN', {
+                      count: automation.run_count || 0,
+                    })
+                  }}
+                </template>
+              </span>
+            </div>
+            <label
+              class="inline-flex items-center gap-1.5 cursor-pointer select-none"
+              :title="
+                automation.active
+                  ? t('KANBAN.AUTOMATIONS.PAUSE')
+                  : t('KANBAN.AUTOMATIONS.RESUME')
+              "
+            >
+              <input
+                type="checkbox"
+                :checked="automation.active"
+                class="size-4 rounded border-n-weak"
+                @change="toggleAutomationActive(automation)"
+              />
+            </label>
+            <Button
+              icon="i-lucide-pen-line"
+              size="xs"
+              ghost
+              slate
+              :aria-label="t('KANBAN.AUTOMATIONS.EDIT')"
+              @click="openEditAutomation(automation)"
+            />
+            <Button
+              icon="i-lucide-trash-2"
+              size="xs"
+              ghost
+              ruby
+              :aria-label="t('KANBAN.AUTOMATIONS.DELETE')"
+              @click="requestDeleteAutomation(automation)"
+            />
+          </li>
+        </ul>
       </article>
     </section>
 
@@ -687,6 +891,30 @@ const STATUS_BADGE = {
       :message-value="funnel?.name"
       :confirm-text="t('KANBAN.FUNNEL.DELETE')"
       :reject-text="t('KANBAN.FUNNEL.CANCEL')"
+    />
+
+    <woot-modal
+      v-model:show="showAutomationModal"
+      :on-close="closeAutomationModal"
+    >
+      <KanbanAutomationFormModal
+        v-if="showAutomationModal && funnel"
+        :automation="editingAutomation"
+        :funnel="funnel"
+        @submit="handleAutomationSubmit"
+        @close="closeAutomationModal"
+      />
+    </woot-modal>
+
+    <woot-delete-modal
+      v-model:show="showDeleteAutomationModal"
+      :on-close="cancelDeleteAutomation"
+      :on-confirm="confirmDeleteAutomation"
+      :title="t('KANBAN.AUTOMATIONS.DELETE_CONFIRM_TITLE')"
+      :message="t('KANBAN.AUTOMATIONS.DELETE_CONFIRM_MESSAGE')"
+      :message-value="automationPendingDelete?.name"
+      :confirm-text="t('KANBAN.AUTOMATIONS.DELETE')"
+      :reject-text="t('KANBAN.AUTOMATIONS.CANCEL')"
     />
   </div>
 </template>
