@@ -21,15 +21,24 @@ class Api::V1::Accounts::FunnelStagesController < Api::V1::Accounts::BaseControl
   def destroy
     @stage.destroy!
     head :ok
-  rescue ActiveRecord::DeleteRestrictionError
-    # Stage has `kanban_tasks dependent: :restrict_with_error`, so any
-    # delete with surviving tasks would 500 without this rescue. Return
-    # 422 + an operator-friendly hint instead so the UI can offer
-    # "mova as tarefas para outra etapa".
-    render json: {
-      error: 'stage_has_tasks',
-      message: 'Mova as tarefas desta etapa antes de removê-la.'
-    }, status: :unprocessable_entity
+  rescue ActiveRecord::DeleteRestrictionError, ActiveRecord::RecordNotDestroyed => e
+    # Two scenarios reach this rescue:
+    #   1. The stage still has `kanban_tasks` (`restrict_with_error` →
+    #      Rails 7 raises `RecordNotDestroyed`, NOT
+    #      `DeleteRestrictionError`).
+    #   2. The stage is the funnel's last column and the
+    #      `ensure_not_last_stage` callback aborts to keep the board
+    #      coherent.
+    # Both deserve a 422 with a clear, operator-friendly hint instead of
+    # an opaque server error in the toast.
+    message = if @stage.errors[:base].any?
+                @stage.errors[:base].first
+              else
+                I18n.t('errors.funnel_stage.has_tasks',
+                       default: 'Mova as tarefas desta etapa antes de removê-la.')
+              end
+    Rails.logger.warn("[FunnelStage#destroy] blocked id=#{@stage&.id}: #{e.message}")
+    render json: { error: 'stage_destroy_blocked', message: message }, status: :unprocessable_entity
   end
 
   def reorder

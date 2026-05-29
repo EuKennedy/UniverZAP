@@ -83,6 +83,11 @@ en:
       call_already_accepted: '%{agent_name} is already handling the call.'
     assignment_policy:
       not_found: Assignment policy not found
+    funnel:
+      destroy_blocked: 'Move or delete the funnel tasks and dependencies before removing it.'
+    funnel_stage:
+      last_stage_protected: 'Funnels must have at least one stage. Create another before removing this one.'
+      has_tasks: 'Move the tasks from this stage to another before removing it.'
     attachments:
       invalid: Invalid attachment
     upload:

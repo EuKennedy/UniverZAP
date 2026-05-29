@@ -28,6 +28,13 @@ class FunnelStage < ApplicationRecord
   validates :wip_limit, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   before_validation :assign_position, on: :create
+  # A kanban without stages is undefined — there'd be nowhere to put
+  # tasks, no UI to render, no meaningful "delete" semantics for the
+  # board. We surface a friendly error instead of letting the operator
+  # destroy the last column and stare at a void. The guard is skipped
+  # when the parent funnel itself is going away so cascade teardown
+  # still works.
+  before_destroy :ensure_not_last_stage
 
   scope :ordered, -> { order(:position, :id) }
 
@@ -63,5 +70,16 @@ class FunnelStage < ApplicationRecord
     return if position.present? && position.positive?
 
     self.position = (funnel&.funnel_stages&.maximum(:position) || 0) + 1
+  end
+
+  def ensure_not_last_stage
+    # Skip when the parent funnel is going away — its cascade legitimately
+    # tears every stage down, including the last one.
+    return if funnel.nil? || funnel.destroyed? || funnel.marked_for_destruction?
+    return if funnel.funnel_stages.where.not(id: id).exists?
+
+    errors.add(:base, I18n.t('errors.funnel_stage.last_stage_protected',
+                             default: 'Funis precisam de pelo menos uma etapa. Crie outra antes de remover esta.'))
+    throw :abort
   end
 end

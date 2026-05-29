@@ -44,6 +44,14 @@ class Funnel < ApplicationRecord
   validate :validate_automation_settings
 
   before_validation :assign_position, on: :create
+  # FunnelStage declares `has_many :kanban_tasks, dependent: :restrict_with_error`
+  # which makes the cascade order matter: when a Funnel is destroyed Rails
+  # walks `funnel_stages` first (declared above) and each stage trips its
+  # restrict guard the moment it sees an attached task — surfacing as a
+  # 500 on what should be the happy path. Prepending this hook lets us
+  # delete every task in one SQL statement before the cascade reaches
+  # the stages, with no per-task callback overhead.
+  before_destroy :purge_kanban_tasks, prepend: true
 
   scope :ordered, -> { order(:position, :id) }
 
@@ -95,5 +103,15 @@ class Funnel < ApplicationRecord
     return if invalid.empty?
 
     errors.add(:automation_settings, "unknown keys: #{invalid.join(', ')}")
+  end
+
+  # `delete_all` skips per-row callbacks and FK touches so we don't pay
+  # the cost of N task destroy callbacks during a funnel teardown. The
+  # KanbanTask broadcast on individual deletion is intentionally dropped
+  # here — clients observing the funnel get the `funnel.deleted` event
+  # which is the single source of truth for "this funnel and everything
+  # under it is gone".
+  def purge_kanban_tasks
+    kanban_tasks.delete_all
   end
 end

@@ -26,7 +26,12 @@ class Api::V2::Kanban::FunnelsController < Api::V2::Kanban::BaseController
   def destroy
     @funnel.destroy!
     head :no_content
-  rescue ActiveRecord::DeleteRestrictionError => e
+  rescue ActiveRecord::DeleteRestrictionError, ActiveRecord::RecordNotDestroyed => e
+    # `restrict_with_error` on child associations surfaces as
+    # `RecordNotDestroyed` in Rails 7 — the v1 path was already paying
+    # this tax, mirroring the rescue here so the public Kanban API
+    # behaves identically to the dashboard.
+    Rails.logger.warn("[Kanban::Funnels#destroy] blocked id=#{@funnel&.id}: #{e.message}")
     render json: { error: 'funnel_has_dependents', message: e.message }, status: :unprocessable_entity
   end
 

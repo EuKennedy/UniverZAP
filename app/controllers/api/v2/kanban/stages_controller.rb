@@ -26,8 +26,18 @@ class Api::V2::Kanban::StagesController < Api::V2::Kanban::BaseController
   def destroy
     @stage.destroy!
     head :no_content
-  rescue ActiveRecord::DeleteRestrictionError => e
-    render json: { error: 'stage_has_tasks', message: e.message }, status: :unprocessable_entity
+  rescue ActiveRecord::DeleteRestrictionError, ActiveRecord::RecordNotDestroyed => e
+    # Symmetrical to v1: `restrict_with_error` raises `RecordNotDestroyed`
+    # on Rails 7, and the model now blocks "delete the last stage" via
+    # `ensure_not_last_stage`. Surfacing the base error keeps the API
+    # client's message in sync with what the operator sees in the UI.
+    message = if @stage.errors[:base].any?
+                @stage.errors[:base].first
+              else
+                e.message
+              end
+    Rails.logger.warn("[Kanban::Stages#destroy] blocked id=#{@stage&.id}: #{e.message}")
+    render json: { error: 'stage_destroy_blocked', message: message }, status: :unprocessable_entity
   end
 
   private

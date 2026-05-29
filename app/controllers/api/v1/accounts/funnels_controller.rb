@@ -38,16 +38,18 @@ class Api::V1::Accounts::FunnelsController < Api::V1::Accounts::BaseController
   def destroy
     @funnel.destroy!
     head :ok
-  rescue ActiveRecord::DeleteRestrictionError
-    # `Funnel#has_many :funnel_stages, dependent: :destroy` cascades
-    # into stages, and `FunnelStage#has_many :kanban_tasks,
-    # dependent: :restrict_with_error` raises when a stage still has
-    # tasks. Without rescue the whole funnel destroy 500s and the
-    # operator gets a useless toast. Surface a 422 with a clear
-    # message so the UI can prompt "move or delete tasks first".
+  rescue ActiveRecord::DeleteRestrictionError, ActiveRecord::RecordNotDestroyed => e
+    # Rails 7 raises `RecordNotDestroyed` (not `DeleteRestrictionError`)
+    # when a `restrict_with_error` association blocks deletion. The model
+    # also prepends `purge_kanban_tasks` so the cascade order is no
+    # longer the failure mode here; this rescue is the belt-and-braces
+    # so any future child with `restrict_with_error` (e.g. inbox
+    # attachments) still surfaces as a friendly 422 instead of a 500.
+    Rails.logger.warn("[Funnel#destroy] blocked id=#{@funnel&.id}: #{e.message}")
     render json: {
-      error: 'funnel_has_tasks',
-      message: 'Mova ou exclua as tarefas dos estágios antes de remover o funil.'
+      error: 'funnel_has_dependents',
+      message: I18n.t('errors.funnel.destroy_blocked',
+                      default: 'Mova ou exclua as tarefas e dependências do funil antes de removê-lo.')
     }, status: :unprocessable_entity
   end
 

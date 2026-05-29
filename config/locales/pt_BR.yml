@@ -63,6 +63,11 @@ pt_BR:
       failed: Registro falhou
     assignment_policy:
       not_found: Política de atribuição não encontrada
+    funnel:
+      destroy_blocked: 'Mova ou exclua as tarefas e dependências do funil antes de removê-lo.'
+    funnel_stage:
+      last_stage_protected: 'Funis precisam de pelo menos uma etapa. Crie outra antes de remover esta.'
+      has_tasks: 'Mova as tarefas desta etapa para outra antes de removê-la.'
     attachments:
       invalid: Anexo inválido
     upload:
