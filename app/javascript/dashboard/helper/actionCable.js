@@ -45,7 +45,38 @@ class ActionCableConnector extends BaseActionCableConnector {
       'kanban_task.updated': this.onKanbanTaskUpsert,
       'kanban_task.deleted': this.onKanbanTaskDeleted,
     };
+    this.subscribeToTaskChannel(pubsubToken);
   }
+
+  // AccountTasksChannel rides its own subscription so the per-user
+  // stream gets authorized server-side via the pubsub_token + user_id
+  // handshake. The handler dispatches every payload to the
+  // `tasksNotifications` store which decides whether to toast and
+  // forwards mutations to the T2 `tasks` store.
+  subscribeToTaskChannel = pubsubToken => {
+    if (!this.consumer || !this.app?.$store) return;
+    const store = this.app.$store;
+    const accountId = store.getters.getCurrentAccountId;
+    const userId = store.getters.getCurrentUserID;
+    if (!accountId || !userId) return;
+    this.taskSubscription = this.consumer.subscriptions.create(
+      {
+        channel: 'AccountTasksChannel',
+        account_id: accountId,
+        user_id: userId,
+        pubsub_token: pubsubToken,
+      },
+      {
+        received: ({ event, data } = {}) => {
+          if (!event) return;
+          store.dispatch('tasksNotifications/handleRealtimeEvent', {
+            event,
+            payload: data,
+          });
+        },
+      }
+    );
+  };
 
   onFunnelUpsert = data => {
     this.app.$store.dispatch('funnels/handleRealtimeUpsert', data);

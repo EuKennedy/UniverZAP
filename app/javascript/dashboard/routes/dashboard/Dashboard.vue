@@ -23,6 +23,7 @@ const FloatingCallWidget = defineAsyncComponent(
 import CopilotLauncher from 'dashboard/components-next/copilot/CopilotLauncher.vue';
 import CopilotContainer from 'dashboard/components/copilot/AthenasCopilotContainer.vue';
 import OnboardingLauncher from 'dashboard/components-next/onboarding/OnboardingLauncher.vue';
+import TaskNotificationToast from 'dashboard/components-next/tasksNotifications/TaskNotificationToast.vue';
 import OnboardingTour from 'dashboard/components-next/onboarding/OnboardingTour.vue';
 import OnboardingContextualOrchestrator from 'dashboard/components-next/onboarding/OnboardingContextualOrchestrator.vue';
 import AthenasCreditsModal from 'dashboard/components-next/athenas/AthenasCreditsModal.vue';
@@ -50,6 +51,7 @@ export default {
     FloatingCallWidget,
     MobileSidebarLauncher,
     OnboardingLauncher,
+    TaskNotificationToast,
     OnboardingTour,
     OnboardingContextualOrchestrator,
     AthenasCreditsModal,
@@ -187,6 +189,7 @@ export default {
         />
         <CopilotContainer />
         <OnboardingLauncher />
+        <TaskNotificationToast />
         <OnboardingTour />
         <OnboardingContextualOrchestrator />
         <AthenasCreditsBanner />

@@ -6,15 +6,20 @@ import { useMapGetter } from 'dashboard/composables/store';
 const emit = defineEmits(['openNotificationPanel']);
 
 const notificationMetadata = useMapGetter('notifications/getMeta');
+const tasksUnread = useMapGetter('tasksNotifications/getUnreadCount');
 const route = useRoute();
-const unreadCount = computed(() => {
-  if (!notificationMetadata.value.unreadCount) {
-    return '';
-  }
 
-  return notificationMetadata.value.unreadCount < 100
-    ? `${notificationMetadata.value.unreadCount}`
-    : '99+';
+// Bell badge combines mention/notification unread + task realtime unread
+// so a single chip surfaces every actionable signal in the sidebar.
+const totalUnread = computed(() => {
+  const notifications = notificationMetadata.value?.unreadCount || 0;
+  const tasks = tasksUnread.value || 0;
+  return notifications + tasks;
+});
+
+const unreadCount = computed(() => {
+  if (!totalUnread.value) return '';
+  return totalUnread.value < 100 ? `${totalUnread.value}` : '99+';
 });
 
 function openNotificationPanel() {

@@ -121,6 +121,41 @@
       "ASSIGN": "Atribuir",
       "DUPLICATE": "Duplicar",
       "DELETE": "Excluir"
+    },
+    "NOTIFICATIONS": {
+      "ASSIGNED": {
+        "TITLE": "Nova tarefa atribuída",
+        "BODY": "{by} te atribuiu: \"{title}\" · {urgency}"
+      },
+      "DUE_SOON": {
+        "TITLE": "Tarefa vencendo em breve",
+        "BODY": "\"{title}\" vence {when}"
+      },
+      "OVERDUE": {
+        "TITLE": "Tarefa atrasada",
+        "BODY": "\"{title}\" passou do prazo"
+      },
+      "COMMENTED": {
+        "TITLE": "Novo comentário",
+        "BODY": "{by} comentou em \"{title}\""
+      },
+      "COMPLETED": {
+        "TITLE": "Tarefa concluída",
+        "BODY": "{by} marcou \"{title}\" como concluída"
+      },
+      "ACTIONS": {
+        "VIEW": "Ver tarefa",
+        "MARK_READ": "Marcar como lida",
+        "DISMISS": "Dispensar"
+      },
+      "SOUND": {
+        "ENABLE": "Ativar som",
+        "DISABLE": "Desativar som"
+      },
+      "PERMISSION": {
+        "REQUEST": "Ativar notificações do navegador",
+        "BLOCKED": "Notificações bloqueadas pelo navegador"
+      }
     }
   }
 }

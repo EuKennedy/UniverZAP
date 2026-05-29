@@ -121,6 +121,41 @@
       "ASSIGN": "Assign",
       "DUPLICATE": "Duplicate",
       "DELETE": "Delete"
+    },
+    "NOTIFICATIONS": {
+      "ASSIGNED": {
+        "TITLE": "New task assigned",
+        "BODY": "{by} assigned you: \"{title}\" · {urgency}"
+      },
+      "DUE_SOON": {
+        "TITLE": "Task due soon",
+        "BODY": "\"{title}\" is due {when}"
+      },
+      "OVERDUE": {
+        "TITLE": "Task overdue",
+        "BODY": "\"{title}\" is past due"
+      },
+      "COMMENTED": {
+        "TITLE": "New comment",
+        "BODY": "{by} commented on \"{title}\""
+      },
+      "COMPLETED": {
+        "TITLE": "Task completed",
+        "BODY": "{by} marked \"{title}\" as done"
+      },
+      "ACTIONS": {
+        "VIEW": "View task",
+        "MARK_READ": "Mark as read",
+        "DISMISS": "Dismiss"
+      },
+      "SOUND": {
+        "ENABLE": "Enable sound",
+        "DISABLE": "Disable sound"
+      },
+      "PERMISSION": {
+        "REQUEST": "Enable browser notifications",
+        "BLOCKED": "Notifications blocked by the browser"
+      }
     }
   }
 }
