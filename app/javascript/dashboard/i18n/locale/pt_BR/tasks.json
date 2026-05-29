@@ -1,0 +1,126 @@
+{
+  "TASKS": {
+    "TITLE": "Tarefas",
+    "SUBTITLE": "Acompanhe suas tarefas pessoais e do time, priorizadas do seu jeito.",
+    "NEW_TASK": "Nova tarefa",
+    "REFRESH": "Atualizar",
+    "TABS": {
+      "MINE": "Minhas",
+      "CREATED_BY_ME": "Criadas por mim",
+      "TEAM": "Time",
+      "ALL": "Todas"
+    },
+    "QUICK_FILTERS": {
+      "TITLE": "Filtros rápidos",
+      "OVERDUE": "Atrasadas",
+      "TODAY": "Vencem hoje",
+      "THIS_WEEK": "Esta semana",
+      "NO_DUE_DATE": "Sem vencimento"
+    },
+    "FILTERS": {
+      "STATUS": "Status",
+      "URGENCY": "Urgência",
+      "ASSIGNEE": "Responsável",
+      "DUE_BEFORE": "Vence antes de",
+      "SEARCH_PLACEHOLDER": "Buscar tarefas…",
+      "CLEAR": "Limpar filtros",
+      "ANY": "Qualquer"
+    },
+    "STATUS": {
+      "OPEN": "Aberta",
+      "IN_PROGRESS": "Em andamento",
+      "BLOCKED": "Bloqueada",
+      "DONE": "Concluída",
+      "CANCELLED": "Cancelada"
+    },
+    "URGENCY": {
+      "URGENT": "Urgente",
+      "HIGH": "Alta",
+      "MEDIUM": "Média",
+      "LOW": "Baixa",
+      "NONE": "Sem urgência"
+    },
+    "GROUP_BY": {
+      "LABEL": "Agrupar por",
+      "URGENCY": "Urgência",
+      "STATUS": "Status",
+      "ASSIGNEE": "Responsável",
+      "DUE_DATE": "Vencimento",
+      "NONE": "Nenhum"
+    },
+    "EMPTY": {
+      "TITLE": "Nada na sua mesa",
+      "DESCRIPTION": "Tarefas que você criar ou for atribuído aparecem aqui. Comece criando a primeira.",
+      "CTA": "Criar tarefa",
+      "FILTERED_TITLE": "Nenhuma tarefa encontrada",
+      "FILTERED_DESCRIPTION": "Ajuste os filtros ou limpe-os para ver mais tarefas."
+    },
+    "CREATE": {
+      "TITLE": "Nova tarefa",
+      "TITLE_LABEL": "Título",
+      "TITLE_PLACEHOLDER": "O que precisa ser feito?",
+      "DESCRIPTION_LABEL": "Descrição",
+      "DESCRIPTION_PLACEHOLDER": "Adicione contexto, links ou passos…",
+      "ASSIGNEES_LABEL": "Responsáveis",
+      "ASSIGNEES_PLACEHOLDER": "Escolha colegas do time",
+      "URGENCY_LABEL": "Urgência",
+      "DUE_DATE_LABEL": "Vencimento",
+      "DUE_DATE_PLACEHOLDER": "Escolha data e horário",
+      "NOTIFY_LABEL": "Notificar responsáveis ao criar",
+      "CANCEL": "Cancelar",
+      "SUBMIT": "Criar tarefa",
+      "SUCCESS": "Tarefa criada.",
+      "ERROR": "Não foi possível criar a tarefa."
+    },
+    "DETAIL": {
+      "BACK": "Voltar",
+      "CLOSE": "Fechar painel",
+      "CREATED_BY": "Criada por",
+      "CREATED_AT": "Criada em",
+      "UPDATED_AT": "Atualizada em",
+      "DUE": "Vence em",
+      "NO_DUE_DATE": "Sem vencimento",
+      "TABS": {
+        "DESCRIPTION": "Descrição",
+        "COMMENTS": "Comentários",
+        "ACTIVITY": "Atividade"
+      },
+      "DESCRIPTION_PLACEHOLDER": "Adicione uma descrição…",
+      "COMMENTS": {
+        "TITLE": "Comentários",
+        "EMPTY": "Nenhum comentário ainda. Inicie a conversa.",
+        "INPUT_PLACEHOLDER": "Escreva um comentário…",
+        "POST": "Publicar"
+      },
+      "ACTIVITY": {
+        "TITLE": "Atividade",
+        "EMPTY": "Nenhuma atividade ainda.",
+        "CREATED": "{user} criou esta tarefa",
+        "STATUS_CHANGED": "{user} mudou o status para {to}",
+        "DUE_DATE_CHANGED": "{user} atualizou o vencimento",
+        "COMPLETED": "{user} marcou esta tarefa como concluída"
+      },
+      "ACTIONS": {
+        "MARK_DONE": "Marcar como concluída",
+        "REOPEN": "Reabrir",
+        "DELETE": "Excluir",
+        "DELETE_CONFIRM": "Excluir esta tarefa? Esta ação não pode ser desfeita."
+      },
+      "MUTATION_SUCCESS": "Tarefa atualizada.",
+      "MUTATION_ERROR": "Não foi possível atualizar a tarefa.",
+      "COMPLETE_SUCCESS": "Tarefa marcada como concluída.",
+      "DELETE_SUCCESS": "Tarefa excluída.",
+      "DELETE_ERROR": "Não foi possível excluir a tarefa."
+    },
+    "ROW": {
+      "TOGGLE_STATUS": "Alternar status",
+      "OVERDUE_BADGE": "Atrasada",
+      "NO_TITLE": "Tarefa sem título",
+      "MORE_ACTIONS": "Mais ações",
+      "OPEN_DETAIL": "Abrir detalhes",
+      "ASSIGN": "Atribuir",
+      "DUPLICATE": "Duplicar",
+      "DELETE": "Excluir"
+    }
+  }
+}

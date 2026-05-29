@@ -327,6 +327,14 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'Tasks',
+      label: t('SIDEBAR.TASKS'),
+      icon: 'i-lucide-list-checks',
+      to: accountScopedRoute('tasks'),
+      dataOnboarding: 'tasks-nav',
+      activeOn: ['tasks'],
+    },
+    {
       name: 'AthenasAI',
       label: t('SIDEBAR.ATHENAS_AI'),
       icon: 'i-lucide-brain-circuit',

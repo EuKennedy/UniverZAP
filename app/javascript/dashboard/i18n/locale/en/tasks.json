@@ -1,0 +1,126 @@
+{
+  "TASKS": {
+    "TITLE": "Tasks",
+    "SUBTITLE": "Track personal and team work, prioritized your way.",
+    "NEW_TASK": "New task",
+    "REFRESH": "Refresh",
+    "TABS": {
+      "MINE": "Mine",
+      "CREATED_BY_ME": "Created by me",
+      "TEAM": "Team",
+      "ALL": "All"
+    },
+    "QUICK_FILTERS": {
+      "TITLE": "Quick filters",
+      "OVERDUE": "Overdue",
+      "TODAY": "Due today",
+      "THIS_WEEK": "This week",
+      "NO_DUE_DATE": "No due date"
+    },
+    "FILTERS": {
+      "STATUS": "Status",
+      "URGENCY": "Urgency",
+      "ASSIGNEE": "Assignee",
+      "DUE_BEFORE": "Due before",
+      "SEARCH_PLACEHOLDER": "Search tasks…",
+      "CLEAR": "Clear filters",
+      "ANY": "Any"
+    },
+    "STATUS": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In progress",
+      "BLOCKED": "Blocked",
+      "DONE": "Done",
+      "CANCELLED": "Cancelled"
+    },
+    "URGENCY": {
+      "URGENT": "Urgent",
+      "HIGH": "High",
+      "MEDIUM": "Medium",
+      "LOW": "Low",
+      "NONE": "None"
+    },
+    "GROUP_BY": {
+      "LABEL": "Group by",
+      "URGENCY": "Urgency",
+      "STATUS": "Status",
+      "ASSIGNEE": "Assignee",
+      "DUE_DATE": "Due date",
+      "NONE": "None"
+    },
+    "EMPTY": {
+      "TITLE": "Nothing on your plate",
+      "DESCRIPTION": "Tasks you create or get assigned to show up here. Start by creating your first one.",
+      "CTA": "Create task",
+      "FILTERED_TITLE": "No matching tasks",
+      "FILTERED_DESCRIPTION": "Adjust the filters or clear them to see more tasks."
+    },
+    "CREATE": {
+      "TITLE": "New task",
+      "TITLE_LABEL": "Title",
+      "TITLE_PLACEHOLDER": "What needs to be done?",
+      "DESCRIPTION_LABEL": "Description",
+      "DESCRIPTION_PLACEHOLDER": "Add more context, links or steps…",
+      "ASSIGNEES_LABEL": "Assignees",
+      "ASSIGNEES_PLACEHOLDER": "Pick teammates",
+      "URGENCY_LABEL": "Urgency",
+      "DUE_DATE_LABEL": "Due date",
+      "DUE_DATE_PLACEHOLDER": "Pick a date and time",
+      "NOTIFY_LABEL": "Notify assignees on creation",
+      "CANCEL": "Cancel",
+      "SUBMIT": "Create task",
+      "SUCCESS": "Task created.",
+      "ERROR": "Could not create the task."
+    },
+    "DETAIL": {
+      "BACK": "Back",
+      "CLOSE": "Close panel",
+      "CREATED_BY": "Created by",
+      "CREATED_AT": "Created",
+      "UPDATED_AT": "Last updated",
+      "DUE": "Due",
+      "NO_DUE_DATE": "No due date",
+      "TABS": {
+        "DESCRIPTION": "Description",
+        "COMMENTS": "Comments",
+        "ACTIVITY": "Activity"
+      },
+      "DESCRIPTION_PLACEHOLDER": "Add a description…",
+      "COMMENTS": {
+        "TITLE": "Comments",
+        "EMPTY": "No comments yet. Start the conversation.",
+        "INPUT_PLACEHOLDER": "Write a comment…",
+        "POST": "Post"
+      },
+      "ACTIVITY": {
+        "TITLE": "Activity",
+        "EMPTY": "No activity yet.",
+        "CREATED": "{user} created this task",
+        "STATUS_CHANGED": "{user} changed status to {to}",
+        "DUE_DATE_CHANGED": "{user} updated the due date",
+        "COMPLETED": "{user} marked this task as done"
+      },
+      "ACTIONS": {
+        "MARK_DONE": "Mark as done",
+        "REOPEN": "Reopen",
+        "DELETE": "Delete",
+        "DELETE_CONFIRM": "Delete this task? This action cannot be undone."
+      },
+      "MUTATION_SUCCESS": "Task updated.",
+      "MUTATION_ERROR": "Could not update the task.",
+      "COMPLETE_SUCCESS": "Task marked as done.",
+      "DELETE_SUCCESS": "Task deleted.",
+      "DELETE_ERROR": "Could not delete the task."
+    },
+    "ROW": {
+      "TOGGLE_STATUS": "Toggle status",
+      "OVERDUE_BADGE": "Overdue",
+      "NO_TITLE": "Untitled task",
+      "MORE_ACTIONS": "More actions",
+      "OPEN_DETAIL": "Open detail",
+      "ASSIGN": "Assign",
+      "DUPLICATE": "Duplicate",
+      "DELETE": "Delete"
+    }
+  }
+}

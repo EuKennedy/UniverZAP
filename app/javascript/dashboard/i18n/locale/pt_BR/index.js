@@ -41,6 +41,7 @@ import settings from './settings.json';
 import signup from './signup.json';
 import sla from './sla.json';
 import snooze from './snooze.json';
+import tasks from './tasks.json';
 import teamsSettings from './teamsSettings.json';
 import webhooks from './webhooks.json';
 import whatsappTemplates from './whatsappTemplates.json';
@@ -90,6 +91,7 @@ export default {
   ...signup,
   ...sla,
   ...snooze,
+  ...tasks,
   ...teamsSettings,
   ...webhooks,
   ...whatsappTemplates,
