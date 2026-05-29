@@ -16,8 +16,10 @@ class Tasks::WorkloadSnapshot
     members.map { |u| agent_row(u) }.sort_by { |row| -row[:open_count] }
   end
 
+  # `User` carries jsonb columns that PG cannot compare for DISTINCT,
+  # so we collapse to ids first and rehydrate via a single `User.where`.
   def members
-    @members ||= @account.users.distinct
+    @members ||= User.where(id: @account.users.select(:id).distinct).order(:name)
   end
 
   def agent_row(user)

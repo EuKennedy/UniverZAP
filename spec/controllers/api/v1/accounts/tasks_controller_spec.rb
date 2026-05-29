@@ -221,7 +221,7 @@ RSpec.describe Api::V1::Accounts::TasksController, type: :request do
     it 'returns workload payload for admins' do
       get "/api/v1/accounts/#{account.id}/tasks/team_workload",
           headers: admin.create_new_auth_token, as: :json
-      expect(response).to(have_http_status(:ok), -> { response.body })
+      expect(response).to have_http_status(:ok)
       expect(response.parsed_body).to include('agents', 'totals')
     end
 
@@ -245,7 +245,7 @@ RSpec.describe Api::V1::Accounts::TasksController, type: :request do
     it 'returns aggregated metrics' do
       get "/api/v1/accounts/#{account.id}/tasks/reports",
           headers: admin.create_new_auth_token, as: :json
-      expect(response).to(have_http_status(:ok), -> { response.body })
+      expect(response).to have_http_status(:ok)
       expect(response.parsed_body).to include(
         'created_vs_completed', 'avg_time_to_complete_by_agent',
         'overdue_rate_by_agent', 'open_urgency_distribution'

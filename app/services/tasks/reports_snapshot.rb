@@ -72,8 +72,9 @@ class Tasks::ReportsSnapshot
     @account.tasks
   end
 
+  # See `WorkloadSnapshot#members` for why we collapse to ids first.
   def members
-    @members ||= @account.users.distinct
+    @members ||= User.where(id: @account.users.select(:id).distinct).order(:name)
   end
 
   def days
