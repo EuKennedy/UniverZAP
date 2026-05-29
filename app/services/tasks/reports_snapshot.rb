@@ -33,27 +33,35 @@ class Tasks::ReportsSnapshot
            .group('users.id', 'users.name', 'users.avatar_url')
            .pluck(Arel.sql("users.id, users.name, users.avatar_url,
                             AVG(EXTRACT(EPOCH FROM (tasks.completed_at - tasks.created_at)) / 3600.0)"))
-    rows.map { |id, name, avatar, avg_hours| { user: { id: id, name: name, avatar_url: avatar },
-                                                avg_hours: avg_hours.to_f.round(2) } }
+    rows.map { |id, name, avatar, avg_hours| agent_avg_row(id, name, avatar, avg_hours) }
+  end
+
+  def agent_avg_row(id, name, avatar, avg_hours)
+    {
+      user: { id: id, name: name, avatar_url: avatar },
+      avg_hours: avg_hours.to_f.round(2)
+    }
   end
 
   def overdue_rate_by_agent
-    members.map do |user|
-      assigned = @account.tasks.assigned_to(user.id).where(created_at: range_boundary)
-      total = assigned.count
-      next nil if total.zero?
+    members.filter_map { |user| overdue_rate_row(user) }
+  end
 
-      overdue = assigned.overdue.count
-      { user: { id: user.id, name: user.name, avatar_url: user.avatar_url },
-        rate: (overdue.to_f / total).round(3) }
-    end.compact
+  def overdue_rate_row(user)
+    assigned = @account.tasks.assigned_to(user.id).where(created_at: range_boundary)
+    total = assigned.count
+    return nil if total.zero?
+
+    overdue = assigned.overdue.count
+    {
+      user: { id: user.id, name: user.name, avatar_url: user.avatar_url },
+      rate: (overdue.to_f / total).round(3)
+    }
   end
 
   def urgency_distribution
     counts = @account.tasks.active.group(:urgency).count
-    %w[urgent high medium low none].each_with_object({}) do |key, h|
-      h[key] = counts[Task.urgencies[key]] || 0
-    end
+    %w[urgent high medium low none].index_with { |key| counts[Task.urgencies[key]] || 0 }
   end
 
   def scoped_tasks

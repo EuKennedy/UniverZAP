@@ -44,10 +44,10 @@ class Tasks::WorkloadSnapshot
   end
 
   def today_range
-    Time.current.beginning_of_day..Time.current.end_of_day
+    Time.current.all_day
   end
 
   def week_range
-    Time.current.beginning_of_week..Time.current.end_of_week
+    Time.current.all_week
   end
 end

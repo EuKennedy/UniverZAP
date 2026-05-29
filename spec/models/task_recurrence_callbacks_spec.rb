@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Task, 'recurrence callbacks', type: :model do
+RSpec.describe Task, type: :model do
   let(:account) { create(:account) }
   let(:user)    { create(:user, account: account) }
 
@@ -11,23 +11,23 @@ RSpec.describe Task, 'recurrence callbacks', type: :model do
                              due_date: 1.day.ago)
       expect do
         parent.update!(status: :done, completed_at: Time.current)
-      end.to change { Task.where(recurrence_parent_id: parent.id).count }.by(1)
+      end.to change { described_class.where(recurrence_parent_id: parent.id).count }.by(1)
     end
 
     it 'does not spawn when the rule is empty' do
       task = create(:task, account: account, created_by_user: user)
       expect do
         task.update!(status: :done, completed_at: Time.current)
-      end.not_to(change(Task, :count))
+      end.not_to(change(described_class, :count))
     end
 
     it 'does not double-spawn when status flips back to done after being open' do
       parent = create(:task, account: account, created_by_user: user,
                              recurrence_rule: { 'type' => 'daily' })
       parent.update!(status: :done, completed_at: Time.current)
-      first_child_count = Task.where(recurrence_parent_id: parent.id).count
+      first_child_count = described_class.where(recurrence_parent_id: parent.id).count
       parent.update!(title: 'unrelated change')
-      expect(Task.where(recurrence_parent_id: parent.id).count).to eq(first_child_count)
+      expect(described_class.where(recurrence_parent_id: parent.id).count).to eq(first_child_count)
     end
 
     it 'skips when status transitions to cancelled' do
@@ -35,7 +35,7 @@ RSpec.describe Task, 'recurrence callbacks', type: :model do
                              recurrence_rule: { 'type' => 'daily' })
       expect do
         parent.update!(status: :cancelled)
-      end.not_to(change { Task.where(recurrence_parent_id: parent.id).count })
+      end.not_to(change { described_class.where(recurrence_parent_id: parent.id).count })
     end
   end
 
