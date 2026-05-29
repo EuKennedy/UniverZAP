@@ -68,6 +68,8 @@ pt_BR:
     funnel_stage:
       last_stage_protected: 'Funis precisam de pelo menos uma etapa. Crie outra antes de remover esta.'
       has_tasks: 'Mova as tarefas desta etapa para outra antes de removê-la.'
+    team_chat:
+      default_channel_protected: 'Canais padrão não podem ser removidos.'
     attachments:
       invalid: Anexo inválido
     upload:

@@ -1,0 +1,49 @@
+{
+  "TEAM_CHAT": {
+    "SIDEBAR": {
+      "TITLE": "Conversas da equipe",
+      "NEW_CHANNEL": "Novo canal",
+      "EMPTY": "Nenhum canal ainda."
+    },
+    "CHANNEL": {
+      "NEW_TITLE": "Criar canal",
+      "EDIT_TITLE": "Editar canal",
+      "MODAL_SUBTITLE": "Canais organizam as conversas do time por assunto.",
+      "NAME_LABEL": "Nome do canal",
+      "NAME_PLACEHOLDER": "Ex.: lançamentos",
+      "DESCRIPTION_LABEL": "Descrição",
+      "DESCRIPTION_PLACEHOLDER": "Para que serve este canal? (opcional)",
+      "CREATE": "Criar canal",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "EDIT": "Editar canal",
+      "ARCHIVE": "Arquivar canal",
+      "CREATE_SUCCESS": "Canal criado.",
+      "UPDATE_SUCCESS": "Canal atualizado.",
+      "ARCHIVE_SUCCESS": "Canal arquivado.",
+      "ARCHIVE_CONFIRM": "Arquivar o canal \"{name}\"? O histórico é preservado, mas ele some da lista.",
+      "SAVE_ERROR": "Não foi possível salvar o canal."
+    },
+    "PANEL": {
+      "NO_CHANNEL": "Selecione um canal para começar.",
+      "EMPTY_TITLE": "Comece a conversa em #{channel}",
+      "EMPTY_BODY": "Seja o primeiro a mandar uma mensagem neste canal.",
+      "TODAY": "Hoje",
+      "YESTERDAY": "Ontem",
+      "SEND_ERROR": "Não foi possível enviar a mensagem."
+    },
+    "COMPOSER": {
+      "PLACEHOLDER": "Mensagem para #{channel}",
+      "SEND": "Enviar",
+      "HINT": "Enter envia · Shift+Enter quebra linha"
+    },
+    "MESSAGE": {
+      "EDIT": "Editar",
+      "DELETE": "Excluir",
+      "DELETE_CONFIRM": "Excluir esta mensagem?",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "EDITED": "(editado)"
+    }
+  }
+}

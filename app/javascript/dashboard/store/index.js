@@ -49,6 +49,7 @@ import summaryReports from './modules/summaryReports';
 import tasks from './modules/tasks';
 import taskViews from './modules/taskViews';
 import tasksNotifications from './modules/tasksNotifications';
+import teamChat from './modules/teamChat';
 import teamMembers from './modules/teamMembers';
 import teams from './modules/teams';
 import userNotificationSettings from './modules/userNotificationSettings';
@@ -117,6 +118,7 @@ export default createStore({
     tasks,
     taskViews,
     tasksNotifications,
+    teamChat,
     teamMembers,
     teams,
     userNotificationSettings,

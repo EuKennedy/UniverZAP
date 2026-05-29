@@ -17,6 +17,8 @@ import TaskSavedViewsList from './components/TaskSavedViewsList.vue';
 import TasksBulkActionBar from './components/TasksBulkActionBar.vue';
 import TeamWorkloadDashboard from './components/TeamWorkloadDashboard.vue';
 import TasksReports from './components/TasksReports.vue';
+import TeamChatPanel from './components/teamChat/TeamChatPanel.vue';
+import TeamChatCreateChannelModal from './components/teamChat/TeamChatCreateChannelModal.vue';
 
 const { t } = useI18n();
 const store = useStore();
@@ -32,6 +34,9 @@ const overdueCount = useMapGetter('tasks/getOverdueCount');
 const meta = useMapGetter('tasks/getMeta');
 const savedViews = useMapGetter('taskViews/getViews');
 const currentUser = useMapGetter('getCurrentUser');
+const chatChannels = useMapGetter('teamChat/getChannels');
+const activeChatChannelId = useMapGetter('teamChat/getActiveChannelId');
+const activeChatChannel = useMapGetter('teamChat/getActiveChannel');
 
 const showCreateModal = ref(false);
 const groupBy = ref('urgency');
@@ -40,6 +45,8 @@ const activeView = ref('list');
 const activeViewId = ref(null);
 const selectedIds = ref([]);
 const isBulkBusy = ref(false);
+const showChannelModal = ref(false);
+const editingChannel = ref(null);
 
 const TABS = [
   { key: 'mine', labelKey: 'TASKS.TABS.MINE', scope: 'mine' },
@@ -302,6 +309,72 @@ const focusAgentFromWorkload = userId => {
   updateFilters({ assignee_id: userId, scope: 'all' });
 };
 
+// --- team chat -------------------------------------------------------------
+const openChannel = channel => {
+  activeView.value = 'chat';
+  store.dispatch('teamChat/setActiveChannel', channel.id);
+};
+
+const openCreateChannel = () => {
+  editingChannel.value = null;
+  showChannelModal.value = true;
+};
+
+const openEditChannel = channel => {
+  editingChannel.value = channel;
+  showChannelModal.value = true;
+};
+
+const closeChannelModal = () => {
+  showChannelModal.value = false;
+  editingChannel.value = null;
+};
+
+const handleChannelSubmit = async payload => {
+  try {
+    if (editingChannel.value) {
+      await store.dispatch('teamChat/updateChannel', {
+        id: editingChannel.value.id,
+        ...payload,
+      });
+      useAlert(t('TEAM_CHAT.CHANNEL.UPDATE_SUCCESS'));
+    } else {
+      const channel = await store.dispatch('teamChat/createChannel', payload);
+      useAlert(t('TEAM_CHAT.CHANNEL.CREATE_SUCCESS'));
+      activeView.value = 'chat';
+      if (channel?.id) store.dispatch('teamChat/setActiveChannel', channel.id);
+    }
+    closeChannelModal();
+  } catch (error) {
+    const message =
+      error?.response?.data?.message ||
+      error?.message ||
+      t('TEAM_CHAT.CHANNEL.SAVE_ERROR');
+    useAlert(message);
+  }
+};
+
+const handleArchiveChannel = async channel => {
+  if (
+    !window.confirm(
+      t('TEAM_CHAT.CHANNEL.ARCHIVE_CONFIRM', { name: channel.name })
+    )
+  ) {
+    return;
+  }
+  try {
+    await store.dispatch('teamChat/archiveChannel', channel.id);
+    useAlert(t('TEAM_CHAT.CHANNEL.ARCHIVE_SUCCESS'));
+    if (!chatChannels.value.length) activeView.value = 'list';
+  } catch (error) {
+    const message =
+      error?.response?.data?.message ||
+      error?.message ||
+      t('TEAM_CHAT.CHANNEL.SAVE_ERROR');
+    useAlert(message);
+  }
+};
+
 const hydrateFromSettings = () => {
   const cached = uiSettings.value?.[settingsKey.value];
   if (!cached || typeof cached !== 'object') return;
@@ -333,6 +406,11 @@ onMounted(async () => {
   } catch (_error) {
     // Saved views are non-essential — silently skip if the endpoint fails.
   }
+  // Team chat channels load eagerly so the sidebar list is populated even
+  // before the user opens chat. Lazy-seeds the four defaults server-side.
+  store.dispatch('teamChat/fetchChannels').catch(() => {
+    // Non-fatal — the chat section just stays empty if this fails.
+  });
 });
 </script>
 
@@ -447,6 +525,47 @@ onMounted(async () => {
         @set-default="handleSetDefaultView"
         @rename="handleRenameView"
       />
+
+      <div class="mt-6 px-4 mb-2 flex items-center justify-between">
+        <span
+          class="text-[10px] uppercase tracking-[0.12em] font-medium text-n-slate-10"
+        >
+          {{ t('TEAM_CHAT.SIDEBAR.TITLE') }}
+        </span>
+        <button
+          v-if="isAdmin"
+          type="button"
+          class="inline-flex items-center justify-center size-5 rounded text-n-slate-10 hover:text-n-slate-12 hover:bg-n-alpha-2 cursor-pointer transition-colors"
+          :aria-label="t('TEAM_CHAT.SIDEBAR.NEW_CHANNEL')"
+          :title="t('TEAM_CHAT.SIDEBAR.NEW_CHANNEL')"
+          @click="openCreateChannel"
+        >
+          <span class="i-lucide-plus size-3.5" />
+        </button>
+      </div>
+      <nav class="flex flex-col gap-0.5 px-2 pb-4">
+        <button
+          v-for="channel in chatChannels"
+          :key="channel.id"
+          type="button"
+          class="flex items-center gap-2 px-3 h-9 rounded-md text-sm transition-colors group"
+          :class="[
+            activeView === 'chat' && activeChatChannelId === channel.id
+              ? 'bg-n-alpha-2 text-n-slate-12 font-medium'
+              : 'text-n-slate-11 hover:text-n-slate-12 hover:bg-n-alpha-1',
+          ]"
+          @click="openChannel(channel)"
+        >
+          <span class="i-lucide-hash size-4 flex-shrink-0 text-n-slate-10" />
+          <span class="flex-1 text-left truncate">{{ channel.name }}</span>
+        </button>
+        <p
+          v-if="!chatChannels.length"
+          class="px-3 py-2 text-xs text-n-slate-10 leading-relaxed"
+        >
+          {{ t('TEAM_CHAT.SIDEBAR.EMPTY') }}
+        </p>
+      </nav>
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0">
@@ -486,6 +605,13 @@ onMounted(async () => {
       />
 
       <TasksReports v-else-if="activeView === 'reports' && isAdmin" />
+
+      <TeamChatPanel
+        v-else-if="activeView === 'chat'"
+        :channel="activeChatChannel"
+        @edit-channel="openEditChannel"
+        @archive-channel="handleArchiveChannel"
+      />
     </main>
 
     <TaskCreateModal
@@ -511,5 +637,14 @@ onMounted(async () => {
       @set-urgency="handleBulkUrgency"
       @cancel="cancelBulk"
     />
+
+    <woot-modal v-model:show="showChannelModal" :on-close="closeChannelModal">
+      <TeamChatCreateChannelModal
+        v-if="showChannelModal"
+        :channel="editingChannel"
+        @submit="handleChannelSubmit"
+        @close="closeChannelModal"
+      />
+    </woot-modal>
   </div>
 </template>

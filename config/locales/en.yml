@@ -88,6 +88,8 @@ en:
     funnel_stage:
       last_stage_protected: 'Funnels must have at least one stage. Create another before removing this one.'
       has_tasks: 'Move the tasks from this stage to another before removing it.'
+    team_chat:
+      default_channel_protected: 'Default channels cannot be removed.'
     attachments:
       invalid: Invalid attachment
     upload:

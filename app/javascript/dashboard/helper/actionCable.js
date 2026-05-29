@@ -46,6 +46,7 @@ class ActionCableConnector extends BaseActionCableConnector {
       'kanban_task.deleted': this.onKanbanTaskDeleted,
     };
     this.subscribeToTaskChannel(pubsubToken);
+    this.subscribeToTeamChatChannel(pubsubToken);
   }
 
   // AccountTasksChannel rides its own subscription so the per-user
@@ -70,6 +71,34 @@ class ActionCableConnector extends BaseActionCableConnector {
         received: ({ event, data } = {}) => {
           if (!event) return;
           store.dispatch('tasksNotifications/handleRealtimeEvent', {
+            event,
+            payload: data,
+          });
+        },
+      }
+    );
+  };
+
+  // AccountTeamChatChannel — one account-wide stream for the internal
+  // team chat. Every member subscribes; the store decides what to do with
+  // channel vs message events based on the event name.
+  subscribeToTeamChatChannel = pubsubToken => {
+    if (!this.consumer || !this.app?.$store) return;
+    const store = this.app.$store;
+    const accountId = store.getters.getCurrentAccountId;
+    const userId = store.getters.getCurrentUserID;
+    if (!accountId || !userId) return;
+    this.teamChatSubscription = this.consumer.subscriptions.create(
+      {
+        channel: 'AccountTeamChatChannel',
+        account_id: accountId,
+        user_id: userId,
+        pubsub_token: pubsubToken,
+      },
+      {
+        received: ({ event, data } = {}) => {
+          if (!event) return;
+          store.dispatch('teamChat/handleRealtimeEvent', {
             event,
             payload: data,
           });

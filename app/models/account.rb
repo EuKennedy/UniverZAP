@@ -76,6 +76,7 @@ class Account < ApplicationRecord
   has_many :kanban_tasks, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :task_views, dependent: :destroy
+  has_many :team_chat_channels, dependent: :destroy
   has_many :kanban_automations, dependent: :destroy
   has_many :kanban_api_tokens, dependent: :destroy
   has_many :kanban_webhook_subscriptions, dependent: :destroy

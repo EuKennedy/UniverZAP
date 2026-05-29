@@ -1,0 +1,49 @@
+{
+  "TEAM_CHAT": {
+    "SIDEBAR": {
+      "TITLE": "Team chat",
+      "NEW_CHANNEL": "New channel",
+      "EMPTY": "No channels yet."
+    },
+    "CHANNEL": {
+      "NEW_TITLE": "Create channel",
+      "EDIT_TITLE": "Edit channel",
+      "MODAL_SUBTITLE": "Channels organize team conversations by topic.",
+      "NAME_LABEL": "Channel name",
+      "NAME_PLACEHOLDER": "e.g. launches",
+      "DESCRIPTION_LABEL": "Description",
+      "DESCRIPTION_PLACEHOLDER": "What is this channel for? (optional)",
+      "CREATE": "Create channel",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "EDIT": "Edit channel",
+      "ARCHIVE": "Archive channel",
+      "CREATE_SUCCESS": "Channel created.",
+      "UPDATE_SUCCESS": "Channel updated.",
+      "ARCHIVE_SUCCESS": "Channel archived.",
+      "ARCHIVE_CONFIRM": "Archive the \"{name}\" channel? History is kept, but it leaves the list.",
+      "SAVE_ERROR": "Could not save the channel."
+    },
+    "PANEL": {
+      "NO_CHANNEL": "Pick a channel to get started.",
+      "EMPTY_TITLE": "Start the conversation in #{channel}",
+      "EMPTY_BODY": "Be the first to send a message in this channel.",
+      "TODAY": "Today",
+      "YESTERDAY": "Yesterday",
+      "SEND_ERROR": "Could not send the message."
+    },
+    "COMPOSER": {
+      "PLACEHOLDER": "Message #{channel}",
+      "SEND": "Send",
+      "HINT": "Enter to send · Shift+Enter for a new line"
+    },
+    "MESSAGE": {
+      "EDIT": "Edit",
+      "DELETE": "Delete",
+      "DELETE_CONFIRM": "Delete this message?",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "EDITED": "(edited)"
+    }
+  }
+}

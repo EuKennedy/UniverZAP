@@ -357,6 +357,14 @@ Rails.application.routes.draw do
             end
           end
 
+          # Internal team chat — Slack/Discord-style channels + messages
+          # scoped to the account. Real-time delivery via
+          # AccountTeamChatChannel; this REST surface backs load + CRUD.
+          resources :team_chat_channels, only: [:index, :show, :create, :update, :destroy] do
+            resources :team_chat_messages, only: [:index, :create, :update, :destroy],
+                                           path: 'messages'
+          end
+
           # Personal-access-style tokens for the public Kanban API
           # (`/api/v2/kanban/*`). Raw value returned ONCE on create —
           # store SHA-256 digest only. Admin-only.
