@@ -104,7 +104,8 @@
         "MARK_DONE": "Marcar como concluída",
         "REOPEN": "Reabrir",
         "DELETE": "Excluir",
-        "DELETE_CONFIRM": "Excluir esta tarefa? Esta ação não pode ser desfeita."
+        "DELETE_CONFIRM": "Excluir esta tarefa? Esta ação não pode ser desfeita.",
+        "CONVERT_TO_KANBAN": "Converter para Kanban"
       },
       "MUTATION_SUCCESS": "Tarefa atualizada.",
       "MUTATION_ERROR": "Não foi possível atualizar a tarefa.",
@@ -156,6 +157,112 @@
         "REQUEST": "Ativar notificações do navegador",
         "BLOCKED": "Notificações bloqueadas pelo navegador"
       }
+    },
+    "BULK": {
+      "SELECT_ALL": "Selecionar tudo",
+      "SELECT_ROW": "Selecionar tarefa",
+      "SELECTED_COUNT": "{n} selecionada(s)",
+      "COMPLETE": "Concluir",
+      "DELETE": "Excluir",
+      "ASSIGN": "Atribuir…",
+      "URGENCY": "Urgência",
+      "APPLY": "Aplicar",
+      "CANCEL": "Cancelar",
+      "SUCCESS": "{n} tarefas atualizadas.",
+      "PARTIAL_SUCCESS": "{ok} atualizadas, {failed} falharam.",
+      "ERROR": "Ação em massa falhou."
+    },
+    "SAVED_VIEWS": {
+      "TITLE": "Visualizações salvas",
+      "NEW": "Nova visualização",
+      "NAME_PLACEHOLDER": "Nome da visualização…",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "RENAME": "Renomear",
+      "DELETE": "Excluir",
+      "SET_DEFAULT": "Definir como padrão",
+      "DEFAULT_BADGE": "Padrão",
+      "EMPTY": "Salve os filtros atuais como uma visualização.",
+      "CREATED": "Visualização salva.",
+      "ERROR": "Não foi possível salvar a visualização.",
+      "DELETE_CONFIRM": "Excluir esta visualização?"
+    },
+    "VIEWS": {
+      "TITLE": "Administração",
+      "TEAM_BOARD": "Quadro do time",
+      "REPORTS": "Relatórios"
+    },
+    "RECURRENCE": {
+      "TOGGLE": "Repetir tarefa",
+      "DAILY": "Diariamente",
+      "WEEKLY": "Semanalmente",
+      "MONTHLY": "Mensalmente",
+      "CUSTOM": "Personalizado (cron)",
+      "MONTHLY_DAY_LABEL": "Dia do mês",
+      "CRON_LABEL": "Expressão cron",
+      "CRON_PLACEHOLDER": "0 9 * * 1-5",
+      "WEEKDAYS": {
+        "SUN": "Dom",
+        "MON": "Seg",
+        "TUE": "Ter",
+        "WED": "Qua",
+        "THU": "Qui",
+        "FRI": "Sex",
+        "SAT": "Sáb"
+      },
+      "PREVIEW": {
+        "DAILY": "Próxima: todo dia às 09:00",
+        "WEEKLY": "Próxima: nos dias selecionados às 09:00",
+        "MONTHLY": "Próxima: no dia escolhido, mensalmente",
+        "CUSTOM": "Próxima: conforme a expressão cron"
+      }
+    },
+    "WORKLOAD": {
+      "TITLE": "Carga do time",
+      "SUBTITLE": "Tarefas abertas por atendente na conta.",
+      "EMPTY": "Nenhum atendente para mostrar ainda.",
+      "LOAD_BAR": "Carga",
+      "OPEN_COUNT": "{n} aberta(s)",
+      "STATS": {
+        "OPEN": "Abertas",
+        "OVERDUE": "Atrasadas",
+        "DUE_TODAY": "Vencem hoje",
+        "AVERAGE": "Carga média"
+      },
+      "LABELS": {
+        "OVERDUE": "Atrasadas",
+        "TODAY": "Hoje",
+        "DONE_WEEK": "Concluídas · semana"
+      }
+    },
+    "REPORTS": {
+      "TITLE": "Relatórios",
+      "SUBTITLE": "Tendências e detalhamento por atendente.",
+      "FROM": "De",
+      "TO": "Até",
+      "APPLY": "Aplicar",
+      "LABELS": {
+        "CREATED": "Criadas",
+        "COMPLETED": "Concluídas",
+        "AVG_HOURS": "Tempo médio (horas)",
+        "OVERDUE_RATE": "% atrasadas",
+        "URGENCY_OPEN": "Abertas por urgência"
+      },
+      "CHARTS": {
+        "CREATED_VS_COMPLETED": "Criadas vs concluídas",
+        "AVG_TIME": "Tempo médio de conclusão",
+        "OVERDUE_RATE": "Taxa de atraso por atendente",
+        "URGENCY": "Abertas por urgência"
+      }
+    },
+    "CONVERT": {
+      "TITLE": "Converter em card do Kanban",
+      "FUNNEL_LABEL": "Funil",
+      "STAGE_LABEL": "Etapa",
+      "SUBMIT": "Criar card",
+      "CANCEL": "Cancelar",
+      "SUCCESS": "Tarefa convertida em card do Kanban.",
+      "ERROR": "Não foi possível criar o card."
     }
   }
 }
