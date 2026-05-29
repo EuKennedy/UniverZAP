@@ -82,6 +82,16 @@ const form = reactive({
   actions: [],
 });
 
+// Stable per-action UID so Vue `v-for` keys survive reordering. Using
+// `${type}-${idx}` made the reorder buttons swap component identities
+// instead of DOM positions, dropping local input state mid-edit.
+// `_uid` is local-only — stripped on submit so it never reaches the wire.
+let actionUidSeq = 0;
+const nextActionUid = () => {
+  actionUidSeq += 1;
+  return `act-${Date.now().toString(36)}-${actionUidSeq}`;
+};
+
 const seedForm = source => {
   form.name = source?.name || '';
   form.description = source?.description || '';
@@ -95,6 +105,7 @@ const seedForm = source => {
     : [];
   form.actions = Array.isArray(source?.actions)
     ? source.actions.map(a => ({
+        _uid: nextActionUid(),
         type: a.type || a[':type'],
         params: { ...(a.params || {}) },
       }))
@@ -160,7 +171,11 @@ const defaultParamsFor = type => {
 };
 
 const addAction = type => {
-  form.actions.push({ type, params: defaultParamsFor(type) });
+  form.actions.push({
+    _uid: nextActionUid(),
+    type,
+    params: defaultParamsFor(type),
+  });
 };
 const removeAction = idx => {
   form.actions.splice(idx, 1);
@@ -197,6 +212,7 @@ const onSubmit = () => {
     funnel_id: props.funnel.id,
     active: form.active,
     conditions: buildConditionsPayload(),
+    // Strip the local-only `_uid` before the payload crosses the wire.
     actions: form.actions.map(a => ({ type: a.type, params: a.params || {} })),
   });
 };
@@ -376,7 +392,7 @@ const actionDesc = a =>
         >
           <li
             v-for="(action, idx) in form.actions"
-            :key="`${action.type}-${idx}`"
+            :key="action._uid"
             class="flex flex-col gap-2 p-3 rounded-lg border border-n-weak bg-n-solid-1"
           >
             <header class="flex items-center gap-2">

@@ -13,10 +13,17 @@ class Tasks::Finder
     @params = params
   end
 
+  # `push_event_data` on each row walks `assignees`, `task_comments` and
+  # `task_activities` to build the association summary the dashboard
+  # renders inline. Without these eager loads the list endpoint fires
+  # O(rows × 3) extra queries on every render — painful on the "Time" /
+  # "Todas" tabs where an account easily holds hundreds of tasks.
+  TASK_LIST_INCLUDES = [:assignees, :task_comments, :task_activities, :created_by_user].freeze
+
   def call
     chain = apply_visibility(@account.tasks)
     chain = apply_filters(chain)
-    chain.order(updated_at: :desc)
+    chain.includes(TASK_LIST_INCLUDES).order(updated_at: :desc)
   end
 
   private

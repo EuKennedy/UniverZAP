@@ -27,6 +27,23 @@ const router = useRouter();
 const store = useStore();
 const { accountScopedRoute } = useAccount();
 
+// The dashboard surfaces axios errors directly to the operator via toasts.
+// Out of the box axios's `error.message` is the generic "Request failed
+// with status code 422" string, which throws away the operator-friendly
+// hint the backend went to the trouble of crafting (e.g. "Mova as tarefas
+// desta etapa para outra antes de removê-la"). This helper digs the JSON
+// body out of the response so the toast carries the same message the
+// controller emitted, falling back to whatever fallback the caller passed
+// (typically a translated i18n key).
+const apiErrorMessage = (error, fallback) => {
+  const data = error?.response?.data;
+  if (data?.message) return data.message;
+  if (Array.isArray(data?.errors) && data.errors.length)
+    return data.errors.join(', ');
+  if (typeof data === 'string' && data.trim()) return data;
+  return fallback;
+};
+
 const funnel = computed(() =>
   store.getters['funnels/getFunnel'](Number(props.funnelId))
 );
@@ -68,7 +85,7 @@ const onStagesReordered = async () => {
       orderedIds,
     });
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.STAGE.REORDER_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.STAGE.REORDER_ERROR')));
     await store.dispatch('funnels/show', Number(props.funnelId));
     syncStagesDraft();
   }
@@ -79,7 +96,7 @@ const ensureFunnel = async () => {
   try {
     await store.dispatch('funnels/show', Number(props.funnelId));
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.FUNNEL.LOAD_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.FUNNEL.LOAD_ERROR')));
   }
 };
 
@@ -102,7 +119,7 @@ const handleFunnelSubmit = async payload => {
     useAlert(t('KANBAN.FUNNEL.UPDATE_SUCCESS'));
     closeFunnelModal();
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.FUNNEL.SAVE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.FUNNEL.SAVE_ERROR')));
   }
 };
 
@@ -139,7 +156,7 @@ const handleStageSubmit = async payload => {
     }
     closeStageModal();
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.STAGE.SAVE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.STAGE.SAVE_ERROR')));
   }
 };
 
@@ -164,7 +181,7 @@ const confirmDeleteStage = async () => {
     useAlert(t('KANBAN.STAGE.DELETE_SUCCESS'));
     cancelDeleteStage();
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.STAGE.DELETE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.STAGE.DELETE_ERROR')));
   }
 };
 
@@ -187,7 +204,7 @@ const loadCustomFields = async () => {
     const { data } = await FunnelCustomFieldsAPI.list(props.funnelId);
     customFields.value = data || [];
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR')));
   }
 };
 
@@ -221,7 +238,7 @@ const handleCustomFieldSubmit = async payload => {
     await loadCustomFields();
     await store.dispatch('funnels/show', Number(props.funnelId));
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR')));
   }
 };
 
@@ -243,7 +260,7 @@ const confirmDeleteCustomField = async () => {
     await loadCustomFields();
     await store.dispatch('funnels/show', Number(props.funnelId));
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.CUSTOM_FIELDS.SAVE_ERROR')));
   }
 };
 
@@ -277,7 +294,7 @@ const loadAutomations = async () => {
     });
     automations.value = Array.isArray(data) ? data : [];
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.AUTOMATIONS.LOAD_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.AUTOMATIONS.LOAD_ERROR')));
   } finally {
     isAutomationsLoading.value = false;
   }
@@ -308,11 +325,7 @@ const handleAutomationSubmit = async payload => {
     closeAutomationModal();
     await loadAutomations();
   } catch (error) {
-    useAlert(
-      error?.response?.data?.errors?.join?.(', ') ||
-        error?.message ||
-        t('KANBAN.AUTOMATIONS.SAVE_ERROR')
-    );
+    useAlert(apiErrorMessage(error, t('KANBAN.AUTOMATIONS.SAVE_ERROR')));
   }
 };
 
@@ -333,7 +346,7 @@ const confirmDeleteAutomation = async () => {
     cancelDeleteAutomation();
     await loadAutomations();
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.AUTOMATIONS.SAVE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.AUTOMATIONS.SAVE_ERROR')));
   }
 };
 
@@ -348,7 +361,7 @@ const toggleAutomationActive = async automation => {
     await KanbanAutomationsAPI.update(automation.id, { active: !previous });
   } catch (error) {
     automations.value[idx] = { ...automation, active: previous };
-    useAlert(error?.message || t('KANBAN.AUTOMATIONS.SAVE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.AUTOMATIONS.SAVE_ERROR')));
   }
 };
 
@@ -375,7 +388,7 @@ const confirmDeleteFunnel = async () => {
     useAlert(t('KANBAN.FUNNEL.DELETE_SUCCESS'));
     router.push(accountScopedRoute('kanban_overview'));
   } catch (error) {
-    useAlert(error?.message || t('KANBAN.FUNNEL.DELETE_ERROR'));
+    useAlert(apiErrorMessage(error, t('KANBAN.FUNNEL.DELETE_ERROR')));
   }
 };
 
