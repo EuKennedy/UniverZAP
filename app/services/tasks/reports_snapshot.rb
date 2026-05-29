@@ -26,14 +26,18 @@ class Tasks::ReportsSnapshot
   end
 
   def avg_time_by_agent
+    # `avatar_url` is a User method (not a column), so we group + pluck
+    # on the columns we have, and hydrate the URL via `User.find` once
+    # per row at the end.
     rows = scoped_tasks
            .where.not(completed_at: nil)
            .where(completed_at: range_boundary)
            .joins(task_assignees: :user)
-           .group('users.id', 'users.name', 'users.avatar_url')
-           .pluck(Arel.sql("users.id, users.name, users.avatar_url,
-                            AVG(EXTRACT(EPOCH FROM (tasks.completed_at - tasks.created_at)) / 3600.0)"))
-    rows.map { |id, name, avatar, avg_hours| agent_avg_row(id, name, avatar, avg_hours) }
+           .group('users.id', 'users.name')
+           .pluck(Arel.sql('users.id, users.name,
+                            AVG(EXTRACT(EPOCH FROM (tasks.completed_at - tasks.created_at)) / 3600.0)'))
+    user_index = User.where(id: rows.map(&:first)).index_by(&:id)
+    rows.map { |id, name, avg_hours| agent_avg_row(id, name, user_index[id]&.avatar_url, avg_hours) }
   end
 
   def agent_avg_row(id, name, avatar, avg_hours)

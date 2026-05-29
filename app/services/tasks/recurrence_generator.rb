@@ -128,7 +128,10 @@ class Tasks::RecurrenceGenerator
   end
 
   def copy_assignees(parent, child)
-    parent.task_assignees.find_each do |assignment|
+    # Use the database scope (not the in-memory association) so callers
+    # who just added assignees on a cached `parent` instance still get
+    # them mirrored onto the next occurrence.
+    TaskAssignee.where(task_id: parent.id).find_each do |assignment|
       child.task_assignees.create!(user_id: assignment.user_id)
     end
   end

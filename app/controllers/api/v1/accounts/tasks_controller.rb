@@ -74,12 +74,32 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
   # Returns `{ ok: <count>, failed: [{ id, reason }] }`.
   def bulk
     ids = Array(params[:task_ids]).map(&:to_i).uniq.compact_blank
-    action = params[:action].to_s
-    return render(json: { error: 'invalid_action' }, status: :unprocessable_entity) unless BULK_ACTIONS.include?(action)
+    name = bulk_action_name
+    return render(json: { error: 'invalid_action' }, status: :unprocessable_entity) unless BULK_ACTIONS.include?(name)
 
     result = Tasks::BulkAction.new(account: Current.account, user: Current.user, ids: ids,
-                                   action: action, payload: bulk_payload).call
+                                   action: name, payload: bulk_payload).call
     render json: result
+  end
+
+  # `params[:action]` collides with the controller's own action name —
+  # the user-supplied value is preserved by parsing the raw request body
+  # so legacy clients sending `action` keep working alongside the safer
+  # `bulk_action` alias.
+  def bulk_action_name
+    return params[:bulk_action].to_s if params[:bulk_action].present?
+
+    body = parsed_request_body
+    (body['bulk_action'] || body['action']).to_s
+  end
+
+  def parsed_request_body
+    @parsed_request_body ||= begin
+      raw = request.raw_post
+      raw.present? ? JSON.parse(raw) : {}
+    rescue JSON::ParserError
+      {}
+    end
   end
 
   # Per-agent workload snapshot, scoped to the current account. Admin-only.

@@ -27,7 +27,7 @@ RSpec.describe Tasks::RecurrenceGenerator do
     end
 
     it 'rolls a monthly day forward when past the current month' do
-      Timecop.freeze(Time.zone.parse('2026-05-20 12:00')) do
+      travel_to(Time.zone.parse('2026-05-20 12:00')) do
         result = described_class.next_occurrence({ 'type' => 'monthly', 'day' => 15 })
         expect(result.to_date).to eq(Date.parse('2026-06-15'))
       end
