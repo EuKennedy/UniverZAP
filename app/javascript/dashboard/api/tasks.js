@@ -44,6 +44,28 @@ class TasksAPI extends ApiClient {
   fetchActivities(id, params = {}) {
     return axios.get(`${this.url}/${id}/activities`, { params });
   }
+
+  // T4 — bulk runs the same dispatcher backend-side; returns
+  // `{ ok, failed: [{ id, reason }] }` so the UI can flag partials.
+  bulk(taskIds, action, payload = {}) {
+    return axios.post(`${this.url}/bulk`, {
+      task_ids: taskIds,
+      action,
+      payload,
+    });
+  }
+
+  fetchTeamWorkload() {
+    return axios.get(`${this.url}/team_workload`);
+  }
+
+  fetchReports(params = {}) {
+    return axios.get(`${this.url}/reports`, { params });
+  }
+
+  convertToKanbanCard(id, payload) {
+    return axios.post(`${this.url}/${id}/convert_to_kanban_card`, payload);
+  }
 }
 
 export default new TasksAPI();

@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import { useMapGetter } from 'dashboard/composables/store';
+import { useUISettings } from 'dashboard/composables/useUISettings';
 
 import TasksHeader from './components/TasksHeader.vue';
 import TasksFilters from './components/TasksFilters.vue';
@@ -12,11 +13,16 @@ import TasksList from './components/TasksList.vue';
 import TasksSkeleton from './components/TasksSkeleton.vue';
 import TaskCreateModal from './components/TaskCreateModal.vue';
 import TaskDetailDrawer from './components/TaskDetailDrawer.vue';
+import TaskSavedViewsList from './components/TaskSavedViewsList.vue';
+import TasksBulkActionBar from './components/TasksBulkActionBar.vue';
+import TeamWorkloadDashboard from './components/TeamWorkloadDashboard.vue';
+import TasksReports from './components/TasksReports.vue';
 
 const { t } = useI18n();
 const store = useStore();
 const route = useRoute();
 const router = useRouter();
+const { uiSettings, updateUISettings } = useUISettings();
 
 const tasks = useMapGetter('tasks/getTasks');
 const filters = useMapGetter('tasks/getFilters');
@@ -24,10 +30,16 @@ const uiFlags = useMapGetter('tasks/getUiFlags');
 const mineCount = useMapGetter('tasks/getMineCount');
 const overdueCount = useMapGetter('tasks/getOverdueCount');
 const meta = useMapGetter('tasks/getMeta');
+const savedViews = useMapGetter('taskViews/getViews');
+const currentUser = useMapGetter('getCurrentUser');
 
 const showCreateModal = ref(false);
 const groupBy = ref('urgency');
 const activeQuickFilter = ref(null);
+const activeView = ref('list');
+const activeViewId = ref(null);
+const selectedIds = ref([]);
+const isBulkBusy = ref(false);
 
 const TABS = [
   { key: 'mine', labelKey: 'TASKS.TABS.MINE', scope: 'mine' },
@@ -38,6 +50,11 @@ const TABS = [
   },
   { key: 'team', labelKey: 'TASKS.TABS.TEAM', scope: 'team' },
   { key: 'all', labelKey: 'TASKS.TABS.ALL', scope: 'all' },
+];
+
+const ADMIN_VIEWS = [
+  { key: 'team_board', labelKey: 'TASKS.VIEWS.TEAM_BOARD' },
+  { key: 'reports', labelKey: 'TASKS.VIEWS.REPORTS' },
 ];
 
 const QUICK_FILTERS = [
@@ -58,7 +75,9 @@ const QUICK_FILTERS = [
   },
 ];
 
+const isAdmin = computed(() => currentUser.value?.role === 'administrator');
 const activeScope = computed(() => filters.value.scope || 'mine');
+const settingsKey = computed(() => `tasks_filters_${activeScope.value}`);
 
 const tabCounts = computed(() => ({
   mine: mineCount.value,
@@ -71,30 +90,36 @@ const refresh = () => {
   store.dispatch('tasks/fetch');
 };
 
+const persistFilters = patch => {
+  const next = { ...filters.value, ...patch };
+  updateUISettings({ [settingsKey.value]: next });
+};
+
 const setScope = scope => {
   if (filters.value.scope === scope) return;
   activeQuickFilter.value = null;
-  store.dispatch('tasks/setFilters', {
-    scope,
-    due_before: null,
-  });
+  store.dispatch('tasks/setFilters', { scope, due_before: null });
   refresh();
 };
 
 const updateFilters = patch => {
   store.dispatch('tasks/setFilters', patch);
+  persistFilters(patch);
   refresh();
 };
 
 const clearFilters = () => {
   activeQuickFilter.value = null;
-  store.dispatch('tasks/setFilters', {
+  activeViewId.value = null;
+  const cleared = {
     status: null,
     urgency: null,
     assignee_id: null,
     due_before: null,
     q: null,
-  });
+  };
+  store.dispatch('tasks/setFilters', cleared);
+  persistFilters(cleared);
   refresh();
 };
 
@@ -186,8 +211,107 @@ const currentTask = computed(() => {
   return tasks.value.find(task => task.id === drawerTaskId.value) || null;
 });
 
-// Lazy-fetch the task when the user lands directly on the deep link before
-// the list query has populated `records`.
+const handleSelectionChange = ids => {
+  selectedIds.value = ids;
+};
+
+const runBulk = async (action, payload = {}) => {
+  if (!selectedIds.value.length) return;
+  isBulkBusy.value = true;
+  try {
+    const result = await store.dispatch('tasks/bulk', {
+      taskIds: selectedIds.value,
+      action,
+      payload,
+    });
+    selectedIds.value = [];
+    if (action !== 'delete') refresh();
+    if (result?.failed?.length) {
+      useAlert(
+        t('TASKS.BULK.PARTIAL_SUCCESS', {
+          ok: result.ok,
+          failed: result.failed.length,
+        })
+      );
+    } else {
+      useAlert(t('TASKS.BULK.SUCCESS', { n: result?.ok ?? 0 }));
+    }
+  } catch (error) {
+    useAlert(error?.message || t('TASKS.BULK.ERROR'));
+  } finally {
+    isBulkBusy.value = false;
+  }
+};
+
+const handleBulkAssign = assigneeId =>
+  runBulk('assign', { user_id: assigneeId });
+
+const handleBulkUrgency = urgency => runBulk('set_urgency', { urgency });
+
+const cancelBulk = () => {
+  selectedIds.value = [];
+};
+
+const handleSelectView = view => {
+  activeViewId.value = view.id;
+  const merged = { ...filters.value, ...(view.filters || {}) };
+  store.dispatch('tasks/setFilters', merged);
+  refresh();
+};
+
+const handleCreateView = async name => {
+  try {
+    await store.dispatch('taskViews/create', {
+      name,
+      filters: filters.value,
+    });
+    useAlert(t('TASKS.SAVED_VIEWS.CREATED'));
+  } catch (error) {
+    useAlert(error?.message || t('TASKS.SAVED_VIEWS.ERROR'));
+  }
+};
+
+const handleRenameView = async ({ id, name }) => {
+  try {
+    await store.dispatch('taskViews/update', { id, name });
+  } catch (error) {
+    useAlert(error?.message || t('TASKS.SAVED_VIEWS.ERROR'));
+  }
+};
+
+const handleDeleteView = async view => {
+  if (!window.confirm(t('TASKS.SAVED_VIEWS.DELETE_CONFIRM'))) return;
+  try {
+    await store.dispatch('taskViews/delete', view.id);
+    if (activeViewId.value === view.id) activeViewId.value = null;
+  } catch (error) {
+    useAlert(error?.message || t('TASKS.SAVED_VIEWS.ERROR'));
+  }
+};
+
+const handleSetDefaultView = async view => {
+  try {
+    await store.dispatch('taskViews/setDefault', view.id);
+  } catch (error) {
+    useAlert(error?.message || t('TASKS.SAVED_VIEWS.ERROR'));
+  }
+};
+
+const focusAgentFromWorkload = userId => {
+  activeView.value = 'list';
+  updateFilters({ assignee_id: userId, scope: 'all' });
+};
+
+const hydrateFromSettings = () => {
+  const cached = uiSettings.value?.[settingsKey.value];
+  if (!cached || typeof cached !== 'object') return;
+  store.dispatch('tasks/setFilters', cached);
+};
+
+watch(activeScope, () => {
+  hydrateFromSettings();
+});
+
 watch(drawerTaskId, async id => {
   if (!id) return;
   const found = tasks.value.find(task => task.id === id);
@@ -200,16 +324,22 @@ watch(drawerTaskId, async id => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
   store.dispatch('agents/get');
+  hydrateFromSettings();
   refresh();
+  try {
+    await store.dispatch('taskViews/fetch');
+  } catch (_error) {
+    // Saved views are non-essential — silently skip if the endpoint fails.
+  }
 });
 </script>
 
 <template>
   <div class="flex h-full w-full bg-n-background">
     <aside
-      class="hidden md:flex flex-col w-56 flex-shrink-0 border-r border-n-weak bg-n-solid-1/40"
+      class="hidden md:flex flex-col w-56 flex-shrink-0 border-r border-n-weak bg-n-solid-1/40 overflow-y-auto"
     >
       <div class="px-4 pt-5 pb-3 flex flex-col gap-3">
         <span
@@ -225,11 +355,15 @@ onMounted(() => {
           type="button"
           class="flex items-center justify-between gap-2 px-3 h-9 rounded-md text-sm transition-colors"
           :class="[
-            activeScope === tab.scope
+            activeView === 'list' && activeScope === tab.scope
               ? 'bg-n-alpha-2 text-n-slate-12 font-medium'
               : 'text-n-slate-11 hover:text-n-slate-12 hover:bg-n-alpha-1',
           ]"
-          @click="setScope(tab.scope)"
+          :data-test-id="`tasks-tab-${tab.key}`"
+          @click="
+            activeView = 'list';
+            setScope(tab.scope);
+          "
         >
           <span class="truncate">{{ t(tab.labelKey) }}</span>
           <span
@@ -240,6 +374,33 @@ onMounted(() => {
           </span>
         </button>
       </nav>
+
+      <template v-if="isAdmin">
+        <div class="mt-6 px-4 mb-2">
+          <span
+            class="text-[10px] uppercase tracking-[0.12em] font-medium text-n-slate-10"
+          >
+            {{ t('TASKS.VIEWS.TITLE') }}
+          </span>
+        </div>
+        <nav class="flex flex-col gap-0.5 px-2">
+          <button
+            v-for="view in ADMIN_VIEWS"
+            :key="view.key"
+            type="button"
+            class="flex items-center justify-between gap-2 px-3 h-9 rounded-md text-sm transition-colors"
+            :class="[
+              activeView === view.key
+                ? 'bg-n-alpha-2 text-n-slate-12 font-medium'
+                : 'text-n-slate-11 hover:text-n-slate-12 hover:bg-n-alpha-1',
+            ]"
+            :data-test-id="`tasks-view-${view.key}`"
+            @click="activeView = view.key"
+          >
+            <span class="truncate">{{ t(view.labelKey) }}</span>
+          </button>
+        </nav>
+      </template>
 
       <div class="mt-6 px-4 mb-2">
         <span
@@ -259,7 +420,10 @@ onMounted(() => {
               ? 'bg-n-alpha-2 text-n-slate-12 font-medium'
               : 'text-n-slate-11 hover:text-n-slate-12 hover:bg-n-alpha-1',
           ]"
-          @click="applyQuickFilter(filter.key)"
+          @click="
+            activeView = 'list';
+            applyQuickFilter(filter.key);
+          "
         >
           <span class="size-4 flex-shrink-0" :class="[filter.icon]" />
           <span class="flex-1 text-left truncate">{{
@@ -273,34 +437,55 @@ onMounted(() => {
           </span>
         </button>
       </nav>
+
+      <TaskSavedViewsList
+        :views="savedViews"
+        :active-view-id="activeViewId"
+        @select="handleSelectView"
+        @create="handleCreateView"
+        @delete="handleDeleteView"
+        @set-default="handleSetDefaultView"
+        @rename="handleRenameView"
+      />
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0">
-      <TasksHeader
-        :total-count="meta.count"
-        :group-by="groupBy"
-        @create="showCreateModal = true"
-        @refresh="refresh"
-        @group-by="groupBy = $event"
-      />
-      <TasksFilters
-        :filters="filters"
-        @update="updateFilters"
-        @clear="clearFilters"
+      <template v-if="activeView === 'list'">
+        <TasksHeader
+          :total-count="meta.count"
+          :group-by="groupBy"
+          @create="showCreateModal = true"
+          @refresh="refresh"
+          @group-by="groupBy = $event"
+        />
+        <TasksFilters
+          :filters="filters"
+          @update="updateFilters"
+          @clear="clearFilters"
+        />
+
+        <TasksSkeleton v-if="uiFlags.isFetching && !tasks.length" />
+        <TasksList
+          v-else
+          :tasks="tasks"
+          :group-by="groupBy"
+          :is-filtered="isFiltered"
+          :selected-ids="selectedIds"
+          @toggle="handleToggle"
+          @open="openTask"
+          @delete="handleDelete"
+          @create="showCreateModal = true"
+          @reset="clearFilters"
+          @selection-change="handleSelectionChange"
+        />
+      </template>
+
+      <TeamWorkloadDashboard
+        v-else-if="activeView === 'team_board' && isAdmin"
+        @focus-agent="focusAgentFromWorkload"
       />
 
-      <TasksSkeleton v-if="uiFlags.isFetching && !tasks.length" />
-      <TasksList
-        v-else
-        :tasks="tasks"
-        :group-by="groupBy"
-        :is-filtered="isFiltered"
-        @toggle="handleToggle"
-        @open="openTask"
-        @delete="handleDelete"
-        @create="showCreateModal = true"
-        @reset="clearFilters"
-      />
+      <TasksReports v-else-if="activeView === 'reports' && isAdmin" />
     </main>
 
     <TaskCreateModal
@@ -315,6 +500,16 @@ onMounted(() => {
       :task="currentTask"
       @close="closeDrawer"
       @deleted="closeDrawer"
+    />
+
+    <TasksBulkActionBar
+      :selected-ids="selectedIds"
+      :is-busy="isBulkBusy"
+      @complete="runBulk('complete')"
+      @delete="runBulk('delete')"
+      @assign="handleBulkAssign"
+      @set-urgency="handleBulkUrgency"
+      @cancel="cancelBulk"
     />
   </div>
 </template>

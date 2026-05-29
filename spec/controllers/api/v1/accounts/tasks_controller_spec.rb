@@ -161,4 +161,117 @@ RSpec.describe Api::V1::Accounts::TasksController, type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  describe 'POST /api/v1/accounts/:id/tasks/bulk' do
+    let!(:tasks) { create_list(:task, 3, account: account, created_by_user: admin) }
+
+    it 'completes multiple tasks' do
+      post "/api/v1/accounts/#{account.id}/tasks/bulk",
+           params: { task_ids: tasks.map(&:id), action: 'complete' },
+           headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body['ok']).to eq(3)
+      tasks.each { |t| expect(t.reload.status).to eq('done') }
+    end
+
+    it 'deletes multiple tasks' do
+      expect do
+        post "/api/v1/accounts/#{account.id}/tasks/bulk",
+             params: { task_ids: tasks.map(&:id), action: 'delete' },
+             headers: admin.create_new_auth_token, as: :json
+      end.to change(Task, :count).by(-3)
+      expect(response.parsed_body['ok']).to eq(3)
+    end
+
+    it 'assigns multiple tasks to a user' do
+      assignee = create(:user, account: account)
+      post "/api/v1/accounts/#{account.id}/tasks/bulk",
+           params: { task_ids: tasks.map(&:id), action: 'assign', payload: { user_id: assignee.id } },
+           headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body['ok']).to eq(3)
+      expect(tasks.first.reload.assignees.pluck(:id)).to include(assignee.id)
+    end
+
+    it 'sets urgency on multiple tasks' do
+      post "/api/v1/accounts/#{account.id}/tasks/bulk",
+           params: { task_ids: tasks.map(&:id), action: 'set_urgency', payload: { urgency: 'high' } },
+           headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body['ok']).to eq(3)
+      expect(tasks.first.reload.urgency).to eq('high')
+    end
+
+    it 'returns 422 for unknown actions' do
+      post "/api/v1/accounts/#{account.id}/tasks/bulk",
+           params: { task_ids: tasks.map(&:id), action: 'unknown' },
+           headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it 'reports missing ids as failures' do
+      post "/api/v1/accounts/#{account.id}/tasks/bulk",
+           params: { task_ids: tasks.map(&:id) + [999_999], action: 'complete' },
+           headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body['failed'].map { |r| r['reason'] }).to include('not_found')
+    end
+  end
+
+  describe 'GET /api/v1/accounts/:id/tasks/team_workload' do
+    before { create_list(:task, 2, account: account, created_by_user: admin) }
+
+    it 'returns workload payload for admins' do
+      get "/api/v1/accounts/#{account.id}/tasks/team_workload",
+          headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include('agents', 'totals')
+    end
+
+    it 'forbids non-admins' do
+      get "/api/v1/accounts/#{account.id}/tasks/team_workload",
+          headers: agent.create_new_auth_token, as: :json
+      expect(response.status).to be_in([401, 403])
+    end
+
+    it 'returns 404 for cross-tenant accounts' do
+      foreign_admin = create(:user, account: create(:account), role: :administrator)
+      get "/api/v1/accounts/#{account.id}/tasks/team_workload",
+          headers: foreign_admin.create_new_auth_token, as: :json
+      expect(response.status).to be_in([401, 403, 404])
+    end
+  end
+
+  describe 'GET /api/v1/accounts/:id/tasks/reports' do
+    before { create_list(:task, 2, account: account, created_by_user: admin) }
+
+    it 'returns aggregated metrics' do
+      get "/api/v1/accounts/#{account.id}/tasks/reports",
+          headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include(
+        'created_vs_completed', 'avg_time_to_complete_by_agent',
+        'overdue_rate_by_agent', 'open_urgency_distribution'
+      )
+    end
+
+    it 'forbids non-admins' do
+      get "/api/v1/accounts/#{account.id}/tasks/reports",
+          headers: agent.create_new_auth_token, as: :json
+      expect(response.status).to be_in([401, 403])
+    end
+  end
+
+  describe 'POST /api/v1/accounts/:id/tasks/:id/convert_to_kanban_card' do
+    let(:task) { create(:task, account: account, created_by_user: admin) }
+    let(:funnel) { create(:funnel, account: account) }
+    let(:stage)  { create(:funnel_stage, funnel: funnel) }
+
+    it 'creates a kanban_task and cross-links the source task' do
+      expect do
+        post "/api/v1/accounts/#{account.id}/tasks/#{task.id}/convert_to_kanban_card",
+             params: { funnel_id: funnel.id, funnel_stage_id: stage.id },
+             headers: admin.create_new_auth_token, as: :json
+      end.to change(KanbanTask, :count).by(1)
+      expect(response).to have_http_status(:created)
+      expect(task.reload.custom_attributes['kanban_card_id']).to eq(KanbanTask.last.id)
+    end
+  end
 end

@@ -161,6 +161,37 @@ export const actions = {
     commit(types.SET_TASKS_FILTERS, filters);
   },
 
+  // T4 — bulk dispatcher. Returns the backend's `{ ok, failed }` shape
+  // so the UI can surface partial-failure toasts. We do NOT optimistically
+  // mutate `records` here — the realtime stream will deliver each
+  // affected row through `upsertFromRealtime`/`removeFromRealtime`.
+  bulk: async ({ commit }, { taskIds, action, payload }) => {
+    const response = await TasksAPI.bulk(taskIds, action, payload || {});
+    if (action === 'delete') {
+      taskIds.forEach(id => commit(types.REMOVE_TASK, id));
+    }
+    return response.data;
+  },
+
+  fetchTeamWorkload: async () => {
+    const response = await TasksAPI.fetchTeamWorkload();
+    return response.data;
+  },
+
+  fetchReports: async (_ctx, params = {}) => {
+    const response = await TasksAPI.fetchReports(params);
+    return response.data;
+  },
+
+  convertToKanbanCard: async ({ commit }, { id, funnelId, funnelStageId }) => {
+    const response = await TasksAPI.convertToKanbanCard(id, {
+      funnel_id: funnelId,
+      funnel_stage_id: funnelStageId,
+    });
+    if (response.data?.task) commit(types.UPDATE_TASK, response.data.task);
+    return response.data;
+  },
+
   // ActionCable bridge (T3 wires the channel handlers here).
   upsertFromRealtime: ({ commit }, task) => {
     if (!task?.id) return;

@@ -27,11 +27,17 @@
 class Task < ApplicationRecord
   belongs_to :account
   belongs_to :created_by_user, class_name: 'User', optional: false
+  # Recurrence parent: when a task is spawned by `RecurrenceGenerator`,
+  # we point back at the template row so the dashboard can group the
+  # series and the scheduler knows where to advance `next_occurrence_at`.
+  belongs_to :recurrence_parent, class_name: 'Task', optional: true
 
   has_many :task_assignees, dependent: :destroy
   has_many :assignees, through: :task_assignees, source: :user
   has_many :task_comments, dependent: :destroy
   has_many :task_activities, dependent: :destroy
+  has_many :recurrence_children, class_name: 'Task', foreign_key: :recurrence_parent_id, dependent: :nullify,
+                                 inverse_of: :recurrence_parent
 
   enum status: { open: 0, in_progress: 1, blocked: 2, done: 3, cancelled: 4 }, _prefix: :status
   enum urgency: { none: 0, low: 1, medium: 2, high: 3, urgent: 4 }, _prefix: :urgency
@@ -48,6 +54,10 @@ class Task < ApplicationRecord
     joins(:task_assignees).where(task_assignees: { user_id: user_id }).distinct
   }
   scope :created_by, ->(user_id) { where(created_by_user_id: user_id) }
+  scope :recurring, -> { where.not(recurrence_rule: {}) }
+  scope :due_for_recurrence, lambda {
+    recurring.where.not(next_occurrence_at: nil).where('next_occurrence_at <= ?', Time.current)
+  }
 
   before_create :assign_display_id
 
@@ -55,6 +65,7 @@ class Task < ApplicationRecord
   after_create_commit  :broadcast_created
   after_update_commit  :log_update_activity
   after_update_commit  :broadcast_updated
+  after_update_commit  :spawn_next_recurrence_on_completion
   after_destroy_commit :broadcast_destroyed
 
   # Full snapshot used by the broadcaster + REST responses. Keep this
@@ -62,6 +73,10 @@ class Task < ApplicationRecord
   # (full comment bodies, activity log) is fetched on demand.
   def push_event_data
     attributes_payload.merge(association_summary).merge(timestamps_payload)
+  end
+
+  def recurring?
+    recurrence_rule.present? && recurrence_rule != {}
   end
 
   private
@@ -80,7 +95,10 @@ class Task < ApplicationRecord
       completed_at: completed_at&.to_i,
       notify_assignees: notify_assignees,
       custom_attributes: custom_attributes,
-      position: position
+      position: position,
+      recurrence_rule: recurrence_rule || {},
+      recurrence_parent_id: recurrence_parent_id,
+      next_occurrence_at: next_occurrence_at&.to_i
     }
   end
 
@@ -140,5 +158,22 @@ class Task < ApplicationRecord
 
   def broadcast_destroyed
     Tasks::Broadcaster.broadcast('task.deleted', self, target: :account, payload: { id: id })
+  end
+
+  # Spawn the next occurrence the moment a recurring task is marked done.
+  # Guarded so the callback only fires when:
+  #   * the status column actually flipped in this update
+  #   * the new status is `done` (cancelled/blocked don't roll forward)
+  #   * the rule is present (skip if recurrence was disabled in-flight)
+  # The Job + RecurrenceGenerator handle the actual clone — the callback
+  # only schedules to keep the user-visible mutation snappy.
+  def spawn_next_recurrence_on_completion
+    return unless saved_change_to_status?
+    return unless status_done?
+    return unless recurring?
+
+    Tasks::RecurrenceGenerator.spawn_next!(self)
+  rescue StandardError => e
+    Rails.logger.error("[Task#spawn_next_recurrence] task=#{id} failed: #{e.message}")
   end
 end

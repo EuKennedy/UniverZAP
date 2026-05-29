@@ -5,8 +5,10 @@
 # yield 404 instead of leaking shape.
 #
 class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
-  before_action :fetch_task, except: [:index, :create]
+  before_action :fetch_task, except: [:index, :create, :bulk, :team_workload, :reports]
   before_action :authorize_action
+
+  BULK_ACTIONS = %w[complete delete assign set_urgency].freeze
 
   def index
     tasks = Tasks::Finder.new(account: Current.account, user: Current.user, params: params).call
@@ -19,12 +21,14 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
 
   def create
     @task = Current.account.tasks.create!(create_params.merge(created_by_user: Current.user))
-    render json: @task.push_event_data, status: :created
+    apply_recurrence_metadata(@task)
+    render json: @task.reload.push_event_data, status: :created
   end
 
   def update
     @task.update!(update_params)
-    render json: @task.push_event_data
+    apply_recurrence_metadata(@task)
+    render json: @task.reload.push_event_data
   end
 
   def destroy
@@ -65,6 +69,39 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
     }
   end
 
+  # Bulk operations over a list of task ids. Runs inside a single
+  # transaction per task so a single bad row doesn't poison the rest.
+  # Returns `{ ok: <count>, failed: [{ id, reason }] }`.
+  def bulk
+    ids = Array(params[:task_ids]).map(&:to_i).uniq.compact_blank
+    action = params[:action].to_s
+    return render(json: { error: 'invalid_action' }, status: :unprocessable_entity) unless BULK_ACTIONS.include?(action)
+
+    result = Tasks::BulkAction.new(account: Current.account, user: Current.user, ids: ids,
+                                   action: action, payload: bulk_payload).call
+    render json: result
+  end
+
+  # Per-agent workload snapshot, scoped to the current account. Admin-only.
+  def team_workload
+    render json: Tasks::WorkloadSnapshot.new(account: Current.account).call
+  end
+
+  # Aggregated metrics for the Reports tab. Admin-only.
+  def reports
+    render json: Tasks::ReportsSnapshot.new(account: Current.account, from: report_from, to: report_to).call
+  end
+
+  # Materializes the task as a new KanbanTask in the chosen funnel/stage
+  # and cross-links both rows via `custom_attributes` so the dashboard
+  # can surface the relationship from either side.
+  def convert_to_kanban_card
+    funnel = Current.account.funnels.find(params.require(:funnel_id))
+    stage  = funnel.funnel_stages.find(params.require(:funnel_stage_id))
+    card = Tasks::KanbanConverter.new(task: @task, funnel: funnel, stage: stage).call
+    render json: { task: @task.reload.push_event_data, kanban_card_id: card.id }, status: :created
+  end
+
   private
 
   def fetch_task
@@ -80,18 +117,32 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
   end
 
   def action_uses_class?
-    %w[index create].include?(action_name)
+    %w[index create bulk team_workload reports].include?(action_name)
   end
 
   def create_params
     params.require(:task).permit(:title, :urgency, :status, :due_date, :notify_assignees,
-                                 description: {}, custom_attributes: {})
+                                 description: {}, custom_attributes: {}, recurrence_rule: {})
   end
 
   def update_params
     params.require(:task).permit(:title, :urgency, :status, :due_date, :completed_at,
                                  :notify_assignees, :position,
-                                 description: {}, custom_attributes: {})
+                                 description: {}, custom_attributes: {}, recurrence_rule: {})
+  end
+
+  # Recurrence metadata lives on the task itself but `next_occurrence_at`
+  # is a derived value — we recompute it whenever the rule changes so
+  # the scheduler/UI never have to.
+  def apply_recurrence_metadata(task)
+    return unless task.recurring?
+
+    next_at = Tasks::RecurrenceGenerator.next_occurrence(task.recurrence_rule, from: task.due_date || Time.current)
+    return if next_at.blank?
+
+    # rubocop:disable Rails/SkipsModelValidations
+    task.update_columns(next_occurrence_at: next_at)
+    # rubocop:enable Rails/SkipsModelValidations
   end
 
   def comment_body
@@ -104,5 +155,28 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
   def fetch_account_user(user_id)
     membership = Current.account.account_users.find_by!(user_id: user_id)
     membership.user
+  end
+
+  def bulk_payload
+    raw = params[:payload]
+    return {} if raw.blank?
+
+    raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw
+  end
+
+  def report_from
+    parse_date_param(params[:from]) || 30.days.ago.to_date
+  end
+
+  def report_to
+    parse_date_param(params[:to]) || Time.current.to_date
+  end
+
+  def parse_date_param(raw)
+    return nil if raw.blank?
+
+    Time.zone.parse(raw.to_s)&.to_date
+  rescue ArgumentError
+    nil
   end
 end

@@ -46,6 +46,22 @@ class TaskPolicy < ApplicationPolicy
     comment?
   end
 
+  def bulk?
+    index?
+  end
+
+  def team_workload?
+    @account_user.administrator?
+  end
+
+  def reports?
+    @account_user.administrator?
+  end
+
+  def convert_to_kanban_card?
+    can_mutate?
+  end
+
   private
 
   def can_mutate?

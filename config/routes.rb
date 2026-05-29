@@ -334,12 +334,26 @@ Rails.application.routes.draw do
           # description + comments, and an activity log surfaced via the
           # `:activities` member route.
           resources :tasks do
+            collection do
+              post :bulk
+              get  :team_workload
+              get  :reports
+            end
             member do
               post :assign
               delete 'assignees/:user_id', action: :unassign
               post :complete
               post :comments, action: :add_comment
               get :activities
+              post :convert_to_kanban_card
+            end
+          end
+
+          # T4: saved filter presets for the Tasks list (per-user or
+          # shared/team views).
+          resources :task_views, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              post :set_default
             end
           end
 

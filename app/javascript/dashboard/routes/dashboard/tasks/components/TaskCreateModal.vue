@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import TaskAssigneeSelect from './TaskAssigneeSelect.vue';
+import TaskRecurrenceForm from './TaskRecurrenceForm.vue';
 
 defineProps({
   isSubmitting: {
@@ -39,6 +40,7 @@ const assigneeIds = ref([]);
 const urgency = ref('medium');
 const dueDate = ref('');
 const notifyAssignees = ref(true);
+const recurrenceRule = ref({});
 
 onMounted(() => {
   nextTick(() => titleInput.value?.focus());
@@ -57,6 +59,7 @@ const submit = () => {
     due_date: dueDate.value || null,
     notify_assignees: notifyAssignees.value,
     assignee_ids: assigneeIds.value,
+    recurrence_rule: recurrenceRule.value || {},
   });
 };
 </script>
@@ -179,6 +182,8 @@ const submit = () => {
             </span>
           </label>
         </div>
+
+        <TaskRecurrenceForm v-model="recurrenceRule" />
       </div>
 
       <footer

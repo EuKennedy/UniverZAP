@@ -42,6 +42,15 @@ tasks_overdue_scanner_job:
   class: 'Tasks::OverdueScannerJob'
   queue: default
 
+# Tasks module — hourly sweeper that spawns the next occurrence for
+# any recurring template whose `next_occurrence_at` is due. The
+# happy-path (user ticks the task) is handled by the `done` callback;
+# this picks up tasks left open through their next firing window.
+tasks_recurrence_scheduler_job:
+  cron: '0 * * * *'
+  class: 'Tasks::RecurrenceSchedulerJob'
+  queue: default
+
 # executed daily at 2230 UTC
 # which is our lowest traffic time
 remove_stale_contact_inboxes_job.rb:

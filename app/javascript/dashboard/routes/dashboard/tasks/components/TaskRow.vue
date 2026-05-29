@@ -11,9 +11,15 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  // T4 — bulk selection: a controlled checkbox lives in the row so the
+  // parent can derive `selectedIds` without per-row local state drift.
+  isSelected: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const emit = defineEmits(['toggle', 'open', 'delete']);
+const emit = defineEmits(['toggle', 'open', 'delete', 'toggleSelected']);
 
 const { t } = useI18n();
 
@@ -34,9 +40,24 @@ const title = computed(() => props.task.title || t('TASKS.ROW.NO_TITLE'));
 <template>
   <div
     class="group flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer border-b border-n-weak/60 last:border-b-0 hover:bg-n-alpha-1 transition-colors"
+    :class="[isSelected && 'bg-n-blue-2/40']"
     data-test-id="task-row"
     @click="emit('open', task)"
   >
+    <label
+      class="size-4 grid place-content-center cursor-pointer flex-shrink-0"
+      data-test-id="task-row-select"
+      :aria-label="t('TASKS.BULK.SELECT_ROW')"
+      @click.stop
+    >
+      <input
+        type="checkbox"
+        class="size-4 rounded-md accent-n-brand"
+        :checked="isSelected"
+        @change="emit('toggleSelected', task.id)"
+      />
+    </label>
+
     <button
       type="button"
       class="size-5 grid place-content-center rounded-md ring-1 ring-inset transition-colors flex-shrink-0"

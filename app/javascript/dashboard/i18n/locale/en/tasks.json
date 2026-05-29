@@ -104,7 +104,8 @@
         "MARK_DONE": "Mark as done",
         "REOPEN": "Reopen",
         "DELETE": "Delete",
-        "DELETE_CONFIRM": "Delete this task? This action cannot be undone."
+        "DELETE_CONFIRM": "Delete this task? This action cannot be undone.",
+        "CONVERT_TO_KANBAN": "Convert to Kanban"
       },
       "MUTATION_SUCCESS": "Task updated.",
       "MUTATION_ERROR": "Could not update the task.",
@@ -156,6 +157,112 @@
         "REQUEST": "Enable browser notifications",
         "BLOCKED": "Notifications blocked by the browser"
       }
+    },
+    "BULK": {
+      "SELECT_ALL": "Select all",
+      "SELECT_ROW": "Select task",
+      "SELECTED_COUNT": "{n} selected",
+      "COMPLETE": "Complete",
+      "DELETE": "Delete",
+      "ASSIGN": "Assign…",
+      "URGENCY": "Urgency",
+      "APPLY": "Apply",
+      "CANCEL": "Cancel",
+      "SUCCESS": "{n} tasks updated.",
+      "PARTIAL_SUCCESS": "{ok} updated, {failed} failed.",
+      "ERROR": "Bulk action failed."
+    },
+    "SAVED_VIEWS": {
+      "TITLE": "Saved views",
+      "NEW": "New view",
+      "NAME_PLACEHOLDER": "View name…",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "RENAME": "Rename",
+      "DELETE": "Delete",
+      "SET_DEFAULT": "Set as default",
+      "DEFAULT_BADGE": "Default view",
+      "EMPTY": "Save the current filters as a view.",
+      "CREATED": "View saved.",
+      "ERROR": "Could not save the view.",
+      "DELETE_CONFIRM": "Delete this saved view?"
+    },
+    "VIEWS": {
+      "TITLE": "Admin",
+      "TEAM_BOARD": "Team board",
+      "REPORTS": "Reports"
+    },
+    "RECURRENCE": {
+      "TOGGLE": "Repeat task",
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly",
+      "CUSTOM": "Custom (cron)",
+      "MONTHLY_DAY_LABEL": "Day of month",
+      "CRON_LABEL": "Cron expression",
+      "CRON_PLACEHOLDER": "0 9 * * 1-5",
+      "WEEKDAYS": {
+        "SUN": "Sun",
+        "MON": "Mon",
+        "TUE": "Tue",
+        "WED": "Wed",
+        "THU": "Thu",
+        "FRI": "Fri",
+        "SAT": "Sat"
+      },
+      "PREVIEW": {
+        "DAILY": "Next: every day at 09:00",
+        "WEEKLY": "Next: matching weekdays at 09:00",
+        "MONTHLY": "Next: on the chosen day, monthly",
+        "CUSTOM": "Next: based on the cron expression"
+      }
+    },
+    "WORKLOAD": {
+      "TITLE": "Team workload",
+      "SUBTITLE": "Open tasks per agent across the account.",
+      "EMPTY": "No agents to show yet.",
+      "LOAD_BAR": "Load",
+      "OPEN_COUNT": "{n} open",
+      "STATS": {
+        "OPEN": "Open",
+        "OVERDUE": "Overdue",
+        "DUE_TODAY": "Due today",
+        "AVERAGE": "Average load"
+      },
+      "LABELS": {
+        "OVERDUE": "Overdue",
+        "TODAY": "Today",
+        "DONE_WEEK": "Done · week"
+      }
+    },
+    "REPORTS": {
+      "TITLE": "Reports",
+      "SUBTITLE": "Trends and per-agent breakdowns.",
+      "FROM": "From",
+      "TO": "To",
+      "APPLY": "Apply",
+      "LABELS": {
+        "CREATED": "Created",
+        "COMPLETED": "Completed",
+        "AVG_HOURS": "Avg hours to complete",
+        "OVERDUE_RATE": "Overdue %",
+        "URGENCY_OPEN": "Open by urgency"
+      },
+      "CHARTS": {
+        "CREATED_VS_COMPLETED": "Created vs completed",
+        "AVG_TIME": "Average completion time",
+        "OVERDUE_RATE": "Overdue rate by agent",
+        "URGENCY": "Open by urgency"
+      }
+    },
+    "CONVERT": {
+      "TITLE": "Convert to Kanban card",
+      "FUNNEL_LABEL": "Funnel",
+      "STAGE_LABEL": "Stage",
+      "SUBMIT": "Create card",
+      "CANCEL": "Cancel",
+      "SUCCESS": "Task converted to Kanban card.",
+      "ERROR": "Could not create the Kanban card."
     }
   }
 }

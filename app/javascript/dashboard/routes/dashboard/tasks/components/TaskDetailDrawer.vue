@@ -11,6 +11,8 @@ import TaskUrgencyBadge from './TaskUrgencyBadge.vue';
 import TaskDueDateChip from './TaskDueDateChip.vue';
 import TaskCommentsList from './TaskCommentsList.vue';
 import TaskActivityFeed from './TaskActivityFeed.vue';
+import TaskRecurrenceForm from './TaskRecurrenceForm.vue';
+import TaskConvertToKanbanModal from './TaskConvertToKanbanModal.vue';
 
 const props = defineProps({
   task: {
@@ -43,6 +45,7 @@ const statusBadgeText = computed(() => {
 
 const titleDraft = ref(props.task?.title || '');
 const descriptionDraft = ref(props.task?.description?.text || '');
+const recurrenceDraft = ref(props.task?.recurrence_rule || {});
 
 const comments = ref([]);
 const activities = ref([]);
@@ -50,6 +53,7 @@ const isLoadingActivities = ref(false);
 const isPostingComment = ref(false);
 const isSavingTitle = ref(false);
 const isSavingDescription = ref(false);
+const isConvertOpen = ref(false);
 
 // Pull the activity stream every time we open a new task. Comments live on the
 // activity controller indirectly — for the MVP we keep them in the task payload
@@ -70,6 +74,7 @@ watch(
   () => {
     titleDraft.value = props.task?.title || '';
     descriptionDraft.value = props.task?.description?.text || '';
+    recurrenceDraft.value = props.task?.recurrence_rule || {};
     activeTab.value = 'description';
     if (props.task?.id) loadActivities();
   },
@@ -88,6 +93,30 @@ const persistField = async patch => {
   } catch (error) {
     useAlert(error?.message || t('TASKS.DETAIL.MUTATION_ERROR'));
     return null;
+  }
+};
+
+const saveRecurrence = async rule => {
+  recurrenceDraft.value = rule;
+  await persistField({ recurrence_rule: rule || {} });
+};
+
+const openConvert = () => {
+  isConvertOpen.value = true;
+};
+
+const handleConvert = async ({ funnelId, funnelStageId }) => {
+  if (!props.task?.id) return;
+  try {
+    await store.dispatch('tasks/convertToKanbanCard', {
+      id: props.task.id,
+      funnelId,
+      funnelStageId,
+    });
+    useAlert(t('TASKS.CONVERT.SUCCESS'));
+    isConvertOpen.value = false;
+  } catch (error) {
+    useAlert(error?.message || t('TASKS.CONVERT.ERROR'));
   }
 };
 
@@ -268,6 +297,13 @@ const formatDate = ts => {
               {{ formatDate(task.updated_at) }}
             </dd>
           </dl>
+
+          <div class="mt-5">
+            <TaskRecurrenceForm
+              :model-value="recurrenceDraft"
+              @update:model-value="saveRecurrence"
+            />
+          </div>
         </template>
 
         <template v-else-if="activeTab === 'comments'">
@@ -313,6 +349,15 @@ const formatDate = ts => {
           @click="reopen"
         />
         <Button
+          icon="i-lucide-columns-3"
+          :label="t('TASKS.DETAIL.ACTIONS.CONVERT_TO_KANBAN')"
+          size="sm"
+          ghost
+          blue
+          data-test-id="task-detail-convert-trigger"
+          @click="openConvert"
+        />
+        <Button
           icon="i-lucide-trash-2"
           :label="t('TASKS.DETAIL.ACTIONS.DELETE')"
           size="sm"
@@ -323,5 +368,11 @@ const formatDate = ts => {
         />
       </footer>
     </aside>
+
+    <TaskConvertToKanbanModal
+      v-if="isConvertOpen"
+      @close="isConvertOpen = false"
+      @submit="handleConvert"
+    />
   </div>
 </template>

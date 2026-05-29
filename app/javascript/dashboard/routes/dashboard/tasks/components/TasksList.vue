@@ -20,9 +20,22 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // T4 — selected ids surfaced from the parent so the bulk action bar
+  // can drive the whole flow without each TasksList instance owning state.
+  selectedIds: {
+    type: Array,
+    default: () => [],
+  },
 });
 
-const emit = defineEmits(['toggle', 'open', 'delete', 'create', 'reset']);
+const emit = defineEmits([
+  'toggle',
+  'open',
+  'delete',
+  'create',
+  'reset',
+  'selectionChange',
+]);
 
 const { t } = useI18n();
 
@@ -53,6 +66,35 @@ const toggleGroup = key => {
   else next.add(key);
   collapsedGroups.value = next;
 };
+
+const allTaskIds = computed(() => props.tasks.map(task => Number(task.id)));
+const allSelected = computed(
+  () =>
+    allTaskIds.value.length > 0 &&
+    allTaskIds.value.every(id => props.selectedIds.includes(id))
+);
+
+const toggleAll = () => {
+  if (allSelected.value) {
+    emit('selectionChange', []);
+  } else {
+    emit('selectionChange', allTaskIds.value);
+  }
+};
+
+const toggleOne = id => {
+  const numericId = Number(id);
+  if (props.selectedIds.includes(numericId)) {
+    emit(
+      'selectionChange',
+      props.selectedIds.filter(value => value !== numericId)
+    );
+    return;
+  }
+  emit('selectionChange', [...props.selectedIds, numericId]);
+};
+
+const isSelected = id => props.selectedIds.includes(Number(id));
 
 const groupedTasks = computed(() => {
   if (props.groupBy === 'none') {
@@ -98,6 +140,23 @@ const groupedTasks = computed(() => {
       @reset="emit('reset')"
     />
     <div v-else class="flex-1 overflow-y-auto px-3 py-3">
+      <header
+        class="flex items-center gap-3 px-3 pb-2 mb-1.5 text-[11px] uppercase tracking-[0.1em] font-medium text-n-slate-10"
+      >
+        <label
+          class="inline-flex items-center cursor-pointer"
+          :aria-label="t('TASKS.BULK.SELECT_ALL')"
+          data-test-id="tasks-list-select-all"
+        >
+          <input
+            type="checkbox"
+            class="size-4 rounded-md accent-n-brand"
+            :checked="allSelected"
+            @change="toggleAll"
+          />
+        </label>
+        <span class="select-none">{{ t('TASKS.BULK.SELECT_ALL') }}</span>
+      </header>
       <section
         v-for="group in groupedTasks"
         :key="group.key"
@@ -137,9 +196,11 @@ const groupedTasks = computed(() => {
             v-for="task in group.tasks"
             :key="task.id"
             :task="task"
+            :is-selected="isSelected(task.id)"
             @toggle="emit('toggle', $event)"
             @open="emit('open', $event)"
             @delete="emit('delete', $event)"
+            @toggle-selected="toggleOne($event)"
           />
         </div>
       </section>
