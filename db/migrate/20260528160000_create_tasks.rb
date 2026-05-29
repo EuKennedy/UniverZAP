@@ -1,4 +1,9 @@
 class CreateTasks < ActiveRecord::Migration[7.1]
+  # Single migration creates 4 related tables + indexes for the new
+  # Tasks module (tasks, task_assignees, task_comments, task_activities).
+  # Splitting into 4 migrations would force a deploy ordering on Coolify
+  # that doesn't match the feature ship-as-one-unit semantics.
+  # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
   def change
     create_table :tasks do |t|
       t.references :account, null: false, foreign_key: true, index: true
@@ -69,4 +74,5 @@ class CreateTasks < ActiveRecord::Migration[7.1]
 
     add_index :task_activities, [:task_id, :created_at]
   end
+  # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 end
