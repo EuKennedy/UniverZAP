@@ -349,8 +349,9 @@ const formatDate = ts => {
           @click="reopen"
         />
         <Button
+          v-tooltip="t('TASKS.DETAIL.ACTIONS.CONVERT_TO_KANBAN')"
           icon="i-lucide-columns-3"
-          :label="t('TASKS.DETAIL.ACTIONS.CONVERT_TO_KANBAN')"
+          :aria-label="t('TASKS.DETAIL.ACTIONS.CONVERT_TO_KANBAN')"
           size="sm"
           ghost
           blue
@@ -358,12 +359,12 @@ const formatDate = ts => {
           @click="openConvert"
         />
         <Button
+          v-tooltip="t('TASKS.DETAIL.ACTIONS.DELETE')"
           icon="i-lucide-trash-2"
-          :label="t('TASKS.DETAIL.ACTIONS.DELETE')"
+          :aria-label="t('TASKS.DETAIL.ACTIONS.DELETE')"
           size="sm"
           ghost
           ruby
-          class="ml-auto"
           @click="destroy"
         />
       </footer>

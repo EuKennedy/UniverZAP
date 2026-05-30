@@ -48,9 +48,22 @@ const formatTimestamp = ts => {
 
 const iconFor = action => ICON_BY_ACTION[action] || 'i-lucide-activity';
 
+// Translate the status enum value carried in `payload.to` ("done",
+// "in_progress", …) into the localized label. Falls back to the raw value
+// if there's no matching key so a future status never renders blank.
+const translateStatus = raw => {
+  if (!raw) return '';
+  const key = `TASKS.STATUS.${String(raw).toUpperCase()}`;
+  const label = t(key);
+  return label === key ? String(raw) : label;
+};
+
 const eventText = activity => {
-  const user = activity.user?.name || 'Someone';
-  const to = activity.payload?.to ?? '';
+  // System-emitted activities (status flips from the complete action,
+  // scheduler) carry no user — show a localized "System" actor instead of
+  // the old hardcoded English "Someone".
+  const user = activity.user?.name || t('TASKS.DETAIL.ACTIVITY.SYSTEM_ACTOR');
+  const to = translateStatus(activity.payload?.to);
   return t(labelKey(activity.action), { user, to });
 };
 </script>

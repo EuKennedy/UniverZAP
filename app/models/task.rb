@@ -134,7 +134,12 @@ class Task < ApplicationRecord
       action = activity_action_for(attr)
       next if action.blank?
 
-      task_activities.create!(action: action, payload: { from: diff[attr][0], to: diff[attr][1] })
+      # Stamp the actor so the activity feed shows a real name instead of
+      # the generic "System" fallback. `Current.user` is set in request
+      # context (dashboard + token API); it's nil only for scheduler-driven
+      # updates, where "System" is the correct attribution.
+      task_activities.create!(user: Current.user, action: action,
+                              payload: { from: diff[attr][0], to: diff[attr][1] })
     end
   end
 

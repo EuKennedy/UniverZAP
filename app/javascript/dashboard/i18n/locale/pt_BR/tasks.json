@@ -95,6 +95,7 @@
       "ACTIVITY": {
         "TITLE": "Atividade",
         "EMPTY": "Nenhuma atividade ainda.",
+        "SYSTEM_ACTOR": "Sistema",
         "CREATED": "{user} criou esta tarefa",
         "STATUS_CHANGED": "{user} mudou o status para {to}",
         "DUE_DATE_CHANGED": "{user} atualizou o vencimento",

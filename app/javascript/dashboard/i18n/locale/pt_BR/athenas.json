@@ -172,6 +172,20 @@
     }
   },
   "ATHENAS_CREDITS": {
+    "BILLING": {
+      "EYEBROW": "Créditos Athenas",
+      "TITLE": "Saldo e recargas",
+      "BALANCE_LABEL": "Saldo disponível",
+      "BURN_LABEL": "Consumo médio",
+      "DAYS_LEFT": "~{days} dias restantes",
+      "CREDITS_AS": "Equivale a {credits} em créditos",
+      "STATUS": {
+        "OK": "Saldo saudável",
+        "WARN_80": "Saldo em 80% — considere recarregar",
+        "WARN_95": "Saldo quase no fim",
+        "EXHAUSTED": "Sem créditos — a Athenas está pausada"
+      }
+    },
     "MODAL": {
       "EYEBROW_EXHAUSTED": "Créditos Athenas",
       "EYEBROW_WARN": "Atenção",

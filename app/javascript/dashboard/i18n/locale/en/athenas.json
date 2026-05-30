@@ -172,6 +172,20 @@
     }
   },
   "ATHENAS_CREDITS": {
+    "BILLING": {
+      "EYEBROW": "Athenas Credits",
+      "TITLE": "Balance & top-ups",
+      "BALANCE_LABEL": "Available balance",
+      "BURN_LABEL": "Average burn",
+      "DAYS_LEFT": "~{days} days left",
+      "CREDITS_AS": "Worth {credits} in credits",
+      "STATUS": {
+        "OK": "Healthy balance",
+        "WARN_80": "Balance at 80% — consider topping up",
+        "WARN_95": "Balance almost gone",
+        "EXHAUSTED": "No credits — Athenas is paused"
+      }
+    },
     "MODAL": {
       "EYEBROW_EXHAUSTED": "Athenas Credits",
       "EYEBROW_WARN": "Heads up",

@@ -52,8 +52,20 @@ class Funnel < ApplicationRecord
   # delete every task in one SQL statement before the cascade reaches
   # the stages, with no per-task callback overhead.
   before_destroy :purge_kanban_tasks, prepend: true
+  # Flag read by `FunnelStage#ensure_not_last_stage`. During a funnel
+  # teardown the cascade destroys each stage, and the "keep at least one
+  # stage" guard must NOT fire — but at that point `funnel.destroyed?` is
+  # still false (the parent row is deleted only AFTER its dependents) and
+  # `marked_for_destruction?` is false (that's an autosave concept, not a
+  # `destroy` one). Without this flag the last stage aborts, the cascade
+  # raises RecordNotDestroyed and the whole funnel delete 422s even with
+  # zero tasks. Set in a prepended before_destroy so it's true before the
+  # dependent stages run their callbacks.
+  before_destroy :flag_cascade_destroy, prepend: true
 
   scope :ordered, -> { order(:position, :id) }
+
+  attr_accessor :cascading_destroy
 
   def automation_enabled?(key)
     ActiveModel::Type::Boolean.new.cast(automation_settings[key.to_s])
@@ -113,5 +125,9 @@ class Funnel < ApplicationRecord
   # under it is gone".
   def purge_kanban_tasks
     kanban_tasks.delete_all
+  end
+
+  def flag_cascade_destroy
+    self.cascading_destroy = true
   end
 end

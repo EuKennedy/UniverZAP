@@ -74,8 +74,12 @@ class FunnelStage < ApplicationRecord
 
   def ensure_not_last_stage
     # Skip when the parent funnel is going away — its cascade legitimately
-    # tears every stage down, including the last one.
-    return if funnel.nil? || funnel.destroyed? || funnel.marked_for_destruction?
+    # tears every stage down, including the last one. `cascading_destroy`
+    # is set by Funnel#flag_cascade_destroy (prepended before_destroy);
+    # `destroyed?`/`marked_for_destruction?` are NOT reliable here because
+    # the parent row is deleted only after its dependents.
+    return if funnel.nil? || funnel.cascading_destroy ||
+              funnel.destroyed? || funnel.marked_for_destruction?
     return if funnel.funnel_stages.where.not(id: id).exists?
 
     errors.add(:base, I18n.t('errors.funnel_stage.last_stage_protected',
