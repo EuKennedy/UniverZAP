@@ -32,7 +32,12 @@ class TeamChatChannel < ApplicationRecord
   belongs_to :account
   belongs_to :created_by_user, class_name: 'User', optional: true
 
-  has_many :messages, class_name: 'TeamChatMessage', dependent: :destroy
+  # `t.references :channel` named the FK column `channel_id`, but the
+  # default has_many inference derives it from the OWNER class name
+  # (`team_chat_channel_id`). Pin the real column + inverse so
+  # `channel.messages` and the message's `belongs_to :channel` agree.
+  has_many :messages, class_name: 'TeamChatMessage', foreign_key: :channel_id,
+                      dependent: :destroy, inverse_of: :channel
 
   enum kind: { default: 0, custom: 1 }, _prefix: :kind
 

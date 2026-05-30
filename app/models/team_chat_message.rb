@@ -16,7 +16,7 @@
 class TeamChatMessage < ApplicationRecord
   MAX_LENGTH = 8000
 
-  belongs_to :channel, class_name: 'TeamChatChannel'
+  belongs_to :channel, class_name: 'TeamChatChannel', inverse_of: :messages
   belongs_to :user
 
   validates :content, presence: true, length: { maximum: MAX_LENGTH }
