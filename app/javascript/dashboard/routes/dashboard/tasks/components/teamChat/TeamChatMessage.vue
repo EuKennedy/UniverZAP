@@ -29,9 +29,15 @@ const isEditing = ref(false);
 const draft = ref('');
 const editRef = ref(null);
 
+// Chatwoot stores locales like `pt_BR` (underscore), but Intl needs a
+// BCP-47 tag (`pt-BR`). Passing the raw value throws
+// `RangeError: Invalid language tag` and takes the whole message list
+// down with it — which is exactly why messages "didn't appear".
+const intlLocale = computed(() => (locale.value || 'pt-BR').replace('_', '-'));
+
 const timeLabel = computed(() => {
   const date = new Date(props.message.created_at * 1000);
-  return new Intl.DateTimeFormat(locale.value || 'pt-BR', {
+  return new Intl.DateTimeFormat(intlLocale.value, {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);

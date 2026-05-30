@@ -45,7 +45,10 @@ const formatDay = ts => {
   if (date.toDateString() === yesterday.toDateString()) {
     return t('TEAM_CHAT.PANEL.YESTERDAY');
   }
-  return new Intl.DateTimeFormat(locale.value || 'pt-BR', {
+  // `pt_BR` → `pt-BR`: Intl rejects the underscore form with a
+  // RangeError that would blank the whole message list.
+  const intlLocale = (locale.value || 'pt-BR').replace('_', '-');
+  return new Intl.DateTimeFormat(intlLocale, {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
