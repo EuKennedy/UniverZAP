@@ -40,7 +40,11 @@ class Api::V1::Accounts::TeamChatMessagesController < Api::V1::Accounts::BaseCon
   private
 
   def fetch_channel
-    @channel = Current.account.team_chat_channels.find(params[:channel_id])
+    # Nested under `resources :team_chat_channels` → Rails names the parent
+    # param after the resource (`team_chat_channel_id`), NOT `channel_id`.
+    # Reading the wrong key made `find(nil)` raise RecordNotFound → every
+    # message POST/GET 404'd ("nenhuma mensagem chega").
+    @channel = Current.account.team_chat_channels.find(params[:team_chat_channel_id])
   end
 
   def fetch_message
