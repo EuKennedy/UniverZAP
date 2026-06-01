@@ -14,6 +14,11 @@
 # Output shape matches Ai::SuggestReplyService so the job stays drop-in.
 # rubocop:disable Metrics/ClassLength
 class Ai::AutopilotReplyService
+  # Raised when a generated reply would repeat a recent assistant turn even
+  # after a forced regeneration. The job rescues this and stays silent so a
+  # human can take over instead of the bot spamming the same questions.
+  class LoopSuppressed < StandardError; end
+
   # Bigger window so customer answers from earlier in the conversation
   # (hair type, química, objetivo) stay in Claude's view instead of
   # rolling off after a 25-message burst. The summary block below
@@ -23,6 +28,15 @@ class Ai::AutopilotReplyService
   # Small enough that long conversations don't drift, large enough that
   # we're not paying for a Summarize call on every autopilot tick.
   SUMMARY_REFRESH_AFTER = 20
+  # Deterministic loop-breaker. Soft prompt rules ("não repita perguntas")
+  # are routinely ignored when a tenant training doc carries a verbatim
+  # qualification script — Claude treats the script as authoritative and
+  # re-recites it every turn. We compare each candidate reply against the
+  # recent assistant messages and, on a near-duplicate, regenerate ONCE
+  # with a hard override; if it still loops we stay silent rather than
+  # spam the customer with the same questions.
+  LOOP_SIMILARITY_THRESHOLD = 0.6
+  LOOP_LOOKBACK = 4
 
   def initialize(conversation:, assistant: nil)
     @conversation = conversation
@@ -50,12 +64,92 @@ class Ai::AutopilotReplyService
     # the first 80 chars) and only kicks in when the conversation
     # already has assistant replies.
     response[:content] = strip_leading_greeting(response[:content].to_s) if conversation_in_progress?
+
+    # Deterministic loop-breaker (see LOOP_SIMILARITY_THRESHOLD). When the
+    # candidate echoes a recent assistant turn we retry once with a hard
+    # override, then suppress if it still loops.
+    response = break_loop_if_needed(messages, response)
+
     response
   end
 
   private
 
-  def call_claude(messages)
+  # Returns the response untouched when it isn't a near-duplicate of a
+  # recent assistant turn. Otherwise regenerates ONCE with an escalated
+  # override band; if that still loops, raises a LoopSuppressed error so
+  # the job stays silent instead of re-sending the same questions.
+  def break_loop_if_needed(messages, response)
+    duplicated = matching_recent_reply(response[:content])
+    return response if duplicated.nil?
+
+    Rails.logger.warn(
+      "[Athenas autopilot] loop detected conv=#{@conversation.display_id} " \
+      "assistant=#{@assistant.id} — regenerating with override"
+    )
+
+    retry_response = call_claude(messages, override: loop_override_directive(duplicated))
+    retry_response[:content] = strip_leading_greeting(retry_response[:content].to_s) if conversation_in_progress?
+
+    if matching_recent_reply(retry_response[:content])
+      Rails.logger.warn(
+        "[Athenas autopilot] loop persists after override conv=#{@conversation.display_id} " \
+        "assistant=#{@assistant.id} — suppressing reply (handing off to human)"
+      )
+      raise LoopSuppressed, "autopilot loop suppressed conv=#{@conversation.display_id}"
+    end
+
+    retry_response
+  end
+
+  # Compares the candidate against the last LOOP_LOOKBACK assistant
+  # messages using token-set Jaccard similarity. Returns the first
+  # recent message that crosses the threshold, or nil.
+  def matching_recent_reply(candidate)
+    candidate_tokens = token_set(candidate)
+    return nil if candidate_tokens.size < 3
+
+    recent_assistant_contents.find do |prior|
+      jaccard(candidate_tokens, token_set(prior)) >= LOOP_SIMILARITY_THRESHOLD
+    end
+  end
+
+  def recent_assistant_contents
+    @conversation.messages
+                 .where(message_type: :outgoing, private: false)
+                 .order(created_at: :desc)
+                 .limit(LOOP_LOOKBACK)
+                 .pluck(:content)
+                 .compact
+  end
+
+  def token_set(text)
+    text.to_s.downcase.gsub(/[^\p{Alnum}\s]/u, ' ').split.reject { |t| t.length < 3 }.to_set
+  end
+
+  def jaccard(set_a, set_b)
+    return 0.0 if set_a.empty? || set_b.empty?
+
+    intersection = (set_a & set_b).size.to_f
+    union = (set_a | set_b).size
+    union.zero? ? 0.0 : (intersection / union)
+  end
+
+  def loop_override_directive(duplicated)
+    <<~OVERRIDE.strip
+      🚨 STOP — VOCÊ ACABOU DE GERAR UMA RESPOSTA REPETIDA.
+      Você JÁ ENVIOU esta mensagem antes nesta conversa:
+      «#{duplicated.to_s.truncate(280)}»
+
+      É TERMINANTEMENTE PROIBIDO repetir essas perguntas ou esse texto.
+      O cliente JÁ respondeu tudo isso. Olhe a MEMÓRIA DA CONVERSA acima.
+      AÇÃO OBRIGATÓRIA AGORA: avance a venda — recomende o produto certo
+      com base no que já se sabe e conduza para link/valor/fechamento.
+      NÃO faça nenhuma pergunta de qualificação. NÃO cumprimente.
+    OVERRIDE
+  end
+
+  def call_claude(messages, override: nil)
     # Log the actual context window we're sending so future "the AI
     # forgot" reports can be triaged from logs instead of guessing.
     # Roles only — never the content (PII safety on shared logs).
@@ -73,7 +167,7 @@ class Ai::AutopilotReplyService
     )
     Ai::ClaudeService.new(assistant: @assistant).chat(
       messages: messages,
-      system: build_system_prompt,
+      system: build_system_prompt(override: override),
       conversation: @conversation,
       phase: 'autopilot'
     )
@@ -168,7 +262,7 @@ class Ai::AutopilotReplyService
     ((@conversation.additional_attributes || {})['autopilot_summary'] || {})['text'].to_s.strip
   end
 
-  def build_system_prompt
+  def build_system_prompt(override: nil)
     # Three-band layout — the in-progress guardrail goes BOTH at the
     # very top (so it primes the model's attention before any tenant
     # custom prompt) AND at the very bottom (so recency bias keeps it
@@ -182,6 +276,7 @@ class Ai::AutopilotReplyService
     # operator instructions and treats the conversation as a cold start,
     # re-asking the same questions the customer already answered.
     [
+      override,
       continuity_rules_priority,
       summary_block,
       'Você é o atendente real falando com o cliente agora. Responda no fluxo natural da conversa.',
@@ -190,7 +285,8 @@ class Ai::AutopilotReplyService
       tone_instruction,
       knowledge_snippets,
       continuity_rules_reinforcement,
-      continuity_examples
+      continuity_examples,
+      override
     ].compact.join("\n\n")
   end
 

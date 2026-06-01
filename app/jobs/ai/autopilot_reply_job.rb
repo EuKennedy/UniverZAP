@@ -29,6 +29,10 @@ class Ai::AutopilotReplyJob < ApplicationJob
 
       send_outgoing(conversation, assistant, reply_text)
     end
+  rescue Ai::AutopilotReplyService::LoopSuppressed => e
+    # Intentional silence: the reply would have repeated a recent turn.
+    # Logged at info — this is the loop-breaker working as designed.
+    Rails.logger.info("[Athenas autopilot] #{e.message}")
   rescue Ai::ClaudeService::Error => e
     Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
   end
