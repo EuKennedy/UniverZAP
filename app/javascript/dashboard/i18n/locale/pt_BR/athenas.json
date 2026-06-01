@@ -143,6 +143,21 @@
         "INVOCATIONS": "Chamadas",
         "TRAININGS": "Treinamentos",
         "INTENTS": "Intenções"
+      },
+      "KNOWLEDGE": {
+        "TITLE": "Base de conhecimento",
+        "SUBTITLE": "Documentos que a IA consulta para responder. Fatos, catálogo, políticas.",
+        "ADD": "Adicionar",
+        "EMPTY": "Nenhum conhecimento ainda. Adicione o primeiro documento.",
+        "LOADING": "Carregando conhecimento...",
+        "FIELD_TITLE": "Título",
+        "FIELD_CATEGORY": "Categoria",
+        "FIELD_CONTENT": "Conteúdo",
+        "SAVE": "Salvar",
+        "CANCEL": "Cancelar",
+        "SAVE_SUCCESS": "Conhecimento salvo.",
+        "DELETE_CONFIRM": "Remover este conhecimento? Esta ação não pode ser desfeita.",
+        "DELETE_SUCCESS": "Conhecimento removido."
       }
     }
   },

@@ -97,6 +97,12 @@ class AthenasAssistantsAPI extends ApiClient {
     });
   }
 
+  updateTraining(assistantId, trainingId, payload) {
+    return axios.patch(`${this.url}/${assistantId}/trainings/${trainingId}`, {
+      ai_training: payload,
+    });
+  }
+
   deleteTraining(assistantId, trainingId) {
     return axios.delete(`${this.url}/${assistantId}/trainings/${trainingId}`);
   }

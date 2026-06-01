@@ -143,6 +143,21 @@
         "INVOCATIONS": "Calls",
         "TRAININGS": "Trainings",
         "INTENTS": "Intents"
+      },
+      "KNOWLEDGE": {
+        "TITLE": "Knowledge base",
+        "SUBTITLE": "Documents the AI consults to answer. Facts, catalog, policies.",
+        "ADD": "Add",
+        "EMPTY": "No knowledge yet. Add your first document.",
+        "LOADING": "Loading knowledge...",
+        "FIELD_TITLE": "Title",
+        "FIELD_CATEGORY": "Category",
+        "FIELD_CONTENT": "Content",
+        "SAVE": "Save",
+        "CANCEL": "Cancel",
+        "SAVE_SUCCESS": "Knowledge saved.",
+        "DELETE_CONFIRM": "Remove this knowledge? This cannot be undone.",
+        "DELETE_SUCCESS": "Knowledge removed."
       }
     }
   },

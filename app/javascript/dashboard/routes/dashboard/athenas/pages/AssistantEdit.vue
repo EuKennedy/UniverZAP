@@ -159,6 +159,118 @@ const toggleAutopilot = () => {
   form.autopilot_enabled = !form.autopilot_enabled;
 };
 
+// === Knowledge base (trainings) ===
+const TRAINING_CATEGORIES = [
+  { key: 'base', label: 'Base' },
+  { key: 'catalog', label: 'Catálogo' },
+  { key: 'policies', label: 'Políticas' },
+  { key: 'sales', label: 'Vendas' },
+  { key: 'faq', label: 'FAQ' },
+  { key: 'support', label: 'Suporte' },
+];
+
+const trainings = ref([]);
+const trainingsLoading = ref(false);
+const editorOpen = ref(false);
+const savingTraining = ref(false);
+const trainingForm = reactive({
+  id: null,
+  title: '',
+  category: 'base',
+  source_type: 'text',
+  content: '',
+});
+
+const categoryLabel = key =>
+  TRAINING_CATEGORIES.find(c => c.key === key)?.label || key;
+
+const trainingMeta = tr =>
+  `${categoryLabel(tr.category)} · ${tr.char_count ?? 0} · ${tr.status}`;
+
+const fetchTrainings = async () => {
+  trainingsLoading.value = true;
+  try {
+    const { data } = await AthenasAssistantsAPI.listTrainings(props.id);
+    trainings.value = data?.payload || [];
+  } catch (e) {
+    useAlert(
+      e?.response?.data?.message || e?.response?.data?.error || e.message
+    );
+  } finally {
+    trainingsLoading.value = false;
+  }
+};
+
+const openNewTraining = () => {
+  Object.assign(trainingForm, {
+    id: null,
+    title: '',
+    category: 'base',
+    source_type: 'text',
+    content: '',
+  });
+  editorOpen.value = true;
+};
+
+const openEditTraining = training => {
+  Object.assign(trainingForm, {
+    id: training.id,
+    title: training.title,
+    category: training.category || 'base',
+    source_type: training.source_type || 'text',
+    content: training.content || '',
+  });
+  editorOpen.value = true;
+};
+
+const closeEditor = () => {
+  editorOpen.value = false;
+};
+
+const saveTraining = async () => {
+  if (!trainingForm.title || !trainingForm.content) return;
+  savingTraining.value = true;
+  try {
+    const payload = {
+      title: trainingForm.title,
+      category: trainingForm.category,
+      source_type: trainingForm.source_type,
+      content: trainingForm.content,
+    };
+    if (trainingForm.id) {
+      await AthenasAssistantsAPI.updateTraining(
+        props.id,
+        trainingForm.id,
+        payload
+      );
+    } else {
+      await AthenasAssistantsAPI.createTraining(props.id, payload);
+    }
+    useAlert(t('ATHENAS.EDIT.KNOWLEDGE.SAVE_SUCCESS'));
+    editorOpen.value = false;
+    await fetchTrainings();
+  } catch (e) {
+    useAlert(
+      e?.response?.data?.message || e?.response?.data?.error || e.message
+    );
+  } finally {
+    savingTraining.value = false;
+  }
+};
+
+const removeTraining = async training => {
+  if (!window.confirm(t('ATHENAS.EDIT.KNOWLEDGE.DELETE_CONFIRM'))) return;
+  try {
+    await AthenasAssistantsAPI.deleteTraining(props.id, training.id);
+    useAlert(t('ATHENAS.EDIT.KNOWLEDGE.DELETE_SUCCESS'));
+    await fetchTrainings();
+  } catch (e) {
+    useAlert(
+      e?.response?.data?.message || e?.response?.data?.error || e.message
+    );
+  }
+};
+
 const statusBadge = computed(() => {
   if (!assistant.value) return null;
   if (assistant.value.autopilot_enabled) {
@@ -183,10 +295,16 @@ const statusBadge = computed(() => {
 
 watch(
   () => props.id,
-  () => fetchAssistant()
+  () => {
+    fetchAssistant();
+    fetchTrainings();
+  }
 );
 
-onMounted(fetchAssistant);
+onMounted(() => {
+  fetchAssistant();
+  fetchTrainings();
+});
 </script>
 
 <template>
@@ -565,21 +683,139 @@ onMounted(fetchAssistant);
 
         <!-- TAB: KNOWLEDGE -->
         <template v-if="currentTab === 'knowledge'">
-          <article
-            class="flex flex-col gap-3 p-10 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak items-center text-center"
-          >
-            <span
-              class="size-16 rounded-2xl bg-gradient-to-br from-n-brand/20 to-n-brand/[0.04] ring-1 ring-n-weak grid place-content-center"
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex flex-col gap-0.5">
+                <h2
+                  class="text-lg font-semibold text-n-slate-12 tracking-tight"
+                >
+                  {{ t('ATHENAS.EDIT.KNOWLEDGE.TITLE') }}
+                </h2>
+                <p class="text-[12px] text-n-slate-11">
+                  {{ t('ATHENAS.EDIT.KNOWLEDGE.SUBTITLE') }}
+                </p>
+              </div>
+              <Button
+                icon="i-lucide-plus"
+                size="sm"
+                :label="t('ATHENAS.EDIT.KNOWLEDGE.ADD')"
+                @click="openNewTraining"
+              />
+            </div>
+
+            <article
+              v-if="editorOpen"
+              class="flex flex-col gap-3 p-5 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak"
             >
-              <span class="i-lucide-book-open size-7 text-n-brand" />
-            </span>
-            <h2 class="text-lg font-semibold text-n-slate-12 tracking-tight">
-              {{ t('ATHENAS.EDIT.KNOWLEDGE_SOON_TITLE') }}
-            </h2>
-            <p class="text-[13px] text-n-slate-11 leading-relaxed max-w-md">
-              {{ t('ATHENAS.EDIT.KNOWLEDGE_SOON_HINT') }}
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-n-slate-12">
+                  {{ t('ATHENAS.EDIT.KNOWLEDGE.FIELD_TITLE') }}
+                </label>
+                <Input v-model="trainingForm.title" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-n-slate-12">
+                  {{ t('ATHENAS.EDIT.KNOWLEDGE.FIELD_CATEGORY') }}
+                </label>
+                <select
+                  v-model="trainingForm.category"
+                  class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand"
+                >
+                  <option
+                    v-for="c in TRAINING_CATEGORIES"
+                    :key="c.key"
+                    :value="c.key"
+                  >
+                    {{ c.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-n-slate-12">
+                  {{ t('ATHENAS.EDIT.KNOWLEDGE.FIELD_CONTENT') }}
+                </label>
+                <textarea
+                  v-model="trainingForm.content"
+                  rows="10"
+                  class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 font-mono leading-relaxed focus:outline-none focus:border-n-brand resize-y"
+                />
+              </div>
+              <div class="flex items-center gap-2 justify-end">
+                <Button
+                  ghost
+                  slate
+                  size="sm"
+                  :label="t('ATHENAS.EDIT.KNOWLEDGE.CANCEL')"
+                  @click="closeEditor"
+                />
+                <Button
+                  size="sm"
+                  :is-loading="savingTraining"
+                  :disabled="
+                    savingTraining ||
+                    !trainingForm.title ||
+                    !trainingForm.content
+                  "
+                  :label="t('ATHENAS.EDIT.KNOWLEDGE.SAVE')"
+                  @click="saveTraining"
+                />
+              </div>
+            </article>
+
+            <p v-if="trainingsLoading" class="text-sm text-n-slate-11">
+              {{ t('ATHENAS.EDIT.KNOWLEDGE.LOADING') }}
             </p>
-          </article>
+
+            <article
+              v-else-if="!trainings.length && !editorOpen"
+              class="flex flex-col gap-3 p-10 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak items-center text-center"
+            >
+              <span
+                class="size-16 rounded-2xl bg-gradient-to-br from-n-brand/20 to-n-brand/[0.04] ring-1 ring-n-weak grid place-content-center"
+              >
+                <span class="i-lucide-book-open size-7 text-n-brand" />
+              </span>
+              <p class="text-[13px] text-n-slate-11 leading-relaxed max-w-md">
+                {{ t('ATHENAS.EDIT.KNOWLEDGE.EMPTY') }}
+              </p>
+            </article>
+
+            <div v-else class="flex flex-col gap-2">
+              <article
+                v-for="tr in trainings"
+                :key="tr.id"
+                class="flex items-center gap-3 p-4 rounded-xl bg-n-solid-1 ring-1 ring-n-weak"
+              >
+                <span
+                  class="size-9 rounded-lg bg-n-alpha-2 grid place-content-center flex-shrink-0"
+                >
+                  <span class="i-lucide-file-text size-4 text-n-slate-11" />
+                </span>
+                <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <span class="text-sm font-medium text-n-slate-12 truncate">
+                    {{ tr.title }}
+                  </span>
+                  <span class="text-[11px] text-n-slate-11">
+                    {{ trainingMeta(tr) }}
+                  </span>
+                </div>
+                <Button
+                  icon="i-lucide-pencil"
+                  size="xs"
+                  ghost
+                  slate
+                  @click="openEditTraining(tr)"
+                />
+                <Button
+                  icon="i-lucide-trash-2"
+                  size="xs"
+                  ghost
+                  ruby
+                  @click="removeTraining(tr)"
+                />
+              </article>
+            </div>
+          </div>
         </template>
 
         <!-- TAB: ACTIVITY -->
