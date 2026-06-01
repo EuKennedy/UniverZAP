@@ -68,9 +68,7 @@ class Ai::AutopilotReplyService
     # Deterministic loop-breaker (see LOOP_SIMILARITY_THRESHOLD). When the
     # candidate echoes a recent assistant turn we retry once with a hard
     # override, then suppress if it still loops.
-    response = break_loop_if_needed(messages, response)
-
-    response
+    break_loop_if_needed(messages, response)
   end
 
   private
