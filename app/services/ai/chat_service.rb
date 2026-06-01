@@ -79,7 +79,10 @@ class Ai::ChatService
                    .filter_map { |m| format_snapshot_line(m) }
     return nil if lines.empty?
 
-    "Conversa que o atendente está atendendo com o CLIENTE (apenas contexto para consulta — NÃO é você conversando, NÃO responda a ela por conta própria):\n#{lines.join("\n")}"
+    header = 'Conversa que o atendente está atendendo com o CLIENTE ' \
+             '(apenas contexto para consulta — NÃO é você conversando, ' \
+             'NÃO responda a ela por conta própria):'
+    "#{header}\n#{lines.join("\n")}"
   end
 
   def format_snapshot_line(message)
