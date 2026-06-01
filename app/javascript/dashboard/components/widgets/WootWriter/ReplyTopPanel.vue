@@ -1,7 +1,7 @@
 <script>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
-import { useCaptain } from 'dashboard/composables/useCaptain';
+import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
 import { useTrack } from 'dashboard/composables';
 import { vOnClickOutside } from '@vueuse/components';
 import { REPLY_EDITOR_MODES, CHAR_LENGTH_WARNING } from './constants';
@@ -74,7 +74,19 @@ export default {
       setReplyMode(newMode);
     };
 
-    const { captainTasksEnabled } = useCaptain();
+    // The AI assist button (summarize / suggest reply / rewrite) must be
+    // gated on Athenas availability, NOT on `captainTasksEnabled` — that
+    // flag is the Chatwoot-Cloud-only CAPTAIN_TASKS feature, which is
+    // always false on this self-hosted fork, so it silently hid the whole
+    // green sparkle button. Show it whenever the account has an active
+    // Athenas assistant (inbox-bound, picked, or any active one).
+    const { activeAssistantId, assistants, fetchAssistants } =
+      useAthenasAssistant();
+    fetchAssistants();
+    const athenasAssistEnabled = computed(
+      () => Boolean(activeAssistantId.value) || assistants.value.length > 0
+    );
+
     const showCopilotMenu = ref(false);
 
     const handleCopilotAction = (actionKey, data) => {
@@ -114,7 +126,7 @@ export default {
       handleReplyClick,
       handleNoteClick,
       REPLY_EDITOR_MODES,
-      captainTasksEnabled,
+      athenasAssistEnabled,
       handleCopilotAction,
       showCopilotMenu,
       toggleCopilotMenu,
@@ -161,7 +173,7 @@ export default {
         </span>
       </div>
     </div>
-    <div v-if="captainTasksEnabled" class="flex items-center gap-2">
+    <div v-if="athenasAssistEnabled" class="flex items-center gap-2">
       <div class="relative">
         <NextButton
           ghost
