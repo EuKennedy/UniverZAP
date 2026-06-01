@@ -306,9 +306,19 @@ class Ai::AutopilotReplyService
       'Não invente histórico que não está visível.',
       '• Se o cliente trouxe novas informações nesta mensagem, USE-AS imediatamente — ' \
       'não confirme que recebeu, aja.',
+      # The core anti-loop rule. The qualification reflex (re-asking hair
+      # type / chemistry / goal) is what made Lizzon loop even with correct
+      # memory. Forbid re-asking anything already known and force forward
+      # progress toward the recommendation/sale.
+      '• NUNCA repita perguntas de diagnóstico/qualificação (tipo de fio, química, ' \
+      'objetivo, nome) cuja resposta já apareça no histórico OU na MEMÓRIA DA CONVERSA. ' \
+      'Se o dado já existe, NÃO pergunte de novo — AVANCE: recomende o produto e conduza à compra.',
+      '• Se o cliente já disse o que quer comprar, NÃO reinicie qualificação: confirme ' \
+      'o produto e siga para link/valor/fechamento.',
       '• Gere APENAS o corpo da próxima mensagem do atendente. Português brasileiro, ' \
       'frases curtas, sem markdown, sem prefixos, sem aspas, sem se identificar como IA.',
-      '• Se faltar alguma informação que NÃO está no histórico, pergunte UMA coisa por vez de forma natural.'
+      '• Se faltar UMA informação essencial que NÃO está no histórico nem na memória, ' \
+      'pergunte só ela, uma vez, de forma natural.'
     ]
   end
 
@@ -342,7 +352,19 @@ class Ai::AutopilotReplyService
     return nil if chunks.empty?
 
     bullets = chunks.map { |title, content| "- #{title}: #{content.to_s.truncate(240)}" }.join("\n")
-    "Base de conhecimento:\n#{bullets}"
+    # The knowledge base is REFERENCE, not a script. Operators often store a
+    # qualification playbook ("ask hair type, chemistry, goal") in a training
+    # doc; without this framing Claude recites it every turn and loops,
+    # re-asking what the customer already answered. Anchor it as lookup
+    # material subordinate to the conversation memory.
+    <<~KNOW.strip
+      BASE DE CONHECIMENTO (referência factual — NÃO é roteiro para recitar):
+      Consulte para responder o que o cliente pergunta. Se algum item trouxer
+      um roteiro de qualificação (ex.: "pergunte tipo de fio, química,
+      objetivo"), trate como guia INTERNO — só pergunte o que ainda NÃO está
+      na MEMÓRIA DA CONVERSA. Com os dados em mãos, avance para recomendação.
+      #{bullets}
+    KNOW
   end
 
   def build_recent_messages

@@ -37,10 +37,39 @@ class AthenasAutopilotListener < BaseListener
   end
 
   def resolve_assistant(conversation)
+    attrs = conversation.additional_attributes || {}
+
+    # Per-conversation toggle is the source of truth for operator-controlled
+    # autopilot (the "ligar IA neste chat" button). It lives in
+    # additional_attributes (jsonb) which — unlike the `ai_mode` column —
+    # is NOT silently reset by resolve / assign / reopen flows. The column
+    # drifting to nil while the toggle stayed true is exactly why an
+    # operator saw "IA ligada" but the wrong path fired. When the key is
+    # present we honour it verbatim: true = reply, false = stay silent.
+    if attrs.key?('autopilot_enabled')
+      return nil unless ActiveModel::Type::Boolean.new.cast(attrs['autopilot_enabled'])
+
+      return resolve_toggled_assistant(conversation, attrs)
+    end
+
+    # Fallback: inbox-wide autopilot for accounts that drive it at the
+    # inbox level instead of per-conversation.
     mode = conversation.ai_mode.presence || conversation.inbox.ai_mode
     return nil unless mode == 'autopilot'
 
     conversation.ai_assistant || conversation.inbox.ai_assistant
+  end
+
+  def resolve_toggled_assistant(conversation, attrs)
+    conversation.ai_assistant ||
+      find_account_assistant(conversation, attrs['autopilot_assistant_id']) ||
+      conversation.inbox.ai_assistant
+  end
+
+  def find_account_assistant(conversation, assistant_id)
+    return nil if assistant_id.blank?
+
+    conversation.account.ai_assistants.find_by(id: assistant_id)
   end
 
   def guardrail_triggered?(message, assistant)
