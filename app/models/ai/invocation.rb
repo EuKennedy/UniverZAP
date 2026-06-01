@@ -4,7 +4,7 @@ class Ai::Invocation < ApplicationRecord
   belongs_to :ai_assistant, class_name: 'Ai::Assistant'
   belongs_to :account
 
-  PHASES = %w[main classifier router summary summarize suggest autopilot rewrite chat].freeze
+  PHASES = %w[main classifier router summary summarize suggest autopilot rewrite chat copilot_chat].freeze
   STATUSES = %w[success error].freeze
 
   validates :phase, inclusion: { in: PHASES }
