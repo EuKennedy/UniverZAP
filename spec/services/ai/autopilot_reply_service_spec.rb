@@ -43,4 +43,22 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(result[:content]).to include('link')
     end
   end
+
+  describe 'context de-poison (build_recent_messages)' do
+    it 'collapses repeated assistant turns and opens with a user turn' do
+      conv = create(:conversation, account: account)
+      create(:message, conversation: conv, account: account, message_type: 'incoming', content: 'oi')
+      3.times do
+        create(:message, conversation: conv, account: account, message_type: 'outgoing',
+                         content: 'Qual o tipo do seu fio? Tem química? O que você mais precisa?')
+      end
+      create(:message, conversation: conv, account: account, message_type: 'incoming', content: 'quero comprar')
+
+      msgs = described_class.new(conversation: conv, assistant: assistant).send(:build_recent_messages)
+
+      expect(msgs.count { |m| m[:role] == 'assistant' }).to eq(1)
+      expect(msgs.first[:role]).to eq('user')
+      expect(msgs.each_cons(2).none? { |a, b| a[:role] == b[:role] }).to be(true)
+    end
+  end
 end
