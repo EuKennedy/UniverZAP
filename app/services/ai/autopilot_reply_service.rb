@@ -304,15 +304,18 @@ class Ai::AutopilotReplyService
         ou qualquer cumprimento.
       • NÃO se apresente, NÃO diga seu nome, NÃO mencione a marca como se
         fosse a primeira vez.
-      • NÃO repita perguntas que o cliente já respondeu no histórico
-        (tipo de cabelo, química, objetivo, nome, etc.).
+      • NÃO faça nenhuma pergunta cuja resposta já apareça no histórico ou
+        na memória da conversa.
       • Se a próxima resposta começaria com saudação → REESCREVA antes
         de enviar.
 
-      AÇÃO REQUERIDA:
-      Leia TODO o histórico abaixo. Encontre o ponto onde a última mensagem
-      do assistant parou. Continue dali, usando as novas informações que
-      o cliente acabou de trazer.
+      AÇÃO REQUERIDA (responda à ÚLTIMA mensagem do cliente):
+      Leia a última mensagem do cliente e responda DIRETO a ela. Se ele já
+      disse o que quer (citou um produto, pediu um link, um preço ou para
+      comprar), sua resposta DEVE entregar isso AGORA: recomende o produto
+      certo e mande o link/valor. É PROIBIDO responder um pedido de compra
+      com perguntas. Só pergunte se faltar UM dado essencial que não está
+      em lugar nenhum da conversa.
     RULES
   end
 
@@ -333,15 +336,15 @@ class Ai::AutopilotReplyService
     return nil unless conversation_in_progress?
 
     <<~EX.strip
-      EXEMPLOS DO QUE NÃO FAZER (resposta proibida quando há histórico):
-      ❌ "Oi! Que bom que você quer conhecer a Lizzon! Me conta sobre seu cabelo..."
-      ❌ "Perfeito! Vou te ajudar a escolher os produtos ideais!"
-      ❌ "Olá! Pra te indicar os produtos perfeitos, me conta..."
+      EXEMPLOS DO QUE NÃO FAZER (proibido quando há histórico):
+      ❌ Cumprimentar ou reiniciar ("Oi! Que bom que você quer conhecer a Lizzon!").
+      ❌ Responder um pedido de compra com perguntas de qualificação.
 
-      EXEMPLOS DO QUE FAZER (continuando do contexto):
-      ✓ "Show, com cabelo cacheado virgem o ideal é a progressiva sem formol Lizzon Premium. Posso te passar o link?"
-      ✓ "Massa, anotei aqui — cacheado, virgem, definitivo. Vou separar 2 opções e te mando em seguida."
-      ✓ "Entendi, pra alisamento definitivo em cabelo virgem cacheado recomendo a linha X. Quer que eu te passe valores?"
+      EXEMPLOS DO QUE FAZER (responda à última mensagem e AVANCE pra venda):
+      ✓ Cliente: "quero a progressiva sem formol pra cabelo cacheado, me passa o link e valor"
+        → "Pra cacheado a Premium Progressiva Sem Formol é a ideal. Link: <link>. Fica R$X, no Pix tem 5% off. Quer que eu já deixe no carrinho?"
+      ✓ "Show, anotei: cacheado, sem formol. Te mando o link da Premium agora."
+      ✓ "Fechou. Essa linha rende bem — segue o link e o valor: <link>, R$X."
     EX
   end
 
@@ -388,8 +391,9 @@ class Ai::AutopilotReplyService
       '• Esta é uma conversa em ANDAMENTO. NUNCA reinicie o atendimento.',
       '• PROIBIDO cumprimentar ou se apresentar de novo (nada de "Oi!", "Olá!", ' \
       '"Que bom que você quer conhecer...").',
-      '• PROIBIDO repetir perguntas já respondidas pelo cliente (tipo de fio, química, ' \
-      'objetivo, nome, etc.). Leia o histórico antes de perguntar qualquer coisa.'
+      '• PROIBIDO repetir qualquer pergunta cuja resposta já esteja no histórico ou ' \
+      'na memória. Se o cliente já pediu um produto/link/preço, responda com a ' \
+      'recomendação e o link — não pergunte.'
     ]
   end
 
@@ -404,9 +408,9 @@ class Ai::AutopilotReplyService
       # type / chemistry / goal) is what made Lizzon loop even with correct
       # memory. Forbid re-asking anything already known and force forward
       # progress toward the recommendation/sale.
-      '• NUNCA repita perguntas de diagnóstico/qualificação (tipo de fio, química, ' \
-      'objetivo, nome) cuja resposta já apareça no histórico OU na MEMÓRIA DA CONVERSA. ' \
-      'Se o dado já existe, NÃO pergunte de novo — AVANCE: recomende o produto e conduza à compra.',
+      '• NUNCA repita perguntas de diagnóstico/qualificação cuja resposta já apareça ' \
+      'no histórico OU na MEMÓRIA DA CONVERSA. Se o dado já existe, NÃO pergunte de ' \
+      'novo — AVANCE: recomende o produto e conduza à compra.',
       '• Se o cliente já disse o que quer comprar, NÃO reinicie qualificação: confirme ' \
       'o produto e siga para link/valor/fechamento.',
       '• Gere APENAS o corpo da próxima mensagem do atendente. Português brasileiro, ' \
