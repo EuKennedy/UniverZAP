@@ -468,8 +468,47 @@ class Ai::AutopilotReplyService
                            .order(created_at: :desc)
                            .limit(RECENT_WINDOW)
                            .reverse
-    history.map { |m| { role: role_for(m), content: m.content_for_llm.to_s } }
-           .reject { |m| m[:content].blank? }
+    raw = history.map { |m| { role: role_for(m), content: m.content_for_llm.to_s } }
+                 .reject { |m| m[:content].blank? }
+    # Fall back to the full (un-deduped) history if collapsing somehow
+    # emptied the array, so we never raise a misleading "no messages" error.
+    normalize_history(collapse_repeated_assistant(raw)).presence || normalize_history(raw)
+  end
+
+  # De-poison the context. A conversation that already looped carries many
+  # near-identical assistant turns (the re-asked qualification questions).
+  # Left intact, that repetition becomes the dominant in-context pattern and
+  # the model keeps imitating it — re-asking forever — no matter what the
+  # persona/summary say. We keep only the FIRST occurrence of each distinct
+  # assistant message and drop later near-duplicates so the loop stops
+  # teaching itself. Incoming (user) turns are never dropped.
+  def collapse_repeated_assistant(messages)
+    seen = []
+    messages.reject do |m|
+      next false unless m[:role] == 'assistant'
+
+      tokens = token_set(m[:content])
+      next false if tokens.size < 3
+
+      duplicate = seen.any? { |s| jaccard(s, tokens) >= LOOP_SIMILARITY_THRESHOLD }
+      seen << tokens unless duplicate
+      duplicate
+    end
+  end
+
+  # Dropping assistant turns can leave two user turns adjacent, which the
+  # Anthropic API rejects. Merge consecutive same-role turns and ensure the
+  # sequence opens with a user turn.
+  def normalize_history(messages)
+    merged = messages.each_with_object([]) do |m, acc|
+      if acc.last && acc.last[:role] == m[:role]
+        acc.last[:content] = "#{acc.last[:content]}\n#{m[:content]}"
+      else
+        acc << { role: m[:role], content: m[:content] }
+      end
+    end
+    merged.shift while merged.first && merged.first[:role] == 'assistant'
+    merged
   end
 
   def role_for(message)
