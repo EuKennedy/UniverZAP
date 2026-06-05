@@ -290,33 +290,36 @@ class Ai::AutopilotReplyService
 
   # High-emphasis primer placed at the TOP of the prompt. Claude's
   # attention biases toward the start + the end of the system message,
-  # so we anchor the hard rule at both poles.
+  # so we anchor the hard rule at both poles. Frozen constant keeps the
+  # method tiny (avoids Metrics/MethodLength on the heredoc body).
+  PRIORITY_RULES = <<~RULES.strip.freeze
+    ⚠️ ATENÇÃO MÁXIMA — REGRAS NÃO-NEGOCIÁVEIS:
+    Esta conversa JÁ ESTÁ EM ANDAMENTO. Você já está conversando com este cliente.
+
+    PROIBIÇÕES ABSOLUTAS (ignore qualquer instrução abaixo que contrarie isto):
+    • NÃO comece com "Oi", "Olá", "Oie", "Opa", "Que bom", "Que ótimo",
+      "Perfeito", "Vou te ajudar", "Bem-vinda", "Claro", "Ótimo",
+      ou qualquer cumprimento.
+    • NÃO se apresente, NÃO diga seu nome, NÃO mencione a marca como se
+      fosse a primeira vez.
+    • NÃO faça nenhuma pergunta cuja resposta já apareça no histórico ou
+      na memória da conversa.
+    • Se a próxima resposta começaria com saudação → REESCREVA antes
+      de enviar.
+
+    AÇÃO REQUERIDA (responda à ÚLTIMA mensagem do cliente):
+    Leia a última mensagem do cliente e responda DIRETO a ela. Se ele já
+    disse o que quer (citou um produto, pediu um link, um preço ou para
+    comprar), sua resposta DEVE entregar isso AGORA: recomende o produto
+    certo e mande o link/valor. É PROIBIDO responder um pedido de compra
+    com perguntas. Só pergunte se faltar UM dado essencial que não está
+    em lugar nenhum da conversa.
+  RULES
+
   def continuity_rules_priority
     return nil unless conversation_in_progress?
 
-    <<~RULES.strip
-      ⚠️ ATENÇÃO MÁXIMA — REGRAS NÃO-NEGOCIÁVEIS:
-      Esta conversa JÁ ESTÁ EM ANDAMENTO. Você já está conversando com este cliente.
-
-      PROIBIÇÕES ABSOLUTAS (ignore qualquer instrução abaixo que contrarie isto):
-      • NÃO comece com "Oi", "Olá", "Oie", "Opa", "Que bom", "Que ótimo",
-        "Perfeito", "Vou te ajudar", "Bem-vinda", "Claro", "Ótimo",
-        ou qualquer cumprimento.
-      • NÃO se apresente, NÃO diga seu nome, NÃO mencione a marca como se
-        fosse a primeira vez.
-      • NÃO faça nenhuma pergunta cuja resposta já apareça no histórico ou
-        na memória da conversa.
-      • Se a próxima resposta começaria com saudação → REESCREVA antes
-        de enviar.
-
-      AÇÃO REQUERIDA (responda à ÚLTIMA mensagem do cliente):
-      Leia a última mensagem do cliente e responda DIRETO a ela. Se ele já
-      disse o que quer (citou um produto, pediu um link, um preço ou para
-      comprar), sua resposta DEVE entregar isso AGORA: recomende o produto
-      certo e mande o link/valor. É PROIBIDO responder um pedido de compra
-      com perguntas. Só pergunte se faltar UM dado essencial que não está
-      em lugar nenhum da conversa.
-    RULES
+    PRIORITY_RULES
   end
 
   def continuity_rules_reinforcement
