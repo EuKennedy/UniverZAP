@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   namespace :connect do
     get  'setup', to: 'setup#show'
     post 'setup', to: 'setup#create'
+    get  'bridge', to: 'bridge#show' # belezaki → univerzap SSO bridge
   end
 
   # AUTH STARTS
