@@ -55,7 +55,10 @@ class Connect::BridgeController < ApplicationController
   end
 
   def create_bridge_user(user, claims)
-    pwd = SecureRandom.base58(24)
+    # Throwaway password (login is always via SSO). Must satisfy the User
+    # password policy: lowercase, uppercase, digit AND a special char — so we
+    # append a fixed quartet to the random base; base58 alone has no special.
+    pwd = "#{SecureRandom.base58(24)}aA1!"
     user.assign_attributes(
       name: claims['name'].presence || 'Titular',
       password: pwd,
