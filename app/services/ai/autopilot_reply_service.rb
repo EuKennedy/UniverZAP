@@ -55,7 +55,7 @@ class Ai::AutopilotReplyService
     # on most ticks.
     ensure_fresh_summary
 
-    response = call_claude(messages)
+    response = generate_response(messages)
     raise_on_empty(response)
     # Last-line defence: even with the three-band prompt + few-shot
     # examples Claude occasionally still leads with a greeting on
@@ -145,6 +145,36 @@ class Ai::AutopilotReplyService
       com base no que já se sabe e conduza para link/valor/fechamento.
       NÃO faça nenhuma pergunta de qualificação. NÃO cumprimente.
     OVERRIDE
+  end
+
+  # When the account is linked to belezaki, run the Claude tool-use loop so the
+  # agent can check the salon agenda and create appointments mid-conversation.
+  # Otherwise fall back to the plain single-shot reply.
+  def generate_response(messages)
+    client = belezaki_client
+    return call_claude(messages) if client.nil?
+
+    Rails.logger.info("[Athenas agent] belezaki scheduling enabled conv=#{@conversation.display_id}")
+    executor = Ai::Belezaki::SchedulingTools.new(
+      client, idempotency_key: "conv-#{@conversation.id}-#{@conversation.messages.maximum(:id)}"
+    )
+    Ai::Agent::ToolLoopService.new(
+      assistant: @assistant,
+      conversation: @conversation,
+      messages: messages,
+      system: build_system_prompt,
+      tools: Ai::Belezaki::SchedulingTools.definitions(include_booking: true),
+      tool_executor: executor
+    ).perform
+  end
+
+  # Never let belezaki resolution (DB lookup / ENV) break the reply for
+  # accounts that don't use scheduling — fall back to the plain path on error.
+  def belezaki_client
+    Ai::Belezaki::AgentClient.for_account(@conversation.account)
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas agent] belezaki resolve failed conv=#{@conversation.display_id}: #{e.message}")
+    nil
   end
 
   def call_claude(messages, override: nil)

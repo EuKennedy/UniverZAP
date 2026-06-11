@@ -51,7 +51,11 @@ class Ai::ClaudeService
       max_tokens: pick(overrides[:max_tokens], @assistant&.max_tokens, 1024),
       temperature: pick(overrides[:temperature], @assistant&.temperature, 0.3),
       system: system,
-      messages: messages
+      messages: messages,
+      # Optional Anthropic tool-use (function calling). Absent for every
+      # existing caller (compact drops nil), so behaviour is unchanged unless
+      # a caller passes `tools:`.
+      tools: overrides[:tools]
     }.compact
   end
 
@@ -108,12 +112,25 @@ class Ai::ClaudeService
     end
     parsed = response.parsed_response
     log_success(payload: payload, parsed: parsed, duration_ms: duration_ms, conversation: conversation, phase: phase)
-    { content: extract_text(parsed), model: parsed['model'], stop_reason: parsed['stop_reason'], raw: parsed }
+    {
+      content: extract_text(parsed),
+      tool_uses: extract_tool_uses(parsed),
+      model: parsed['model'],
+      stop_reason: parsed['stop_reason'],
+      raw: parsed
+    }
   end
 
   def extract_text(parsed)
     blocks = parsed['content'] || []
     blocks.filter_map { |b| b['text'] if b['type'] == 'text' }.join
+  end
+
+  # Tool-use blocks Claude wants executed before it can answer. Empty for
+  # plain text replies. Each: { 'id', 'name', 'input' }.
+  def extract_tool_uses(parsed)
+    blocks = parsed['content'] || []
+    blocks.select { |b| b['type'] == 'tool_use' }
   end
 
   def log_success(payload:, parsed:, duration_ms:, conversation:, phase:)
