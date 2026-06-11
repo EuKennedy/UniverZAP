@@ -1,8 +1,7 @@
 class Ai::PricingCalculator
-  # Anthropic 2025 list prices, USD per million tokens. We mirror the same
-  # table the ClaudeService uses internally for token counting; keeping a
-  # single source of truth would be nice once the OSS upstream stabilises
-  # but for now it's two short hashes that rarely change.
+  # Anthropic 2025 list prices, USD per million tokens. Single source of
+  # truth: Ai::ClaudeService reads this table for telemetry, the ledger
+  # debits through it, so a price update lands everywhere at once.
   COST_PER_MILLION_USD = {
     'claude-opus-4-5' => { input: 15.0, output: 75.0 },
     'claude-sonnet-4-5' => { input: 3.0, output: 15.0 },

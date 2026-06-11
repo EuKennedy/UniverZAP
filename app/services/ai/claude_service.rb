@@ -7,12 +7,6 @@ class Ai::ClaudeService
   API_BASE = 'https://api.anthropic.com'.freeze
   API_VERSION = '2023-06-01'.freeze
 
-  COST_PER_MILLION = {
-    'claude-opus-4-5' => { input: 15.0, output: 75.0 },
-    'claude-sonnet-4-5' => { input: 3.0, output: 15.0 },
-    'claude-haiku-4-5' => { input: 0.8, output: 4.0 }
-  }.freeze
-
   def initialize(assistant:, account: nil)
     @assistant = assistant
     @account = account || assistant&.account
@@ -71,16 +65,20 @@ class Ai::ClaudeService
 
   def perform_request(api_key, payload)
     attempts = 0
-    attempts += 1
-    response = post_to_claude(api_key, payload)
-    return response unless retryable_response?(response) && attempts < MAX_RETRY_ATTEMPTS
+    begin
+      attempts += 1
+      response = post_to_claude(api_key, payload)
+      # Exhausted retries return the response as-is: `track` logs the failed
+      # invocation and raises a user-facing Error with the upstream status.
+      raise Net::ReadTimeout if retryable_response?(response) && attempts < MAX_RETRY_ATTEMPTS
 
-    raise Net::ReadTimeout
-  rescue *RETRYABLE_NET_ERRORS => e
-    raise e if attempts >= MAX_RETRY_ATTEMPTS
+      response
+    rescue *RETRYABLE_NET_ERRORS => e
+      raise e if attempts >= MAX_RETRY_ATTEMPTS
 
-    sleep(0.5 * (2**(attempts - 1)))
-    retry
+      sleep(0.5 * (2**(attempts - 1)))
+      retry
+    end
   end
 
   def post_to_claude(api_key, payload)
@@ -204,8 +202,10 @@ class Ai::ClaudeService
     Rails.logger.error("[Athenas] failure logging crashed: #{e.message}")
   end
 
+  # Pricing lives in Ai::PricingCalculator (single source of truth) so the
+  # telemetry recorded here can never drift from what the ledger debits.
   def compute_cost(model, input_tokens, output_tokens)
-    rates = COST_PER_MILLION[model] || COST_PER_MILLION['claude-sonnet-4-5']
+    rates = Ai::PricingCalculator::COST_PER_MILLION_USD.fetch(model, Ai::PricingCalculator::COST_PER_MILLION_USD['claude-sonnet-4-5'])
     ((input_tokens * rates[:input]) + (output_tokens * rates[:output])) / 1_000_000.0
   end
 end
