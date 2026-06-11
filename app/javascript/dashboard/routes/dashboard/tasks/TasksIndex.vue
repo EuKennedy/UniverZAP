@@ -200,7 +200,6 @@ const closeDrawer = () => {
   router.replace({ name: 'tasks', query: nextQuery });
 };
 
-
 const confirmDialogRef = ref(null);
 const confirmState = ref({ title: '', description: '', onConfirm: null });
 const askConfirmation = ({ title, description, onConfirm }) => {
@@ -213,13 +212,6 @@ const runConfirmedAction = async () => {
   if (action) await action();
 };
 
-const handleDelete = task =>
-  askConfirmation({
-    title: t('TASKS.DETAIL.ACTIONS.DELETE_TITLE'),
-    description: t('TASKS.DETAIL.ACTIONS.DELETE_CONFIRM'),
-    onConfirm: () => performDeleteTask(task),
-  });
-
 const performDeleteTask = async task => {
   try {
     await store.dispatch('tasks/delete', task.id);
@@ -228,6 +220,13 @@ const performDeleteTask = async task => {
     useAlert(error?.message || t('TASKS.DETAIL.DELETE_ERROR'));
   }
 };
+
+const handleDelete = task =>
+  askConfirmation({
+    title: t('TASKS.DETAIL.ACTIONS.DELETE_TITLE'),
+    description: t('TASKS.DETAIL.ACTIONS.DELETE_CONFIRM'),
+    onConfirm: () => performDeleteTask(task),
+  });
 
 const drawerTaskId = computed(() =>
   route.query.task ? Number(route.query.task) : null
@@ -306,13 +305,6 @@ const handleRenameView = async ({ id, name }) => {
   }
 };
 
-const handleDeleteView = view =>
-  askConfirmation({
-    title: t('TASKS.SAVED_VIEWS.DELETE_TITLE'),
-    description: t('TASKS.SAVED_VIEWS.DELETE_CONFIRM'),
-    onConfirm: () => performDeleteView(view),
-  });
-
 const performDeleteView = async view => {
   try {
     await store.dispatch('taskViews/delete', view.id);
@@ -321,6 +313,13 @@ const performDeleteView = async view => {
     useAlert(error?.message || t('TASKS.SAVED_VIEWS.ERROR'));
   }
 };
+
+const handleDeleteView = view =>
+  askConfirmation({
+    title: t('TASKS.SAVED_VIEWS.DELETE_TITLE'),
+    description: t('TASKS.SAVED_VIEWS.DELETE_CONFIRM'),
+    onConfirm: () => performDeleteView(view),
+  });
 
 const handleSetDefaultView = async view => {
   try {
@@ -380,15 +379,6 @@ const handleChannelSubmit = async payload => {
   }
 };
 
-const handleArchiveChannel = channel =>
-  askConfirmation({
-    title: t('TEAM_CHAT.CHANNEL.ARCHIVE_TITLE'),
-    description: t('TEAM_CHAT.CHANNEL.ARCHIVE_CONFIRM', {
-      name: channel.name,
-    }),
-    onConfirm: () => performArchiveChannel(channel),
-  });
-
 const performArchiveChannel = async channel => {
   try {
     await store.dispatch('teamChat/archiveChannel', channel.id);
@@ -402,6 +392,15 @@ const performArchiveChannel = async channel => {
     useAlert(message);
   }
 };
+
+const handleArchiveChannel = channel =>
+  askConfirmation({
+    title: t('TEAM_CHAT.CHANNEL.ARCHIVE_TITLE'),
+    description: t('TEAM_CHAT.CHANNEL.ARCHIVE_CONFIRM', {
+      name: channel.name,
+    }),
+    onConfirm: () => performArchiveChannel(channel),
+  });
 
 const hydrateFromSettings = () => {
   const cached = uiSettings.value?.[settingsKey.value];

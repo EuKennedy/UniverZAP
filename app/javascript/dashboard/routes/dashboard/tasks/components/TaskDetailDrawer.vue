@@ -157,7 +157,6 @@ const reopen = async () => {
   if (updated) loadActivities();
 };
 
-
 const confirmDialogRef = ref(null);
 const confirmState = ref({ title: '', description: '', onConfirm: null });
 const askConfirmation = ({ title, description, onConfirm }) => {
@@ -170,15 +169,6 @@ const runConfirmedAction = async () => {
   if (action) await action();
 };
 
-const destroy = () => {
-  if (!props.task?.id) return;
-  askConfirmation({
-    title: t('TASKS.DETAIL.ACTIONS.DELETE_TITLE'),
-    description: t('TASKS.DETAIL.ACTIONS.DELETE_CONFIRM'),
-    onConfirm: performDestroy,
-  });
-};
-
 const performDestroy = async () => {
   try {
     await store.dispatch('tasks/delete', props.task.id);
@@ -187,6 +177,15 @@ const performDestroy = async () => {
   } catch (error) {
     useAlert(error?.message || t('TASKS.DETAIL.DELETE_ERROR'));
   }
+};
+
+const destroy = () => {
+  if (!props.task?.id) return;
+  askConfirmation({
+    title: t('TASKS.DETAIL.ACTIONS.DELETE_TITLE'),
+    description: t('TASKS.DETAIL.ACTIONS.DELETE_CONFIRM'),
+    onConfirm: performDestroy,
+  });
 };
 
 const postComment = async ({ text }) => {

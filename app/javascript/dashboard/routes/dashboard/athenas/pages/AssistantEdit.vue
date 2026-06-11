@@ -155,13 +155,6 @@ const runConfirmedAction = async () => {
   if (action) await action();
 };
 
-const remove = () =>
-  askConfirmation({
-    title: t('ATHENAS.EDIT.DELETE_TITLE'),
-    description: t('ATHENAS.EDIT.DELETE_CONFIRM'),
-    onConfirm: performRemove,
-  });
-
 const performRemove = async () => {
   try {
     await AthenasAssistantsAPI.delete(props.id);
@@ -173,6 +166,13 @@ const performRemove = async () => {
     );
   }
 };
+
+const remove = () =>
+  askConfirmation({
+    title: t('ATHENAS.EDIT.DELETE_TITLE'),
+    description: t('ATHENAS.EDIT.DELETE_CONFIRM'),
+    onConfirm: performRemove,
+  });
 
 const toggleAutopilot = () => {
   form.autopilot_enabled = !form.autopilot_enabled;
@@ -272,13 +272,6 @@ const saveTraining = async () => {
   }
 };
 
-const removeTraining = training =>
-  askConfirmation({
-    title: t('ATHENAS.EDIT.KNOWLEDGE.DELETE_TITLE'),
-    description: t('ATHENAS.EDIT.KNOWLEDGE.DELETE_CONFIRM'),
-    onConfirm: () => performRemoveTraining(training),
-  });
-
 const performRemoveTraining = async training => {
   try {
     await AthenasAssistantsAPI.deleteTraining(props.id, training.id);
@@ -290,6 +283,13 @@ const performRemoveTraining = async training => {
     );
   }
 };
+
+const removeTraining = training =>
+  askConfirmation({
+    title: t('ATHENAS.EDIT.KNOWLEDGE.DELETE_TITLE'),
+    description: t('ATHENAS.EDIT.KNOWLEDGE.DELETE_CONFIRM'),
+    onConfirm: () => performRemoveTraining(training),
+  });
 
 const statusBadge = computed(() => {
   if (!assistant.value) return null;

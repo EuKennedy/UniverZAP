@@ -136,7 +136,6 @@ const handleEdit = async ({ messageId, content }) => {
   }
 };
 
-
 const confirmDialogRef = ref(null);
 const confirmState = ref({ title: '', description: '', onConfirm: null });
 const askConfirmation = ({ title, description, onConfirm }) => {
@@ -149,13 +148,6 @@ const runConfirmedAction = async () => {
   if (action) await action();
 };
 
-const handleDelete = message =>
-  askConfirmation({
-    title: t('TEAM_CHAT.MESSAGE.DELETE_TITLE'),
-    description: t('TEAM_CHAT.MESSAGE.DELETE_CONFIRM'),
-    onConfirm: () => performDeleteMessage(message),
-  });
-
 const performDeleteMessage = async message => {
   try {
     await store.dispatch('teamChat/deleteMessage', {
@@ -166,6 +158,13 @@ const performDeleteMessage = async message => {
     useAlert(error?.message || t('TEAM_CHAT.PANEL.SEND_ERROR'));
   }
 };
+
+const handleDelete = message =>
+  askConfirmation({
+    title: t('TEAM_CHAT.MESSAGE.DELETE_TITLE'),
+    description: t('TEAM_CHAT.MESSAGE.DELETE_CONFIRM'),
+    onConfirm: () => performDeleteMessage(message),
+  });
 </script>
 
 <template>
