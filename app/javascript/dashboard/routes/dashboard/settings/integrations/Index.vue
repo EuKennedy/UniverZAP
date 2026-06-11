@@ -14,8 +14,12 @@ const { replaceInstallationName } = useBranding();
 const searchQuery = ref('');
 const uiFlags = getters['integrations/getUIFlags'];
 
-const integrationList = computed(
-  () => getters['integrations/getAppIntegrations'].value
+// UniverZAP: Dialogflow hidden from the Apps list (backend integration kept).
+const HIDDEN_INTEGRATION_IDS = ['dialogflow'];
+const integrationList = computed(() =>
+  getters['integrations/getAppIntegrations'].value.filter(
+    item => !HIDDEN_INTEGRATION_IDS.includes(item.id)
+  )
 );
 
 const filteredIntegrationList = computed(() => {

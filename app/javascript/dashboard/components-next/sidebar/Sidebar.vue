@@ -2,7 +2,6 @@
 import { h, ref, computed, onMounted } from 'vue';
 import { provideSidebarContext, useSidebarResize } from './provider';
 import { useAccount } from 'dashboard/composables/useAccount';
-import { useConfig } from 'dashboard/composables/useConfig';
 import { useKbd } from 'dashboard/composables/utils/useKbd';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useStore } from 'vuex';
@@ -38,7 +37,9 @@ const emit = defineEmits([
 ]);
 
 const { accountScopedRoute, isOnChatwootCloud } = useAccount();
-const { captainVisible } = useConfig();
+// UniverZAP: legacy Captain (robot) hidden from the sidebar — Athenas is the
+// AI agent here. Backend kept; only the UI entry is suppressed.
+const captainVisible = false;
 const store = useStore();
 const searchShortcut = useKbd([`$mod`, 'k']);
 const { t } = useI18n();
@@ -689,18 +690,7 @@ const menuItems = computed(() => {
           icon: 'i-lucide-code',
           to: accountScopedRoute('attributes_list'),
         },
-        {
-          name: 'Settings Automation',
-          label: t('SIDEBAR.AUTOMATION'),
-          icon: 'i-lucide-repeat',
-          to: accountScopedRoute('automation_list'),
-        },
-        {
-          name: 'Settings Agent Bots',
-          label: t('SIDEBAR.AGENT_BOTS'),
-          icon: 'i-lucide-bot',
-          to: accountScopedRoute('agent_bots'),
-        },
+        // UniverZAP: Automation + Agent Bots hidden from the UI (backend kept).
         {
           name: 'Settings Macros',
           label: t('SIDEBAR.MACROS'),
