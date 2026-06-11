@@ -436,10 +436,14 @@ describe('#actions', () => {
         data: dataReceived,
       });
       await actions.fetchFilteredConversations({ commit }, dataToSend);
-      expect(commit).toHaveBeenCalledTimes(2);
+      // The mock context has no `dispatch`, so buildConversationList throws
+      // after SET_ALL_CONVERSATION; the catch now clears the loading flag so a
+      // failed fetch never leaves an infinite "Carregando conversas" spinner.
+      expect(commit).toHaveBeenCalledTimes(3);
       expect(commit.mock.calls).toEqual([
         ['SET_LIST_LOADING_STATUS'],
         ['SET_ALL_CONVERSATION', dataReceived.payload],
+        ['CLEAR_LIST_LOADING_STATUS'],
       ]);
     });
   });
