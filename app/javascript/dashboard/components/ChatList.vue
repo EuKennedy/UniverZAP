@@ -224,7 +224,9 @@ const activeAssigneeTabCount = computed(() => {
 });
 
 const conversationListPagination = computed(() => {
-  const conversationsPerPage = 25;
+  // Must match the backend CONVERSATION_RESULTS_PER_PAGE (env). Loads 50
+  // conversations per scroll/load, appended incrementally.
+  const conversationsPerPage = 50;
   const hasChatsOnView =
     chatsOnView.value &&
     Array.isArray(chatsOnView.value) &&
