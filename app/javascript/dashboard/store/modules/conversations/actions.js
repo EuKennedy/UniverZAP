@@ -61,7 +61,11 @@ const actions = {
         : params.assigneeType;
       buildConversationList({ commit, dispatch }, params, data, pageFilterKey);
     } catch (error) {
-      // Handle error
+      // Always clear the loading flag — otherwise a failed/timed-out list
+      // request leaves the UI stuck on "Carregando conversas" forever.
+      commit(types.CLEAR_LIST_LOADING_STATUS);
+      // eslint-disable-next-line no-console
+      console.error('[conversations] fetchAllConversations failed', error);
     }
   },
 
@@ -76,7 +80,9 @@ const actions = {
         'appliedFilters'
       );
     } catch (error) {
-      // Handle error
+      commit(types.CLEAR_LIST_LOADING_STATUS);
+      // eslint-disable-next-line no-console
+      console.error('[conversations] fetchFilteredConversations failed', error);
     }
   },
 
