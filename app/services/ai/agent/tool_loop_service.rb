@@ -19,29 +19,40 @@ class Ai::Agent::ToolLoopService
   end
 
   def perform
-    claude = Ai::ClaudeService.new(assistant: @assistant)
     last = nil
-
     MAX_ITERATIONS.times do
-      last = claude.chat(
-        messages: @messages, system: @system, conversation: @conversation,
-        phase: @phase, tools: @tools
-      )
-      tool_uses = last[:tool_uses] || []
-      return last if tool_uses.empty?
+      last = run_turn
+      return last if Array(last[:tool_uses]).empty?
 
-      assistant_blocks = last[:raw]&.dig('content') || []
-      @messages << { role: 'assistant', content: assistant_blocks }
-      @messages << { role: 'user', content: tool_uses.map { |tu| tool_result_block(tu) } }
+      feed_tool_results(last)
     end
-
-    Rails.logger.warn(
-      "[Athenas agent] tool loop hit MAX_ITERATIONS conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
-    )
-    last || { content: '', tool_uses: [], stop_reason: 'max_iterations' }
+    log_max_iterations
+    last
   end
 
   private
+
+  def run_turn
+    claude.chat(
+      messages: @messages, system: @system, conversation: @conversation,
+      phase: @phase, tools: @tools
+    )
+  end
+
+  def claude
+    @claude ||= Ai::ClaudeService.new(assistant: @assistant)
+  end
+
+  def feed_tool_results(response)
+    @messages << { role: 'assistant', content: response[:raw]&.dig('content') || [] }
+    @messages << { role: 'user', content: Array(response[:tool_uses]).map { |tu| tool_result_block(tu) } }
+  end
+
+  def log_max_iterations
+    Rails.logger.warn(
+      "[Athenas agent] tool loop hit MAX_ITERATIONS conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
+    )
+  end
 
   def tool_result_block(tool_use)
     {

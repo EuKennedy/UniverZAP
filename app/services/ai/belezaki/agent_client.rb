@@ -56,15 +56,16 @@ class Ai::Belezaki::AgentClient
   private
 
   def get(path, params = {})
-    request(:get, path, query: params.compact)
+    request(:get, path, { query: params.compact })
   end
 
   def post(path, body)
-    request(:post, path, body: body.to_json)
+    request(:post, path, { body: body.to_json })
   end
 
-  def request(method, path, **opts)
-    response = HTTParty.public_send(method, "#{self.class.base_url}#{PREFIX}#{path}", headers: headers, timeout: 15, **opts)
+  def request(method, path, http_options)
+    url = "#{self.class.base_url}#{PREFIX}#{path}"
+    response = HTTParty.public_send(method, url, **http_options, headers: headers, timeout: 15)
     parsed = response.parsed_response
     return parsed if response.success?
 
