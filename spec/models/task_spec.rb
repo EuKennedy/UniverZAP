@@ -41,6 +41,11 @@ RSpec.describe Task, type: :model do
       a2 = create(:task, account: create(:account))
       expect([a1.display_id, a2.display_id]).to all(eq(1))
     end
+
+    it 'keeps an explicitly provided display_id' do
+      task = create(:task, display_id: 777)
+      expect(task.display_id).to eq(777)
+    end
   end
 
   describe 'scopes' do

@@ -18,6 +18,7 @@
 #
 class KanbanTask < ApplicationRecord
   include KanbanRealtime
+  include AccountDisplayId
 
   belongs_to :account
   belongs_to :funnel
@@ -73,7 +74,6 @@ class KanbanTask < ApplicationRecord
   validate  :funnel_belongs_to_account
 
   before_validation :assign_position, on: :create
-  before_create     :assign_display_id
 
   after_create_commit  :run_automation_on_create
   after_update_commit  :run_automation_on_stage_change
@@ -198,10 +198,6 @@ class KanbanTask < ApplicationRecord
     return if position.present? && position.positive?
 
     self.position = (funnel_stage&.kanban_tasks&.maximum(:position) || 0) + 1
-  end
-
-  def assign_display_id
-    self.display_id ||= (account.kanban_tasks.maximum(:display_id) || 0) + 1
   end
 
   def funnel_stage_belongs_to_funnel

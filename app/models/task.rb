@@ -25,6 +25,8 @@
 #   index_tasks_on_display_id
 #
 class Task < ApplicationRecord
+  include AccountDisplayId
+
   belongs_to :account
   belongs_to :created_by_user, class_name: 'User', optional: false
   # Recurrence parent: when a task is spawned by `RecurrenceGenerator`,
@@ -58,8 +60,6 @@ class Task < ApplicationRecord
   scope :due_for_recurrence, lambda {
     recurring.where.not(next_occurrence_at: nil).where('next_occurrence_at <= ?', Time.current)
   }
-
-  before_create :assign_display_id
 
   after_create_commit  :log_creation_activity
   after_create_commit  :broadcast_created
@@ -116,10 +116,6 @@ class Task < ApplicationRecord
 
   def timestamps_payload
     { created_at: created_at.to_i, updated_at: updated_at.to_i }
-  end
-
-  def assign_display_id
-    self.display_id ||= (account.tasks.maximum(:display_id) || 0) + 1
   end
 
   def log_creation_activity
