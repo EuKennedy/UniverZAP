@@ -113,6 +113,7 @@ describe ConversationFinder do
                                        assigned_count: 3,
                                        unassigned_count: 1,
                                        all_count: 4,
+                                       group_count: 0,
                                        waiting_count: 4,
                                        in_attendance_count: 0
                                      })
@@ -211,6 +212,7 @@ describe ConversationFinder do
                                        assigned_count: 3,
                                        unassigned_count: 1,
                                        all_count: 4,
+                                       group_count: 0,
                                        waiting_count: 4,
                                        in_attendance_count: 0
                                      })

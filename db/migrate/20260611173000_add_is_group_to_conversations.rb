@@ -2,9 +2,7 @@ class AddIsGroupToConversations < ActiveRecord::Migration[7.1]
   disable_ddl_transaction!
 
   def up
-    unless column_exists?(:conversations, :is_group)
-      add_column :conversations, :is_group, :boolean, default: false, null: false
-    end
+    add_column :conversations, :is_group, :boolean, default: false, null: false unless column_exists?(:conversations, :is_group)
 
     add_index :conversations, %i[account_id is_group], algorithm: :concurrently, if_not_exists: true
 
