@@ -60,4 +60,13 @@ export const ASSIGNEE_TYPE_TAB_PERMISSIONS = {
       CONVERSATION_PARTICIPATING_PERMISSIONS,
     ],
   },
+  // UniverZAP: WhatsApp groups, separated from the regular tabs.
+  groups: {
+    count: 'groupCount',
+    permissions: [
+      ...ROLES,
+      MANAGE_ALL_CONVERSATION_PERMISSIONS,
+      CONVERSATION_PARTICIPATING_PERMISSIONS,
+    ],
+  },
 };

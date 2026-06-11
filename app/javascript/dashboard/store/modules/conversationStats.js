@@ -9,6 +9,8 @@ const state = {
   // UniverZAP attendance-state tabs
   waitingCount: 0,
   inAttendanceCount: 0,
+  // UniverZAP groups tab
+  groupCount: 0,
 };
 
 export const getters = {
@@ -61,6 +63,7 @@ export const mutations = {
       all_count: allCount,
       waiting_count: waitingCount,
       in_attendance_count: inAttendanceCount,
+      group_count: groupCount,
     } = {}
   ) {
     $state.mineCount = mineCount;
@@ -69,6 +72,7 @@ export const mutations = {
     if (waitingCount !== undefined) $state.waitingCount = waitingCount;
     if (inAttendanceCount !== undefined)
       $state.inAttendanceCount = inAttendanceCount;
+    if (groupCount !== undefined) $state.groupCount = groupCount;
     $state.updatedOn = new Date();
   },
 };

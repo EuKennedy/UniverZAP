@@ -19,7 +19,8 @@
       "unassigned": "Unassigned",
       "waiting": "Waiting",
       "in_attendance": "In attendance",
-      "all": "All"
+      "all": "All",
+      "groups": "Groups"
     },
     "CHAT_STATUS_FILTER_ITEMS": {
       "open": {

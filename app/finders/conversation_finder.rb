@@ -45,6 +45,7 @@ class ConversationFinder
     # zeroes out the counter of the other tab.
     counts = build_count_payload
 
+    apply_group_scope
     filter_by_conversation_type if params[:conversation_type]
     filter_by_assignee_type
 
@@ -54,6 +55,17 @@ class ConversationFinder
   def perform_meta_only
     set_up
     { count: build_count_payload }
+  end
+
+  # UniverZAP: WhatsApp groups live only in the dedicated "Grupos" tab. The
+  # regular tabs exclude them; the Grupos tab (conversation_type=groups) shows
+  # only them. Applied after the badge counts are computed.
+  def apply_group_scope
+    @conversations = if params[:conversation_type] == 'groups'
+                       @conversations.groups
+                     else
+                       @conversations.non_groups
+                     end
   end
 
   private
@@ -170,11 +182,17 @@ class ConversationFinder
     @conversations = @conversations.where(contact_inboxes: { source_id: params[:source_id] })
   end
 
+  # Standard tab badges count NON-group conversations only — groups have their
+  # own "Grupos" tab and must not inflate Minhas/Todos/etc.
+  def count_scope
+    @conversations.non_groups
+  end
+
   def set_count_for_all_conversations
     [
-      @conversations.assigned_to(current_user).count,
-      @conversations.unassigned.count,
-      @conversations.count
+      count_scope.assigned_to(current_user).count,
+      count_scope.unassigned.count,
+      count_scope.count
     ]
   end
 
@@ -185,15 +203,17 @@ class ConversationFinder
       assigned_count: all_count - unassigned_count,
       unassigned_count: unassigned_count,
       all_count: all_count,
+      group_count: @conversations.groups.count,
       **set_count_for_attendance_states
     }
   end
 
   # UniverZAP: attendance state counts (waiting vs in_attendance) for tab badges.
+  # Groups excluded — they have their own tab.
   def set_count_for_attendance_states
     {
-      waiting_count: @conversations.waiting.count,
-      in_attendance_count: @conversations.in_attendance.count
+      waiting_count: count_scope.waiting.count,
+      in_attendance_count: count_scope.in_attendance.count
     }
   end
 

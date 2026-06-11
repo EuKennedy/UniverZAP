@@ -55,8 +55,10 @@ const actions = {
       // i.e. the conversation_type. Bucket the page state under the same key,
       // otherwise endReached for these tabs is never set and the list spins
       // forever (infinite loadMore + repeated meta calls).
-      const attendanceTypes = ['waiting', 'in_attendance'];
-      const pageFilterKey = attendanceTypes.includes(params.conversationType)
+      const conversationTypeTabs = ['waiting', 'in_attendance', 'groups'];
+      const pageFilterKey = conversationTypeTabs.includes(
+        params.conversationType
+      )
         ? params.conversationType
         : params.assigneeType;
       buildConversationList({ commit, dispatch }, params, data, pageFilterKey);

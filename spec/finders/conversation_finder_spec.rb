@@ -236,5 +236,29 @@ describe ConversationFinder do
         expect(result[:conversations].length).to be 2
       end
     end
+
+    context 'with whatsapp groups' do
+      let!(:group_contact) { create(:contact, account: account, identifier: '120363000000000001@g.us') }
+      let!(:group_conversation) do
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, contact: group_contact)
+      end
+
+      it 'flags is_group on create from the contact identifier' do
+        expect(group_conversation.is_group).to be(true)
+      end
+
+      it 'returns only group conversations on the groups tab' do
+        params = { assignee_type: 'all', conversation_type: 'groups', inbox_id: inbox.id }
+        result = described_class.new(user_1, params).perform
+        expect(result[:conversations].map(&:id)).to eq([group_conversation.id])
+      end
+
+      it 'excludes groups from regular tabs and counts them separately' do
+        params = { assignee_type: 'all', inbox_id: inbox.id }
+        result = described_class.new(user_1, params).perform
+        expect(result[:conversations].map(&:id)).not_to include(group_conversation.id)
+        expect(result[:count][:group_count]).to eq(1)
+      end
+    end
   end
 end

@@ -4,9 +4,10 @@ export default {
     ME: 'me',
     UNASSIGNED: 'unassigned',
     ALL: 'all',
-    // UniverZAP: attendance-state tabs (drive `conversation_type` API param, not assignee_id).
+    // UniverZAP: conversation_type tabs (drive `conversation_type` API param, not assignee_id).
     WAITING: 'waiting',
     IN_ATTENDANCE: 'in_attendance',
+    GROUPS: 'groups',
   },
   STATUS_TYPE: {
     OPEN: 'open',

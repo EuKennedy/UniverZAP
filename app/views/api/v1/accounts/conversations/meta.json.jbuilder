@@ -5,4 +5,5 @@ json.meta do
   json.all_count @conversations_count[:all_count]
   json.waiting_count @conversations_count[:waiting_count]
   json.in_attendance_count @conversations_count[:in_attendance_count]
+  json.group_count @conversations_count[:group_count]
 end

@@ -251,6 +251,7 @@ const conversationListPagination = computed(() => {
 const ATTENDANCE_STATE_TABS = [
   wootConstants.ASSIGNEE_TYPE.WAITING,
   wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE,
+  wootConstants.ASSIGNEE_TYPE.GROUPS,
 ];
 
 const isAttendanceStateTab = computed(() =>
@@ -312,21 +313,28 @@ const pageTitle = computed(() => {
 });
 
 function filterByAssigneeTab(conversations) {
+  // Groups tab shows ONLY WhatsApp groups; every other tab excludes them so
+  // they don't pollute the regular lists. The store accumulates both, so the
+  // client-side split mirrors the backend filtering.
+  if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.GROUPS) {
+    return conversations.filter(c => c.is_group);
+  }
+  const nonGroups = conversations.filter(c => !c.is_group);
   if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.ME) {
-    return conversations.filter(
+    return nonGroups.filter(
       c => c.meta?.assignee?.id === currentUser.value?.id
     );
   }
   if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.UNASSIGNED) {
-    return conversations.filter(c => !c.meta?.assignee);
+    return nonGroups.filter(c => !c.meta?.assignee);
   }
   if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.WAITING) {
-    return conversations.filter(c => !c.first_reply_created_at);
+    return nonGroups.filter(c => !c.first_reply_created_at);
   }
   if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE) {
-    return conversations.filter(c => !!c.first_reply_created_at);
+    return nonGroups.filter(c => !!c.first_reply_created_at);
   }
-  return [...conversations];
+  return nonGroups;
 }
 
 const conversationList = computed(() => {
@@ -341,18 +349,27 @@ const conversationList = computed(() => {
         participatingChatsList.value(filters)
       );
     } else if (activeAssigneeTab.value === 'me') {
-      localConversationList = [...mineChatsList.value(filters)];
+      localConversationList = mineChatsList
+        .value(filters)
+        .filter(c => !c.is_group);
     } else if (activeAssigneeTab.value === 'unassigned') {
-      localConversationList = [...unAssignedChatsList.value(filters)];
+      localConversationList = unAssignedChatsList
+        .value(filters)
+        .filter(c => !c.is_group);
     } else if (
       activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.WAITING ||
-      activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE
+      activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE ||
+      activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.GROUPS
     ) {
       // Backend already returns the filtered bucket; reuse the "all" list and
-      // filter client-side by first_reply_created_at for incremental updates.
+      // filter client-side (groups-only for the Grupos tab, first_reply for
+      // waiting/in_attendance, all of which exclude groups).
       localConversationList = filterByAssigneeTab(allChatList.value(filters));
     } else {
-      localConversationList = [...allChatList.value(filters)];
+      // Default (Todos): exclude groups — they live only in the Grupos tab.
+      localConversationList = allChatList
+        .value(filters)
+        .filter(c => !c.is_group);
     }
   } else {
     localConversationList = [...chatLists.value];

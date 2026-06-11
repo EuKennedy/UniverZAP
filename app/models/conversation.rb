@@ -124,6 +124,12 @@ class Conversation < ApplicationRecord
   # - in_attendance = agent has already replied at least once.
   scope :waiting, -> { where(first_reply_created_at: nil) }
   scope :in_attendance, -> { where.not(first_reply_created_at: nil) }
+  # UniverZAP: WhatsApp group chats (contact identifier ends with "@g.us") are
+  # bucketed into a dedicated "Grupos" tab and excluded from the regular tabs
+  # to cut visual noise. `is_group` is set on create (see set_group_flag) and
+  # backfilled by the migration.
+  scope :groups, -> { where(is_group: true) }
+  scope :non_groups, -> { where(is_group: false) }
   scope :resolvable_not_waiting, lambda { |auto_resolve_after|
     return none if auto_resolve_after.to_i.zero?
 
@@ -165,6 +171,7 @@ class Conversation < ApplicationRecord
   before_save :ensure_snooze_until_reset
   before_create :determine_conversation_status
   before_create :ensure_waiting_since
+  before_create :set_group_flag
 
   after_update_commit :execute_after_update_commit_callbacks
   after_create_commit :notify_conversation_creation
@@ -312,6 +319,14 @@ class Conversation < ApplicationRecord
 
   def ensure_waiting_since
     self.waiting_since = created_at
+  end
+
+  # WhatsApp group jids end with "@g.us". The WAHA connector sets the group id
+  # as the contact identifier, so a conversation is a group when its contact's
+  # identifier matches. Computed once on create; backfilled for existing rows.
+  def set_group_flag
+    self.is_group = contact&.identifier.to_s.end_with?('@g.us')
+    true
   end
 
   def validate_additional_attributes
