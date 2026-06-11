@@ -3,7 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe Ai::ClaudeService do
-  subject(:service) { described_class.new(assistant: nil, account: nil) }
+  let(:service) { described_class.new(assistant: nil, account: nil) }
 
   describe 'retry policy' do
     let(:payload) { { model: 'claude-sonnet-4-5', max_tokens: 16, messages: [] } }
