@@ -21,6 +21,7 @@
       "CREATE_SUCCESS": "Channel created.",
       "UPDATE_SUCCESS": "Channel updated.",
       "ARCHIVE_SUCCESS": "Channel archived.",
+      "ARCHIVE_TITLE": "Archive channel",
       "ARCHIVE_CONFIRM": "Archive the \"{name}\" channel? History is kept, but it leaves the list.",
       "SAVE_ERROR": "Could not save the channel."
     },
@@ -40,6 +41,7 @@
     "MESSAGE": {
       "EDIT": "Edit",
       "DELETE": "Delete",
+      "DELETE_TITLE": "Delete message",
       "DELETE_CONFIRM": "Delete this message?",
       "SAVE": "Save",
       "CANCEL": "Cancel",

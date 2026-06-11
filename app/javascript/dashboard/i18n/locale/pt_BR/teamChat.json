@@ -21,6 +21,7 @@
       "CREATE_SUCCESS": "Canal criado.",
       "UPDATE_SUCCESS": "Canal atualizado.",
       "ARCHIVE_SUCCESS": "Canal arquivado.",
+      "ARCHIVE_TITLE": "Arquivar canal",
       "ARCHIVE_CONFIRM": "Arquivar o canal \"{name}\"? O histórico é preservado, mas ele some da lista.",
       "SAVE_ERROR": "Não foi possível salvar o canal."
     },
@@ -40,6 +41,7 @@
     "MESSAGE": {
       "EDIT": "Editar",
       "DELETE": "Excluir",
+      "DELETE_TITLE": "Excluir mensagem",
       "DELETE_CONFIRM": "Excluir esta mensagem?",
       "SAVE": "Salvar",
       "CANCEL": "Cancelar",

@@ -9,6 +9,13 @@
       "EMPTY_TITLE": "Nenhum assistente ainda",
       "EMPTY_DESCRIPTION": "A Athenas AI permite colocar um assistente de WhatsApp no ar em minutos. Escolha um papel, ensine sobre o seu negócio e deixe ele qualificar leads, atender e até fechar vendas sozinho."
     },
+    "TONES": {
+      "SALES": "Vendas",
+      "SUPPORT": "Suporte",
+      "FRIENDLY": "Amigável",
+      "FORMAL": "Formal",
+      "CONCIERGE": "Concierge"
+    },
     "WIZARD": {
       "HEADER_TITLE": "Novo assistente Athenas",
       "BACK": "Voltar",
@@ -110,6 +117,7 @@
     "EDIT": {
       "LOADING": "Carregando assistente…",
       "DELETE": "Excluir",
+      "DELETE_TITLE": "Excluir assistente",
       "DELETE_CONFIRM": "Excluir este assistente? Esta ação não pode ser desfeita.",
       "DELETE_SUCCESS": "Assistente excluído.",
       "SAVE": "Salvar alterações",
@@ -156,6 +164,7 @@
         "SAVE": "Salvar",
         "CANCEL": "Cancelar",
         "SAVE_SUCCESS": "Conhecimento salvo.",
+        "DELETE_TITLE": "Remover conhecimento",
         "DELETE_CONFIRM": "Remover este conhecimento? Esta ação não pode ser desfeita.",
         "DELETE_SUCCESS": "Conhecimento removido."
       }

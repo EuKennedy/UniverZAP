@@ -5,6 +5,7 @@ import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import TasksAPI from 'dashboard/api/tasks';
 import TaskUrgencyBadge from './TaskUrgencyBadge.vue';
@@ -156,9 +157,29 @@ const reopen = async () => {
   if (updated) loadActivities();
 };
 
-const destroy = async () => {
+
+const confirmDialogRef = ref(null);
+const confirmState = ref({ title: '', description: '', onConfirm: null });
+const askConfirmation = ({ title, description, onConfirm }) => {
+  confirmState.value = { title, description, onConfirm };
+  confirmDialogRef.value?.open();
+};
+const runConfirmedAction = async () => {
+  const action = confirmState.value.onConfirm;
+  confirmDialogRef.value?.close();
+  if (action) await action();
+};
+
+const destroy = () => {
   if (!props.task?.id) return;
-  if (!window.confirm(t('TASKS.DETAIL.ACTIONS.DELETE_CONFIRM'))) return;
+  askConfirmation({
+    title: t('TASKS.DETAIL.ACTIONS.DELETE_TITLE'),
+    description: t('TASKS.DETAIL.ACTIONS.DELETE_CONFIRM'),
+    onConfirm: performDestroy,
+  });
+};
+
+const performDestroy = async () => {
   try {
     await store.dispatch('tasks/delete', props.task.id);
     useAlert(t('TASKS.DETAIL.DELETE_SUCCESS'));
@@ -374,6 +395,14 @@ const formatDate = ts => {
       v-if="isConvertOpen"
       @close="isConvertOpen = false"
       @submit="handleConvert"
+    />
+
+    <Dialog
+      ref="confirmDialogRef"
+      type="alert"
+      :title="confirmState.title"
+      :description="confirmState.description"
+      @confirm="runConfirmedAction"
     />
   </div>
 </template>

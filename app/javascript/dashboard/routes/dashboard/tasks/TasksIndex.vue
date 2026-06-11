@@ -19,6 +19,7 @@ import TeamWorkloadDashboard from './components/TeamWorkloadDashboard.vue';
 import TasksReports from './components/TasksReports.vue';
 import TeamChatPanel from './components/teamChat/TeamChatPanel.vue';
 import TeamChatCreateChannelModal from './components/teamChat/TeamChatCreateChannelModal.vue';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 
 const { t } = useI18n();
 const store = useStore();
@@ -199,8 +200,27 @@ const closeDrawer = () => {
   router.replace({ name: 'tasks', query: nextQuery });
 };
 
-const handleDelete = async task => {
-  if (!window.confirm(t('TASKS.DETAIL.ACTIONS.DELETE_CONFIRM'))) return;
+
+const confirmDialogRef = ref(null);
+const confirmState = ref({ title: '', description: '', onConfirm: null });
+const askConfirmation = ({ title, description, onConfirm }) => {
+  confirmState.value = { title, description, onConfirm };
+  confirmDialogRef.value?.open();
+};
+const runConfirmedAction = async () => {
+  const action = confirmState.value.onConfirm;
+  confirmDialogRef.value?.close();
+  if (action) await action();
+};
+
+const handleDelete = task =>
+  askConfirmation({
+    title: t('TASKS.DETAIL.ACTIONS.DELETE_TITLE'),
+    description: t('TASKS.DETAIL.ACTIONS.DELETE_CONFIRM'),
+    onConfirm: () => performDeleteTask(task),
+  });
+
+const performDeleteTask = async task => {
   try {
     await store.dispatch('tasks/delete', task.id);
     useAlert(t('TASKS.DETAIL.DELETE_SUCCESS'));
@@ -286,8 +306,14 @@ const handleRenameView = async ({ id, name }) => {
   }
 };
 
-const handleDeleteView = async view => {
-  if (!window.confirm(t('TASKS.SAVED_VIEWS.DELETE_CONFIRM'))) return;
+const handleDeleteView = view =>
+  askConfirmation({
+    title: t('TASKS.SAVED_VIEWS.DELETE_TITLE'),
+    description: t('TASKS.SAVED_VIEWS.DELETE_CONFIRM'),
+    onConfirm: () => performDeleteView(view),
+  });
+
+const performDeleteView = async view => {
   try {
     await store.dispatch('taskViews/delete', view.id);
     if (activeViewId.value === view.id) activeViewId.value = null;
@@ -354,14 +380,16 @@ const handleChannelSubmit = async payload => {
   }
 };
 
-const handleArchiveChannel = async channel => {
-  if (
-    !window.confirm(
-      t('TEAM_CHAT.CHANNEL.ARCHIVE_CONFIRM', { name: channel.name })
-    )
-  ) {
-    return;
-  }
+const handleArchiveChannel = channel =>
+  askConfirmation({
+    title: t('TEAM_CHAT.CHANNEL.ARCHIVE_TITLE'),
+    description: t('TEAM_CHAT.CHANNEL.ARCHIVE_CONFIRM', {
+      name: channel.name,
+    }),
+    onConfirm: () => performArchiveChannel(channel),
+  });
+
+const performArchiveChannel = async channel => {
   try {
     await store.dispatch('teamChat/archiveChannel', channel.id);
     useAlert(t('TEAM_CHAT.CHANNEL.ARCHIVE_SUCCESS'));
@@ -646,5 +674,13 @@ onMounted(async () => {
         @close="closeChannelModal"
       />
     </woot-modal>
+
+    <Dialog
+      ref="confirmDialogRef"
+      type="alert"
+      :title="confirmState.title"
+      :description="confirmState.description"
+      @confirm="runConfirmedAction"
+    />
   </div>
 </template>

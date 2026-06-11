@@ -9,6 +9,13 @@
       "EMPTY_TITLE": "No agents yet",
       "EMPTY_DESCRIPTION": "Athenas AI lets you launch an autonomous WhatsApp agent in minutes. Pick a role, teach it about your business and let it qualify leads, answer support and even close deals on its own."
     },
+    "TONES": {
+      "SALES": "Sales",
+      "SUPPORT": "Support",
+      "FRIENDLY": "Friendly",
+      "FORMAL": "Formal",
+      "CONCIERGE": "Concierge"
+    },
     "WIZARD": {
       "HEADER_TITLE": "New Athenas agent",
       "BACK": "Back",
@@ -110,6 +117,7 @@
     "EDIT": {
       "LOADING": "Loading agent…",
       "DELETE": "Delete",
+      "DELETE_TITLE": "Delete agent",
       "DELETE_CONFIRM": "Delete this agent? This cannot be undone.",
       "DELETE_SUCCESS": "Agent deleted.",
       "SAVE": "Save changes",
@@ -156,6 +164,7 @@
         "SAVE": "Save",
         "CANCEL": "Cancel",
         "SAVE_SUCCESS": "Knowledge saved.",
+        "DELETE_TITLE": "Remove knowledge",
         "DELETE_CONFIRM": "Remove this knowledge? This cannot be undone.",
         "DELETE_SUCCESS": "Knowledge removed."
       }

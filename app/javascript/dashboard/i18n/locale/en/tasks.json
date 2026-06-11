@@ -105,6 +105,7 @@
         "MARK_DONE": "Mark as done",
         "REOPEN": "Reopen",
         "DELETE": "Delete",
+        "DELETE_TITLE": "Delete task",
         "DELETE_CONFIRM": "Delete this task? This action cannot be undone.",
         "CONVERT_TO_KANBAN": "Convert to Kanban"
       },
@@ -186,6 +187,7 @@
       "EMPTY": "Save the current filters as a view.",
       "CREATED": "View saved.",
       "ERROR": "Could not save the view.",
+      "DELETE_TITLE": "Delete saved view",
       "DELETE_CONFIRM": "Delete this saved view?"
     },
     "VIEWS": {

@@ -5,7 +5,12 @@ import { useRouter } from 'vue-router';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
 import AthenasAssistantsAPI from 'dashboard/api/athenas';
+import {
+  TONE_OPTIONS,
+  TRAINING_CATEGORY_OPTIONS,
+} from 'dashboard/routes/dashboard/athenas/constants';
 
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 
@@ -66,13 +71,9 @@ const MODELS = [
   },
 ];
 
-const TONES = [
-  { key: 'sales', label: 'Vendas', icon: 'i-lucide-trending-up' },
-  { key: 'support', label: 'Suporte', icon: 'i-lucide-life-buoy' },
-  { key: 'friendly', label: 'Amigável', icon: 'i-lucide-smile' },
-  { key: 'formal', label: 'Formal', icon: 'i-lucide-briefcase' },
-  { key: 'concierge', label: 'Concierge', icon: 'i-lucide-crown' },
-];
+const tones = computed(() =>
+  TONE_OPTIONS.map(o => ({ ...o, label: t(o.labelKey) }))
+);
 
 const stopWordsCSV = computed({
   get: () => (form.guardrails.stop_words || []).join(', '),
@@ -142,8 +143,26 @@ const save = async () => {
 const goBack = () =>
   router.push(accountScopedRoute('athenas_assistants_index'));
 
-const remove = async () => {
-  if (!window.confirm(t('ATHENAS.EDIT.DELETE_CONFIRM'))) return;
+const confirmDialogRef = ref(null);
+const confirmState = ref({ title: '', description: '', onConfirm: null });
+const askConfirmation = ({ title, description, onConfirm }) => {
+  confirmState.value = { title, description, onConfirm };
+  confirmDialogRef.value?.open();
+};
+const runConfirmedAction = async () => {
+  const action = confirmState.value.onConfirm;
+  confirmDialogRef.value?.close();
+  if (action) await action();
+};
+
+const remove = () =>
+  askConfirmation({
+    title: t('ATHENAS.EDIT.DELETE_TITLE'),
+    description: t('ATHENAS.EDIT.DELETE_CONFIRM'),
+    onConfirm: performRemove,
+  });
+
+const performRemove = async () => {
   try {
     await AthenasAssistantsAPI.delete(props.id);
     useAlert(t('ATHENAS.EDIT.DELETE_SUCCESS'));
@@ -160,14 +179,9 @@ const toggleAutopilot = () => {
 };
 
 // === Knowledge base (trainings) ===
-const TRAINING_CATEGORIES = [
-  { key: 'base', label: 'Base' },
-  { key: 'catalog', label: 'Catálogo' },
-  { key: 'policies', label: 'Políticas' },
-  { key: 'sales', label: 'Vendas' },
-  { key: 'faq', label: 'FAQ' },
-  { key: 'support', label: 'Suporte' },
-];
+const trainingCategories = computed(() =>
+  TRAINING_CATEGORY_OPTIONS.map(o => ({ key: o.key, label: t(o.labelKey) }))
+);
 
 const trainings = ref([]);
 const trainingsLoading = ref(false);
@@ -182,7 +196,7 @@ const trainingForm = reactive({
 });
 
 const categoryLabel = key =>
-  TRAINING_CATEGORIES.find(c => c.key === key)?.label || key;
+  trainingCategories.value.find(c => c.key === key)?.label || key;
 
 const trainingMeta = tr =>
   `${categoryLabel(tr.category)} · ${tr.char_count ?? 0} · ${tr.status}`;
@@ -258,8 +272,14 @@ const saveTraining = async () => {
   }
 };
 
-const removeTraining = async training => {
-  if (!window.confirm(t('ATHENAS.EDIT.KNOWLEDGE.DELETE_CONFIRM'))) return;
+const removeTraining = training =>
+  askConfirmation({
+    title: t('ATHENAS.EDIT.KNOWLEDGE.DELETE_TITLE'),
+    description: t('ATHENAS.EDIT.KNOWLEDGE.DELETE_CONFIRM'),
+    onConfirm: () => performRemoveTraining(training),
+  });
+
+const performRemoveTraining = async training => {
   try {
     await AthenasAssistantsAPI.deleteTraining(props.id, training.id);
     useAlert(t('ATHENAS.EDIT.KNOWLEDGE.DELETE_SUCCESS'));
@@ -473,7 +493,7 @@ onMounted(() => {
               </label>
               <div class="grid grid-cols-3 gap-2 sm:grid-cols-5">
                 <button
-                  v-for="t2 in TONES"
+                  v-for="t2 in tones"
                   :key="t2.key"
                   type="button"
                   class="flex flex-col items-center gap-1.5 p-3 rounded-xl ring-1 transition-all"
@@ -722,7 +742,7 @@ onMounted(() => {
                   class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand"
                 >
                   <option
-                    v-for="c in TRAINING_CATEGORIES"
+                    v-for="c in trainingCategories"
                     :key="c.key"
                     :value="c.key"
                   >
@@ -878,5 +898,13 @@ onMounted(() => {
         </template>
       </div>
     </section>
+
+    <Dialog
+      ref="confirmDialogRef"
+      type="alert"
+      :title="confirmState.title"
+      :description="confirmState.description"
+      @confirm="runConfirmedAction"
+    />
   </div>
 </template>

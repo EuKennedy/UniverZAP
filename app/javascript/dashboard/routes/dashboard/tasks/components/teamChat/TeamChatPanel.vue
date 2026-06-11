@@ -5,6 +5,7 @@ import { useStore } from 'vuex';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import Icon from 'next/icon/Icon.vue';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import TeamChatMessage from './TeamChatMessage.vue';
 import TeamChatComposer from './TeamChatComposer.vue';
 
@@ -135,8 +136,27 @@ const handleEdit = async ({ messageId, content }) => {
   }
 };
 
-const handleDelete = async message => {
-  if (!window.confirm(t('TEAM_CHAT.MESSAGE.DELETE_CONFIRM'))) return;
+
+const confirmDialogRef = ref(null);
+const confirmState = ref({ title: '', description: '', onConfirm: null });
+const askConfirmation = ({ title, description, onConfirm }) => {
+  confirmState.value = { title, description, onConfirm };
+  confirmDialogRef.value?.open();
+};
+const runConfirmedAction = async () => {
+  const action = confirmState.value.onConfirm;
+  confirmDialogRef.value?.close();
+  if (action) await action();
+};
+
+const handleDelete = message =>
+  askConfirmation({
+    title: t('TEAM_CHAT.MESSAGE.DELETE_TITLE'),
+    description: t('TEAM_CHAT.MESSAGE.DELETE_CONFIRM'),
+    onConfirm: () => performDeleteMessage(message),
+  });
+
+const performDeleteMessage = async message => {
   try {
     await store.dispatch('teamChat/deleteMessage', {
       channelId: props.channel.id,
@@ -254,4 +274,12 @@ const handleDelete = async message => {
   >
     {{ t('TEAM_CHAT.PANEL.NO_CHANNEL') }}
   </section>
+
+  <Dialog
+    ref="confirmDialogRef"
+    type="alert"
+    :title="confirmState.title"
+    :description="confirmState.description"
+    @confirm="runConfirmedAction"
+  />
 </template>

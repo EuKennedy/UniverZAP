@@ -105,6 +105,7 @@
         "MARK_DONE": "Marcar como concluída",
         "REOPEN": "Reabrir",
         "DELETE": "Excluir",
+        "DELETE_TITLE": "Excluir tarefa",
         "DELETE_CONFIRM": "Excluir esta tarefa? Esta ação não pode ser desfeita.",
         "CONVERT_TO_KANBAN": "Converter para Kanban"
       },
@@ -186,6 +187,7 @@
       "EMPTY": "Salve os filtros atuais como uma visualização.",
       "CREATED": "Visualização salva.",
       "ERROR": "Não foi possível salvar a visualização.",
+      "DELETE_TITLE": "Excluir visualização",
       "DELETE_CONFIRM": "Excluir esta visualização?"
     },
     "VIEWS": {

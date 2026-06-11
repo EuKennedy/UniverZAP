@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
 import AthenasAssistantsAPI from 'dashboard/api/athenas';
+import { TONE_OPTIONS } from 'dashboard/routes/dashboard/athenas/constants';
 
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -81,13 +82,9 @@ const MODELS = [
   },
 ];
 
-const TONES = [
-  { key: 'sales', label: 'Vendas', icon: 'i-lucide-trending-up' },
-  { key: 'support', label: 'Suporte', icon: 'i-lucide-life-buoy' },
-  { key: 'friendly', label: 'Amigável', icon: 'i-lucide-smile' },
-  { key: 'formal', label: 'Formal', icon: 'i-lucide-briefcase' },
-  { key: 'concierge', label: 'Concierge', icon: 'i-lucide-crown' },
-];
+const tones = computed(() =>
+  TONE_OPTIONS.map(o => ({ ...o, label: t(o.labelKey) }))
+);
 
 const ROLE_SUGGESTIONS = [
   'Vendedor SDR',
@@ -325,7 +322,7 @@ const removeTraining = idx => {
             </label>
             <div class="grid grid-cols-3 gap-2 sm:grid-cols-5">
               <button
-                v-for="t2 in TONES"
+                v-for="t2 in tones"
                 :key="t2.key"
                 type="button"
                 class="flex flex-col items-center gap-1.5 p-3 rounded-xl ring-1 transition-all"
