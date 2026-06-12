@@ -5,6 +5,36 @@
       "DRAFT": "Draft",
       "ARCHIVED": "Archived"
     },
+    "TRIGGER": {
+      "BADGE": "Trigger",
+      "TITLE": "Activation trigger",
+      "SUBTITLE": "Choose which channel and when this flow starts. Without a trigger the bot never runs.",
+      "INBOX": "Channel",
+      "ALL_INBOXES": "All channels",
+      "WHEN": "Start the flow when…",
+      "KEYWORDS": "Keywords",
+      "KEYWORD_PLACEHOLDER": "Type and press Enter",
+      "KEYWORD_HINT": "Fires when the message contains any of these words.",
+      "EDIT_HINT": "Click to edit",
+      "SAVE": "Save trigger",
+      "SAVED": "Trigger saved.",
+      "SUMMARY_KEYWORD": "Keyword: {keywords}",
+      "SUMMARY_KEYWORD_EMPTY": "Keyword (none set yet)",
+      "TYPE": {
+        "ON_FIRST_MESSAGE": {
+          "LABEL": "First message",
+          "HINT": "Starts on the customer's first message in the conversation."
+        },
+        "KEYWORD": {
+          "LABEL": "Keyword",
+          "HINT": "Starts when the message matches one of your keywords."
+        },
+        "ANY_MESSAGE": {
+          "LABEL": "Any message",
+          "HINT": "Starts on any incoming message when no flow is running."
+        }
+      }
+    },
     "LIST": {
       "TITLE": "Chatflow",
       "SUBTITLE": "Build guided message automations so your bot can qualify and route customers without depending on AI.",

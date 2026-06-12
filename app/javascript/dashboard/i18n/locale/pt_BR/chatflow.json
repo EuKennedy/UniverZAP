@@ -5,6 +5,36 @@
       "DRAFT": "Rascunho",
       "ARCHIVED": "Arquivado"
     },
+    "TRIGGER": {
+      "BADGE": "Gatilho",
+      "TITLE": "Gatilho de ativação",
+      "SUBTITLE": "Escolha o canal e quando o fluxo começa. Sem gatilho, o bot nunca roda.",
+      "INBOX": "Canal",
+      "ALL_INBOXES": "Todos os canais",
+      "WHEN": "Iniciar o fluxo quando…",
+      "KEYWORDS": "Palavras-chave",
+      "KEYWORD_PLACEHOLDER": "Digite e tecle Enter",
+      "KEYWORD_HINT": "Dispara quando a mensagem contém uma destas palavras.",
+      "EDIT_HINT": "Clique para editar",
+      "SAVE": "Salvar gatilho",
+      "SAVED": "Gatilho salvo.",
+      "SUMMARY_KEYWORD": "Palavra-chave: {keywords}",
+      "SUMMARY_KEYWORD_EMPTY": "Palavra-chave (nenhuma definida)",
+      "TYPE": {
+        "ON_FIRST_MESSAGE": {
+          "LABEL": "Primeira mensagem",
+          "HINT": "Começa na primeira mensagem do cliente na conversa."
+        },
+        "KEYWORD": {
+          "LABEL": "Palavra-chave",
+          "HINT": "Começa quando a mensagem casa com uma das suas palavras."
+        },
+        "ANY_MESSAGE": {
+          "LABEL": "Qualquer mensagem",
+          "HINT": "Começa em qualquer mensagem recebida quando não há fluxo rodando."
+        }
+      }
+    },
     "LIST": {
       "TITLE": "Chatflow",
       "SUBTITLE": "Crie automações de mensagem guiadas para o bot qualificar e direcionar clientes sem depender de IA.",

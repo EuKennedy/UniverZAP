@@ -11,11 +11,16 @@ import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ChatflowNode from '../components/ChatflowNode.vue';
+import ChatflowTriggerNode from '../components/ChatflowTriggerNode.vue';
 import NodeEditorDrawer from '../components/NodeEditorDrawer.vue';
+import TriggerConfigDrawer from '../components/TriggerConfigDrawer.vue';
 
 const props = defineProps({
   chatflowId: { type: [String, Number], required: true },
 });
+
+// Synthetic id for the trigger entry node (not a ChatflowNode row).
+const TRIGGER_ID = '__trigger__';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -41,6 +46,8 @@ const {
 const active = useMapGetter('chatflows/getActiveChatflow');
 const selectedNodeId = ref(null);
 const isSavingNode = ref(false);
+const isTriggerOpen = ref(false);
+const isSavingTrigger = ref(false);
 
 const flow = computed(() => active.value.chatflow);
 
@@ -86,14 +93,48 @@ const mapEdge = edge => ({
   markerEnd: MarkerType.ArrowClosed,
 });
 
+// The trigger is a synthetic, non-deletable entry node carrying the flow's
+// trigger config. Its outgoing edge points at the start step.
+const triggerNode = () => ({
+  id: TRIGGER_ID,
+  type: 'trigger',
+  position: { x: -40, y: 40 },
+  deletable: false,
+  data: { chatflow: flow.value },
+});
+
+const triggerEdge = () => {
+  const startId = flow.value?.start_node_id;
+  if (!startId) return [];
+  return [
+    {
+      id: 'trigger-start',
+      source: TRIGGER_ID,
+      target: String(startId),
+      animated: true,
+      style: { stroke: '#13CB8D', strokeWidth: 2.5 },
+      markerEnd: MarkerType.ArrowClosed,
+    },
+  ];
+};
+
 const hydrateCanvas = () => {
-  setNodes(active.value.nodes.map(mapNode));
-  setEdges(active.value.edges.map(mapEdge));
+  setNodes([triggerNode(), ...active.value.nodes.map(mapNode)]);
+  setEdges([...triggerEdge(), ...active.value.edges.map(mapEdge)]);
   setTimeout(() => fitView({ padding: 0.2 }), 50);
+};
+
+// Refresh just the trigger node's data + start edge after a config change.
+const refreshTrigger = () => {
+  const node = findNode(TRIGGER_ID);
+  if (node) node.data = { chatflow: flow.value };
+  removeEdges(['trigger-start']);
+  addEdges(triggerEdge());
 };
 
 onMounted(async () => {
   store.dispatch('labels/get');
+  store.dispatch('inboxes/get');
   await store.dispatch('chatflows/show', props.chatflowId);
   hydrateCanvas();
 });
@@ -124,6 +165,20 @@ const addNode = async kind => {
 // --- connect two nodes (operator drags a point) -------------------------
 
 onConnect(async params => {
+  // Connecting FROM the trigger sets the flow's start step.
+  if (params.source === TRIGGER_ID) {
+    try {
+      await store.dispatch('chatflows/update', {
+        id: Number(props.chatflowId),
+        start_node_id: Number(params.target),
+      });
+      refreshTrigger();
+      useAlert(t('CHATFLOW.BUILDER.START_SET'));
+    } catch (error) {
+      useAlert(error?.message || t('CHATFLOW.BUILDER.EDGE_ERROR'));
+    }
+    return;
+  }
   try {
     const created = await store.dispatch('chatflows/createEdge', {
       chatflowId: props.chatflowId,
@@ -140,6 +195,7 @@ onConnect(async params => {
 });
 
 onEdgeClick(async ({ edge }) => {
+  if (edge.id === 'trigger-start') return; // managed via the trigger node
   // eslint-disable-next-line no-alert
   if (!window.confirm(t('CHATFLOW.BUILDER.EDGE_DELETE_CONFIRM'))) return;
   try {
@@ -156,6 +212,7 @@ onEdgeClick(async ({ edge }) => {
 // --- persist drag position ----------------------------------------------
 
 onNodeDragStop(({ node }) => {
+  if (node.id === TRIGGER_ID) return; // synthetic, position not persisted
   store.dispatch('chatflows/updateNode', {
     chatflowId: props.chatflowId,
     nodeId: Number(node.id),
@@ -164,6 +221,12 @@ onNodeDragStop(({ node }) => {
 });
 
 onNodeClick(({ node }) => {
+  if (node.id === TRIGGER_ID) {
+    selectedNodeId.value = null;
+    isTriggerOpen.value = true;
+    return;
+  }
+  isTriggerOpen.value = false;
   selectedNodeId.value = node.id;
 });
 
@@ -206,7 +269,25 @@ const setAsStart = async () => {
     id: Number(props.chatflowId),
     start_node_id: Number(selectedNodeId.value),
   });
+  refreshTrigger();
   useAlert(t('CHATFLOW.BUILDER.START_SET'));
+};
+
+const saveTrigger = async payload => {
+  isSavingTrigger.value = true;
+  try {
+    await store.dispatch('chatflows/update', {
+      id: Number(props.chatflowId),
+      ...payload,
+    });
+    refreshTrigger();
+    isTriggerOpen.value = false;
+    useAlert(t('CHATFLOW.TRIGGER.SAVED'));
+  } catch (error) {
+    useAlert(error?.message || t('CHATFLOW.BUILDER.NODE_ERROR'));
+  } finally {
+    isSavingTrigger.value = false;
+  }
 };
 
 // --- flow lifecycle ------------------------------------------------------
@@ -310,6 +391,12 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
             fit-view-on-init
             class="bg-n-background [background-image:radial-gradient(circle,_rgba(148,163,184,0.18)_1px,_transparent_1px)] [background-size:22px_22px]"
           >
+            <template #node-trigger="nodeProps">
+              <ChatflowTriggerNode
+                :data="nodeProps.data"
+                :selected="isTriggerOpen"
+              />
+            </template>
             <template #node-chatflow="nodeProps">
               <ChatflowNode
                 :id="nodeProps.id"
@@ -322,9 +409,18 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
       </div>
     </div>
 
+    <!-- Trigger config -->
+    <TriggerConfigDrawer
+      v-if="isTriggerOpen && flow"
+      :chatflow="flow"
+      :is-saving="isSavingTrigger"
+      @save="saveTrigger"
+      @close="isTriggerOpen = false"
+    />
+
     <!-- Node editor -->
     <NodeEditorDrawer
-      v-if="selectedBackendNode"
+      v-else-if="selectedBackendNode"
       :key="selectedBackendNode.id"
       :node="selectedBackendNode"
       :is-start="flow?.start_node_id === selectedBackendNode.id"
