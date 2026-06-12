@@ -101,7 +101,6 @@ class Chatflow::EngineService
 
   def reprompt(execution, node)
     Chatflow::NodeRunnerService.new(execution, node).resend_menu
-    execution.touch
   end
 
   def record_selection(execution, node, option)

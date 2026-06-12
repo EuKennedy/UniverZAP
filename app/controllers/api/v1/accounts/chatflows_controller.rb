@@ -43,7 +43,10 @@ class Api::V1::Accounts::ChatflowsController < Api::V1::Accounts::BaseController
   def archive
     @chatflow.status_archived!
     # Stop any in-flight runs so an archived flow never keeps replying.
+    # Bulk flip is intentional — no per-row callbacks needed here.
+    # rubocop:disable Rails/SkipsModelValidations
     @chatflow.executions.live.update_all(status: ChatflowExecution.statuses[:aborted], updated_at: Time.current)
+    # rubocop:enable Rails/SkipsModelValidations
     render_summary
   end
 
