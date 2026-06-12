@@ -58,10 +58,23 @@ class Chatflow::EngineService
     ActiveModel::Type::Boolean.new.cast(attrs['autopilot_enabled'])
   end
 
+  # Live flows fire for everyone; a flow in test mode fires only for the
+  # tester's number (and even while still a draft) so operators can rehearse
+  # before publishing.
   def matching_chatflow
-    @account.chatflows.status_active
-            .where(inbox_id: [@conversation.inbox_id, nil])
-            .detect { |chatflow| trigger_matches?(chatflow) }
+    candidates = @account.chatflows
+                         .where(inbox_id: [@conversation.inbox_id, nil])
+                         .where('status = ? OR test_mode = ?', Chatflow.statuses[:active], true)
+    candidates.detect { |chatflow| flow_eligible?(chatflow) && trigger_matches?(chatflow) }
+  end
+
+  def flow_eligible?(chatflow)
+    return true unless chatflow.test_mode
+
+    digits = chatflow.test_digits
+    return false if digits.blank?
+
+    @conversation.contact&.phone_number.to_s.gsub(/\D/, '').include?(digits)
   end
 
   def trigger_matches?(chatflow)

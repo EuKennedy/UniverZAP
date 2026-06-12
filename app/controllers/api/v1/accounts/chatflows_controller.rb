@@ -50,6 +50,18 @@ class Api::V1::Accounts::ChatflowsController < Api::V1::Accounts::BaseController
     render_summary
   end
 
+  # Test mode: the flow runs only for the given tester number, even while it
+  # is still a draft, so operators can rehearse before publishing.
+  def test
+    @chatflow.update!(test_mode: true, test_phone: params[:phone].to_s.strip)
+    render_summary
+  end
+
+  def stop_test
+    @chatflow.update!(test_mode: false)
+    render_summary
+  end
+
   private
 
   def fetch_chatflow

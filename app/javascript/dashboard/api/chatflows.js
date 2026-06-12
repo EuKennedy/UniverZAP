@@ -22,6 +22,14 @@ class ChatflowsAPI extends ApiClient {
     return axios.post(`${this.url}/${id}/archive`);
   }
 
+  test(id, phone) {
+    return axios.post(`${this.url}/${id}/test`, { phone });
+  }
+
+  stopTest(id) {
+    return axios.post(`${this.url}/${id}/stop_test`);
+  }
+
   // --- graph: nodes ------------------------------------------------------
 
   createNode(chatflowId, node) {

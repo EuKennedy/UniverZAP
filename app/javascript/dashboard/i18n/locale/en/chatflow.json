@@ -110,6 +110,20 @@
       "SET_START": "Start the flow at this step",
       "SAVE": "Save"
     },
+    "TEST": {
+      "BUTTON": "Test flow",
+      "TITLE": "Test this flow",
+      "SUBTITLE": "While testing, the flow only runs for the number below.",
+      "PHONE": "Tester number",
+      "PHONE_PLACEHOLDER": "e.g. 5531999999999",
+      "CANCEL": "Cancel",
+      "START": "Start test",
+      "STARTED": "Test mode on. Message the bot from the tester number.",
+      "STOPPED": "Test mode off.",
+      "ERROR": "Could not start test mode.",
+      "ACTIVE": "Testing · {phone}",
+      "STOP": "Stop"
+    },
     "BUILDER": {
       "PALETTE": "Steps",
       "COLOR": "Flow color",

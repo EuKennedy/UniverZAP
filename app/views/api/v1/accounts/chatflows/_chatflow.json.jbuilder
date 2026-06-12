@@ -5,6 +5,8 @@ json.name chatflow.name
 json.description chatflow.description
 json.status chatflow.status
 json.color chatflow.color
+json.test_mode chatflow.test_mode
+json.test_phone chatflow.test_phone
 json.trigger_type chatflow.trigger_type
 json.trigger_config chatflow.trigger_config
 json.inbox_id chatflow.inbox_id

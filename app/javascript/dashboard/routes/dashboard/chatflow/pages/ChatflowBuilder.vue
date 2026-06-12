@@ -342,6 +342,37 @@ const changeColor = async color => {
   setEdges([...triggerEdge(), ...active.value.edges.map(mapEdge)]);
 };
 
+// --- test mode -----------------------------------------------------------
+
+const isTestPopupOpen = ref(false);
+const testPhone = ref('');
+const isTestActive = computed(() => Boolean(flow.value?.test_mode));
+
+const openTestPopup = () => {
+  testPhone.value = flow.value?.test_phone || '';
+  isTestPopupOpen.value = true;
+};
+
+const startTest = async () => {
+  const phone = testPhone.value.trim();
+  if (!phone) return;
+  try {
+    await store.dispatch('chatflows/test', {
+      id: Number(props.chatflowId),
+      phone,
+    });
+    isTestPopupOpen.value = false;
+    useAlert(t('CHATFLOW.TEST.STARTED'));
+  } catch (error) {
+    useAlert(error?.message || t('CHATFLOW.TEST.ERROR'));
+  }
+};
+
+const stopTest = async () => {
+  await store.dispatch('chatflows/stopTest', Number(props.chatflowId));
+  useAlert(t('CHATFLOW.TEST.STOPPED'));
+};
+
 const goBack = () => router.push(accountScopedRoute('chatflow_index'));
 </script>
 
@@ -394,6 +425,35 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
             {{ t(`CHATFLOW.STATUS.${(flow.status || 'draft').toUpperCase()}`) }}
           </span>
         </div>
+        <div
+          v-if="isTestActive"
+          class="flex items-center gap-2 px-2.5 h-8 rounded-lg bg-n-amber-3 text-n-amber-11 text-xs font-medium"
+        >
+          <span class="relative flex size-2">
+            <span
+              class="absolute inline-flex h-full w-full rounded-full bg-n-amber-9 opacity-75 motion-safe:animate-ping"
+            />
+            <span
+              class="relative inline-flex rounded-full size-2 bg-n-amber-9"
+            />
+          </span>
+          {{ t('CHATFLOW.TEST.ACTIVE', { phone: flow.test_phone }) }}
+          <button
+            type="button"
+            class="ml-1 underline cursor-pointer hover:text-n-amber-12"
+            @click="stopTest"
+          >
+            {{ t('CHATFLOW.TEST.STOP') }}
+          </button>
+        </div>
+        <Button
+          v-else-if="flow"
+          variant="ghost"
+          color="slate"
+          icon="i-lucide-flask-conical"
+          :label="t('CHATFLOW.TEST.BUTTON')"
+          @click="openTestPopup"
+        />
         <div v-if="flow" class="flex items-center gap-1.5 mr-1">
           <button
             v-for="color in FLOW_COLORS"
@@ -471,6 +531,60 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
               />
             </template>
           </VueFlow>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test mode popup -->
+    <div
+      v-if="isTestPopupOpen"
+      class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      @click.self="isTestPopupOpen = false"
+    >
+      <div
+        class="w-[400px] rounded-2xl bg-n-solid-1 border border-n-weak shadow-2xl p-6 flex flex-col gap-4"
+      >
+        <div class="flex items-center gap-3">
+          <span
+            class="flex items-center justify-center size-10 rounded-xl bg-n-amber-3 text-n-amber-11"
+          >
+            <Icon icon="i-lucide-flask-conical" class="size-5" />
+          </span>
+          <div class="flex flex-col">
+            <h3 class="text-sm font-semibold text-n-slate-12 m-0">
+              {{ t('CHATFLOW.TEST.TITLE') }}
+            </h3>
+            <p class="text-xs text-n-slate-11 m-0">
+              {{ t('CHATFLOW.TEST.SUBTITLE') }}
+            </p>
+          </div>
+        </div>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">
+            {{ t('CHATFLOW.TEST.PHONE') }}
+          </span>
+          <input
+            v-model="testPhone"
+            v-focus
+            type="tel"
+            :placeholder="t('CHATFLOW.TEST.PHONE_PLACEHOLDER')"
+            class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+            @keydown.enter="startTest"
+          />
+        </label>
+        <div class="flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            color="slate"
+            :label="t('CHATFLOW.TEST.CANCEL')"
+            @click="isTestPopupOpen = false"
+          />
+          <Button
+            color="amber"
+            icon="i-lucide-play"
+            :label="t('CHATFLOW.TEST.START')"
+            @click="startTest"
+          />
         </div>
       </div>
     </div>

@@ -47,6 +47,11 @@ class Chatflow < ApplicationRecord
     Array(trigger_config['keywords']).map { |k| k.to_s.downcase.strip }.reject(&:blank?)
   end
 
+  # Digits-only tester number used to gate a flow that is in test mode.
+  def test_digits
+    test_phone.to_s.gsub(/\D/, '')
+  end
+
   private
 
   def inbox_belongs_to_account

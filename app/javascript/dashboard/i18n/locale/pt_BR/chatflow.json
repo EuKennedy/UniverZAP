@@ -110,6 +110,20 @@
       "SET_START": "Iniciar o fluxo nesta etapa",
       "SAVE": "Salvar"
     },
+    "TEST": {
+      "BUTTON": "Testar fluxo",
+      "TITLE": "Testar este fluxo",
+      "SUBTITLE": "Durante o teste, o fluxo roda só para o número abaixo.",
+      "PHONE": "Número testador",
+      "PHONE_PLACEHOLDER": "ex: 5531999999999",
+      "CANCEL": "Cancelar",
+      "START": "Iniciar teste",
+      "STARTED": "Modo teste ligado. Mande mensagem pro bot pelo número testador.",
+      "STOPPED": "Modo teste desligado.",
+      "ERROR": "Não foi possível iniciar o teste.",
+      "ACTIVE": "Testando · {phone}",
+      "STOP": "Desativar"
+    },
     "BUILDER": {
       "PALETTE": "Etapas",
       "COLOR": "Cor do fluxo",

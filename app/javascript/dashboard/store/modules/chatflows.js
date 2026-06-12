@@ -80,6 +80,20 @@ export const actions = {
     return data;
   },
 
+  test: async ({ commit }, { id, phone }) => {
+    const { data } = await ChatflowsAPI.test(id, phone);
+    commit('upsertChatflow', data);
+    commit('setActiveChatflow', data);
+    return data;
+  },
+
+  stopTest: async ({ commit }, id) => {
+    const { data } = await ChatflowsAPI.stopTest(id);
+    commit('upsertChatflow', data);
+    commit('setActiveChatflow', data);
+    return data;
+  },
+
   // --- graph mutations through the API -----------------------------------
 
   createNode: async ({ commit }, { chatflowId, node }) => {
