@@ -13,6 +13,8 @@ const props = defineProps({
   selected: { type: Boolean, default: false },
 });
 
+const emit = defineEmits(['delete']);
+
 const { t } = useI18n();
 
 const KIND_META = {
@@ -64,18 +66,29 @@ const toneClass = computed(
 
 <template>
   <div
-    class="relative w-64 rounded-2xl border bg-n-solid-1 shadow-md transition-all"
+    class="group relative w-64 rounded-2xl border bg-n-solid-1 shadow-sm transition-all"
     :class="
       selected
-        ? 'border-n-teal-8 shadow-lg ring-2 ring-n-teal-7/40'
-        : 'border-n-weak'
+        ? 'border-n-teal-7 shadow-md ring-1 ring-n-teal-6/40'
+        : 'border-n-weak hover:border-n-slate-6'
     "
   >
+    <!-- Delete affordance (hover) -->
+    <button
+      type="button"
+      class="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center justify-center size-6 rounded-full bg-n-solid-2 text-n-slate-11 ring-1 ring-n-weak shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-n-ruby-9 hover:text-white"
+      :aria-label="t('CHATFLOW.NODE.DELETE')"
+      :title="t('CHATFLOW.NODE.DELETE')"
+      @click.stop="emit('delete')"
+    >
+      <fluent-icon icon="delete" size="13" />
+    </button>
+
     <!-- Entry point -->
     <Handle
       type="target"
       :position="Position.Left"
-      class="!size-3 !bg-n-slate-9 !border-2 !border-n-solid-1"
+      class="!size-3 !bg-n-slate-8 !border-2 !border-n-solid-1"
     />
 
     <div class="flex items-center gap-2.5 px-3.5 pt-3.5">
@@ -121,7 +134,7 @@ const toneClass = computed(
           :id="String(opt.value)"
           type="source"
           :position="Position.Right"
-          class="!size-3 !bg-n-amber-9 !border-2 !border-n-solid-1"
+          class="!size-3 !bg-n-amber-8 !border-2 !border-n-solid-1"
         />
       </div>
     </div>
@@ -132,7 +145,7 @@ const toneClass = computed(
       id="default"
       type="source"
       :position="Position.Right"
-      class="!size-3 !bg-n-teal-9 !border-2 !border-n-solid-1"
+      class="!size-3 !bg-n-teal-8 !border-2 !border-n-solid-1"
     />
   </div>
 </template>

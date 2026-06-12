@@ -32,7 +32,8 @@ const {
   onConnect,
   onNodeDragStop,
   onNodeClick,
-  onEdgeClick,
+  onNodesChange,
+  onEdgesChange,
   setNodes,
   setEdges,
   addNodes,
@@ -89,7 +90,7 @@ const mapEdge = edge => ({
   target: String(edge.target_node_id),
   sourceHandle: edge.source_handle,
   animated: true,
-  style: { stroke: '#13CB8D', strokeWidth: 2 },
+  style: { stroke: '#94A3B8', strokeWidth: 1.75 },
   markerEnd: MarkerType.ArrowClosed,
 });
 
@@ -112,7 +113,8 @@ const triggerEdge = () => {
       source: TRIGGER_ID,
       target: String(startId),
       animated: true,
-      style: { stroke: '#13CB8D', strokeWidth: 2.5 },
+      deletable: false,
+      style: { stroke: '#5FB89F', strokeWidth: 2 },
       markerEnd: MarkerType.ArrowClosed,
     },
   ];
@@ -194,20 +196,35 @@ onConnect(async params => {
   }
 });
 
-onEdgeClick(async ({ edge }) => {
-  if (edge.id === 'trigger-start') return; // managed via the trigger node
-  // eslint-disable-next-line no-alert
-  if (!window.confirm(t('CHATFLOW.BUILDER.EDGE_DELETE_CONFIRM'))) return;
-  try {
-    await store.dispatch('chatflows/deleteEdge', {
-      chatflowId: props.chatflowId,
-      edgeId: Number(edge.id),
+// Delete via Backspace/Delete or a node's trash button. Vue Flow applies the
+// removal to its own store; we mirror it to the backend here so there is a
+// single persistence path (the trash button just calls removeNodes).
+onNodesChange(changes => {
+  changes
+    .filter(c => c.type === 'remove' && c.id !== TRIGGER_ID)
+    .forEach(c => {
+      store.dispatch('chatflows/deleteNode', {
+        chatflowId: props.chatflowId,
+        nodeId: Number(c.id),
+      });
     });
-    removeEdges([edge.id]);
-  } catch (error) {
-    useAlert(error?.message);
-  }
 });
+
+onEdgesChange(changes => {
+  changes
+    .filter(c => c.type === 'remove' && c.id !== 'trigger-start')
+    .forEach(c => {
+      store.dispatch('chatflows/deleteEdge', {
+        chatflowId: props.chatflowId,
+        edgeId: Number(c.id),
+      });
+    });
+});
+
+const deleteNodeFromCanvas = id => {
+  if (String(selectedNodeId.value) === String(id)) selectedNodeId.value = null;
+  removeNodes([String(id)]);
+};
 
 // --- persist drag position ----------------------------------------------
 
@@ -250,19 +267,7 @@ const saveNode = async ({ name, config }) => {
   }
 };
 
-const removeNode = async () => {
-  const id = selectedNodeId.value;
-  try {
-    await store.dispatch('chatflows/deleteNode', {
-      chatflowId: props.chatflowId,
-      nodeId: Number(id),
-    });
-    removeNodes([String(id)]);
-    selectedNodeId.value = null;
-  } catch (error) {
-    useAlert(error?.message);
-  }
-};
+const removeNode = () => deleteNodeFromCanvas(selectedNodeId.value);
 
 const setAsStart = async () => {
   await store.dispatch('chatflows/update', {
@@ -314,6 +319,26 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
 
 <template>
   <div class="flex w-full h-full overflow-hidden bg-n-background">
+    <!-- Options panel — lives on the LEFT -->
+    <TriggerConfigDrawer
+      v-if="isTriggerOpen && flow"
+      :chatflow="flow"
+      :is-saving="isSavingTrigger"
+      @save="saveTrigger"
+      @close="isTriggerOpen = false"
+    />
+    <NodeEditorDrawer
+      v-else-if="selectedBackendNode"
+      :key="selectedBackendNode.id"
+      :node="selectedBackendNode"
+      :is-start="flow?.start_node_id === selectedBackendNode.id"
+      :is-saving="isSavingNode"
+      @save="saveNode"
+      @remove="removeNode"
+      @set-start="setAsStart"
+      @close="selectedNodeId = null"
+    />
+
     <div class="flex flex-col flex-1 min-w-0">
       <header
         class="flex items-center justify-between gap-3 px-5 h-14 border-b border-n-weak bg-n-solid-1 z-10"
@@ -387,7 +412,7 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
             :default-viewport="{ zoom: 0.9 }"
             :min-zoom="0.2"
             :max-zoom="2"
-            :delete-key-code="null"
+            :delete-key-code="['Backspace', 'Delete']"
             fit-view-on-init
             class="bg-n-background [background-image:radial-gradient(circle,_rgba(148,163,184,0.18)_1px,_transparent_1px)] [background-size:22px_22px]"
           >
@@ -402,33 +427,12 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
                 :id="nodeProps.id"
                 :data="nodeProps.data"
                 :selected="nodeProps.id === selectedNodeId"
+                @delete="deleteNodeFromCanvas(nodeProps.id)"
               />
             </template>
           </VueFlow>
         </div>
       </div>
     </div>
-
-    <!-- Trigger config -->
-    <TriggerConfigDrawer
-      v-if="isTriggerOpen && flow"
-      :chatflow="flow"
-      :is-saving="isSavingTrigger"
-      @save="saveTrigger"
-      @close="isTriggerOpen = false"
-    />
-
-    <!-- Node editor -->
-    <NodeEditorDrawer
-      v-else-if="selectedBackendNode"
-      :key="selectedBackendNode.id"
-      :node="selectedBackendNode"
-      :is-start="flow?.start_node_id === selectedBackendNode.id"
-      :is-saving="isSavingNode"
-      @save="saveNode"
-      @remove="removeNode"
-      @set-start="setAsStart"
-      @close="selectedNodeId = null"
-    />
   </div>
 </template>

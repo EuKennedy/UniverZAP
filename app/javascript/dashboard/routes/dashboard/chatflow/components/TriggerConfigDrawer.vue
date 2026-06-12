@@ -77,7 +77,7 @@ const save = () => {
 
 <template>
   <aside
-    class="flex flex-col w-[380px] h-full bg-n-solid-1 border-l border-n-weak shadow-xl"
+    class="flex flex-col w-[380px] h-full bg-n-solid-1 border-r border-n-weak shadow-xl"
   >
     <header
       class="flex items-center justify-between px-4 h-14 border-b border-n-weak"

@@ -64,7 +64,8 @@
       "MEDIA_SUMMARY": "Media attachment",
       "LABEL_SUMMARY": "Categorize the contact",
       "END_SUMMARY": "Closes the flow",
-      "OPTION_EMPTY": "Empty option"
+      "OPTION_EMPTY": "Empty option",
+      "DELETE": "Delete step"
     },
     "EDITOR": {
       "NAME": "Step name",

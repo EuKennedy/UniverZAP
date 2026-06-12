@@ -41,8 +41,8 @@ const conditionText = computed(() => {
 
 <template>
   <div
-    class="relative w-60 rounded-2xl border bg-gradient-to-br from-n-teal-9 to-n-teal-10 shadow-lg transition-all"
-    :class="selected ? 'ring-2 ring-n-teal-6 shadow-xl' : ''"
+    class="relative w-60 rounded-2xl border border-n-teal-8 bg-gradient-to-br from-n-teal-8 to-n-teal-9 shadow-sm transition-all"
+    :class="selected ? 'ring-1 ring-n-teal-6 shadow-md' : ''"
   >
     <div class="flex items-center gap-2.5 px-3.5 pt-3.5">
       <span

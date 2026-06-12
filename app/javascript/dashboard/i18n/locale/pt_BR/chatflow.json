@@ -64,7 +64,8 @@
       "MEDIA_SUMMARY": "Anexo de mídia",
       "LABEL_SUMMARY": "Categorizar o contato",
       "END_SUMMARY": "Encerra o fluxo",
-      "OPTION_EMPTY": "Opção vazia"
+      "OPTION_EMPTY": "Opção vazia",
+      "DELETE": "Excluir etapa"
     },
     "EDITOR": {
       "NAME": "Nome da etapa",
