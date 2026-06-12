@@ -1,0 +1,76 @@
+{
+  "CHATFLOW": {
+    "STATUS": {
+      "ACTIVE": "Ativo",
+      "DRAFT": "Rascunho",
+      "ARCHIVED": "Arquivado"
+    },
+    "LIST": {
+      "TITLE": "Chatflow",
+      "SUBTITLE": "Crie automações de mensagem guiadas para o bot qualificar e direcionar clientes sem depender de IA.",
+      "NEW": "Novo fluxo",
+      "NAME_PLACEHOLDER": "Nome do fluxo, ex: Menu do SAC",
+      "CREATE": "Criar",
+      "CANCEL": "Cancelar",
+      "CREATE_ERROR": "Não foi possível criar o fluxo.",
+      "DELETE_CONFIRM": "Excluir o fluxo \"{name}\"? Esta ação não pode ser desfeita.",
+      "DELETE_SUCCESS": "Fluxo excluído.",
+      "DELETE_ERROR": "Não foi possível excluir o fluxo.",
+      "NODE_COUNT": "{count} etapas",
+      "EMPTY_TITLE": "Nenhum fluxo ainda",
+      "EMPTY_BODY": "Crie seu primeiro fluxo de chatbot para receber o cliente, mostrar um menu e direcioná-lo automaticamente."
+    },
+    "NODE": {
+      "KIND": {
+        "SEND_MESSAGE": "Enviar mensagem",
+        "SEND_AUDIO": "Enviar áudio",
+        "SEND_MEDIA": "Enviar mídia",
+        "MENU": "Menu (SAC)",
+        "SET_LABEL": "Aplicar etiqueta",
+        "END_FLOW": "Finalizar"
+      },
+      "MENU_EMPTY": "Menu sem título",
+      "AUDIO_SUMMARY": "Mensagem de voz",
+      "MEDIA_SUMMARY": "Anexo de mídia",
+      "LABEL_SUMMARY": "Categorizar o contato",
+      "END_SUMMARY": "Encerra o fluxo",
+      "OPTION_EMPTY": "Opção vazia"
+    },
+    "EDITOR": {
+      "NAME": "Nome da etapa",
+      "NAME_PLACEHOLDER": "Nome interno opcional",
+      "MENU_PROMPT": "Pergunta do menu",
+      "MESSAGE_TEXT": "Mensagem",
+      "MESSAGE_PLACEHOLDER": "Digite a mensagem que o bot vai enviar…",
+      "CAPTION": "Legenda",
+      "CAPTION_PLACEHOLDER": "Legenda opcional para a mídia…",
+      "MEDIA": "Mídia",
+      "AUDIO": "Áudio",
+      "OPTIONAL": "(opcional)",
+      "UPLOAD": "Enviar arquivo",
+      "UPLOADING": "Enviando…",
+      "UPLOAD_ERROR": "Falha no envio. Tente novamente.",
+      "OPTIONS": "Opções",
+      "ADD_OPTION": "Adicionar",
+      "OPTIONS_HINT": "Cada opção vira um ponto de conexão que você liga à próxima etapa.",
+      "OPTION_PLACEHOLDER": "Texto da opção, ex: Compras",
+      "LABELS": "Etiquetas a aplicar",
+      "END_HINT": "Esta etapa encerra a automação. A conversa fica aberta para um humano ou a IA.",
+      "SET_START": "Iniciar o fluxo nesta etapa",
+      "SAVE": "Salvar"
+    },
+    "BUILDER": {
+      "PALETTE": "Etapas",
+      "ACTIVATE": "Ativar",
+      "ARCHIVE": "Pausar",
+      "ACTIVATED": "Fluxo no ar.",
+      "ACTIVATE_ERROR": "Não foi possível ativar o fluxo.",
+      "NODE_ERROR": "Não foi possível salvar a etapa.",
+      "NODE_SAVED": "Etapa salva.",
+      "EDGE_ERROR": "Não foi possível conectar as etapas.",
+      "EDGE_DELETE_CONFIRM": "Remover esta conexão?",
+      "START_SET": "Etapa inicial definida.",
+      "ACTIVATE_HINT": "Defina uma etapa inicial antes de ativar."
+    }
+  }
+}

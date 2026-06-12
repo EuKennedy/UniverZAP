@@ -1,0 +1,13 @@
+json.id chatflow.id
+json.display_id chatflow.display_id
+json.account_id chatflow.account_id
+json.name chatflow.name
+json.description chatflow.description
+json.status chatflow.status
+json.trigger_type chatflow.trigger_type
+json.trigger_config chatflow.trigger_config
+json.inbox_id chatflow.inbox_id
+json.start_node_id chatflow.start_node_id
+json.nodes_count chatflow.nodes.size
+json.created_at chatflow.created_at.to_i
+json.updated_at chatflow.updated_at.to_i

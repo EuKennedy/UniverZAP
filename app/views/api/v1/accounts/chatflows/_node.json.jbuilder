@@ -1,0 +1,9 @@
+json.id node.id
+json.chatflow_id node.chatflow_id
+json.kind node.kind
+json.name node.name
+json.position_x node.position_x
+json.position_y node.position_y
+json.config node.config
+json.created_at node.created_at.to_i
+json.updated_at node.updated_at.to_i

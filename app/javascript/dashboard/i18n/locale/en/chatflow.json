@@ -1,0 +1,76 @@
+{
+  "CHATFLOW": {
+    "STATUS": {
+      "ACTIVE": "Active",
+      "DRAFT": "Draft",
+      "ARCHIVED": "Archived"
+    },
+    "LIST": {
+      "TITLE": "Chatflow",
+      "SUBTITLE": "Build guided message automations so your bot can qualify and route customers without depending on AI.",
+      "NEW": "New flow",
+      "NAME_PLACEHOLDER": "Flow name, e.g. SAC menu",
+      "CREATE": "Create",
+      "CANCEL": "Cancel",
+      "CREATE_ERROR": "Could not create the flow.",
+      "DELETE_CONFIRM": "Delete the flow \"{name}\"? This cannot be undone.",
+      "DELETE_SUCCESS": "Flow deleted.",
+      "DELETE_ERROR": "Could not delete the flow.",
+      "NODE_COUNT": "{count} steps",
+      "EMPTY_TITLE": "No flows yet",
+      "EMPTY_BODY": "Create your first chatbot flow to greet customers, show a menu and route them automatically."
+    },
+    "NODE": {
+      "KIND": {
+        "SEND_MESSAGE": "Send message",
+        "SEND_AUDIO": "Send audio",
+        "SEND_MEDIA": "Send media",
+        "MENU": "Menu (SAC)",
+        "SET_LABEL": "Set label",
+        "END_FLOW": "End"
+      },
+      "MENU_EMPTY": "Untitled menu",
+      "AUDIO_SUMMARY": "Voice message",
+      "MEDIA_SUMMARY": "Media attachment",
+      "LABEL_SUMMARY": "Categorize the contact",
+      "END_SUMMARY": "Closes the flow",
+      "OPTION_EMPTY": "Empty option"
+    },
+    "EDITOR": {
+      "NAME": "Step name",
+      "NAME_PLACEHOLDER": "Optional internal name",
+      "MENU_PROMPT": "Menu question",
+      "MESSAGE_TEXT": "Message",
+      "MESSAGE_PLACEHOLDER": "Type the message the bot will send…",
+      "CAPTION": "Caption",
+      "CAPTION_PLACEHOLDER": "Optional caption for the media…",
+      "MEDIA": "Media",
+      "AUDIO": "Audio",
+      "OPTIONAL": "(optional)",
+      "UPLOAD": "Upload file",
+      "UPLOADING": "Uploading…",
+      "UPLOAD_ERROR": "Upload failed. Try again.",
+      "OPTIONS": "Options",
+      "ADD_OPTION": "Add",
+      "OPTIONS_HINT": "Each option becomes a connection point you link to the next step.",
+      "OPTION_PLACEHOLDER": "Option label, e.g. Purchases",
+      "LABELS": "Labels to apply",
+      "END_HINT": "This step ends the automation. The conversation stays open for a human or the AI.",
+      "SET_START": "Start the flow at this step",
+      "SAVE": "Save"
+    },
+    "BUILDER": {
+      "PALETTE": "Steps",
+      "ACTIVATE": "Activate",
+      "ARCHIVE": "Pause",
+      "ACTIVATED": "Flow is live.",
+      "ACTIVATE_ERROR": "Could not activate the flow.",
+      "NODE_ERROR": "Could not save the step.",
+      "NODE_SAVED": "Step saved.",
+      "EDGE_ERROR": "Could not connect the steps.",
+      "EDGE_DELETE_CONFIRM": "Remove this connection?",
+      "START_SET": "Start step set.",
+      "ACTIVATE_HINT": "Set a start step before activating."
+    }
+  }
+}

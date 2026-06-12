@@ -13,6 +13,7 @@ import automations from './modules/automations';
 import bulkActions from './modules/bulkActions';
 import campaigns from './modules/campaigns';
 import cannedResponse from './modules/cannedResponse';
+import chatflows from './modules/chatflows';
 import categories from './modules/helpCenterCategories';
 import contactConversations from './modules/contactConversations';
 import contactLabels from './modules/contactLabels';
@@ -98,6 +99,7 @@ export default createStore({
     csat,
     customRole,
     customViews,
+    chatflows,
     dashboardApps,
     draftMessages,
     funnels,

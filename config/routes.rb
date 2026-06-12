@@ -366,6 +366,23 @@ Rails.application.routes.draw do
                                            path: 'messages'
           end
 
+          # Chatflow — visual chatbot flow builder. A `chatflow` owns a graph
+          # of `nodes` (etapas: send message/audio/media, SAC menu, set
+          # label, end) wired by `edges`. The engine runs flows against live
+          # conversations; bot messages are created through MessageBuilder so
+          # they render inside Chatwoot AND dispatch to WhatsApp via WAHA.
+          resources :chatflows do
+            member do
+              post :activate
+              post :archive
+            end
+            resources :chatflow_nodes, only: [:create, :update, :destroy], path: 'nodes'
+            resources :chatflow_edges, only: [:create, :destroy], path: 'edges'
+          end
+          # Media for chatflow nodes is authored before any conversation
+          # exists, so it uploads against the account (not a conversation).
+          resource :chatflow_direct_uploads, only: [:create], controller: 'chatflows/direct_uploads'
+
           # Personal-access-style tokens for the public Kanban API
           # (`/api/v2/kanban/*`). Raw value returned ONCE on create —
           # store SHA-256 digest only. Admin-only.

@@ -11,6 +11,7 @@ class AsyncDispatcher < BaseDispatcher
   def listeners
     [
       AthenasAutopilotListener.instance,
+      ChatflowListener.instance,
       AutomationRuleListener.instance,
       CampaignListener.instance,
       CsatSurveyListener.instance,
