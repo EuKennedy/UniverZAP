@@ -67,7 +67,7 @@ class Api::V1::Accounts::ChatflowsController < Api::V1::Accounts::BaseController
 
   def permitted_params
     params.require(:chatflow).permit(
-      :name, :description, :inbox_id, :start_node_id, :trigger_type,
+      :name, :description, :inbox_id, :start_node_id, :trigger_type, :color,
       trigger_config: { keywords: [] }
     )
   end

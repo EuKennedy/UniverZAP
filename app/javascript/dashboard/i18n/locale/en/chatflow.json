@@ -92,6 +92,7 @@
     },
     "BUILDER": {
       "PALETTE": "Steps",
+      "COLOR": "Flow color",
       "ACTIVATE": "Activate",
       "ARCHIVE": "Pause",
       "ACTIVATED": "Flow is live.",

@@ -51,6 +51,18 @@ const isTriggerOpen = ref(false);
 const isSavingTrigger = ref(false);
 
 const flow = computed(() => active.value.chatflow);
+const flowColor = computed(() => flow.value?.color || '#5FB89F');
+
+// Calm, eye-friendly palette for theming a flow's edges + accents.
+const FLOW_COLORS = [
+  '#5FB89F',
+  '#6E8AE0',
+  '#C99BE0',
+  '#E0A96E',
+  '#E08B8B',
+  '#7FB069',
+  '#8593A8',
+];
 
 const PALETTE = [
   { kind: 'send_message', icon: 'i-lucide-message-square' },
@@ -90,7 +102,7 @@ const mapEdge = edge => ({
   target: String(edge.target_node_id),
   sourceHandle: edge.source_handle,
   animated: true,
-  style: { stroke: '#94A3B8', strokeWidth: 1.75 },
+  style: { stroke: flowColor.value, strokeWidth: 1.75 },
   markerEnd: MarkerType.ArrowClosed,
 });
 
@@ -114,7 +126,7 @@ const triggerEdge = () => {
       target: String(startId),
       animated: true,
       deletable: false,
-      style: { stroke: '#5FB89F', strokeWidth: 2 },
+      style: { stroke: flowColor.value, strokeWidth: 2 },
       markerEnd: MarkerType.ArrowClosed,
     },
   ];
@@ -314,6 +326,15 @@ const toggleStatus = async () => {
   }
 };
 
+const changeColor = async color => {
+  await store.dispatch('chatflows/update', {
+    id: Number(props.chatflowId),
+    color,
+  });
+  // Re-apply edge strokes with the new accent (no viewport jump).
+  setEdges([...triggerEdge(), ...active.value.edges.map(mapEdge)]);
+};
+
 const goBack = () => router.push(accountScopedRoute('chatflow_index'));
 </script>
 
@@ -365,6 +386,22 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
           >
             {{ t(`CHATFLOW.STATUS.${(flow.status || 'draft').toUpperCase()}`) }}
           </span>
+        </div>
+        <div v-if="flow" class="flex items-center gap-1.5 mr-1">
+          <button
+            v-for="color in FLOW_COLORS"
+            :key="color"
+            type="button"
+            class="size-5 rounded-full cursor-pointer transition-transform hover:scale-110"
+            :class="
+              flowColor === color
+                ? 'ring-2 ring-offset-2 ring-offset-n-solid-1 ring-n-slate-9'
+                : ''
+            "
+            :style="{ backgroundColor: color }"
+            :aria-label="t('CHATFLOW.BUILDER.COLOR')"
+            @click="changeColor(color)"
+          />
         </div>
         <Button
           v-if="flow"

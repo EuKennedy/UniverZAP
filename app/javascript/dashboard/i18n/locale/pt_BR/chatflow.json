@@ -92,6 +92,7 @@
     },
     "BUILDER": {
       "PALETTE": "Etapas",
+      "COLOR": "Cor do fluxo",
       "ACTIVATE": "Ativar",
       "ARCHIVE": "Pausar",
       "ACTIVATED": "Fluxo no ar.",
