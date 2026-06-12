@@ -21,7 +21,10 @@ class Chatflow::NodeRunnerService
     when 'send_audio', 'send_media' then send_media_node
     when 'menu' then send_menu_node
     when 'set_label' then apply_labels_node
-    when 'end_flow' then :stop
+    when 'assign_agent' then assign_agent_node
+    when 'add_to_kanban' then add_to_kanban_node
+    when 'webhook' then webhook_node
+    when 'end_flow' then end_flow_node
     else :continue
     end
   end
@@ -53,6 +56,94 @@ class Chatflow::NodeRunnerService
     titles = @conversation.account.labels.where(id: ids).pluck(:title)
     @conversation.add_labels(titles) if titles.any?
     :continue
+  end
+
+  def assign_agent_node
+    agent_id = @node.config['agent_id']
+    team_id = @node.config['team_id']
+    assign_agent(agent_id) if agent_id.present?
+    assign_team(team_id) if team_id.present?
+    :continue
+  end
+
+  def assign_agent(agent_id)
+    return unless @conversation.account.account_users.exists?(user_id: agent_id)
+
+    @conversation.update!(assignee_id: agent_id)
+  end
+
+  def assign_team(team_id)
+    return unless @conversation.account.teams.exists?(id: team_id)
+
+    @conversation.update!(team_id: team_id)
+  end
+
+  def add_to_kanban_node
+    account = @conversation.account
+    funnel = account.funnels.find_by(id: @node.config['funnel_id'])
+    stage = funnel&.funnel_stages&.find_by(id: @node.config['funnel_stage_id'])
+    return :continue if stage.blank?
+
+    task = account.kanban_tasks.create!(funnel: funnel, funnel_stage: stage, title: kanban_title)
+    task.conversations << @conversation
+    :continue
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.warn("[Chatflow add_to_kanban] #{e.message}")
+    :continue
+  end
+
+  def kanban_title
+    @node.config['title'].presence ||
+      @conversation.contact&.name.presence ||
+      "Conversa ##{@conversation.display_id}"
+  end
+
+  def webhook_node
+    url = @node.config['url'].to_s
+    return :continue if url.blank?
+
+    method = %w[post get put].include?(@node.config['method']) ? @node.config['method'] : 'post'
+    HTTParty.public_send(method, url, body: webhook_payload.to_json,
+                                      headers: { 'Content-Type' => 'application/json' }, timeout: 8)
+    :continue
+  rescue StandardError => e
+    Rails.logger.warn("[Chatflow webhook] #{e.message}")
+    :continue
+  end
+
+  def webhook_payload
+    {
+      conversation_id: @conversation.display_id,
+      inbox_id: @conversation.inbox_id,
+      flow_id: @execution.chatflow_id,
+      contact: {
+        name: @conversation.contact&.name,
+        phone_number: @conversation.contact&.phone_number
+      }
+    }
+  end
+
+  # Terminal node. Runs optional finish actions (resolve the conversation,
+  # apply labels) before completing the execution.
+  def end_flow_node
+    actions = @node.config['actions'] || {}
+    resolve_conversation if actions['resolve']
+    end_labels(actions['label_ids'])
+    :stop
+  end
+
+  def resolve_conversation
+    return if @conversation.resolved?
+
+    @conversation.update!(status: :resolved)
+  end
+
+  def end_labels(ids)
+    label_ids = Array(ids).map(&:to_i).reject(&:zero?)
+    return if label_ids.empty?
+
+    titles = @conversation.account.labels.where(id: label_ids).pluck(:title)
+    @conversation.add_labels(titles) if titles.any?
   end
 
   def send_menu

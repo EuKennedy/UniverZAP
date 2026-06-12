@@ -10,6 +10,7 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 import ChatflowNode from '../components/ChatflowNode.vue';
 import ChatflowTriggerNode from '../components/ChatflowTriggerNode.vue';
 import NodeEditorDrawer from '../components/NodeEditorDrawer.vue';
@@ -70,6 +71,9 @@ const PALETTE = [
   { kind: 'send_media', icon: 'i-lucide-image' },
   { kind: 'menu', icon: 'i-lucide-list-tree' },
   { kind: 'set_label', icon: 'i-lucide-tag' },
+  { kind: 'assign_agent', icon: 'i-lucide-user-check' },
+  { kind: 'add_to_kanban', icon: 'i-lucide-kanban-square' },
+  { kind: 'webhook', icon: 'i-lucide-webhook' },
   { kind: 'end_flow', icon: 'i-lucide-flag' },
 ];
 
@@ -79,7 +83,10 @@ const DEFAULT_CONFIG = {
   send_media: { caption: '' },
   menu: { text: '', options: [] },
   set_label: { label_ids: [] },
-  end_flow: {},
+  assign_agent: {},
+  add_to_kanban: {},
+  webhook: { method: 'post' },
+  end_flow: { actions: {} },
 };
 
 const selectedBackendNode = computed(
@@ -433,11 +440,7 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
             class="flex items-center gap-2 px-2.5 h-9 rounded-lg text-xs text-n-slate-12 hover:bg-n-alpha-2 transition-colors cursor-pointer text-left"
             @click="addNode(item.kind)"
           >
-            <fluent-icon
-              :icon="item.icon.replace('i-lucide-', '')"
-              size="16"
-              class="text-n-slate-11"
-            />
+            <Icon :icon="item.icon" class="size-4 text-n-slate-11" />
             {{ t(`CHATFLOW.NODE.KIND.${item.kind.toUpperCase()}`) }}
           </button>
         </nav>

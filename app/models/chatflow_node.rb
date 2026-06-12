@@ -35,7 +35,10 @@ class ChatflowNode < ApplicationRecord
     send_media: 2,
     menu: 3,
     set_label: 4,
-    end_flow: 5
+    end_flow: 5,
+    assign_agent: 6,
+    add_to_kanban: 7,
+    webhook: 8
   }, _prefix: :kind
 
   validates :name, length: { maximum: 255 }, allow_blank: true

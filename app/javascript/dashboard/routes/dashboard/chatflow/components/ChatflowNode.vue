@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Handle, Position } from '@vue-flow/core';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 
 // Custom Vue Flow node: one card = one "etapa". The target handle (left) is
 // where an incoming edge lands. Source handles (right) are the connection
@@ -19,10 +20,13 @@ const { t } = useI18n();
 
 const KIND_META = {
   send_message: { icon: 'i-lucide-message-square', tone: 'teal' },
-  send_audio: { icon: 'i-lucide-mic', tone: 'violet', source: 'default' },
+  send_audio: { icon: 'i-lucide-mic', tone: 'violet' },
   send_media: { icon: 'i-lucide-image', tone: 'blue' },
   menu: { icon: 'i-lucide-list-tree', tone: 'amber' },
   set_label: { icon: 'i-lucide-tag', tone: 'iris' },
+  assign_agent: { icon: 'i-lucide-user-check', tone: 'blue' },
+  add_to_kanban: { icon: 'i-lucide-kanban-square', tone: 'iris' },
+  webhook: { icon: 'i-lucide-webhook', tone: 'violet' },
   end_flow: { icon: 'i-lucide-flag', tone: 'ruby' },
 };
 
@@ -47,6 +51,10 @@ const summary = computed(() => {
   if (kind.value === 'send_media')
     return config.caption || t('CHATFLOW.NODE.MEDIA_SUMMARY');
   if (kind.value === 'set_label') return t('CHATFLOW.NODE.LABEL_SUMMARY');
+  if (kind.value === 'assign_agent') return t('CHATFLOW.NODE.ASSIGN_SUMMARY');
+  if (kind.value === 'add_to_kanban') return t('CHATFLOW.NODE.KANBAN_SUMMARY');
+  if (kind.value === 'webhook')
+    return config.url || t('CHATFLOW.NODE.WEBHOOK_SUMMARY');
   if (isEnd.value) return t('CHATFLOW.NODE.END_SUMMARY');
   return '';
 });
@@ -81,7 +89,7 @@ const toneClass = computed(
       :title="t('CHATFLOW.NODE.DELETE')"
       @click.stop="emit('delete')"
     >
-      <fluent-icon icon="delete" size="13" />
+      <Icon icon="i-lucide-trash-2" class="size-3.5" />
     </button>
 
     <!-- Entry point -->
@@ -96,7 +104,7 @@ const toneClass = computed(
         class="flex items-center justify-center size-8 rounded-lg shrink-0"
         :class="toneClass"
       >
-        <fluent-icon :icon="meta.icon.replace('i-lucide-', '')" size="16" />
+        <Icon :icon="meta.icon" class="size-4" />
       </span>
       <div class="flex flex-col min-w-0">
         <p class="text-sm font-semibold text-n-slate-12 m-0 truncate">

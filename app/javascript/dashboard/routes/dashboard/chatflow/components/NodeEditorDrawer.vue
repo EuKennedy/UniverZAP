@@ -1,6 +1,7 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useStore } from 'vuex';
 import { DirectUpload } from 'activestorage';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
@@ -20,9 +21,19 @@ const props = defineProps({
 const emit = defineEmits(['save', 'remove', 'setStart', 'close']);
 
 const { t } = useI18n();
+const store = useStore();
 const accountId = useMapGetter('getCurrentAccountId');
 const currentUser = useMapGetter('getCurrentUser');
 const labels = useMapGetter('labels/getLabels');
+const agents = useMapGetter('agents/getAgents');
+const teams = useMapGetter('teams/getTeams');
+const funnels = useMapGetter('funnels/getFunnels');
+
+onMounted(() => {
+  store.dispatch('agents/get');
+  store.dispatch('teams/get');
+  store.dispatch('funnels/get');
+});
 
 const name = ref('');
 const config = ref({});
@@ -71,6 +82,29 @@ const toggleLabel = id => {
     ? labelIds.value.filter(l => l !== id)
     : [...labelIds.value, id];
 };
+
+// add_to_kanban: stages come from the funnel the operator picks.
+const selectedFunnel = computed(() =>
+  funnels.value.find(f => f.id === config.value.funnel_id)
+);
+const funnelStages = computed(() => selectedFunnel.value?.stages || []);
+const onFunnelChange = () => {
+  config.value.funnel_stage_id = null;
+};
+
+// end_flow: optional resolve-on-finish toggle.
+const resolveOnEnd = computed({
+  get: () => Boolean(config.value.actions?.resolve),
+  set: val => {
+    config.value.actions = { ...(config.value.actions || {}), resolve: val };
+  },
+});
+
+const HTTP_METHODS = [
+  { value: 'post', label: 'POST' },
+  { value: 'get', label: 'GET' },
+  { value: 'put', label: 'PUT' },
+];
 
 const uploadMedia = event => {
   const file = event.target.files?.[0];
@@ -305,9 +339,137 @@ const save = () => {
         </button>
       </div>
 
-      <p v-if="kind === 'end_flow'" class="text-xs text-n-slate-11 m-0">
-        {{ t('CHATFLOW.EDITOR.END_HINT') }}
-      </p>
+      <!-- Assign agent / team -->
+      <div v-if="kind === 'assign_agent'" class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.AGENT')
+          }}</span>
+          <select
+            v-model="config.agent_id"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+          >
+            <option :value="undefined">
+              {{ t('CHATFLOW.EDITOR.AGENT_NONE') }}
+            </option>
+            <option v-for="a in agents" :key="a.id" :value="a.id">
+              {{ a.name }}
+            </option>
+          </select>
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.TEAM')
+          }}</span>
+          <select
+            v-model="config.team_id"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+          >
+            <option :value="undefined">
+              {{ t('CHATFLOW.EDITOR.TEAM_NONE') }}
+            </option>
+            <option v-for="tm in teams" :key="tm.id" :value="tm.id">
+              {{ tm.name }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Add to Kanban -->
+      <div v-if="kind === 'add_to_kanban'" class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.FUNNEL')
+          }}</span>
+          <select
+            v-model="config.funnel_id"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+            @change="onFunnelChange"
+          >
+            <option :value="undefined">
+              {{ t('CHATFLOW.EDITOR.SELECT') }}
+            </option>
+            <option v-for="f in funnels" :key="f.id" :value="f.id">
+              {{ f.name }}
+            </option>
+          </select>
+        </label>
+        <label v-if="funnelStages.length" class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.STAGE')
+          }}</span>
+          <select
+            v-model="config.funnel_stage_id"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+          >
+            <option :value="undefined">
+              {{ t('CHATFLOW.EDITOR.SELECT') }}
+            </option>
+            <option v-for="s in funnelStages" :key="s.id" :value="s.id">
+              {{ s.name }}
+            </option>
+          </select>
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.CARD_TITLE')
+          }}</span>
+          <input
+            v-model="config.title"
+            type="text"
+            :placeholder="t('CHATFLOW.EDITOR.CARD_TITLE_PLACEHOLDER')"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+        </label>
+      </div>
+
+      <!-- Webhook -->
+      <div v-if="kind === 'webhook'" class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.WEBHOOK_URL')
+          }}</span>
+          <input
+            v-model="config.url"
+            type="url"
+            :placeholder="t('CHATFLOW.EDITOR.WEBHOOK_URL_PLACEHOLDER')"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.WEBHOOK_METHOD')
+          }}</span>
+          <select
+            v-model="config.method"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+          >
+            <option v-for="m in HTTP_METHODS" :key="m.value" :value="m.value">
+              {{ m.label }}
+            </option>
+          </select>
+        </label>
+        <p class="text-[11px] text-n-slate-10 m-0">
+          {{ t('CHATFLOW.EDITOR.WEBHOOK_HINT') }}
+        </p>
+      </div>
+
+      <!-- End flow + optional actions -->
+      <div v-if="kind === 'end_flow'" class="flex flex-col gap-3">
+        <p class="text-xs text-n-slate-11 m-0">
+          {{ t('CHATFLOW.EDITOR.END_HINT') }}
+        </p>
+        <label
+          class="flex items-center gap-2 text-sm text-n-slate-12 cursor-pointer"
+        >
+          <input
+            v-model="resolveOnEnd"
+            type="checkbox"
+            class="accent-n-teal-9"
+          />
+          {{ t('CHATFLOW.EDITOR.END_RESOLVE') }}
+        </label>
+      </div>
     </div>
 
     <footer class="flex flex-col gap-2 px-4 py-3 border-t border-n-weak">
