@@ -484,27 +484,6 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
       </header>
 
       <div class="flex flex-1 min-h-0">
-        <!-- Palette -->
-        <nav
-          class="flex flex-col gap-1 w-44 shrink-0 p-2 border-r border-n-weak bg-n-solid-1 overflow-auto"
-        >
-          <p
-            class="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-n-slate-10 m-0"
-          >
-            {{ t('CHATFLOW.BUILDER.PALETTE') }}
-          </p>
-          <button
-            v-for="item in PALETTE"
-            :key="item.kind"
-            type="button"
-            class="flex items-center gap-2 px-2.5 h-9 rounded-lg text-xs text-n-slate-12 hover:bg-n-alpha-2 transition-colors cursor-pointer text-left"
-            @click="addNode(item.kind)"
-          >
-            <Icon :icon="item.icon" class="size-4 text-n-slate-11" />
-            {{ t(`CHATFLOW.NODE.KIND.${item.kind.toUpperCase()}`) }}
-          </button>
-        </nav>
-
         <!-- Infinite canvas -->
         <div class="relative flex-1 min-w-0">
           <VueFlow
@@ -532,6 +511,27 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
             </template>
           </VueFlow>
         </div>
+
+        <!-- Palette (far right) -->
+        <nav
+          class="flex flex-col gap-1 w-44 shrink-0 p-2 border-l border-n-weak bg-n-solid-1 overflow-auto"
+        >
+          <p
+            class="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-n-slate-10 m-0"
+          >
+            {{ t('CHATFLOW.BUILDER.PALETTE') }}
+          </p>
+          <button
+            v-for="item in PALETTE"
+            :key="item.kind"
+            type="button"
+            class="flex items-center gap-2 px-2.5 h-9 rounded-lg text-xs text-n-slate-12 hover:bg-n-alpha-2 transition-colors cursor-pointer text-left"
+            @click="addNode(item.kind)"
+          >
+            <Icon :icon="item.icon" class="size-4 text-n-slate-11" />
+            {{ t(`CHATFLOW.NODE.KIND.${item.kind.toUpperCase()}`) }}
+          </button>
+        </nav>
       </div>
     </div>
 
