@@ -35,7 +35,7 @@ class Chatflow < ApplicationRecord
   # on_first_message — fires once, on the first inbound message of a conversation.
   # keyword          — fires when an inbound message matches trigger_config['keywords'].
   # any_message      — fires on every inbound message with no live execution.
-  enum trigger_type: { on_first_message: 0, keyword: 1, any_message: 2 }, _prefix: :trigger
+  enum trigger_type: { on_first_message: 0, keyword: 1, any_message: 2, webhook: 3 }, _prefix: :trigger
 
   validates :name, presence: true, length: { maximum: 255 }
   validates :description, length: { maximum: 5000 }, allow_blank: true

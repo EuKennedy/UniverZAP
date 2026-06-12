@@ -16,6 +16,15 @@
       "KEYWORD_PLACEHOLDER": "Type and press Enter",
       "KEYWORD_HINT": "Fires when the message contains any of these words.",
       "EDIT_HINT": "Click to edit",
+      "RESTART": "Restart rule",
+      "RESTART_MODE": {
+        "ONCE": "Once per conversation",
+        "COOLDOWN": "Repeat after a time window"
+      },
+      "RESTART_EVERY": "Repeat every",
+      "RESTART_HOURS": "hours",
+      "RUN_URL": "Webhook start URL",
+      "RUN_HINT": "POST { conversation_id } to this URL to start the flow.",
       "SAVE": "Save trigger",
       "SAVED": "Trigger saved.",
       "SUMMARY_KEYWORD": "Keyword: {keywords}",
@@ -32,6 +41,10 @@
         "ANY_MESSAGE": {
           "LABEL": "Any message",
           "HINT": "Starts on any incoming message when no flow is running."
+        },
+        "WEBHOOK": {
+          "LABEL": "Webhook",
+          "HINT": "Started by an external system calling this flow's URL."
         }
       }
     },

@@ -377,6 +377,7 @@ Rails.application.routes.draw do
               post :archive
               post :test
               post :stop_test
+              post :run
             end
             resources :chatflow_nodes, only: [:create, :update, :destroy], path: 'nodes'
             resources :chatflow_edges, only: [:create, :destroy], path: 'edges'

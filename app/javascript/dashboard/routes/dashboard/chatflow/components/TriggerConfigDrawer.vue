@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useStore } from 'vuex';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 
 // Configures WHEN a flow fires — the single most important part of a chatbot.
 // Trigger config lives on the Chatflow itself (inbox_id, trigger_type,
@@ -18,6 +19,11 @@ const emit = defineEmits(['save', 'close']);
 const { t } = useI18n();
 const store = useStore();
 const inboxes = useMapGetter('inboxes/getInboxes');
+const accountId = useMapGetter('getCurrentAccountId');
+
+const runUrl = computed(
+  () => `/api/v1/accounts/${accountId.value}/chatflows/${props.chatflow.id}/run`
+);
 
 // Only message channels can host a WhatsApp-style flow.
 const eligibleInboxes = computed(() =>
@@ -30,12 +36,17 @@ const TRIGGER_TYPES = [
   { value: 'on_first_message', icon: 'i-lucide-message-circle-plus' },
   { value: 'keyword', icon: 'i-lucide-hash' },
   { value: 'any_message', icon: 'i-lucide-messages-square' },
+  { value: 'webhook', icon: 'i-lucide-webhook' },
 ];
+
+const RESTART_MODES = ['once', 'cooldown'];
 
 const inboxId = ref(null);
 const triggerType = ref('on_first_message');
 const keywords = ref([]);
 const keywordDraft = ref('');
+const restartMode = ref('once');
+const restartHours = ref(24);
 
 watch(
   () => props.chatflow,
@@ -45,6 +56,8 @@ watch(
     keywords.value = Array.isArray(flow.trigger_config?.keywords)
       ? [...flow.trigger_config.keywords]
       : [];
+    restartMode.value = flow.trigger_config?.restart?.mode || 'once';
+    restartHours.value = flow.trigger_config?.restart?.hours || 24;
   },
   { immediate: true }
 );
@@ -70,7 +83,10 @@ const save = () => {
   emit('save', {
     inbox_id: inboxId.value,
     trigger_type: triggerType.value,
-    trigger_config: { keywords: keywords.value },
+    trigger_config: {
+      keywords: keywords.value,
+      restart: { mode: restartMode.value, hours: Number(restartHours.value) },
+    },
   });
 };
 </script>
@@ -84,9 +100,9 @@ const save = () => {
     >
       <div class="flex items-center gap-2">
         <span
-          class="flex items-center justify-center size-7 rounded-lg bg-gradient-to-br from-n-teal-9 to-n-teal-10 text-white"
+          class="flex items-center justify-center size-7 rounded-lg bg-gradient-to-br from-n-teal-8 to-n-teal-9 text-white"
         >
-          <fluent-icon icon="flash" size="15" />
+          <Icon icon="i-lucide-zap" class="size-3.5" />
         </span>
         <h3 class="text-sm font-semibold text-n-slate-12 m-0">
           {{ t('CHATFLOW.TRIGGER.TITLE') }}
@@ -151,7 +167,7 @@ const save = () => {
                 : 'bg-n-alpha-2 text-n-slate-11'
             "
           >
-            <fluent-icon :icon="type.icon.replace('i-lucide-', '')" size="16" />
+            <Icon :icon="type.icon" class="size-4" />
           </span>
           <span class="flex flex-col gap-0.5 min-w-0">
             <span class="text-sm font-medium text-n-slate-12">
@@ -183,7 +199,7 @@ const save = () => {
               class="inline-flex items-center justify-center size-4 rounded hover:bg-n-teal-5 cursor-pointer"
               @click="removeKeyword(index)"
             >
-              <fluent-icon icon="dismiss" size="10" />
+              <Icon icon="i-lucide-x" class="size-2.5" />
             </button>
           </span>
           <input
@@ -197,6 +213,57 @@ const save = () => {
         </div>
         <p class="text-[11px] text-n-slate-10 m-0">
           {{ t('CHATFLOW.TRIGGER.KEYWORD_HINT') }}
+        </p>
+      </div>
+
+      <!-- Restart rule (first-message trigger) -->
+      <div
+        v-if="triggerType === 'on_first_message'"
+        class="flex flex-col gap-2"
+      >
+        <span class="text-xs font-medium text-n-slate-11">
+          {{ t('CHATFLOW.TRIGGER.RESTART') }}
+        </span>
+        <select
+          v-model="restartMode"
+          class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+        >
+          <option v-for="m in RESTART_MODES" :key="m" :value="m">
+            {{ t(`CHATFLOW.TRIGGER.RESTART_MODE.${m.toUpperCase()}`) }}
+          </option>
+        </select>
+        <label
+          v-if="restartMode === 'cooldown'"
+          class="flex items-center gap-2"
+        >
+          <span class="text-xs text-n-slate-11">
+            {{ t('CHATFLOW.TRIGGER.RESTART_EVERY') }}
+          </span>
+          <input
+            v-model.number="restartHours"
+            type="number"
+            min="1"
+            class="w-20 h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+          <span class="text-xs text-n-slate-11">
+            {{ t('CHATFLOW.TRIGGER.RESTART_HOURS') }}
+          </span>
+        </label>
+      </div>
+
+      <!-- Webhook trigger: external start URL -->
+      <div v-if="triggerType === 'webhook'" class="flex flex-col gap-1.5">
+        <span class="text-xs font-medium text-n-slate-11">
+          {{ t('CHATFLOW.TRIGGER.RUN_URL') }}
+        </span>
+        <input
+          :value="runUrl"
+          readonly
+          class="h-10 px-3 rounded-lg bg-n-alpha-2 border border-n-weak text-xs text-n-slate-11 focus:outline-none"
+          @focus="$event.target.select()"
+        />
+        <p class="text-[11px] text-n-slate-10 m-0">
+          {{ t('CHATFLOW.TRIGGER.RUN_HINT') }}
         </p>
       </div>
     </div>

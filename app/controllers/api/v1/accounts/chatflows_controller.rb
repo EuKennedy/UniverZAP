@@ -62,6 +62,16 @@ class Api::V1::Accounts::ChatflowsController < Api::V1::Accounts::BaseController
     render_summary
   end
 
+  # Externally-triggered start (webhook trigger). Integrators POST a
+  # conversation_id and the engine runs this flow on that conversation.
+  def run
+    conversation = Current.account.conversations.find_by(display_id: params[:conversation_id])
+    return render json: { error: 'conversation_not_found' }, status: :not_found if conversation.nil?
+
+    Chatflow::EngineService.force_start(@chatflow, conversation)
+    head :ok
+  end
+
   private
 
   def fetch_chatflow

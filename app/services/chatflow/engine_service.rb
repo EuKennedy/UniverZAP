@@ -28,6 +28,24 @@ class Chatflow::EngineService
     # An `active` (mid auto-run) execution ignores concurrent inbound noise.
   end
 
+  # Start a specific flow on a conversation regardless of trigger — used by
+  # the webhook trigger endpoint (POST /chatflows/:id/run).
+  def self.force_start(chatflow, conversation)
+    return if chatflow.start_node.blank?
+    return if ChatflowExecution.live.exists?(conversation_id: conversation.id)
+
+    service = allocate
+    service.instance_variable_set(:@conversation, conversation)
+    service.instance_variable_set(:@account, conversation.account)
+    execution = ChatflowExecution.create!(
+      account: conversation.account, chatflow: chatflow,
+      conversation: conversation, current_node: chatflow.start_node, status: :active
+    )
+    service.send(:run_chain, execution, chatflow.start_node)
+  rescue ActiveRecord::RecordNotUnique
+    nil
+  end
+
   private
 
   def live_execution
@@ -77,13 +95,33 @@ class Chatflow::EngineService
     @conversation.contact&.phone_number.to_s.gsub(/\D/, '').include?(digits)
   end
 
+  # webhook flows are started externally (POST /chatflows/:id/run), so an
+  # inbound message never auto-matches them.
   def trigger_matches?(chatflow)
     case chatflow.trigger_type
-    when 'on_first_message' then first_inbound_message?
+    when 'on_first_message' then first_message_trigger?(chatflow)
     when 'keyword' then keyword_hit?(chatflow)
     when 'any_message' then true
     else false
     end
+  end
+
+  # The first-message trigger fires on the conversation's first inbound
+  # message. A `cooldown` restart rule lets it fire again once enough hours
+  # have passed since the last run — for recurring touchpoints.
+  def first_message_trigger?(chatflow)
+    return true if first_inbound_message?
+
+    restart = chatflow.trigger_config['restart'] || {}
+    return false unless restart['mode'] == 'cooldown'
+
+    cooldown_elapsed?(chatflow, restart['hours'])
+  end
+
+  def cooldown_elapsed?(chatflow, hours)
+    window = (hours.to_i.positive? ? hours.to_i : 24).hours
+    last_run = chatflow.executions.where(conversation_id: @conversation.id).maximum(:updated_at)
+    last_run.nil? || last_run < window.ago
   end
 
   def first_inbound_message?

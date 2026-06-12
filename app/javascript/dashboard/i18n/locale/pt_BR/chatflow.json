@@ -16,6 +16,15 @@
       "KEYWORD_PLACEHOLDER": "Digite e tecle Enter",
       "KEYWORD_HINT": "Dispara quando a mensagem contém uma destas palavras.",
       "EDIT_HINT": "Clique para editar",
+      "RESTART": "Regra de reinício",
+      "RESTART_MODE": {
+        "ONCE": "Uma vez por conversa",
+        "COOLDOWN": "Repetir após uma janela de tempo"
+      },
+      "RESTART_EVERY": "Repetir a cada",
+      "RESTART_HOURS": "horas",
+      "RUN_URL": "URL de início (webhook)",
+      "RUN_HINT": "Faça POST { conversation_id } nessa URL para iniciar o fluxo.",
       "SAVE": "Salvar gatilho",
       "SAVED": "Gatilho salvo.",
       "SUMMARY_KEYWORD": "Palavra-chave: {keywords}",
@@ -32,6 +41,10 @@
         "ANY_MESSAGE": {
           "LABEL": "Qualquer mensagem",
           "HINT": "Começa em qualquer mensagem recebida quando não há fluxo rodando."
+        },
+        "WEBHOOK": {
+          "LABEL": "Webhook",
+          "HINT": "Iniciado por um sistema externo chamando a URL do fluxo."
         }
       }
     },
