@@ -46,7 +46,8 @@ class AccountBuilder
   def create_account
     @account = Account.create!(
       name: account_name,
-      locale: I18n.locale,
+      # UniverZAP defaults to pt-BR; honour an explicitly provided locale.
+      locale: locale.presence || 'pt_BR',
       custom_attributes: { 'onboarding_step' => 'account_details' }
     )
     Current.account = @account
