@@ -15,18 +15,21 @@ class Chatflow::NodeRunnerService
     @conversation = execution.conversation
   end
 
+  HANDLERS = {
+    'send_message' => :send_message_node,
+    'send_audio' => :send_media_node,
+    'send_media' => :send_media_node,
+    'menu' => :send_menu_node,
+    'set_label' => :apply_labels_node,
+    'assign_agent' => :assign_agent_node,
+    'add_to_kanban' => :add_to_kanban_node,
+    'webhook' => :webhook_node,
+    'end_flow' => :end_flow_node
+  }.freeze
+
   def run
-    case @node.kind
-    when 'send_message' then send_message_node
-    when 'send_audio', 'send_media' then send_media_node
-    when 'menu' then send_menu_node
-    when 'set_label' then apply_labels_node
-    when 'assign_agent' then assign_agent_node
-    when 'add_to_kanban' then add_to_kanban_node
-    when 'webhook' then webhook_node
-    when 'end_flow' then end_flow_node
-    else :continue
-    end
+    handler = HANDLERS[@node.kind]
+    handler ? send(handler) : :continue
   end
 
   # Re-prompt the customer when their reply didn't match any menu option.
