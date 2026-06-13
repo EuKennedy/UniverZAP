@@ -10,6 +10,7 @@ import attributes from './modules/attributes';
 import auditlogs from './modules/auditlogs';
 import auth from './modules/auth';
 import automations from './modules/automations';
+import broadcasts from './modules/broadcasts';
 import bulkActions from './modules/bulkActions';
 import campaigns from './modules/campaigns';
 import cannedResponse from './modules/cannedResponse';
@@ -80,6 +81,7 @@ export default createStore({
     auditlogs,
     auth,
     automations,
+    broadcasts,
     bulkActions,
     campaigns,
     cannedResponse,

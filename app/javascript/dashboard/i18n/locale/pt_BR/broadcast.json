@@ -1,0 +1,95 @@
+{
+  "BROADCAST": {
+    "STATUS": {
+      "DRAFT": "Rascunho",
+      "SCHEDULED": "Agendada",
+      "RUNNING": "Em andamento",
+      "PAUSED": "Pausada",
+      "COMPLETED": "Concluída"
+    },
+    "MODE": {
+      "WAHA": {
+        "LABEL": "WhatsApp (WAHA)",
+        "BADGE": "WAHA",
+        "HINT": "Envie mensagens livres pela sua sessão de WhatsApp conectada."
+      },
+      "OFFICIAL": {
+        "LABEL": "API Oficial (Meta)",
+        "BADGE": "Oficial",
+        "HINT": "Envie templates aprovados pela API Oficial da Meta."
+      }
+    },
+    "LIST": {
+      "TITLE": "Campanhas de disparo",
+      "SUBTITLE": "Envie mensagens em massa para públicos segmentados com ritmo controlado.",
+      "NEW": "Nova campanha",
+      "NAME_PLACEHOLDER": "Nome da campanha, ex.: Promo de fim de semana",
+      "CREATE": "Criar",
+      "CANCEL": "Cancelar",
+      "CREATE_ERROR": "Não foi possível criar a campanha.",
+      "DELETE_CONFIRM": "Excluir a campanha \"{name}\"? Essa ação não pode ser desfeita.",
+      "DELETE_SUCCESS": "Campanha excluída.",
+      "DELETE_ERROR": "Não foi possível excluir a campanha.",
+      "PROGRESS": "{sent}/{total} enviadas",
+      "EMPTY_TITLE": "Nenhuma campanha ainda",
+      "EMPTY_BODY": "Crie seu primeiro disparo para alcançar um público segmentado no WhatsApp."
+    },
+    "COMPOSER": {
+      "TITLE": "Campanha",
+      "MODE_TITLE": "Modo de envio",
+      "MESSAGE_TITLE": "Mensagem",
+      "AUDIENCE_TITLE": "Público",
+      "THROTTLE_TITLE": "Ritmo",
+      "SCHEDULE_TITLE": "Agendamento",
+      "AUDIENCE_PREVIEW": "Audiência",
+      "CONTACTS": "contatos",
+      "REFRESH_AUDIENCE": "Recalcular",
+      "STAT_TOTAL": "Destinatários",
+      "STAT_SENT": "Enviadas",
+      "STAT_FAILED": "Falhas",
+      "SAVE": "Salvar",
+      "SAVED": "Campanha salva.",
+      "SAVE_ERROR": "Não foi possível salvar a campanha.",
+      "LOAD_ERROR": "Não foi possível carregar a campanha.",
+      "PREVIEW_ERROR": "Não foi possível estimar o público.",
+      "LAUNCH": "Disparar",
+      "LAUNCH_CONFIRM": "Disparar para {count} contatos?",
+      "LAUNCHED": "Campanha disparada.",
+      "LAUNCH_ERROR": "Não foi possível disparar a campanha.",
+      "PAUSE": "Pausar",
+      "PAUSED": "Campanha pausada.",
+      "PAUSE_ERROR": "Não foi possível pausar a campanha."
+    },
+    "MESSAGE": {
+      "TEXT": "Texto da mensagem",
+      "TEXT_PLACEHOLDER": "Digite a mensagem que seus contatos vão receber…",
+      "MEDIA": "Mídia (opcional)",
+      "MEDIA_PLACEHOLDER": "Nome de referência do anexo",
+      "MEDIA_HINT": "O upload de mídia chega em uma fase posterior — por enquanto é só uma referência.",
+      "TEMPLATE_NAME": "Nome do template",
+      "TEMPLATE_NAME_PLACEHOLDER": "ex.: atualizacao_pedido",
+      "TEMPLATE_LANGUAGE": "Idioma do template",
+      "TEMPLATE_LANGUAGE_PLACEHOLDER": "pt_BR"
+    },
+    "AUDIENCE": {
+      "CONTACT_LABELS": "Etiquetas de contato",
+      "CONVERSATION_LABELS": "Etiquetas de conversa",
+      "FUNNEL_STAGES": "Etapas do Kanban",
+      "NO_LABELS": "Nenhuma etiqueta disponível ainda.",
+      "NO_FUNNELS": "Nenhum funil disponível ainda.",
+      "MANUAL_SOON": "Seleção manual de contatos e importação de números chegam em uma fase posterior."
+    },
+    "THROTTLE": {
+      "HINT": "Controle a velocidade de envio para evitar bloqueios.",
+      "BATCH_MIN": "Lote mín.",
+      "BATCH_MAX": "Lote máx.",
+      "DELAY_MIN": "Intervalo mín. (s)",
+      "DELAY_MAX": "Intervalo máx. (s)",
+      "DAILY_CAP": "Limite diário"
+    },
+    "SCHEDULE": {
+      "AT": "Enviar em",
+      "HINT": "Deixe em branco para enviar assim que disparar."
+    }
+  }
+}

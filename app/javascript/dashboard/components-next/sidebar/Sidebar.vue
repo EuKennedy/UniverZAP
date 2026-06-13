@@ -548,6 +548,14 @@ const menuItems = computed(() => {
         },
       ],
     },
+    {
+      name: 'Broadcasts',
+      label: t('SIDEBAR.BROADCASTS'),
+      icon: 'i-lucide-megaphone',
+      to: accountScopedRoute('broadcasts_index'),
+      dataOnboarding: 'broadcasts-nav',
+      activeOn: ['broadcasts_index', 'broadcasts_show'],
+    },
     ...(campaignsVisible
       ? [
           {

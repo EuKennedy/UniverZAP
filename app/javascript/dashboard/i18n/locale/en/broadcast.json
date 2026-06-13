@@ -1,0 +1,95 @@
+{
+  "BROADCAST": {
+    "STATUS": {
+      "DRAFT": "Draft",
+      "SCHEDULED": "Scheduled",
+      "RUNNING": "Running",
+      "PAUSED": "Paused",
+      "COMPLETED": "Completed"
+    },
+    "MODE": {
+      "WAHA": {
+        "LABEL": "WhatsApp (WAHA)",
+        "BADGE": "WAHA",
+        "HINT": "Send free-form messages through your connected WhatsApp session."
+      },
+      "OFFICIAL": {
+        "LABEL": "Official API (Meta)",
+        "BADGE": "Official",
+        "HINT": "Send approved message templates through the Meta Cloud API."
+      }
+    },
+    "LIST": {
+      "TITLE": "Broadcast campaigns",
+      "SUBTITLE": "Send messages in bulk to segmented audiences with controlled pacing.",
+      "NEW": "New campaign",
+      "NAME_PLACEHOLDER": "Campaign name, e.g. Weekend promo",
+      "CREATE": "Create",
+      "CANCEL": "Cancel",
+      "CREATE_ERROR": "Could not create the campaign.",
+      "DELETE_CONFIRM": "Delete the campaign \"{name}\"? This cannot be undone.",
+      "DELETE_SUCCESS": "Campaign deleted.",
+      "DELETE_ERROR": "Could not delete the campaign.",
+      "PROGRESS": "{sent}/{total} sent",
+      "EMPTY_TITLE": "No campaigns yet",
+      "EMPTY_BODY": "Create your first broadcast to reach a segmented audience on WhatsApp."
+    },
+    "COMPOSER": {
+      "TITLE": "Campaign",
+      "MODE_TITLE": "Sending mode",
+      "MESSAGE_TITLE": "Message",
+      "AUDIENCE_TITLE": "Audience",
+      "THROTTLE_TITLE": "Pacing",
+      "SCHEDULE_TITLE": "Scheduling",
+      "AUDIENCE_PREVIEW": "Audience",
+      "CONTACTS": "contacts",
+      "REFRESH_AUDIENCE": "Recalculate",
+      "STAT_TOTAL": "Recipients",
+      "STAT_SENT": "Sent",
+      "STAT_FAILED": "Failed",
+      "SAVE": "Save",
+      "SAVED": "Campaign saved.",
+      "SAVE_ERROR": "Could not save the campaign.",
+      "LOAD_ERROR": "Could not load the campaign.",
+      "PREVIEW_ERROR": "Could not estimate the audience.",
+      "LAUNCH": "Launch",
+      "LAUNCH_CONFIRM": "Launch to {count} contacts?",
+      "LAUNCHED": "Campaign launched.",
+      "LAUNCH_ERROR": "Could not launch the campaign.",
+      "PAUSE": "Pause",
+      "PAUSED": "Campaign paused.",
+      "PAUSE_ERROR": "Could not pause the campaign."
+    },
+    "MESSAGE": {
+      "TEXT": "Message text",
+      "TEXT_PLACEHOLDER": "Type the message your contacts will receive…",
+      "MEDIA": "Media (optional)",
+      "MEDIA_PLACEHOLDER": "Attachment reference name",
+      "MEDIA_HINT": "Media upload arrives in a later phase — for now this is just a reference.",
+      "TEMPLATE_NAME": "Template name",
+      "TEMPLATE_NAME_PLACEHOLDER": "e.g. order_update",
+      "TEMPLATE_LANGUAGE": "Template language",
+      "TEMPLATE_LANGUAGE_PLACEHOLDER": "pt_BR"
+    },
+    "AUDIENCE": {
+      "CONTACT_LABELS": "Contact labels",
+      "CONVERSATION_LABELS": "Conversation labels",
+      "FUNNEL_STAGES": "Kanban stages",
+      "NO_LABELS": "No labels available yet.",
+      "NO_FUNNELS": "No funnels available yet.",
+      "MANUAL_SOON": "Manual contact selection and phone import arrive in a later phase."
+    },
+    "THROTTLE": {
+      "HINT": "Control how fast messages go out to avoid blocks.",
+      "BATCH_MIN": "Batch min",
+      "BATCH_MAX": "Batch max",
+      "DELAY_MIN": "Delay min (s)",
+      "DELAY_MAX": "Delay max (s)",
+      "DAILY_CAP": "Daily cap"
+    },
+    "SCHEDULE": {
+      "AT": "Send at",
+      "HINT": "Leave empty to send as soon as you launch."
+    }
+  }
+}
