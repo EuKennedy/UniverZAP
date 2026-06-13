@@ -382,6 +382,18 @@ Rails.application.routes.draw do
             resources :chatflow_nodes, only: [:create, :update, :destroy], path: 'nodes'
             resources :chatflow_edges, only: [:create, :destroy], path: 'edges'
           end
+
+          # Broadcast — mass WhatsApp dispatch. A `broadcast` resolves an
+          # audience (labels, kanban stages, manual ids, phone lists) and
+          # dispatches an outgoing message per recipient through MessageBuilder
+          # (WAHA send mode) using an adaptive, human-like throttle.
+          resources :broadcasts do
+            member do
+              post :launch
+              post :pause
+              get :audience_preview
+            end
+          end
           # Media for chatflow nodes is authored before any conversation
           # exists, so it uploads against the account (not a conversation).
           resource :chatflow_direct_uploads, only: [:create], controller: 'chatflows/direct_uploads'
