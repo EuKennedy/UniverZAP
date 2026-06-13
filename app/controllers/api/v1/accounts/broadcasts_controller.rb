@@ -1,5 +1,5 @@
 class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseController
-  before_action :fetch_broadcast, except: [:index, :create]
+  before_action :fetch_broadcast, except: [:index, :create, :templates]
   before_action :authorize_action
 
   def index
@@ -40,6 +40,14 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
     render json: { count: Broadcasts::AudienceResolver.new(@broadcast).contact_ids.length }
   end
 
+  # Approved Meta templates for a Cloud API inbox, for the official-mode picker.
+  def templates
+    inbox = Current.account.inboxes.find(params[:inbox_id])
+    channel = inbox.channel
+    list = channel.respond_to?(:message_templates) ? Array(channel.message_templates) : []
+    render json: { templates: list.select { |tpl| tpl['status']&.downcase == 'approved' } }
+  end
+
   private
 
   def fetch_broadcast
@@ -48,7 +56,7 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
 
   def authorize_action
     case action_name
-    when 'index', 'create'
+    when 'index', 'create', 'templates'
       authorize(Broadcast)
     else
       authorize(@broadcast)

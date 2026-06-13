@@ -393,6 +393,9 @@ Rails.application.routes.draw do
               post :pause
               get :audience_preview
             end
+            collection do
+              get :templates
+            end
           end
           # Media for chatflow nodes is authored before any conversation
           # exists, so it uploads against the account (not a conversation).

@@ -70,7 +70,11 @@ class Broadcasts::RecipientSenderService
   end
 
   def send_message(conversation)
-    params = { content: @broadcast.message_text, message_type: 'outgoing' }
+    msg = @broadcast.message || {}
+    attachment = msg['attachment']
+    content = attachment.present? ? msg['caption'] : msg['text']
+    params = { content: content, message_type: 'outgoing' }
+    params[:attachments] = [attachment] if attachment.present?
     Messages::MessageBuilder.new(nil, conversation, params).perform
   end
 
