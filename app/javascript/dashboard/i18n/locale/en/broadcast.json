@@ -63,13 +63,20 @@
     "MESSAGE": {
       "TEXT": "Message text",
       "TEXT_PLACEHOLDER": "Type the message your contacts will receive…",
+      "CAPTION": "Caption (optional)",
+      "CAPTION_PLACEHOLDER": "Text shown alongside the media…",
       "MEDIA": "Media (optional)",
-      "MEDIA_PLACEHOLDER": "Attachment reference name",
-      "MEDIA_HINT": "Media upload arrives in a later phase — for now this is just a reference.",
-      "TEMPLATE_NAME": "Template name",
-      "TEMPLATE_NAME_PLACEHOLDER": "e.g. order_update",
-      "TEMPLATE_LANGUAGE": "Template language",
-      "TEMPLATE_LANGUAGE_PLACEHOLDER": "pt_BR"
+      "MEDIA_UPLOAD": "Upload media",
+      "MEDIA_UPLOADING": "Uploading…",
+      "MEDIA_ACCEPT_HINT": "Image, video, PDF or audio.",
+      "MEDIA_REMOVE": "Remove",
+      "MEDIA_UPLOAD_ERROR": "Could not upload the file.",
+      "TEMPLATE": "Template",
+      "TEMPLATE_SELECT": "Select a template",
+      "TEMPLATE_PREVIEW": "Preview",
+      "TEMPLATE_EMPTY": "No templates? Connect a Cloud API number to load approved templates.",
+      "TEMPLATE_LOAD_ERROR": "Could not load templates.",
+      "TEMPLATE_NO_INBOX": "Set the inbox for this campaign to load its templates."
     },
     "AUDIENCE": {
       "CONTACT_LABELS": "Contact labels",
@@ -77,7 +84,15 @@
       "FUNNEL_STAGES": "Kanban stages",
       "NO_LABELS": "No labels available yet.",
       "NO_FUNNELS": "No funnels available yet.",
-      "MANUAL_SOON": "Manual contact selection and phone import arrive in a later phase."
+      "CONTACTS": "Contacts",
+      "CONTACTS_SEARCH": "Search by name or phone…",
+      "CONTACTS_EMPTY": "No contacts match your search.",
+      "CONTACTS_SELECTED": "{count} selected",
+      "IMPORT": "Import list",
+      "IMPORT_PLACEHOLDER": "Paste phone numbers — one per line or separated by comma/semicolon.",
+      "IMPORT_FILE": "Import CSV / TXT",
+      "IMPORT_COUNT": "{count} numbers parsed",
+      "IMPORT_CLEAR": "Clear"
     },
     "THROTTLE": {
       "HINT": "Control how fast messages go out to avoid blocks.",

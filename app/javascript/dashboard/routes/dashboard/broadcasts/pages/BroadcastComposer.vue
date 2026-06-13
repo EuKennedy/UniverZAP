@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
+import { DirectUpload } from 'activestorage';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
@@ -23,6 +24,9 @@ const { accountScopedRoute } = useAccount();
 const labels = useMapGetter('labels/getLabels');
 const funnels = useMapGetter('funnels/getFunnels');
 const uiFlags = useMapGetter('broadcasts/getUIFlags');
+const accountId = useMapGetter('getCurrentAccountId');
+const currentUser = useMapGetter('getCurrentUser');
+const contacts = useMapGetter('contacts/getContacts');
 
 const THROTTLE_DEFAULTS = {
   batch_min: 3,
@@ -57,6 +61,17 @@ const form = reactive({
 
 const audienceCount = ref(null);
 const isPreviewing = ref(false);
+
+// Media upload (WAHA mode).
+const isUploadingMedia = ref(false);
+
+// Approved Meta templates (official mode), loaded per inbox.
+const templates = ref([]);
+const selectedTemplateKey = ref('');
+
+// Manual contact selection + list import (audience builder).
+const contactSearch = ref('');
+const importText = ref('');
 
 const status = computed(() => broadcast.value?.status || 'draft');
 
@@ -108,23 +123,159 @@ const hydrate = record => {
   form.audience.phone_numbers = aud.phone_numbers || [];
   form.throttle = { ...THROTTLE_DEFAULTS, ...(record.throttle || {}) };
   form.scheduled_at = toLocalInput(record.scheduled_at);
+  selectedTemplateKey.value = form.message.template.name
+    ? `${form.message.template.name}::${form.message.template.language}`
+    : '';
+  importText.value = form.audience.phone_numbers.join('\n');
 };
-
-onMounted(async () => {
-  store.dispatch('labels/get');
-  store.dispatch('funnels/get');
-  try {
-    const data = await store.dispatch('broadcasts/show', props.broadcastId);
-    hydrate(data);
-  } catch (error) {
-    useAlert(error?.message || t('BROADCAST.COMPOSER.LOAD_ERROR'));
-  }
-});
 
 const toggleId = (list, id) => {
   const idx = list.indexOf(id);
   if (idx === -1) list.push(id);
   else list.splice(idx, 1);
+};
+
+// --- WAHA media upload (reuses the account-scoped chatflow uploader) ---
+const uploadMedia = event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  isUploadingMedia.value = true;
+  const upload = new DirectUpload(
+    file,
+    `/api/v1/accounts/${accountId.value}/chatflow_direct_uploads`,
+    {
+      directUploadWillCreateBlobWithXHR: xhr => {
+        xhr.setRequestHeader(
+          'api_access_token',
+          currentUser.value.access_token
+        );
+      },
+    }
+  );
+  upload.create((error, blob) => {
+    isUploadingMedia.value = false;
+    if (error) {
+      useAlert(t('BROADCAST.MESSAGE.MEDIA_UPLOAD_ERROR'));
+      return;
+    }
+    form.message.attachment = blob.signed_id;
+    form.message.attachment_name = blob.filename;
+  });
+};
+
+const clearMedia = () => {
+  form.message.attachment = null;
+  form.message.attachment_name = '';
+};
+
+// --- Official template picker ---
+const templateKey = template => `${template.name}::${template.language}`;
+
+const loadTemplates = async () => {
+  const inboxId = broadcast.value?.inbox_id;
+  if (form.mode !== 'official' || !inboxId) {
+    templates.value = [];
+    return;
+  }
+  try {
+    const { data } = await BroadcastsAPI.templates(inboxId);
+    templates.value = data.templates || [];
+  } catch (error) {
+    templates.value = [];
+    useAlert(error?.message || t('BROADCAST.MESSAGE.TEMPLATE_LOAD_ERROR'));
+  }
+};
+
+onMounted(async () => {
+  store.dispatch('labels/get');
+  store.dispatch('funnels/get');
+  store.dispatch('contacts/get', { page: 1 });
+  try {
+    const data = await store.dispatch('broadcasts/show', props.broadcastId);
+    hydrate(data);
+    await loadTemplates();
+  } catch (error) {
+    useAlert(error?.message || t('BROADCAST.COMPOSER.LOAD_ERROR'));
+  }
+});
+
+const onTemplateSelect = () => {
+  const template = templates.value.find(
+    tpl => templateKey(tpl) === selectedTemplateKey.value
+  );
+  if (!template) return;
+  form.message.template = {
+    name: template.name,
+    language: template.language,
+    namespace: template.namespace || '',
+  };
+};
+
+// Best-effort body preview from the template's components.
+const templatePreview = computed(() => {
+  const template = templates.value.find(
+    tpl => templateKey(tpl) === selectedTemplateKey.value
+  );
+  const body = (template?.components || []).find(c => c.type === 'BODY');
+  return body?.text || '';
+});
+
+// --- Manual contact selection ---
+const filteredContacts = computed(() => {
+  const term = contactSearch.value.trim().toLowerCase();
+  const list = term
+    ? (contacts.value || []).filter(contact => {
+        const name = (contact.name || '').toLowerCase();
+        const phone = (contact.phone_number || '').toLowerCase();
+        return name.includes(term) || phone.includes(term);
+      })
+    : contacts.value || [];
+  return list.slice(0, 50);
+});
+
+const selectedContacts = computed(() =>
+  (contacts.value || []).filter(contact =>
+    form.audience.contact_ids.includes(contact.id)
+  )
+);
+
+// --- List import (paste / CSV / TXT) ---
+const parsePhoneNumbers = raw => {
+  const seen = new Set();
+  return (raw || '')
+    .split(/[\n,;]/)
+    .map(entry => entry.trim().replace(/[^\d+]/g, ''))
+    .map(entry => entry.replace(/(?!^)\+/g, ''))
+    .filter(entry => {
+      if (!entry || entry === '+') return false;
+      if (seen.has(entry)) return false;
+      seen.add(entry);
+      return true;
+    });
+};
+
+const applyImport = () => {
+  form.audience.phone_numbers = parsePhoneNumbers(importText.value);
+};
+
+const importFromFile = event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    importText.value = importText.value
+      ? `${importText.value}\n${reader.result}`
+      : String(reader.result);
+    applyImport();
+  };
+  reader.readAsText(file);
+  // eslint-disable-next-line no-param-reassign
+  event.target.value = '';
+};
+
+const clearImport = () => {
+  importText.value = '';
+  form.audience.phone_numbers = [];
 };
 
 const buildPayload = () => {
@@ -207,6 +358,7 @@ watch(
   () => form.mode,
   () => {
     audienceCount.value = null;
+    loadTemplates();
   }
 );
 </script>
@@ -308,51 +460,112 @@ watch(
                 class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
               />
             </label>
-            <!-- TODO: replace with a real media uploader (signed_id). For now
-                 this is just a manual attachment name reference. -->
             <label class="flex flex-col gap-1.5">
+              <span class="text-xs font-medium text-n-slate-11">
+                {{ t('BROADCAST.MESSAGE.CAPTION') }}
+              </span>
+              <textarea
+                v-model="form.message.caption"
+                rows="2"
+                :placeholder="t('BROADCAST.MESSAGE.CAPTION_PLACEHOLDER')"
+                class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
+              />
+            </label>
+
+            <div class="flex flex-col gap-1.5">
               <span class="text-xs font-medium text-n-slate-11">
                 {{ t('BROADCAST.MESSAGE.MEDIA') }}
               </span>
-              <input
-                v-model="form.message.attachment_name"
-                type="text"
-                :placeholder="t('BROADCAST.MESSAGE.MEDIA_PLACEHOLDER')"
-                class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
-              />
+              <div
+                v-if="form.message.attachment"
+                class="flex items-center gap-2 px-3 h-10 rounded-lg bg-n-alpha-2 border border-n-weak"
+              >
+                <Icon
+                  icon="i-lucide-paperclip"
+                  class="size-4 text-n-slate-11 shrink-0"
+                />
+                <span class="flex-1 text-xs text-n-slate-12 truncate">
+                  {{ form.message.attachment_name }}
+                </span>
+                <Button
+                  variant="ghost"
+                  color="ruby"
+                  size="sm"
+                  icon="i-lucide-x"
+                  @click="clearMedia"
+                />
+              </div>
+              <label
+                v-else
+                class="flex items-center justify-center gap-2 h-10 rounded-lg border border-dashed border-n-weak text-xs text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors"
+              >
+                <Icon
+                  v-if="!isUploadingMedia"
+                  icon="i-lucide-upload"
+                  class="size-4"
+                />
+                <span>
+                  {{
+                    isUploadingMedia
+                      ? t('BROADCAST.MESSAGE.MEDIA_UPLOADING')
+                      : t('BROADCAST.MESSAGE.MEDIA_UPLOAD')
+                  }}
+                </span>
+                <input
+                  type="file"
+                  class="hidden"
+                  accept="image/*,video/*,application/pdf,audio/*"
+                  @change="uploadMedia"
+                />
+              </label>
               <p class="text-[11px] text-n-slate-10 m-0">
-                {{ t('BROADCAST.MESSAGE.MEDIA_HINT') }}
+                {{ t('BROADCAST.MESSAGE.MEDIA_ACCEPT_HINT') }}
               </p>
-            </label>
+            </div>
           </template>
 
           <template v-else>
-            <!-- TODO: replace manual entry with a template picker that loads
-                 approved Meta templates by name/language/namespace. -->
-            <label class="flex flex-col gap-1.5">
+            <label v-if="templates.length" class="flex flex-col gap-1.5">
               <span class="text-xs font-medium text-n-slate-11">
-                {{ t('BROADCAST.MESSAGE.TEMPLATE_NAME') }}
+                {{ t('BROADCAST.MESSAGE.TEMPLATE') }}
               </span>
-              <input
-                v-model="form.message.template.name"
-                type="text"
-                :placeholder="t('BROADCAST.MESSAGE.TEMPLATE_NAME_PLACEHOLDER')"
-                class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
-              />
+              <select
+                v-model="selectedTemplateKey"
+                class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+                @change="onTemplateSelect"
+              >
+                <option value="" disabled>
+                  {{ t('BROADCAST.MESSAGE.TEMPLATE_SELECT') }}
+                </option>
+                <option
+                  v-for="tpl in templates"
+                  :key="`${tpl.name}::${tpl.language}`"
+                  :value="`${tpl.name}::${tpl.language}`"
+                >
+                  {{ tpl.name }} ({{ tpl.language }})
+                </option>
+              </select>
             </label>
-            <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-medium text-n-slate-11">
-                {{ t('BROADCAST.MESSAGE.TEMPLATE_LANGUAGE') }}
+
+            <div
+              v-if="templatePreview"
+              class="flex flex-col gap-1 p-3 rounded-lg bg-n-alpha-1 border border-n-weak"
+            >
+              <span class="text-[11px] font-medium text-n-slate-10">
+                {{ t('BROADCAST.MESSAGE.TEMPLATE_PREVIEW') }}
               </span>
-              <input
-                v-model="form.message.template.language"
-                type="text"
-                :placeholder="
-                  t('BROADCAST.MESSAGE.TEMPLATE_LANGUAGE_PLACEHOLDER')
-                "
-                class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
-              />
-            </label>
+              <p class="text-xs text-n-slate-12 m-0 whitespace-pre-line">
+                {{ templatePreview }}
+              </p>
+            </div>
+
+            <p v-if="!templates.length" class="text-[11px] text-n-slate-10 m-0">
+              {{
+                broadcast?.inbox_id
+                  ? t('BROADCAST.MESSAGE.TEMPLATE_EMPTY')
+                  : t('BROADCAST.MESSAGE.TEMPLATE_NO_INBOX')
+              }}
+            </p>
           </template>
         </section>
 
@@ -459,15 +672,120 @@ watch(
             </p>
           </div>
 
-          <!-- TODO (out of P3 scope): manual contact selection + phone number
-               import (audience.contact_ids / audience.phone_numbers). -->
-          <div
-            class="flex items-center gap-2 p-3 rounded-xl border border-dashed border-n-weak text-n-slate-10"
-          >
-            <Icon icon="i-lucide-users" class="size-4" />
-            <span class="text-xs">
-              {{ t('BROADCAST.AUDIENCE.MANUAL_SOON') }}
+          <!-- Manual contact selection -->
+          <div class="flex flex-col gap-2">
+            <span class="text-xs font-medium text-n-slate-11">
+              {{ t('BROADCAST.AUDIENCE.CONTACTS') }}
             </span>
+            <div v-if="selectedContacts.length" class="flex flex-wrap gap-2">
+              <span
+                v-for="contact in selectedContacts"
+                :key="`sel-${contact.id}`"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-n-teal-8 bg-n-teal-3 text-xs font-medium text-n-teal-12"
+              >
+                {{ contact.name || contact.phone_number }}
+                <button
+                  type="button"
+                  class="cursor-pointer text-n-teal-11 hover:text-n-teal-12"
+                  @click="toggleId(form.audience.contact_ids, contact.id)"
+                >
+                  <Icon icon="i-lucide-x" class="size-3" />
+                </button>
+              </span>
+            </div>
+            <input
+              v-model="contactSearch"
+              type="text"
+              :placeholder="t('BROADCAST.AUDIENCE.CONTACTS_SEARCH')"
+              class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+            />
+            <p
+              v-if="form.audience.contact_ids.length"
+              class="text-[11px] text-n-slate-10 m-0"
+            >
+              {{
+                t('BROADCAST.AUDIENCE.CONTACTS_SELECTED', {
+                  count: form.audience.contact_ids.length,
+                })
+              }}
+            </p>
+            <div
+              v-if="filteredContacts.length"
+              class="flex flex-col max-h-56 overflow-auto rounded-xl bg-n-alpha-1 border border-n-weak divide-y divide-n-weak"
+            >
+              <label
+                v-for="contact in filteredContacts"
+                :key="`ct-${contact.id}`"
+                class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-n-alpha-2"
+              >
+                <input
+                  type="checkbox"
+                  class="accent-n-teal-9"
+                  :checked="form.audience.contact_ids.includes(contact.id)"
+                  @change="toggleId(form.audience.contact_ids, contact.id)"
+                />
+                <span class="flex flex-col min-w-0">
+                  <span class="text-sm text-n-slate-12 truncate">
+                    {{ contact.name || contact.phone_number }}
+                  </span>
+                  <span
+                    v-if="contact.phone_number"
+                    class="text-[11px] text-n-slate-10 truncate"
+                  >
+                    {{ contact.phone_number }}
+                  </span>
+                </span>
+              </label>
+            </div>
+            <p v-else class="text-[11px] text-n-slate-10 m-0">
+              {{ t('BROADCAST.AUDIENCE.CONTACTS_EMPTY') }}
+            </p>
+          </div>
+
+          <!-- Import list (paste / CSV / TXT) -->
+          <div class="flex flex-col gap-2">
+            <span class="text-xs font-medium text-n-slate-11">
+              {{ t('BROADCAST.AUDIENCE.IMPORT') }}
+            </span>
+            <textarea
+              v-model="importText"
+              rows="4"
+              :placeholder="t('BROADCAST.AUDIENCE.IMPORT_PLACEHOLDER')"
+              class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
+              @input="applyImport"
+            />
+            <div class="flex items-center gap-3 flex-wrap">
+              <label
+                class="inline-flex items-center gap-2 px-3 h-9 rounded-lg border border-dashed border-n-weak text-xs text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors"
+              >
+                <Icon icon="i-lucide-file-up" class="size-4" />
+                <span>{{ t('BROADCAST.AUDIENCE.IMPORT_FILE') }}</span>
+                <input
+                  type="file"
+                  class="hidden"
+                  accept=".csv,.txt"
+                  @change="importFromFile"
+                />
+              </label>
+              <span
+                v-if="form.audience.phone_numbers.length"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-n-teal-3 text-xs font-medium text-n-teal-12"
+              >
+                {{
+                  t('BROADCAST.AUDIENCE.IMPORT_COUNT', {
+                    count: form.audience.phone_numbers.length,
+                  })
+                }}
+              </span>
+              <button
+                v-if="form.audience.phone_numbers.length"
+                type="button"
+                class="text-xs text-n-ruby-11 cursor-pointer hover:underline"
+                @click="clearImport"
+              >
+                {{ t('BROADCAST.AUDIENCE.IMPORT_CLEAR') }}
+              </button>
+            </div>
           </div>
         </section>
 

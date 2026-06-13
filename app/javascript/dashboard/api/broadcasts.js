@@ -25,6 +25,12 @@ class BroadcastsAPI extends ApiClient {
   audiencePreview(id) {
     return axios.get(`${this.url}/${id}/audience_preview`);
   }
+
+  templates(inboxId) {
+    return axios.get(`${this.url}/templates`, {
+      params: { inbox_id: inboxId },
+    });
+  }
 }
 
 export default new BroadcastsAPI();
