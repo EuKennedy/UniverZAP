@@ -40,6 +40,9 @@ const { accountScopedRoute, isOnChatwootCloud } = useAccount();
 // UniverZAP: legacy Captain (robot) hidden from the sidebar — Athenas is the
 // AI agent here. Backend kept; only the UI entry is suppressed.
 const captainVisible = false;
+// UniverZAP: native Chatwoot campaigns hidden — replaced by our own
+// broadcast ("Campanhas de disparo") module.
+const campaignsVisible = false;
 const store = useStore();
 const searchShortcut = useKbd([`$mod`, 'k']);
 const { t } = useI18n();
@@ -545,28 +548,32 @@ const menuItems = computed(() => {
         },
       ],
     },
-    {
-      name: 'Campaigns',
-      label: t('SIDEBAR.CAMPAIGNS'),
-      icon: 'i-lucide-megaphone',
-      children: [
-        {
-          name: 'Live chat',
-          label: t('SIDEBAR.LIVE_CHAT'),
-          to: accountScopedRoute('campaigns_livechat_index'),
-        },
-        {
-          name: 'SMS',
-          label: t('SIDEBAR.SMS'),
-          to: accountScopedRoute('campaigns_sms_index'),
-        },
-        {
-          name: 'WhatsApp',
-          label: t('SIDEBAR.WHATSAPP'),
-          to: accountScopedRoute('campaigns_whatsapp_index'),
-        },
-      ],
-    },
+    ...(campaignsVisible
+      ? [
+          {
+            name: 'Campaigns',
+            label: t('SIDEBAR.CAMPAIGNS'),
+            icon: 'i-lucide-megaphone',
+            children: [
+              {
+                name: 'Live chat',
+                label: t('SIDEBAR.LIVE_CHAT'),
+                to: accountScopedRoute('campaigns_livechat_index'),
+              },
+              {
+                name: 'SMS',
+                label: t('SIDEBAR.SMS'),
+                to: accountScopedRoute('campaigns_sms_index'),
+              },
+              {
+                name: 'WhatsApp',
+                label: t('SIDEBAR.WHATSAPP'),
+                to: accountScopedRoute('campaigns_whatsapp_index'),
+              },
+            ],
+          },
+        ]
+      : []),
     {
       name: 'Portals',
       label: t('SIDEBAR.HELP_CENTER.TITLE'),
