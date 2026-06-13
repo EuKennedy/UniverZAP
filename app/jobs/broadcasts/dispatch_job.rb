@@ -27,7 +27,10 @@ class Broadcasts::DispatchJob < ApplicationJob
     rows = contact_ids.map do |contact_id|
       { broadcast_id: @broadcast.id, contact_id: contact_id, status: 0, created_at: now, updated_at: now }
     end
+    # Bulk insert is intentional — no per-row callbacks needed when seeding recipients.
+    # rubocop:disable Rails/SkipsModelValidations
     @broadcast.broadcast_recipients.insert_all(rows)
+    # rubocop:enable Rails/SkipsModelValidations
   end
 
   def send_batch
