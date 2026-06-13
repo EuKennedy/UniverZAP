@@ -13,16 +13,40 @@ class Broadcasts::RecipientSenderService
   def perform
     return mark_failed('missing phone_number') if @contact.phone_number.blank?
 
-    conversation = find_or_create_conversation
-    send_message(conversation)
-
-    @recipient.update!(status: :sent, sent_at: Time.current, conversation_id: conversation.display_id)
+    @broadcast.mode == 'official' ? send_official : send_waha
   rescue StandardError => e
     Rails.logger.error("[Broadcast send] recipient=#{@recipient.id} #{e.message}")
     mark_failed(e.message)
   end
 
   private
+
+  # WAHA (unofficial): build the message through Messages::MessageBuilder so it
+  # renders in Chatwoot AND ships via the WAHA connector.
+  def send_waha
+    conversation = find_or_create_conversation
+    send_message(conversation)
+    @recipient.update!(status: :sent, sent_at: Time.current, conversation_id: conversation.display_id)
+  end
+
+  # Official (Meta Cloud API): send an approved template, reusing Chatwoot's
+  # existing template machinery (same path as Whatsapp::OneoffCampaignService).
+  def send_official
+    channel = @inbox.channel
+    raise 'official mode needs a WhatsApp Cloud inbox' unless channel.respond_to?(:send_template)
+
+    template_params = @broadcast.message['template']
+    raise 'missing template config' if template_params.blank?
+
+    name, namespace, lang_code, parameters = Whatsapp::TemplateProcessorService.new(
+      channel: channel, template_params: template_params, message: nil
+    ).call
+    raise 'template not resolved' if name.blank?
+
+    channel.send_template(@contact.phone_number,
+                          { name: name, namespace: namespace, lang_code: lang_code, parameters: parameters }, nil)
+    @recipient.update!(status: :sent, sent_at: Time.current)
+  end
 
   def find_or_create_conversation
     contact_inbox = find_or_build_contact_inbox
