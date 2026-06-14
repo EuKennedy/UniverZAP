@@ -101,6 +101,7 @@
       "CONTACTS_SELECTED": "{count} selected",
       "CONTACTS_HINT": "{count} contacts — search by name or phone",
       "CONTACTS_TOTAL": "{count} contacts total — search to filter",
+      "CONTACTS_LOADED": "{count} contacts loaded — scroll for more or search to filter",
       "CONTACTS_LOADING": "Loading contacts…",
       "IMPORT": "Import list",
       "IMPORT_PLACEHOLDER": "Paste phone numbers — one per line or separated by comma/semicolon.",

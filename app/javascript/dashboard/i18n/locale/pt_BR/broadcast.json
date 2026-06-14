@@ -101,6 +101,7 @@
       "CONTACTS_SELECTED": "{count} selecionados",
       "CONTACTS_HINT": "{count} contatos — busque por nome ou telefone",
       "CONTACTS_TOTAL": "{count} contatos no total — busque para filtrar",
+      "CONTACTS_LOADED": "{count} contatos carregados — role para ver mais ou busque para filtrar",
       "CONTACTS_LOADING": "Carregando contatos…",
       "IMPORT": "Importar lista",
       "IMPORT_PLACEHOLDER": "Cole os números — um por linha ou separados por vírgula/ponto e vírgula.",

@@ -11,6 +11,7 @@ import { useAlert } from 'dashboard/composables';
 import BroadcastsAPI from 'dashboard/api/broadcasts';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 
 const props = defineProps({
   broadcastId: { type: [String, Number], required: true },
@@ -27,7 +28,6 @@ const uiFlags = useMapGetter('broadcasts/getUIFlags');
 const accountId = useMapGetter('getCurrentAccountId');
 const currentUser = useMapGetter('getCurrentUser');
 const contacts = useMapGetter('contacts/getContacts');
-const contactsUiFlags = useMapGetter('contacts/getUIFlags');
 const contactsMeta = useMapGetter('contacts/getMeta');
 const inboxes = useMapGetter('inboxes/getInboxes');
 
@@ -88,16 +88,91 @@ const importText = ref('');
 const openSection = ref('');
 // Lazy-load contacts the first time the Contacts section is opened.
 const contactsLoaded = ref(false);
+
+// --- Contacts picker (paged, alphabetical, infinite scroll) ---
+// We accumulate pages into a local list so the picker keeps prior pages while
+// scrolling. The store's `contacts/get` replaces and `contacts/search` requires
+// a non-empty query, so the component owns the accumulated list and order.
+const SORT_ATTR = 'name';
+const CONTACTS_PER_PAGE = 15;
+const SCROLL_THRESHOLD = 80;
+
+const loadedContacts = ref([]);
+const contactsPage = ref(1);
+const isLoadingContacts = ref(false);
+const hasMoreContacts = ref(true);
+
+// Remembered labels for selected contacts so chips render across search pages.
+const contactLabelMap = reactive({});
+
+// Append a freshly fetched store page into the accumulator, de-duped by id.
+const appendContactsPage = page => {
+  const seen = new Set(loadedContacts.value.map(contact => contact.id));
+  page.forEach(contact => {
+    if (!seen.has(contact.id)) {
+      seen.add(contact.id);
+      loadedContacts.value.push(contact);
+    }
+  });
+};
+
+// Fetch the next page for the current query, honoring append vs reset.
+const fetchContactsPage = async ({ reset = false } = {}) => {
+  if (isLoadingContacts.value) return;
+  if (!reset && !hasMoreContacts.value) return;
+  isLoadingContacts.value = true;
+  const page = reset ? 1 : contactsPage.value + 1;
+  const query = contactSearch.value.trim();
+  try {
+    if (query) {
+      await store.dispatch('contacts/search', {
+        search: query,
+        page,
+        sortAttr: SORT_ATTR,
+        append: page > 1,
+      });
+      // `search` meta carries an explicit has_more flag.
+      hasMoreContacts.value = Boolean(contactsMeta.value?.hasMore);
+    } else {
+      // Blank query: the search endpoint rejects it, so page the index.
+      await store.dispatch('contacts/get', { page, sortAttr: SORT_ATTR });
+      // The index returns no has_more; a full page implies more may follow.
+      hasMoreContacts.value =
+        (contacts.value || []).length >= CONTACTS_PER_PAGE;
+    }
+    if (reset) loadedContacts.value = [];
+    appendContactsPage(contacts.value || []);
+    contactsPage.value = page;
+  } finally {
+    isLoadingContacts.value = false;
+  }
+};
+
+// Reset to page 1 for the active query and load fresh.
+const resetContactsPicker = () => {
+  contactsPage.value = 1;
+  hasMoreContacts.value = true;
+  loadedContacts.value = [];
+  fetchContactsPage({ reset: true });
+};
+
+// Infinite scroll: load the next page when nearing the bottom of the list.
+const onContactsScroll = event => {
+  const el = event.target;
+  const nearBottom =
+    el.scrollTop + el.clientHeight >= el.scrollHeight - SCROLL_THRESHOLD;
+  if (nearBottom && hasMoreContacts.value && !isLoadingContacts.value) {
+    fetchContactsPage();
+  }
+};
+
 const toggleSection = key => {
   openSection.value = openSection.value === key ? '' : key;
   if (openSection.value === 'contacts' && !contactsLoaded.value) {
     contactsLoaded.value = true;
-    store.dispatch('contacts/get', { page: 1 });
+    resetContactsPicker();
   }
 };
-
-// Remembered labels for selected contacts so chips render across search pages.
-const contactLabelMap = reactive({});
 
 const status = computed(() => broadcast.value?.status || 'draft');
 
@@ -289,7 +364,6 @@ onMounted(async () => {
   store.dispatch('labels/get');
   store.dispatch('funnels/get');
   store.dispatch('inboxes/get');
-  store.dispatch('contacts/get', { page: 1 });
   try {
     const data = await store.dispatch('broadcasts/show', props.broadcastId);
     hydrate(data);
@@ -320,16 +394,17 @@ const templatePreview = computed(() => {
   return body?.text || '';
 });
 
-// --- Manual contact selection (server-side search) ---
-// Render the current contacts page, capped for performance.
-const contactResults = computed(() => (contacts.value || []).slice(0, 30));
+// --- Manual contact selection (paged, alphabetical) ---
+// The accumulated, name-ascending list rendered in the picker.
+const contactResults = computed(() => loadedContacts.value);
 
-// Total contacts in the account (from the contacts meta), for the picker hint.
-const contactsTotal = computed(() => contactsMeta.value?.count || 0);
+// Contacts loaded so far in the picker (grows as the user scrolls).
+const contactsTotal = computed(() => loadedContacts.value.length);
 
-// True while the contacts store is fetching the first page or a search.
+// True only for the very first page load / search; later pages show an inline
+// "carregando…" row instead of replacing the whole list.
 const isFetchingContacts = computed(
-  () => contactsUiFlags.value?.isFetching || false
+  () => isLoadingContacts.value && loadedContacts.value.length === 0
 );
 
 const rememberContact = contact => {
@@ -350,20 +425,11 @@ const selectedContactChips = computed(() =>
   }))
 );
 
-// Debounced server search; blank query falls back to the first page.
+// Debounced search: reset to page 1 (non-append) and start over.
 let searchTimer = null;
-const runContactSearch = () => {
-  const query = contactSearch.value.trim();
-  if (query) {
-    store.dispatch('contacts/search', { search: query, page: 1 });
-  } else {
-    store.dispatch('contacts/get', { page: 1 });
-  }
-};
-
 const onContactSearch = () => {
   if (searchTimer) clearTimeout(searchTimer);
-  searchTimer = setTimeout(runContactSearch, 300);
+  searchTimer = setTimeout(resetContactsPicker, 300);
 };
 
 // --- List import (paste / CSV / TXT) ---
@@ -1003,7 +1069,7 @@ watch(
                 />
                 <p class="text-[11px] text-n-slate-10 m-0">
                   {{
-                    t('BROADCAST.AUDIENCE.CONTACTS_TOTAL', {
+                    t('BROADCAST.AUDIENCE.CONTACTS_LOADED', {
                       count: contactsTotal,
                     })
                   }}
@@ -1040,6 +1106,7 @@ watch(
                 <div
                   v-else-if="contactResults.length"
                   class="flex flex-col max-h-56 overflow-auto rounded-xl bg-n-alpha-1 border border-n-weak divide-y divide-n-weak"
+                  @scroll="onContactsScroll"
                 >
                   <label
                     v-for="contact in contactResults"
@@ -1051,6 +1118,12 @@ watch(
                       class="accent-n-teal-9 cursor-pointer"
                       :checked="form.audience.contact_ids.includes(contact.id)"
                       @change="toggleContact(contact)"
+                    />
+                    <Avatar
+                      :name="contact.name || contact.phone_number || '#'"
+                      :src="contact.thumbnail"
+                      :size="28"
+                      rounded-full
                     />
                     <span class="flex flex-col min-w-0">
                       <span class="text-sm text-n-slate-12 truncate">
@@ -1064,6 +1137,16 @@ watch(
                       </span>
                     </span>
                   </label>
+                  <div
+                    v-if="isLoadingContacts"
+                    class="flex items-center gap-2 px-3 py-2.5 text-[11px] text-n-slate-10"
+                  >
+                    <Icon
+                      icon="i-lucide-loader-circle"
+                      class="size-4 animate-spin"
+                    />
+                    <span>{{ t('BROADCAST.AUDIENCE.CONTACTS_LOADING') }}</span>
+                  </div>
                 </div>
                 <p v-else class="text-[11px] text-n-slate-10 m-0">
                   {{ t('BROADCAST.AUDIENCE.CONTACTS_EMPTY') }}
