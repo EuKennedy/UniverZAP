@@ -1,0 +1,46 @@
+{
+  "METAS": {
+    "TITLE": "Metas",
+    "SUBTITLE": "Defina metas de vendas por agente e acompanhe o progresso em tempo real.",
+    "NEW": "Nova meta",
+    "EMPTY_TITLE": "Nenhuma meta ainda",
+    "EMPTY_BODY": "Crie a primeira meta de vendas para começar a acompanhar o desempenho do time.",
+    "PERIOD": {
+      "DAILY": "Diária",
+      "WEEKLY": "Semanal",
+      "MONTHLY": "Mensal"
+    },
+    "CARD": {
+      "REMAINING": "Faltam {amount}",
+      "ACHIEVED": "Meta batida! 🎉",
+      "OF": "de",
+      "RANK": "#{rank}",
+      "EDIT": "Editar meta",
+      "DELETE": "Excluir meta"
+    },
+    "DELETE": {
+      "CONFIRM": "Tem certeza que deseja excluir a meta de {name}?",
+      "SUCCESS": "Meta excluída com sucesso.",
+      "ERROR": "Não foi possível excluir a meta."
+    },
+    "MODAL": {
+      "CREATE_TITLE": "Nova meta",
+      "EDIT_TITLE": "Editar meta",
+      "AGENT_LABEL": "Agente",
+      "AGENT_PLACEHOLDER": "Selecione um agente",
+      "PERIOD_LABEL": "Período",
+      "TARGET_LABEL": "Valor da meta",
+      "TARGET_PLACEHOLDER": "0,00",
+      "SAVE": "Salvar meta",
+      "CANCEL": "Cancelar",
+      "CREATE_SUCCESS": "Meta criada com sucesso.",
+      "UPDATE_SUCCESS": "Meta atualizada com sucesso.",
+      "CREATE_ERROR": "Não foi possível criar a meta.",
+      "UPDATE_ERROR": "Não foi possível atualizar a meta.",
+      "VALIDATION": {
+        "AGENT": "Selecione um agente.",
+        "AMOUNT": "Informe um valor de meta maior que zero."
+      }
+    }
+  }
+}

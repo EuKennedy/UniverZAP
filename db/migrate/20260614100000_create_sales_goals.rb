@@ -1,5 +1,5 @@
 class CreateSalesGoals < ActiveRecord::Migration[7.1]
-  def change # rubocop:disable Metrics/MethodLength
+  def change
     create_table :sales_goals do |t|
       t.references :account, null: false, index: true, foreign_key: true
       t.references :user, null: false, foreign_key: true

@@ -12,6 +12,7 @@ import { routes as captainRoutes } from './captain/captain.routes';
 import kanbanRoutes from './kanban/kanban.routes';
 import chatflowRoutes from './chatflow/chatflow.routes';
 import broadcastsRoutes from './broadcasts/broadcasts.routes';
+import metasRoutes from './metas/metas.routes';
 import athenasRoutes from './athenas/athenas.routes';
 import tasksRoutes from './tasks/tasks.routes';
 import AppContainer from './Dashboard.vue';
@@ -38,6 +39,7 @@ export default {
         ...kanbanRoutes.routes,
         ...chatflowRoutes.routes,
         ...broadcastsRoutes.routes,
+        ...metasRoutes.routes,
         ...athenasRoutes.routes,
         ...tasksRoutes.routes,
       ],

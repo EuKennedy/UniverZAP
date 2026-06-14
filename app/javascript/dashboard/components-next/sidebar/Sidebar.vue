@@ -340,6 +340,14 @@ const menuItems = computed(() => {
       activeOn: ['chatflow_index', 'chatflow_builder'],
     },
     {
+      name: 'Metas',
+      label: t('SIDEBAR.METAS'),
+      icon: 'i-lucide-target',
+      to: accountScopedRoute('metas_index'),
+      dataOnboarding: 'metas-nav',
+      activeOn: ['metas_index'],
+    },
+    {
       name: 'Tasks',
       label: t('SIDEBAR.TASKS'),
       icon: 'i-lucide-list-checks',

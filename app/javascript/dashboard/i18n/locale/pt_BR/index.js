@@ -32,6 +32,7 @@ import kanban from './kanban.json';
 import labelsMgmt from './labelsMgmt.json';
 import login from './login.json';
 import macros from './macros.json';
+import metas from './metas.json';
 import mfa from './mfa.json';
 import legal from './legal.json';
 import onboarding from './onboarding.json';
@@ -85,6 +86,7 @@ export default {
   ...labelsMgmt,
   ...login,
   ...macros,
+  ...metas,
   ...mfa,
   ...legal,
   ...onboarding,

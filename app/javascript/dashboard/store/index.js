@@ -45,6 +45,7 @@ import macros from './modules/macros';
 import notifications from './modules/notifications';
 import portals from './modules/helpCenterPortals';
 import reports from './modules/reports';
+import salesGoals from './modules/salesGoals';
 import sla from './modules/sla';
 import slaReports from './modules/SLAReports';
 import summaryReports from './modules/summaryReports';
@@ -116,6 +117,7 @@ export default createStore({
     notifications,
     portals,
     reports,
+    salesGoals,
     sla,
     slaReports,
     summaryReports,

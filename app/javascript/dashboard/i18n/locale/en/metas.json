@@ -1,0 +1,46 @@
+{
+  "METAS": {
+    "TITLE": "Goals",
+    "SUBTITLE": "Set sales targets per agent and track progress in real time.",
+    "NEW": "New goal",
+    "EMPTY_TITLE": "No goals yet",
+    "EMPTY_BODY": "Create your first sales goal to start tracking your team's performance.",
+    "PERIOD": {
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly"
+    },
+    "CARD": {
+      "REMAINING": "{amount} to go",
+      "ACHIEVED": "Goal reached! 🎉",
+      "OF": "of",
+      "RANK": "#{rank}",
+      "EDIT": "Edit goal",
+      "DELETE": "Delete goal"
+    },
+    "DELETE": {
+      "CONFIRM": "Are you sure you want to delete {name}'s goal?",
+      "SUCCESS": "Goal deleted successfully.",
+      "ERROR": "Could not delete the goal."
+    },
+    "MODAL": {
+      "CREATE_TITLE": "New goal",
+      "EDIT_TITLE": "Edit goal",
+      "AGENT_LABEL": "Agent",
+      "AGENT_PLACEHOLDER": "Select an agent",
+      "PERIOD_LABEL": "Period",
+      "TARGET_LABEL": "Target amount",
+      "TARGET_PLACEHOLDER": "0.00",
+      "SAVE": "Save goal",
+      "CANCEL": "Cancel",
+      "CREATE_SUCCESS": "Goal created successfully.",
+      "UPDATE_SUCCESS": "Goal updated successfully.",
+      "CREATE_ERROR": "Could not create the goal.",
+      "UPDATE_ERROR": "Could not update the goal.",
+      "VALIDATION": {
+        "AGENT": "Please select an agent.",
+        "AMOUNT": "Please enter a target amount greater than zero."
+      }
+    }
+  }
+}
