@@ -402,6 +402,12 @@ Rails.application.routes.draw do
           # exists, so it uploads against the account (not a conversation).
           resource :chatflow_direct_uploads, only: [:create], controller: 'chatflows/direct_uploads'
 
+          # Metas — sales goals (admin sets per-agent targets) and sale_records
+          # (agents register sale values against a contact). Progress is derived
+          # live from the records within each goal's current window.
+          resources :sales_goals, only: [:index, :create, :update, :destroy]
+          resources :sale_records, only: [:index, :create]
+
           # Personal-access-style tokens for the public Kanban API
           # (`/api/v2/kanban/*`). Raw value returned ONCE on create —
           # store SHA-256 digest only. Admin-only.
