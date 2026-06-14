@@ -27,6 +27,7 @@ const uiFlags = useMapGetter('broadcasts/getUIFlags');
 const accountId = useMapGetter('getCurrentAccountId');
 const currentUser = useMapGetter('getCurrentUser');
 const contacts = useMapGetter('contacts/getContacts');
+const inboxes = useMapGetter('inboxes/getInboxes');
 
 const THROTTLE_DEFAULTS = {
   batch_min: 3,
@@ -41,6 +42,7 @@ const broadcast = ref(null);
 // Local editable form state — synced from the loaded broadcast.
 const form = reactive({
   mode: 'waha',
+  inbox_id: null,
   message: {
     text: '',
     attachment: null,
@@ -73,6 +75,15 @@ const selectedTemplateKey = ref('');
 const contactSearch = ref('');
 const importText = ref('');
 
+// Audience accordion: only one section open at a time, all closed initially.
+const openSection = ref('');
+const toggleSection = key => {
+  openSection.value = openSection.value === key ? '' : key;
+};
+
+// Remembered labels for selected contacts so chips render across search pages.
+const contactLabelMap = reactive({});
+
 const status = computed(() => broadcast.value?.status || 'draft');
 
 const statusTone = computed(
@@ -86,11 +97,42 @@ const statusTone = computed(
     })[status.value] || 'text-n-slate-11 bg-n-alpha-2'
 );
 
+// Inboxes that can send in the current mode.
+const availableInboxes = computed(() => {
+  const list = inboxes.value || [];
+  if (form.mode === 'official') {
+    return list.filter(
+      inbox =>
+        inbox.channel_type === 'Channel::Whatsapp' &&
+        inbox.provider === 'whatsapp_cloud'
+    );
+  }
+  return list.filter(
+    inbox =>
+      inbox.channel_type === 'Channel::Api' ||
+      (inbox.channel_type === 'Channel::Whatsapp' &&
+        inbox.provider !== 'whatsapp_cloud')
+  );
+});
+
+const inboxChannelHint = inbox =>
+  inbox.channel_type === 'Channel::Api'
+    ? t('BROADCAST.MODE.WAHA.BADGE')
+    : t('BROADCAST.MODE.OFFICIAL.BADGE');
+
 const canLaunch = computed(
   () =>
     ['draft', 'paused'].includes(status.value) &&
-    Number(audienceCount.value) > 0
+    Number(audienceCount.value) > 0 &&
+    Boolean(form.inbox_id)
 );
+
+const launchHint = computed(() => {
+  if (!form.inbox_id) return t('BROADCAST.COMPOSER.LAUNCH_NEEDS_INBOX');
+  if (!(Number(audienceCount.value) > 0))
+    return t('BROADCAST.COMPOSER.LAUNCH_NEEDS_AUDIENCE');
+  return '';
+});
 
 const isRunning = computed(() => status.value === 'running');
 
@@ -105,6 +147,7 @@ const toLocalInput = iso => {
 const hydrate = record => {
   broadcast.value = record;
   form.mode = record.mode || 'waha';
+  form.inbox_id = record.inbox_id || null;
   const msg = record.message || {};
   form.message.text = msg.text || '';
   form.message.attachment = msg.attachment || null;
@@ -172,7 +215,7 @@ const clearMedia = () => {
 const templateKey = template => `${template.name}::${template.language}`;
 
 const loadTemplates = async () => {
-  const inboxId = broadcast.value?.inbox_id;
+  const inboxId = form.inbox_id;
   if (form.mode !== 'official' || !inboxId) {
     templates.value = [];
     return;
@@ -189,6 +232,7 @@ const loadTemplates = async () => {
 onMounted(async () => {
   store.dispatch('labels/get');
   store.dispatch('funnels/get');
+  store.dispatch('inboxes/get');
   store.dispatch('contacts/get', { page: 1 });
   try {
     const data = await store.dispatch('broadcasts/show', props.broadcastId);
@@ -220,24 +264,43 @@ const templatePreview = computed(() => {
   return body?.text || '';
 });
 
-// --- Manual contact selection ---
-const filteredContacts = computed(() => {
-  const term = contactSearch.value.trim().toLowerCase();
-  const list = term
-    ? (contacts.value || []).filter(contact => {
-        const name = (contact.name || '').toLowerCase();
-        const phone = (contact.phone_number || '').toLowerCase();
-        return name.includes(term) || phone.includes(term);
-      })
-    : contacts.value || [];
-  return list.slice(0, 50);
-});
+// --- Manual contact selection (server-side search) ---
+// Render the current contacts page, capped for performance.
+const contactResults = computed(() => (contacts.value || []).slice(0, 30));
 
-const selectedContacts = computed(() =>
-  (contacts.value || []).filter(contact =>
-    form.audience.contact_ids.includes(contact.id)
-  )
+const rememberContact = contact => {
+  contactLabelMap[contact.id] =
+    contact.name || contact.phone_number || `#${contact.id}`;
+};
+
+const toggleContact = contact => {
+  rememberContact(contact);
+  toggleId(form.audience.contact_ids, contact.id);
+};
+
+// Removable chips, labelled from the remembered map.
+const selectedContactChips = computed(() =>
+  form.audience.contact_ids.map(id => ({
+    id,
+    label: contactLabelMap[id] || `#${id}`,
+  }))
 );
+
+// Debounced server search; blank query falls back to the first page.
+let searchTimer = null;
+const runContactSearch = () => {
+  const query = contactSearch.value.trim();
+  if (query) {
+    store.dispatch('contacts/search', { search: query, page: 1 });
+  } else {
+    store.dispatch('contacts/get', { page: 1 });
+  }
+};
+
+const onContactSearch = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(runContactSearch, 300);
+};
 
 // --- List import (paste / CSV / TXT) ---
 const parsePhoneNumbers = raw => {
@@ -291,6 +354,7 @@ const buildPayload = () => {
   return {
     id: props.broadcastId,
     mode: form.mode,
+    inbox_id: form.inbox_id,
     message,
     audience: { ...form.audience },
     throttle: { ...form.throttle },
@@ -358,6 +422,20 @@ watch(
   () => form.mode,
   () => {
     audienceCount.value = null;
+    // Drop the selected inbox when it no longer fits the active mode.
+    if (
+      form.inbox_id &&
+      !availableInboxes.value.some(inbox => inbox.id === form.inbox_id)
+    ) {
+      form.inbox_id = null;
+    }
+    loadTemplates();
+  }
+);
+
+watch(
+  () => form.inbox_id,
+  () => {
     loadTemplates();
   }
 );
@@ -442,6 +520,34 @@ watch(
           </div>
         </section>
 
+        <!-- Inbox -->
+        <section class="flex flex-col gap-3">
+          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
+            {{ t('BROADCAST.COMPOSER.INBOX_TITLE') }}
+          </h2>
+          <select
+            v-model="form.inbox_id"
+            class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+          >
+            <option :value="null" disabled>
+              {{ t('BROADCAST.COMPOSER.INBOX_SELECT') }}
+            </option>
+            <option
+              v-for="inbox in availableInboxes"
+              :key="inbox.id"
+              :value="inbox.id"
+            >
+              {{ `${inbox.name} · ${inboxChannelHint(inbox)}` }}
+            </option>
+          </select>
+          <p
+            v-if="!availableInboxes.length"
+            class="text-[11px] text-n-amber-11 m-0"
+          >
+            {{ t('BROADCAST.COMPOSER.INBOX_EMPTY') }}
+          </p>
+        </section>
+
         <!-- Message -->
         <section class="flex flex-col gap-3">
           <h2 class="text-sm font-semibold text-n-slate-12 m-0">
@@ -449,6 +555,7 @@ watch(
           </h2>
 
           <template v-if="form.mode === 'waha'">
+            <!-- Plain text message (used when there is no media) -->
             <label class="flex flex-col gap-1.5">
               <span class="text-xs font-medium text-n-slate-11">
                 {{ t('BROADCAST.MESSAGE.TEXT') }}
@@ -459,57 +566,40 @@ watch(
                 :placeholder="t('BROADCAST.MESSAGE.TEXT_PLACEHOLDER')"
                 class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
               />
-            </label>
-            <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-medium text-n-slate-11">
-                {{ t('BROADCAST.MESSAGE.CAPTION') }}
-              </span>
-              <textarea
-                v-model="form.message.caption"
-                rows="2"
-                :placeholder="t('BROADCAST.MESSAGE.CAPTION_PLACEHOLDER')"
-                class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
-              />
+              <p class="text-[11px] text-n-slate-10 m-0">
+                {{ t('BROADCAST.MESSAGE.TEXT_HINT') }}
+              </p>
             </label>
 
+            <!-- Media + caption: one cohesive card -->
             <div class="flex flex-col gap-1.5">
               <span class="text-xs font-medium text-n-slate-11">
                 {{ t('BROADCAST.MESSAGE.MEDIA') }}
               </span>
-              <div
-                v-if="form.message.attachment"
-                class="flex items-center gap-2 px-3 h-10 rounded-lg bg-n-alpha-2 border border-n-weak"
-              >
-                <Icon
-                  icon="i-lucide-paperclip"
-                  class="size-4 text-n-slate-11 shrink-0"
-                />
-                <span class="flex-1 text-xs text-n-slate-12 truncate">
-                  {{ form.message.attachment_name }}
-                </span>
-                <Button
-                  variant="ghost"
-                  color="ruby"
-                  size="sm"
-                  icon="i-lucide-x"
-                  @click="clearMedia"
-                />
-              </div>
+
+              <!-- No media: dashed drop-zone -->
               <label
-                v-else
-                class="flex items-center justify-center gap-2 h-10 rounded-lg border border-dashed border-n-weak text-xs text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors"
+                v-if="!form.message.attachment"
+                class="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border border-dashed border-n-weak text-xs text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors"
               >
                 <Icon
-                  v-if="!isUploadingMedia"
-                  icon="i-lucide-upload"
-                  class="size-4"
+                  :icon="
+                    isUploadingMedia
+                      ? 'i-lucide-loader-circle'
+                      : 'i-lucide-paperclip'
+                  "
+                  class="size-5"
+                  :class="isUploadingMedia ? 'animate-spin' : ''"
                 />
-                <span>
+                <span class="font-medium">
                   {{
                     isUploadingMedia
                       ? t('BROADCAST.MESSAGE.MEDIA_UPLOADING')
                       : t('BROADCAST.MESSAGE.MEDIA_UPLOAD')
                   }}
+                </span>
+                <span class="text-[11px] text-n-slate-10">
+                  {{ t('BROADCAST.MESSAGE.MEDIA_ACCEPT_HINT') }}
                 </span>
                 <input
                   type="file"
@@ -518,9 +608,42 @@ watch(
                   @change="uploadMedia"
                 />
               </label>
-              <p class="text-[11px] text-n-slate-10 m-0">
-                {{ t('BROADCAST.MESSAGE.MEDIA_ACCEPT_HINT') }}
-              </p>
+
+              <!-- Media present: file row + caption read as one unit -->
+              <div
+                v-else
+                class="flex flex-col rounded-xl border border-n-weak bg-n-alpha-1 overflow-hidden"
+              >
+                <div
+                  class="flex items-center gap-2 px-3 py-2.5 border-b border-n-weak"
+                >
+                  <Icon
+                    icon="i-lucide-paperclip"
+                    class="size-4 text-n-teal-11 shrink-0"
+                  />
+                  <span class="flex-1 text-xs text-n-slate-12 truncate">
+                    {{ form.message.attachment_name }}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    color="ruby"
+                    size="sm"
+                    icon="i-lucide-x"
+                    @click="clearMedia"
+                  />
+                </div>
+                <div class="flex flex-col gap-1.5 p-3">
+                  <span class="text-[11px] font-medium text-n-slate-10">
+                    {{ t('BROADCAST.MESSAGE.CAPTION') }}
+                  </span>
+                  <textarea
+                    v-model="form.message.caption"
+                    rows="2"
+                    :placeholder="t('BROADCAST.MESSAGE.CAPTION_PLACEHOLDER')"
+                    class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
+                  />
+                </div>
+              </div>
             </div>
           </template>
 
@@ -561,7 +684,7 @@ watch(
 
             <p v-if="!templates.length" class="text-[11px] text-n-slate-10 m-0">
               {{
-                broadcast?.inbox_id
+                form.inbox_id
                   ? t('BROADCAST.MESSAGE.TEMPLATE_EMPTY')
                   : t('BROADCAST.MESSAGE.TEMPLATE_NO_INBOX')
               }}
@@ -570,221 +693,352 @@ watch(
         </section>
 
         <!-- Audience -->
-        <section class="flex flex-col gap-4">
+        <section class="flex flex-col gap-3">
           <h2 class="text-sm font-semibold text-n-slate-12 m-0">
             {{ t('BROADCAST.COMPOSER.AUDIENCE_TITLE') }}
           </h2>
 
-          <!-- Contact labels -->
-          <div class="flex flex-col gap-2">
-            <span class="text-xs font-medium text-n-slate-11">
-              {{ t('BROADCAST.AUDIENCE.CONTACT_LABELS') }}
-            </span>
-            <div v-if="labels.length" class="flex flex-wrap gap-2">
+          <div
+            class="flex flex-col rounded-xl border border-n-weak bg-n-solid-1 divide-y divide-n-weak overflow-hidden"
+          >
+            <!-- Contact labels -->
+            <div class="flex flex-col">
               <button
-                v-for="label in labels"
-                :key="`cl-${label.id}`"
                 type="button"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium cursor-pointer transition-all"
-                :class="
-                  form.audience.contact_label_ids.includes(label.id)
-                    ? 'border-n-teal-8 bg-n-teal-3 text-n-teal-12'
-                    : 'border-n-weak text-n-slate-11 hover:border-n-slate-6'
-                "
-                @click="toggleId(form.audience.contact_label_ids, label.id)"
+                class="flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors hover:bg-n-alpha-1"
+                @click="toggleSection('contactLabels')"
               >
-                <span
-                  class="size-2 rounded-sm"
-                  :style="{ backgroundColor: label.color }"
+                <Icon
+                  icon="i-lucide-chevron-down"
+                  class="size-4 text-n-slate-11 transition-transform"
+                  :class="openSection === 'contactLabels' ? 'rotate-180' : ''"
                 />
-                {{ label.title }}
-              </button>
-            </div>
-            <p v-else class="text-[11px] text-n-slate-10 m-0">
-              {{ t('BROADCAST.AUDIENCE.NO_LABELS') }}
-            </p>
-          </div>
-
-          <!-- Conversation labels -->
-          <div class="flex flex-col gap-2">
-            <span class="text-xs font-medium text-n-slate-11">
-              {{ t('BROADCAST.AUDIENCE.CONVERSATION_LABELS') }}
-            </span>
-            <div v-if="labels.length" class="flex flex-wrap gap-2">
-              <button
-                v-for="label in labels"
-                :key="`vl-${label.id}`"
-                type="button"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium cursor-pointer transition-all"
-                :class="
-                  form.audience.conversation_label_ids.includes(label.id)
-                    ? 'border-n-teal-8 bg-n-teal-3 text-n-teal-12'
-                    : 'border-n-weak text-n-slate-11 hover:border-n-slate-6'
-                "
-                @click="
-                  toggleId(form.audience.conversation_label_ids, label.id)
-                "
-              >
                 <span
-                  class="size-2 rounded-sm"
-                  :style="{ backgroundColor: label.color }"
-                />
-                {{ label.title }}
-              </button>
-            </div>
-            <p v-else class="text-[11px] text-n-slate-10 m-0">
-              {{ t('BROADCAST.AUDIENCE.NO_LABELS') }}
-            </p>
-          </div>
-
-          <!-- Kanban stages -->
-          <div class="flex flex-col gap-3">
-            <span class="text-xs font-medium text-n-slate-11">
-              {{ t('BROADCAST.AUDIENCE.FUNNEL_STAGES') }}
-            </span>
-            <div
-              v-for="funnel in funnels"
-              :key="funnel.id"
-              class="flex flex-col gap-2 p-3 rounded-xl bg-n-alpha-1 border border-n-weak"
-            >
-              <span class="text-xs font-semibold text-n-slate-12">
-                {{ funnel.name }}
-              </span>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="stage in funnel.stages || []"
-                  :key="`st-${funnel.id}-${stage.id}`"
-                  type="button"
-                  class="inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-medium cursor-pointer transition-all"
-                  :class="
-                    form.audience.funnel_stage_ids.includes(stage.id)
-                      ? 'border-n-teal-8 bg-n-teal-3 text-n-teal-12'
-                      : 'border-n-weak text-n-slate-11 hover:border-n-slate-6'
-                  "
-                  @click="toggleId(form.audience.funnel_stage_ids, stage.id)"
+                  class="flex-1 text-left text-sm font-medium text-n-slate-12"
                 >
-                  {{ stage.name }}
-                </button>
+                  {{ t('BROADCAST.AUDIENCE.CONTACT_LABELS') }}
+                </span>
+                <span
+                  v-if="form.audience.contact_label_ids.length"
+                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-n-teal-3 text-[11px] font-semibold text-n-teal-11 tabular-nums"
+                >
+                  {{ form.audience.contact_label_ids.length }}
+                </span>
+              </button>
+              <div v-if="openSection === 'contactLabels'" class="px-4 pb-4">
+                <div v-if="labels.length" class="flex flex-wrap gap-2">
+                  <button
+                    v-for="label in labels"
+                    :key="`cl-${label.id}`"
+                    type="button"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium cursor-pointer transition-colors"
+                    :class="
+                      form.audience.contact_label_ids.includes(label.id)
+                        ? 'border-n-teal-8 bg-n-teal-3 text-n-teal-12'
+                        : 'border-n-weak text-n-slate-11 hover:border-n-slate-6'
+                    "
+                    @click="toggleId(form.audience.contact_label_ids, label.id)"
+                  >
+                    <span
+                      class="size-2 rounded-sm"
+                      :style="{ backgroundColor: label.color }"
+                    />
+                    {{ label.title }}
+                  </button>
+                </div>
+                <p v-else class="text-[11px] text-n-slate-10 m-0">
+                  {{ t('BROADCAST.AUDIENCE.NO_LABELS') }}
+                </p>
               </div>
             </div>
-            <p v-if="!funnels.length" class="text-[11px] text-n-slate-10 m-0">
-              {{ t('BROADCAST.AUDIENCE.NO_FUNNELS') }}
-            </p>
-          </div>
 
-          <!-- Manual contact selection -->
-          <div class="flex flex-col gap-2">
-            <span class="text-xs font-medium text-n-slate-11">
-              {{ t('BROADCAST.AUDIENCE.CONTACTS') }}
-            </span>
-            <div v-if="selectedContacts.length" class="flex flex-wrap gap-2">
-              <span
-                v-for="contact in selectedContacts"
-                :key="`sel-${contact.id}`"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-n-teal-8 bg-n-teal-3 text-xs font-medium text-n-teal-12"
-              >
-                {{ contact.name || contact.phone_number }}
-                <button
-                  type="button"
-                  class="cursor-pointer text-n-teal-11 hover:text-n-teal-12"
-                  @click="toggleId(form.audience.contact_ids, contact.id)"
-                >
-                  <Icon icon="i-lucide-x" class="size-3" />
-                </button>
-              </span>
-            </div>
-            <input
-              v-model="contactSearch"
-              type="text"
-              :placeholder="t('BROADCAST.AUDIENCE.CONTACTS_SEARCH')"
-              class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
-            />
-            <p
-              v-if="form.audience.contact_ids.length"
-              class="text-[11px] text-n-slate-10 m-0"
-            >
-              {{
-                t('BROADCAST.AUDIENCE.CONTACTS_SELECTED', {
-                  count: form.audience.contact_ids.length,
-                })
-              }}
-            </p>
-            <div
-              v-if="filteredContacts.length"
-              class="flex flex-col max-h-56 overflow-auto rounded-xl bg-n-alpha-1 border border-n-weak divide-y divide-n-weak"
-            >
-              <label
-                v-for="contact in filteredContacts"
-                :key="`ct-${contact.id}`"
-                class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-n-alpha-2"
-              >
-                <input
-                  type="checkbox"
-                  class="accent-n-teal-9"
-                  :checked="form.audience.contact_ids.includes(contact.id)"
-                  @change="toggleId(form.audience.contact_ids, contact.id)"
-                />
-                <span class="flex flex-col min-w-0">
-                  <span class="text-sm text-n-slate-12 truncate">
-                    {{ contact.name || contact.phone_number }}
-                  </span>
-                  <span
-                    v-if="contact.phone_number"
-                    class="text-[11px] text-n-slate-10 truncate"
-                  >
-                    {{ contact.phone_number }}
-                  </span>
-                </span>
-              </label>
-            </div>
-            <p v-else class="text-[11px] text-n-slate-10 m-0">
-              {{ t('BROADCAST.AUDIENCE.CONTACTS_EMPTY') }}
-            </p>
-          </div>
-
-          <!-- Import list (paste / CSV / TXT) -->
-          <div class="flex flex-col gap-2">
-            <span class="text-xs font-medium text-n-slate-11">
-              {{ t('BROADCAST.AUDIENCE.IMPORT') }}
-            </span>
-            <textarea
-              v-model="importText"
-              rows="4"
-              :placeholder="t('BROADCAST.AUDIENCE.IMPORT_PLACEHOLDER')"
-              class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
-              @input="applyImport"
-            />
-            <div class="flex items-center gap-3 flex-wrap">
-              <label
-                class="inline-flex items-center gap-2 px-3 h-9 rounded-lg border border-dashed border-n-weak text-xs text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors"
-              >
-                <Icon icon="i-lucide-file-up" class="size-4" />
-                <span>{{ t('BROADCAST.AUDIENCE.IMPORT_FILE') }}</span>
-                <input
-                  type="file"
-                  class="hidden"
-                  accept=".csv,.txt"
-                  @change="importFromFile"
-                />
-              </label>
-              <span
-                v-if="form.audience.phone_numbers.length"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-n-teal-3 text-xs font-medium text-n-teal-12"
-              >
-                {{
-                  t('BROADCAST.AUDIENCE.IMPORT_COUNT', {
-                    count: form.audience.phone_numbers.length,
-                  })
-                }}
-              </span>
+            <!-- Conversation labels -->
+            <div class="flex flex-col">
               <button
-                v-if="form.audience.phone_numbers.length"
                 type="button"
-                class="text-xs text-n-ruby-11 cursor-pointer hover:underline"
-                @click="clearImport"
+                class="flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors hover:bg-n-alpha-1"
+                @click="toggleSection('conversationLabels')"
               >
-                {{ t('BROADCAST.AUDIENCE.IMPORT_CLEAR') }}
+                <Icon
+                  icon="i-lucide-chevron-down"
+                  class="size-4 text-n-slate-11 transition-transform"
+                  :class="
+                    openSection === 'conversationLabels' ? 'rotate-180' : ''
+                  "
+                />
+                <span
+                  class="flex-1 text-left text-sm font-medium text-n-slate-12"
+                >
+                  {{ t('BROADCAST.AUDIENCE.CONVERSATION_LABELS') }}
+                </span>
+                <span
+                  v-if="form.audience.conversation_label_ids.length"
+                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-n-teal-3 text-[11px] font-semibold text-n-teal-11 tabular-nums"
+                >
+                  {{ form.audience.conversation_label_ids.length }}
+                </span>
               </button>
+              <div
+                v-if="openSection === 'conversationLabels'"
+                class="px-4 pb-4"
+              >
+                <div v-if="labels.length" class="flex flex-wrap gap-2">
+                  <button
+                    v-for="label in labels"
+                    :key="`vl-${label.id}`"
+                    type="button"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium cursor-pointer transition-colors"
+                    :class="
+                      form.audience.conversation_label_ids.includes(label.id)
+                        ? 'border-n-teal-8 bg-n-teal-3 text-n-teal-12'
+                        : 'border-n-weak text-n-slate-11 hover:border-n-slate-6'
+                    "
+                    @click="
+                      toggleId(form.audience.conversation_label_ids, label.id)
+                    "
+                  >
+                    <span
+                      class="size-2 rounded-sm"
+                      :style="{ backgroundColor: label.color }"
+                    />
+                    {{ label.title }}
+                  </button>
+                </div>
+                <p v-else class="text-[11px] text-n-slate-10 m-0">
+                  {{ t('BROADCAST.AUDIENCE.NO_LABELS') }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Kanban -->
+            <div class="flex flex-col">
+              <button
+                type="button"
+                class="flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors hover:bg-n-alpha-1"
+                @click="toggleSection('kanban')"
+              >
+                <Icon
+                  icon="i-lucide-chevron-down"
+                  class="size-4 text-n-slate-11 transition-transform"
+                  :class="openSection === 'kanban' ? 'rotate-180' : ''"
+                />
+                <span
+                  class="flex-1 text-left text-sm font-medium text-n-slate-12"
+                >
+                  {{ t('BROADCAST.AUDIENCE.FUNNEL_STAGES') }}
+                </span>
+                <span
+                  v-if="form.audience.funnel_stage_ids.length"
+                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-n-teal-3 text-[11px] font-semibold text-n-teal-11 tabular-nums"
+                >
+                  {{ form.audience.funnel_stage_ids.length }}
+                </span>
+              </button>
+              <div
+                v-if="openSection === 'kanban'"
+                class="flex flex-col gap-3 px-4 pb-4"
+              >
+                <div
+                  v-for="funnel in funnels"
+                  :key="funnel.id"
+                  class="flex flex-col gap-2"
+                >
+                  <span
+                    class="text-[11px] font-semibold uppercase tracking-wide text-n-slate-10"
+                  >
+                    {{ funnel.name }}
+                  </span>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      v-for="stage in funnel.stages || []"
+                      :key="`st-${funnel.id}-${stage.id}`"
+                      type="button"
+                      class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors"
+                      :class="
+                        form.audience.funnel_stage_ids.includes(stage.id)
+                          ? 'bg-n-teal-9 text-white'
+                          : 'bg-n-alpha-2 text-n-slate-11 hover:bg-n-alpha-3'
+                      "
+                      @click="
+                        toggleId(form.audience.funnel_stage_ids, stage.id)
+                      "
+                    >
+                      {{ stage.name }}
+                    </button>
+                  </div>
+                </div>
+                <p
+                  v-if="!funnels.length"
+                  class="text-[11px] text-n-slate-10 m-0"
+                >
+                  {{ t('BROADCAST.AUDIENCE.NO_FUNNELS') }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Contacts -->
+            <div class="flex flex-col">
+              <button
+                type="button"
+                class="flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors hover:bg-n-alpha-1"
+                @click="toggleSection('contacts')"
+              >
+                <Icon
+                  icon="i-lucide-chevron-down"
+                  class="size-4 text-n-slate-11 transition-transform"
+                  :class="openSection === 'contacts' ? 'rotate-180' : ''"
+                />
+                <span
+                  class="flex-1 text-left text-sm font-medium text-n-slate-12"
+                >
+                  {{ t('BROADCAST.AUDIENCE.CONTACTS') }}
+                </span>
+                <span
+                  v-if="form.audience.contact_ids.length"
+                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-n-teal-3 text-[11px] font-semibold text-n-teal-11 tabular-nums"
+                >
+                  {{ form.audience.contact_ids.length }}
+                </span>
+              </button>
+              <div
+                v-if="openSection === 'contacts'"
+                class="flex flex-col gap-2 px-4 pb-4"
+              >
+                <input
+                  v-model="contactSearch"
+                  type="text"
+                  :placeholder="t('BROADCAST.AUDIENCE.CONTACTS_SEARCH')"
+                  class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+                  @input="onContactSearch"
+                />
+                <p class="text-[11px] text-n-slate-10 m-0">
+                  {{
+                    t('BROADCAST.AUDIENCE.CONTACTS_HINT', {
+                      count: form.audience.contact_ids.length,
+                    })
+                  }}
+                </p>
+                <div
+                  v-if="selectedContactChips.length"
+                  class="flex flex-wrap gap-2"
+                >
+                  <span
+                    v-for="chip in selectedContactChips"
+                    :key="`sel-${chip.id}`"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-n-teal-8 bg-n-teal-3 text-xs font-medium text-n-teal-12"
+                  >
+                    {{ chip.label }}
+                    <button
+                      type="button"
+                      class="cursor-pointer text-n-teal-11 hover:text-n-teal-12"
+                      @click="toggleId(form.audience.contact_ids, chip.id)"
+                    >
+                      <Icon icon="i-lucide-x" class="size-3" />
+                    </button>
+                  </span>
+                </div>
+                <div
+                  v-if="contactResults.length"
+                  class="flex flex-col max-h-56 overflow-auto rounded-xl bg-n-alpha-1 border border-n-weak divide-y divide-n-weak"
+                >
+                  <label
+                    v-for="contact in contactResults"
+                    :key="`ct-${contact.id}`"
+                    class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-n-alpha-2"
+                  >
+                    <input
+                      type="checkbox"
+                      class="accent-n-teal-9"
+                      :checked="form.audience.contact_ids.includes(contact.id)"
+                      @change="toggleContact(contact)"
+                    />
+                    <span class="flex flex-col min-w-0">
+                      <span class="text-sm text-n-slate-12 truncate">
+                        {{ contact.name || contact.phone_number }}
+                      </span>
+                      <span
+                        v-if="contact.phone_number"
+                        class="text-[11px] text-n-slate-10 truncate"
+                      >
+                        {{ contact.phone_number }}
+                      </span>
+                    </span>
+                  </label>
+                </div>
+                <p v-else class="text-[11px] text-n-slate-10 m-0">
+                  {{ t('BROADCAST.AUDIENCE.CONTACTS_EMPTY') }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Import list -->
+            <div class="flex flex-col">
+              <button
+                type="button"
+                class="flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors hover:bg-n-alpha-1"
+                @click="toggleSection('import')"
+              >
+                <Icon
+                  icon="i-lucide-chevron-down"
+                  class="size-4 text-n-slate-11 transition-transform"
+                  :class="openSection === 'import' ? 'rotate-180' : ''"
+                />
+                <span
+                  class="flex-1 text-left text-sm font-medium text-n-slate-12"
+                >
+                  {{ t('BROADCAST.AUDIENCE.IMPORT') }}
+                </span>
+                <span
+                  v-if="form.audience.phone_numbers.length"
+                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-n-teal-3 text-[11px] font-semibold text-n-teal-11 tabular-nums"
+                >
+                  {{ form.audience.phone_numbers.length }}
+                </span>
+              </button>
+              <div
+                v-if="openSection === 'import'"
+                class="flex flex-col gap-2 px-4 pb-4"
+              >
+                <textarea
+                  v-model="importText"
+                  rows="4"
+                  :placeholder="t('BROADCAST.AUDIENCE.IMPORT_PLACEHOLDER')"
+                  class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
+                  @input="applyImport"
+                />
+                <div class="flex items-center gap-3 flex-wrap">
+                  <label
+                    class="inline-flex items-center gap-2 px-3 h-9 rounded-lg border border-dashed border-n-weak text-xs text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors"
+                  >
+                    <Icon icon="i-lucide-file-up" class="size-4" />
+                    <span>{{ t('BROADCAST.AUDIENCE.IMPORT_FILE') }}</span>
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept=".csv,.txt"
+                      @change="importFromFile"
+                    />
+                  </label>
+                  <span
+                    v-if="form.audience.phone_numbers.length"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-n-teal-3 text-xs font-medium text-n-teal-12"
+                  >
+                    {{
+                      t('BROADCAST.AUDIENCE.IMPORT_COUNT', {
+                        count: form.audience.phone_numbers.length,
+                      })
+                    }}
+                  </span>
+                  <button
+                    v-if="form.audience.phone_numbers.length"
+                    type="button"
+                    class="text-xs text-n-ruby-11 cursor-pointer hover:underline"
+                    @click="clearImport"
+                  >
+                    {{ t('BROADCAST.AUDIENCE.IMPORT_CLEAR') }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -917,6 +1171,12 @@ watch(
             :disabled="!canLaunch"
             @click="launch"
           />
+          <p
+            v-if="!isRunning && launchHint"
+            class="text-[11px] text-n-amber-11 text-center m-0"
+          >
+            {{ launchHint }}
+          </p>
           <Button
             v-else
             class="w-full"
