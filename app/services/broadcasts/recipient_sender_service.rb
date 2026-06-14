@@ -69,10 +69,24 @@ class Broadcasts::RecipientSenderService
     ).perform
   end
 
+  # A campaign can carry a SEQUENCE of messages (message['messages']). Each is
+  # sent in order. Legacy single-message campaigns (flat text/attachment) still
+  # work via the fallback.
   def send_message(conversation)
+    broadcast_messages.each { |m| build_one(conversation, m) }
+  end
+
+  def broadcast_messages
     msg = @broadcast.message || {}
-    attachment = msg['attachment']
-    content = attachment.present? ? msg['caption'] : msg['text']
+    list = msg['messages']
+    list.is_a?(Array) && list.any? ? list : [msg]
+  end
+
+  def build_one(conversation, message_part)
+    attachment = message_part['attachment']
+    content = attachment.present? ? message_part['caption'] : message_part['text']
+    return if content.blank? && attachment.blank?
+
     params = { content: content, message_type: 'outgoing' }
     params[:attachments] = [attachment] if attachment.present?
     Messages::MessageBuilder.new(nil, conversation, params).perform
