@@ -120,6 +120,30 @@
     "SCHEDULE": {
       "AT": "Enviar em",
       "HINT": "Deixe em branco para enviar assim que disparar."
+    },
+    "PROGRESS": {
+      "TITLE": "Progresso do disparo",
+      "OPEN": "Acompanhar disparo",
+      "PROGRESS_LABEL": "Progresso",
+      "SENT": "Enviadas",
+      "FAILED": "Falhas",
+      "PENDING": "Pendentes",
+      "TOTAL": "Total",
+      "PAUSE": "Pausar",
+      "CLOSE": "Fechar",
+      "STATUS_RUNNING": "Em andamento",
+      "STATUS_PAUSED": "Pausado",
+      "STATUS_COMPLETED": "Concluído",
+      "EMPTY": "Nenhum destinatário ainda — as mensagens aparecem aqui conforme são enviadas.",
+      "LOAD_ERROR": "Não foi possível carregar o progresso do disparo.",
+      "PAUSE_ERROR": "Não foi possível pausar a campanha.",
+      "RECIPIENT": {
+        "PENDING": "Pendente",
+        "SENT": "Enviada",
+        "DELIVERED": "Entregue",
+        "READ": "Lida",
+        "FAILED": "Falhou"
+      }
     }
   }
 }

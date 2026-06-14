@@ -120,6 +120,30 @@
     "SCHEDULE": {
       "AT": "Send at",
       "HINT": "Leave empty to send as soon as you launch."
+    },
+    "PROGRESS": {
+      "TITLE": "Dispatch progress",
+      "OPEN": "Track dispatch",
+      "PROGRESS_LABEL": "Progress",
+      "SENT": "Sent",
+      "FAILED": "Failed",
+      "PENDING": "Pending",
+      "TOTAL": "Total",
+      "PAUSE": "Pause",
+      "CLOSE": "Close",
+      "STATUS_RUNNING": "Running",
+      "STATUS_PAUSED": "Paused",
+      "STATUS_COMPLETED": "Completed",
+      "EMPTY": "No recipients yet — messages will appear here as they go out.",
+      "LOAD_ERROR": "Could not load dispatch progress.",
+      "PAUSE_ERROR": "Could not pause the campaign.",
+      "RECIPIENT": {
+        "PENDING": "Pending",
+        "SENT": "Sent",
+        "DELIVERED": "Delivered",
+        "READ": "Read",
+        "FAILED": "Failed"
+      }
     }
   }
 }

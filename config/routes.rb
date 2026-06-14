@@ -392,6 +392,7 @@ Rails.application.routes.draw do
               post :launch
               post :pause
               get :audience_preview
+              get :recipients
             end
             collection do
               get :templates

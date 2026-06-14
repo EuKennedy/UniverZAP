@@ -48,7 +48,40 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
     render json: { templates: list.select { |tpl| tpl['status']&.downcase == 'approved' } }
   end
 
+  # Per-recipient progress log for the live tracking popup. Returns the rolling
+  # counts plus the most-recent recipients with their delivery status.
+  def recipients
+    list = @broadcast.broadcast_recipients.includes(:contact)
+                     .order(Arel.sql('sent_at DESC NULLS LAST'), id: :desc).limit(200)
+    render json: {
+      status: @broadcast.status,
+      counts: recipient_counts,
+      recipients: list.map { |recipient| recipient_payload(recipient) }
+    }
+  end
+
   private
+
+  def recipient_counts
+    rel = @broadcast.broadcast_recipients
+    {
+      total: rel.count,
+      sent: rel.where(status: %i[sent delivered read]).count,
+      failed: rel.status_failed.count,
+      pending: rel.status_pending.count
+    }
+  end
+
+  def recipient_payload(recipient)
+    {
+      id: recipient.id,
+      name: recipient.contact&.name,
+      phone: recipient.contact&.phone_number,
+      status: recipient.status,
+      sent_at: recipient.sent_at&.to_i,
+      error: recipient.error
+    }
+  end
 
   def fetch_broadcast
     @broadcast = Current.account.broadcasts.find(params[:id])

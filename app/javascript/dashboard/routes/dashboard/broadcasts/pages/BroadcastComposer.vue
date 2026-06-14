@@ -1,5 +1,12 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -12,6 +19,7 @@ import BroadcastsAPI from 'dashboard/api/broadcasts';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
+import BroadcastProgressModal from '../components/BroadcastProgressModal.vue';
 
 const props = defineProps({
   broadcastId: { type: [String, Number], required: true },
@@ -235,6 +243,37 @@ const launchHint = computed(() => {
 });
 
 const isRunning = computed(() => status.value === 'running');
+
+// Live dispatch progress popup — auto-opens after launch, reopenable later.
+const isProgressOpen = ref(false);
+
+// While running, refresh the inline right-rail stats so numbers aren't stale.
+const STATS_REFRESH_INTERVAL = 5000;
+let statsTimer = null;
+
+const stopStatsRefresh = () => {
+  if (statsTimer) {
+    clearInterval(statsTimer);
+    statsTimer = null;
+  }
+};
+
+const refreshStats = async () => {
+  try {
+    const data = await store.dispatch('broadcasts/show', props.broadcastId);
+    broadcast.value = data;
+  } catch (error) {
+    // Silent: a transient refresh failure shouldn't disrupt the composer.
+  }
+};
+
+const startStatsRefresh = () => {
+  stopStatsRefresh();
+  statsTimer = setInterval(() => {
+    if (status.value === 'running') refreshStats();
+    else stopStatsRefresh();
+  }, STATS_REFRESH_INTERVAL);
+};
 
 // Convert an ISO timestamp to the value a datetime-local input expects.
 const toLocalInput = iso => {
@@ -535,6 +574,8 @@ const launch = async () => {
     const data = await store.dispatch('broadcasts/launch', props.broadcastId);
     hydrate(data);
     useAlert(t('BROADCAST.COMPOSER.LAUNCHED'));
+    // Surface the live dispatch progress popup right after launch.
+    isProgressOpen.value = true;
   } catch (error) {
     useAlert(error?.message || t('BROADCAST.COMPOSER.LAUNCH_ERROR'));
   }
@@ -575,6 +616,14 @@ watch(
     loadTemplates();
   }
 );
+
+// Run the inline stats refresh only while the campaign is actively running.
+watch(status, value => {
+  if (value === 'running') startStatsRefresh();
+  else stopStatsRefresh();
+});
+
+onBeforeUnmount(stopStatsRefresh);
 </script>
 
 <template>
@@ -1338,6 +1387,15 @@ watch(
 
         <div class="flex flex-col gap-2 mt-auto">
           <Button
+            v-if="['running', 'paused'].includes(status)"
+            class="w-full"
+            variant="outline"
+            color="teal"
+            icon="i-lucide-activity"
+            :label="t('BROADCAST.PROGRESS.OPEN')"
+            @click="isProgressOpen = true"
+          />
+          <Button
             class="w-full"
             variant="outline"
             color="slate"
@@ -1371,5 +1429,11 @@ watch(
         </div>
       </aside>
     </div>
+
+    <BroadcastProgressModal
+      :broadcast-id="Number(props.broadcastId)"
+      :open="isProgressOpen"
+      @close="isProgressOpen = false"
+    />
   </div>
 </template>

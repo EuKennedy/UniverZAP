@@ -31,6 +31,10 @@ class BroadcastsAPI extends ApiClient {
       params: { inbox_id: inboxId },
     });
   }
+
+  recipients(id) {
+    return axios.get(`${this.url}/${id}/recipients`);
+  }
 }
 
 export default new BroadcastsAPI();
