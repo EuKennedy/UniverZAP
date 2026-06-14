@@ -12,10 +12,11 @@ import VideoCallButton from '../VideoCallButton.vue';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
 import { mapGetters } from 'vuex';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import RegisterSaleModal from 'dashboard/components-next/sale/RegisterSaleModal.vue';
 
 export default {
   name: 'ReplyBottomPanel',
-  components: { NextButton, FileUpload, VideoCallButton },
+  components: { NextButton, FileUpload, VideoCallButton, RegisterSaleModal },
   mixins: [inboxMixin],
   props: {
     isNote: {
@@ -169,6 +170,7 @@ export default {
   data() {
     return {
       ALLOWED_FILE_TYPES,
+      isSaleModalOpen: false,
     };
   },
   computed: {
@@ -176,7 +178,16 @@ export default {
       accountId: 'getCurrentAccountId',
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       uiFlags: 'integrations/getUIFlags',
+      currentChat: 'getSelectedChat',
     }),
+    saleContact() {
+      const senderId = this.currentChat?.meta?.sender?.id;
+      if (!senderId) return null;
+      return this.$store.getters['contacts/getContact'](senderId);
+    },
+    saleContactTotal() {
+      return this.saleContact?.additional_attributes?.valor_em_compras || 0;
+    },
     wrapClass() {
       return {
         'is-note-mode': this.isNote,
@@ -279,6 +290,16 @@ export default {
     toggleInsertArticle() {
       this.$emit('toggleInsertArticle');
     },
+    openSaleModal() {
+      this.isSaleModalOpen = true;
+    },
+    onSaleSaved() {
+      this.isSaleModalOpen = false;
+      const senderId = this.currentChat?.meta?.sender?.id;
+      if (senderId) {
+        this.$store.dispatch('contacts/show', { id: senderId });
+      }
+    },
   },
 };
 </script>
@@ -348,6 +369,15 @@ export default {
         @click="toggleMessageSignature"
       />
       <NextButton
+        v-if="saleContact"
+        v-tooltip.top-end="$t('METAS.SALE.BUTTON_TOOLTIP')"
+        icon="i-lucide-circle-dollar-sign"
+        teal
+        faded
+        sm
+        @click="openSaleModal"
+      />
+      <NextButton
         v-if="showQuotedReplyToggle"
         v-tooltip.top-end="quotedReplyToggleTooltip"
         icon="i-ph-quotes"
@@ -415,6 +445,15 @@ export default {
         @click="onSend"
       />
     </div>
+    <RegisterSaleModal
+      v-if="saleContact"
+      :open="isSaleModalOpen"
+      :contact-id="saleContact.id"
+      :contact-name="saleContact.name"
+      :current-total="saleContactTotal"
+      @close="isSaleModalOpen = false"
+      @saved="onSaleSaved"
+    />
   </div>
 </template>
 
