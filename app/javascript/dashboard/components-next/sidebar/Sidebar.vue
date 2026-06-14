@@ -18,6 +18,7 @@ import SidebarChangelogCard from './SidebarChangelogCard.vue';
 import SidebarChangelogButton from './SidebarChangelogButton.vue';
 import ChannelLeaf from './ChannelLeaf.vue';
 import ChannelIcon from 'next/icon/ChannelIcon.vue';
+import Icon from 'next/icon/Icon.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
 import Logo from 'next/icon/Logo.vue';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
@@ -878,6 +879,28 @@ const menuItems = computed(() => {
         class="flex flex-col gap-1 m-0 list-none min-w-0"
         :class="{ 'items-center': isEffectivelyCollapsed }"
       >
+        <li class="list-none min-w-0">
+          <a
+            href="https://grupo.univerzap.cloud/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center rounded-lg text-n-slate-11 transition-colors cursor-pointer hover:bg-n-alpha-2 hover:text-n-slate-12"
+            :class="
+              isEffectivelyCollapsed
+                ? 'justify-center size-10'
+                : 'gap-2 px-2 h-9'
+            "
+            :title="t('SIDEBAR.ZAPGRUP')"
+          >
+            <Icon icon="i-lucide-layout-grid" class="size-4 shrink-0" />
+            <span
+              v-if="!isEffectivelyCollapsed"
+              class="text-sm font-medium truncate"
+            >
+              {{ t('SIDEBAR.ZAPGRUP') }}
+            </span>
+          </a>
+        </li>
         <SidebarGroup
           v-for="item in menuItems"
           :key="item.name"
