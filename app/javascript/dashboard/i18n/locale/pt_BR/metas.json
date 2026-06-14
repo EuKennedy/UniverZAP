@@ -41,6 +41,21 @@
         "AGENT": "Selecione um agente.",
         "AMOUNT": "Informe um valor de meta maior que zero."
       }
+    },
+    "SALE": {
+      "BUTTON_TOOLTIP": "Registrar venda",
+      "MODAL": {
+        "TITLE": "Registrar venda",
+        "CURRENT_TOTAL": "Valor em compras atual",
+        "AMOUNT_LABEL": "Valor da venda",
+        "AMOUNT_PLACEHOLDER": "0,00",
+        "SAVE": "Registrar venda",
+        "CANCEL": "Cancelar",
+        "SUCCESS": "Venda registrada com sucesso! 💰",
+        "ERROR": "Não foi possível registrar a venda.",
+        "VALIDATION": "Informe um valor de venda maior que zero."
+      },
+      "CONTACT_PANEL_LABEL": "Valor em compras"
     }
   }
 }

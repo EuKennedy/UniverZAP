@@ -7,6 +7,8 @@ import BackButton from '../BackButton.vue';
 import InboxName from '../InboxName.vue';
 import MoreActions from './MoreActions.vue';
 import ConversationCostChip from 'dashboard/components-next/athenas/ConversationCostChip.vue';
+import RegisterSaleModal from 'dashboard/components-next/sale/RegisterSaleModal.vue';
+import Icon from 'next/icon/Icon.vue';
 import Avatar from 'next/avatar/Avatar.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import wootConstants from 'dashboard/constants/globals';
@@ -103,6 +105,24 @@ const copyConversationId = async () => {
     // error
   }
 };
+
+const isSaleModalOpen = ref(false);
+
+const saleContactTotal = computed(
+  () => currentContact.value?.additional_attributes?.valor_em_compras || 0
+);
+
+const openSaleModal = () => {
+  isSaleModalOpen.value = true;
+};
+
+const onSaleSaved = () => {
+  isSaleModalOpen.value = false;
+  const contactId = props.chat.meta?.sender?.id;
+  if (contactId) {
+    store.dispatch('contacts/show', { id: contactId });
+  }
+};
 </script>
 
 <template>
@@ -177,7 +197,23 @@ const copyConversationId = async () => {
         :cost-cents-brl="currentChat.athenas_cost_cents_brl || 0"
         class="hidden md:inline-flex"
       />
+      <button
+        v-tooltip.bottom="t('METAS.SALE.BUTTON_TOOLTIP')"
+        type="button"
+        class="flex items-center justify-center flex-shrink-0 rounded-lg size-7 text-n-teal-11 hover:bg-n-teal-3 cursor-pointer transition-colors"
+        @click="openSaleModal"
+      >
+        <Icon icon="i-lucide-circle-dollar-sign" class="size-4" />
+      </button>
       <MoreActions :conversation-id="currentChat.id" />
     </div>
+    <RegisterSaleModal
+      :open="isSaleModalOpen"
+      :contact-id="currentContact.id"
+      :contact-name="currentContact.name"
+      :current-total="saleContactTotal"
+      @close="isSaleModalOpen = false"
+      @saved="onSaleSaved"
+    />
   </div>
 </template>

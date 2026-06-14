@@ -41,6 +41,21 @@
         "AGENT": "Please select an agent.",
         "AMOUNT": "Please enter a target amount greater than zero."
       }
+    },
+    "SALE": {
+      "BUTTON_TOOLTIP": "Register sale",
+      "MODAL": {
+        "TITLE": "Register sale",
+        "CURRENT_TOTAL": "Current purchases value",
+        "AMOUNT_LABEL": "Sale amount",
+        "AMOUNT_PLACEHOLDER": "0,00",
+        "SAVE": "Register sale",
+        "CANCEL": "Cancel",
+        "SUCCESS": "Sale registered successfully! 💰",
+        "ERROR": "Could not register the sale.",
+        "VALIDATION": "Please enter a sale amount greater than zero."
+      },
+      "CONTACT_PANEL_LABEL": "Purchases value"
     }
   }
 }

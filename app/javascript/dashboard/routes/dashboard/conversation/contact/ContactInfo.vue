@@ -63,6 +63,13 @@ export default {
     additionalAttributes() {
       return this.contact.additional_attributes || {};
     },
+    purchasesValue() {
+      const value = Number(this.additionalAttributes.valor_em_compras) || 0;
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(value);
+    },
     location() {
       const {
         country = '',
@@ -286,6 +293,12 @@ export default {
             icon="map"
             emoji="🌍"
             :title="$t('CONTACT_PANEL.LOCATION')"
+          />
+          <ContactInfoRow
+            :value="purchasesValue"
+            icon="building-bank"
+            emoji="💰"
+            :title="$t('METAS.SALE.CONTACT_PANEL_LABEL')"
           />
           <SocialIcons :social-profiles="socialProfiles" />
         </div>
