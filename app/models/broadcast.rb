@@ -20,7 +20,8 @@
 # renders inside Chatwoot AND dispatches to WhatsApp via the WAHA connector.
 class Broadcast < ApplicationRecord
   belongs_to :account
-  belongs_to :inbox
+  # Inbox is chosen later in the composer, so a fresh broadcast starts without one.
+  belongs_to :inbox, optional: true
 
   has_many :broadcast_recipients, dependent: :destroy
 
