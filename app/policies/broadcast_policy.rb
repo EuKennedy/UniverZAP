@@ -31,6 +31,14 @@ class BroadcastPolicy < ApplicationPolicy
     @account_user.present?
   end
 
+  def templates?
+    @account_user.present?
+  end
+
+  def recipients?
+    @account_user.present?
+  end
+
   class Scope < Scope
     def resolve
       scope.where(account_id: account&.id)
