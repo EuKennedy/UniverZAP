@@ -241,6 +241,7 @@
     "SUPER_ADMIN_CONSOLE": "Console de Super Admin",
     "DOCS": "Ler documentação",
     "CHANGELOG": "Notas de versão",
+    "REPLAY_TOUR": "Refazer tour guiado",
     "LOGOUT": "Encerrar sessão"
   },
   "APP_GLOBAL": {

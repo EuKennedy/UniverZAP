@@ -3,6 +3,9 @@ import { computed } from 'vue';
 import Auth from 'dashboard/api/auth';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
+import { useAdmin } from 'dashboard/composables/useAdmin';
+import { emitter } from 'shared/helpers/mitt';
+import { ONBOARDING_TOUR_EVENTS } from 'dashboard/components-next/onboarding/onboardingSteps';
 import Avatar from 'next/avatar/Avatar.vue';
 import SidebarProfileMenuStatus from './SidebarProfileMenuStatus.vue';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
@@ -26,6 +29,7 @@ defineOptions({
 });
 
 const { t } = useI18n();
+const { isAdmin } = useAdmin();
 
 const currentUser = useMapGetter('getCurrentUser');
 const currentUserAvailability = useMapGetter('getCurrentUserAvailability');
@@ -98,6 +102,16 @@ const menuItems = computed(() => {
       link: 'https://www.chatwoot.com/changelog/',
       nativeLink: true,
       target: '_blank',
+    },
+    {
+      show: isAdmin.value,
+      showOnCustomBrandedInstance: true,
+      label: t('SIDEBAR_ITEMS.REPLAY_TOUR'),
+      icon: 'i-lucide-rocket',
+      click: () => {
+        emit('close');
+        emitter.emit(ONBOARDING_TOUR_EVENTS.START);
+      },
     },
     {
       show: currentUser.value.type === 'SuperAdmin',

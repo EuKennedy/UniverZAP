@@ -241,6 +241,7 @@
     "SUPER_ADMIN_CONSOLE": "SuperAdmin console",
     "DOCS": "Read documentation",
     "CHANGELOG": "Changelog",
+    "REPLAY_TOUR": "Replay guided tour",
     "LOGOUT": "Log out"
   },
   "APP_GLOBAL": {
