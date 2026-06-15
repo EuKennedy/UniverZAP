@@ -87,7 +87,20 @@
       "TEMPLATE_PREVIEW": "Pré-visualização",
       "TEMPLATE_EMPTY": "Nenhum template? Conecte um número Cloud API para carregar os templates aprovados.",
       "TEMPLATE_LOAD_ERROR": "Não foi possível carregar os templates.",
-      "TEMPLATE_NO_INBOX": "Defina a caixa de entrada da campanha para carregar os templates."
+      "TEMPLATE_NO_INBOX": "Defina a caixa de entrada da campanha para carregar os templates.",
+      "TEMPLATE_VARIABLES": "Variáveis do template",
+      "TEMPLATE_VARIABLE_PLACEHOLDER": "Valor da variável {variable}",
+      "TEMPLATE_MEDIA_HEADER": "Cabeçalho {type}",
+      "TEMPLATE_MEDIA_URL": "URL pública da mídia",
+      "TEMPLATE_MEDIA_NAME": "Nome do arquivo (opcional)",
+      "TEMPLATE_BUTTON_PARAMS": "Parâmetros dos botões",
+      "TEMPLATE_BUTTON_PARAM": "Valor do botão",
+      "TEMPLATE_TOKENS_HINT": "Inserir no campo selecionado:",
+      "TOKENS": {
+        "NAME": "Nome",
+        "PHONE": "Telefone",
+        "EMAIL": "Email"
+      }
     },
     "AUDIENCE": {
       "CONTACT_LABELS": "Etiquetas de contato",

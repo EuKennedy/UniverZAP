@@ -20,10 +20,25 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import BroadcastProgressModal from '../components/BroadcastProgressModal.vue';
+import {
+  buildTemplateParameters,
+  findComponentByType,
+  replaceTemplateVariables,
+  COMPONENT_TYPES,
+  MEDIA_FORMATS,
+} from 'dashboard/helper/templateHelper';
 
 const props = defineProps({
   broadcastId: { type: [String, Number], required: true },
 });
+
+// Contact tokens an operator can drop into a template variable so every
+// recipient gets a personalized value. Resolved per-contact on the backend.
+const CONTACT_TOKENS = [
+  { token: '{contact.name}', label: 'BROADCAST.MESSAGE.TOKENS.NAME' },
+  { token: '{contact.phone_number}', label: 'BROADCAST.MESSAGE.TOKENS.PHONE' },
+  { token: '{contact.email}', label: 'BROADCAST.MESSAGE.TOKENS.EMAIL' },
+];
 
 const { t } = useI18n();
 const router = useRouter();
@@ -87,6 +102,12 @@ const uploadingBlock = ref(null);
 // Approved Meta templates (official mode), loaded per inbox.
 const templates = ref([]);
 const selectedTemplateKey = ref('');
+// Official template variable values — the enhanced `processed_params` shape
+// ({ header, body, buttons }). Built from the selected template's components.
+const templateVars = ref({});
+// Tracks the currently focused variable input so the contact-token chips
+// insert the token into the right field.
+const activeVarField = ref(null);
 
 // Manual contact selection + list import (audience builder).
 const contactSearch = ref('');
@@ -311,7 +332,9 @@ const hydrate = record => {
     name: msg.template?.name || '',
     language: msg.template?.language || 'pt_BR',
     namespace: msg.template?.namespace || '',
+    processed_params: msg.template?.processed_params || {},
   };
+  templateVars.value = msg.template?.processed_params || {};
   const aud = record.audience || {};
   form.audience.contact_label_ids = aud.contact_label_ids || [];
   form.audience.conversation_label_ids = aud.conversation_label_ids || [];
@@ -412,26 +435,80 @@ onMounted(async () => {
   }
 });
 
+const selectedTemplate = computed(() =>
+  templates.value.find(tpl => templateKey(tpl) === selectedTemplateKey.value)
+);
+
+const headerComponent = computed(() =>
+  selectedTemplate.value
+    ? findComponentByType(selectedTemplate.value, COMPONENT_TYPES.HEADER)
+    : null
+);
+
+const hasMediaHeader = computed(() =>
+  MEDIA_FORMATS.includes(headerComponent.value?.format)
+);
+
+const mediaFormatLabel = computed(() => {
+  const f = headerComponent.value?.format || '';
+  return f ? f.charAt(0) + f.slice(1).toLowerCase() : '';
+});
+
+const isDocumentHeader = computed(
+  () => headerComponent.value?.format?.toLowerCase() === 'document'
+);
+
 const onTemplateSelect = () => {
-  const template = templates.value.find(
-    tpl => templateKey(tpl) === selectedTemplateKey.value
-  );
+  const template = selectedTemplate.value;
   if (!template) return;
   form.message.template = {
     name: template.name,
     language: template.language,
     namespace: template.namespace || '',
   };
+  // Build the variable scaffold (body vars, media header, button params)
+  // straight from the template's components.
+  templateVars.value = buildTemplateParameters(template, hasMediaHeader.value);
+  form.message.template.processed_params = templateVars.value;
 };
 
-// Best-effort body preview from the template's components.
+// Body text with current variable values substituted, for the live preview.
 const templatePreview = computed(() => {
-  const template = templates.value.find(
-    tpl => templateKey(tpl) === selectedTemplateKey.value
+  const body = (selectedTemplate.value?.components || []).find(
+    c => c.type === 'BODY'
   );
-  const body = (template?.components || []).find(c => c.type === 'BODY');
-  return body?.text || '';
+  const text = body?.text || '';
+  if (!text) return '';
+  return replaceTemplateVariables(text, templateVars.value || {});
 });
+
+// Variable label shown beside each body input, e.g. "{{1}}". Built in JS so
+// the literal braces never confuse the Vue template parser.
+const varLabel = key => `{{${key}}}`;
+
+// Insert a contact token into the variable input that was last focused.
+const insertToken = token => {
+  const field = activeVarField.value;
+  if (!field) return;
+  if (field.section === 'body' && templateVars.value.body) {
+    templateVars.value.body[field.key] =
+      `${templateVars.value.body[field.key] || ''}${token}`;
+  } else if (field.section === 'button' && templateVars.value.buttons) {
+    const btn = templateVars.value.buttons[field.key];
+    if (btn) btn.parameter = `${btn.parameter || ''}${token}`;
+  }
+};
+
+// Sync processed_params into the persisted template object as the operator
+// edits variables (templateVars is the same object reference, but keep the
+// link explicit for clarity / hydrate flows).
+watch(
+  templateVars,
+  value => {
+    if (form.message.template) form.message.template.processed_params = value;
+  },
+  { deep: true }
+);
 
 // --- Manual contact selection (paged, alphabetical) ---
 // The accumulated, name-ascending list rendered in the picker.
@@ -525,7 +602,14 @@ const buildPayload = () => {
             caption: block.caption,
           })),
         }
-      : { template: { ...form.message.template } };
+      : {
+          template: {
+            name: form.message.template.name,
+            language: form.message.template.language,
+            namespace: form.message.template.namespace,
+            processed_params: templateVars.value || {},
+          },
+        };
   return {
     id: props.broadcastId,
     mode: form.mode,
@@ -885,6 +969,111 @@ onBeforeUnmount(stopStatsRefresh);
               <p class="text-xs text-n-slate-12 m-0 whitespace-pre-line">
                 {{ templatePreview }}
               </p>
+            </div>
+
+            <!-- Media header (image/video/document templates) -->
+            <div
+              v-if="selectedTemplate && hasMediaHeader && templateVars.header"
+              class="flex flex-col gap-1.5"
+            >
+              <span class="text-xs font-medium text-n-slate-11">
+                {{
+                  t('BROADCAST.MESSAGE.TEMPLATE_MEDIA_HEADER', {
+                    type: mediaFormatLabel,
+                  })
+                }}
+              </span>
+              <input
+                v-model="templateVars.header.media_url"
+                type="url"
+                :placeholder="t('BROADCAST.MESSAGE.TEMPLATE_MEDIA_URL')"
+                class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+              />
+              <input
+                v-if="isDocumentHeader"
+                v-model="templateVars.header.media_name"
+                type="text"
+                :placeholder="t('BROADCAST.MESSAGE.TEMPLATE_MEDIA_NAME')"
+                class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+              />
+            </div>
+
+            <!-- Body variables -->
+            <div
+              v-if="selectedTemplate && templateVars.body"
+              class="flex flex-col gap-1.5"
+            >
+              <span class="text-xs font-medium text-n-slate-11">
+                {{ t('BROADCAST.MESSAGE.TEMPLATE_VARIABLES') }}
+              </span>
+              <div
+                v-for="(val, key) in templateVars.body"
+                :key="`body-${key}`"
+                class="flex items-center gap-2"
+              >
+                <span
+                  class="shrink-0 text-[11px] font-semibold text-n-slate-10 tabular-nums w-8"
+                >
+                  {{ varLabel(key) }}
+                </span>
+                <input
+                  v-model="templateVars.body[key]"
+                  type="text"
+                  :placeholder="
+                    t('BROADCAST.MESSAGE.TEMPLATE_VARIABLE_PLACEHOLDER', {
+                      variable: key,
+                    })
+                  "
+                  class="flex-1 h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+                  @focus="activeVarField = { section: 'body', key }"
+                />
+              </div>
+            </div>
+
+            <!-- Button parameters (dynamic URL / copy-code) -->
+            <div
+              v-if="selectedTemplate && templateVars.buttons"
+              class="flex flex-col gap-1.5"
+            >
+              <span class="text-xs font-medium text-n-slate-11">
+                {{ t('BROADCAST.MESSAGE.TEMPLATE_BUTTON_PARAMS') }}
+              </span>
+              <template
+                v-for="(btn, index) in templateVars.buttons"
+                :key="`btn-${index}`"
+              >
+                <input
+                  v-if="btn"
+                  v-model="btn.parameter"
+                  type="text"
+                  :placeholder="t('BROADCAST.MESSAGE.TEMPLATE_BUTTON_PARAM')"
+                  class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+                  @focus="activeVarField = { section: 'button', key: index }"
+                />
+              </template>
+            </div>
+
+            <!-- Contact-token chips: personalize a variable per recipient -->
+            <div
+              v-if="
+                selectedTemplate && (templateVars.body || templateVars.buttons)
+              "
+              class="flex flex-wrap items-center gap-1.5"
+            >
+              <span class="text-[11px] text-n-slate-10">
+                {{ t('BROADCAST.MESSAGE.TEMPLATE_TOKENS_HINT') }}
+              </span>
+              <button
+                v-for="tk in CONTACT_TOKENS"
+                :key="tk.token"
+                type="button"
+                class="inline-flex items-center gap-1 px-2 h-6 rounded-md bg-n-teal-3 text-n-teal-11 text-[11px] font-medium cursor-pointer hover:bg-n-teal-4 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                :disabled="!activeVarField"
+                @click="insertToken(tk.token)"
+              >
+                <Icon icon="i-lucide-plus" class="size-3" />
+                {{ t(tk.label) }}
+              </button>
             </div>
 
             <p v-if="!templates.length" class="text-[11px] text-n-slate-10 m-0">

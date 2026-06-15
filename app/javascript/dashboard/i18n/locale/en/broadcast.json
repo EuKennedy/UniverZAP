@@ -87,7 +87,20 @@
       "TEMPLATE_PREVIEW": "Preview",
       "TEMPLATE_EMPTY": "No templates? Connect a Cloud API number to load approved templates.",
       "TEMPLATE_LOAD_ERROR": "Could not load templates.",
-      "TEMPLATE_NO_INBOX": "Set the inbox for this campaign to load its templates."
+      "TEMPLATE_NO_INBOX": "Set the inbox for this campaign to load its templates.",
+      "TEMPLATE_VARIABLES": "Template variables",
+      "TEMPLATE_VARIABLE_PLACEHOLDER": "Value for variable {variable}",
+      "TEMPLATE_MEDIA_HEADER": "{type} header",
+      "TEMPLATE_MEDIA_URL": "Public media URL",
+      "TEMPLATE_MEDIA_NAME": "File name (optional)",
+      "TEMPLATE_BUTTON_PARAMS": "Button parameters",
+      "TEMPLATE_BUTTON_PARAM": "Button value",
+      "TEMPLATE_TOKENS_HINT": "Insert in the focused field:",
+      "TOKENS": {
+        "NAME": "Name",
+        "PHONE": "Phone",
+        "EMAIL": "Email"
+      }
     },
     "AUDIENCE": {
       "CONTACT_LABELS": "Contact labels",

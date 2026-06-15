@@ -35,7 +35,7 @@ class Broadcasts::RecipientSenderService
     channel = @inbox.channel
     raise 'official mode needs a WhatsApp Cloud inbox' unless channel.respond_to?(:send_template)
 
-    template_params = @broadcast.message['template']
+    template_params = personalized_template_params
     raise 'missing template config' if template_params.blank?
 
     name, namespace, lang_code, parameters = Whatsapp::TemplateProcessorService.new(
@@ -46,6 +46,43 @@ class Broadcasts::RecipientSenderService
     channel.send_template(@contact.phone_number,
                           { name: name, namespace: namespace, lang_code: lang_code, parameters: parameters }, nil)
     @recipient.update!(status: :sent, sent_at: Time.current)
+  end
+
+  # Per-recipient copy of the template config with contact tokens resolved.
+  # Tokens like `{contact.name}`, `{contact.phone_number}`, `{contact.email}`
+  # or `{contact.attr.KEY}` are replaced with this contact's values so each
+  # recipient gets a personalized template. Deep-duped so recipients never
+  # bleed into each other.
+  def personalized_template_params
+    raw = @broadcast.message['template']
+    return raw if raw.blank?
+
+    resolve_tokens(Marshal.load(Marshal.dump(raw)))
+  end
+
+  def resolve_tokens(node)
+    case node
+    when Hash then node.transform_values { |v| resolve_tokens(v) }
+    when Array then node.map { |v| resolve_tokens(v) }
+    when String then replace_contact_tokens(node)
+    else node
+    end
+  end
+
+  def replace_contact_tokens(str)
+    str.gsub(/\{contact\.([a-z_]+)(?:\.([^}]+))?\}/) do
+      contact_token_value(Regexp.last_match(1), Regexp.last_match(2))
+    end
+  end
+
+  def contact_token_value(field, key)
+    case field
+    when 'name' then @contact.name.to_s
+    when 'phone', 'phone_number' then @contact.phone_number.to_s
+    when 'email' then @contact.email.to_s
+    when 'attr', 'custom' then (@contact.custom_attributes || {})[key].to_s
+    else ''
+    end
   end
 
   def find_or_create_conversation
