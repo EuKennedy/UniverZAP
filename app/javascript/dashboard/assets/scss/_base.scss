@@ -121,6 +121,32 @@ textarea {
   }
 }
 
+// Custom-styled fields opt out of the base resting outline.
+//
+// `.field-base` paints `outline outline-1 outline-n-weak` on every input,
+// select and textarea. When a field also declares its own Tailwind border,
+// resting ring (`ring-1`/`ring-inset`) or a transparent background (i.e. it
+// lives inside a styled wrapper), that base outline stacks on top and the
+// field renders as a DOUBLE box. These selectors sit outside `@layer` so they
+// win over the components layer and neutralise the base outline — the field's
+// own border/ring/wrapper becomes the single source of truth. Focus styles a
+// field declares itself (`focus:border-*`, `focus:ring-*`, `focus-within:*`)
+// keep working.
+#{$form-input-selector}.border,
+#{$form-input-selector}.ring-1,
+#{$form-input-selector}.ring-inset,
+#{$form-input-selector}.bg-transparent,
+select.border,
+select.ring-1,
+select.ring-inset,
+select.bg-transparent,
+textarea.border,
+textarea.ring-1,
+textarea.ring-inset,
+textarea.bg-transparent {
+  @apply outline-none;
+}
+
 // Add mb-1 when .help-text exists within the same label container
 label:has(.help-text) {
   input,
