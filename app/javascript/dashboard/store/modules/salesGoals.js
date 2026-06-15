@@ -1,4 +1,5 @@
 import SalesGoalsAPI from '../../api/salesGoals';
+import SaleRecordsAPI from '../../api/saleRecords';
 
 export const state = {
   records: [],
@@ -50,6 +51,14 @@ export const actions = {
   delete: async ({ commit }, id) => {
     await SalesGoalsAPI.delete(id);
     commit('removeSalesGoal', id);
+  },
+
+  // Register progress against a goal's category (used by the per-card register
+  // action for count goals like "Depoimentos"). Refetches goals so progress
+  // recomputes server-side.
+  registerRecord: async ({ dispatch }, { userId, category, amount }) => {
+    await SaleRecordsAPI.create(null, amount, { user_id: userId, category });
+    await dispatch('get');
   },
 };
 

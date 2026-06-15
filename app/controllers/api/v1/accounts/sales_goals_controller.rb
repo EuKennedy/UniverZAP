@@ -37,6 +37,6 @@ class Api::V1::Accounts::SalesGoalsController < Api::V1::Accounts::BaseControlle
   end
 
   def permitted_params
-    params.require(:sales_goal).permit(:user_id, :period, :target_amount, :active)
+    params.require(:sales_goal).permit(:user_id, :period, :target_amount, :active, :name, :unit)
   end
 end

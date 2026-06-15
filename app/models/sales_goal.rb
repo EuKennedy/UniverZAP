@@ -23,6 +23,14 @@ class SalesGoal < ApplicationRecord
   # monthly — window resets each month (beginning_of_month).
   enum period: { daily: 0, weekly: 1, monthly: 2 }, _prefix: :period
 
+  # currency — progress rendered as BRL, fed by the in-chat "registrar venda".
+  # count    — progress rendered as a plain number (e.g. "Depoimentos"), fed by
+  #            the per-card register action on the Metas panel.
+  enum unit: { currency: 0, count: 1 }, _prefix: :unit
+
+  before_validation :assign_category
+
+  validates :name, presence: true
   validates :target_amount, numericality: { greater_than_or_equal_to: 0 }
 
   # Start of the current goal window, used as the lower bound for summing sales.
@@ -34,10 +42,12 @@ class SalesGoal < ApplicationRecord
     end
   end
 
-  # Total value the agent has registered within the current window.
+  # Total value the agent has registered within the current window, scoped to
+  # this goal's category so a "Depoimentos" goal never counts sales and vice
+  # versa.
   def current_amount
     account.sale_records
-           .where(user_id: user_id)
+           .where(user_id: user_id, category: category)
            .where('recorded_at >= ?', period_start)
            .sum(:amount)
   end
@@ -50,5 +60,13 @@ class SalesGoal < ApplicationRecord
       remaining: [target_amount - current, 0].max,
       percent: target_amount.positive? ? [(current / target_amount * 100).round, 100].min : 0
     }
+  end
+
+  private
+
+  # Currency goals always land on the shared 'sales' bucket so the in-chat sale
+  # registration feeds them. Count goals get a slug derived from their name.
+  def assign_category
+    self.category = unit_currency? ? 'sales' : (name.to_s.parameterize.presence || 'meta')
   end
 end

@@ -5,6 +5,9 @@ json.user do
   json.name sales_goal.user.name
   json.thumbnail sales_goal.user.avatar_url
 end
+json.name sales_goal.name
+json.unit sales_goal.unit
+json.category sales_goal.category
 json.period sales_goal.period
 json.target_amount sales_goal.target_amount
 json.active sales_goal.active

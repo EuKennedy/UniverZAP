@@ -39,7 +39,11 @@ const brlFormatter = new Intl.NumberFormat('pt-BR', {
 });
 
 const amount = ref('');
+const orderNumber = ref('');
+const paidAt = ref('');
 const isSaving = ref(false);
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
 
 const formattedCurrentTotal = computed(() =>
   brlFormatter.format(Number(props.currentTotal) || 0)
@@ -58,6 +62,8 @@ watch(
   isOpen => {
     if (isOpen) {
       amount.value = '';
+      orderNumber.value = '';
+      paidAt.value = todayISO();
       isSaving.value = false;
     }
   }
@@ -77,7 +83,12 @@ const save = async () => {
   try {
     const { data } = await SaleRecordsAPI.create(
       props.contactId,
-      parsedAmount.value
+      parsedAmount.value,
+      {
+        category: 'sales',
+        order_number: orderNumber.value.trim() || undefined,
+        paid_at: paidAt.value || undefined,
+      }
     );
     useAlert(t('METAS.SALE.MODAL.SUCCESS'));
     emit('saved', data.contact_total);
@@ -148,6 +159,49 @@ const save = async () => {
               class="flex-1 h-11 bg-transparent border-0 outline-none text-sm text-n-slate-12 tabular-nums placeholder:text-n-slate-10"
               @keydown.enter="save"
             />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1.5">
+            <label
+              for="register-sale-order"
+              class="text-sm font-medium text-n-slate-12"
+            >
+              {{ t('METAS.SALE.MODAL.ORDER_LABEL') }}
+            </label>
+            <div
+              class="flex items-center gap-2 px-3 rounded-xl bg-n-alpha-black2 ring-1 ring-n-weak focus-within:ring-n-teal-8"
+            >
+              <span class="text-sm font-medium text-n-slate-10">#</span>
+              <input
+                id="register-sale-order"
+                v-model="orderNumber"
+                type="text"
+                autocomplete="off"
+                :placeholder="t('METAS.SALE.MODAL.ORDER_PLACEHOLDER')"
+                class="flex-1 h-11 bg-transparent border-0 outline-none text-sm text-n-slate-12 placeholder:text-n-slate-10"
+                @keydown.enter="save"
+              />
+            </div>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label
+              for="register-sale-paid"
+              class="text-sm font-medium text-n-slate-12"
+            >
+              {{ t('METAS.SALE.MODAL.PAID_AT_LABEL') }}
+            </label>
+            <div
+              class="flex items-center px-3 rounded-xl bg-n-alpha-black2 ring-1 ring-n-weak focus-within:ring-n-teal-8"
+            >
+              <input
+                id="register-sale-paid"
+                v-model="paidAt"
+                type="date"
+                class="flex-1 h-11 bg-transparent border-0 outline-none text-sm text-n-slate-12"
+              />
+            </div>
           </div>
         </div>
 

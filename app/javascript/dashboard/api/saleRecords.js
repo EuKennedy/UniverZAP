@@ -6,8 +6,8 @@ class SaleRecordsAPI extends ApiClient {
     super('sale_records', { accountScoped: true });
   }
 
-  create(contactId, amount) {
-    return axios.post(this.url, { contact_id: contactId, amount });
+  create(contactId, amount, options = {}) {
+    return axios.post(this.url, { contact_id: contactId, amount, ...options });
   }
 
   forContact(contactId) {

@@ -10,13 +10,28 @@
       "WEEKLY": "Semanal",
       "MONTHLY": "Mensal"
     },
+    "UNIT": {
+      "CURRENCY": "Valor (R$)",
+      "COUNT": "Quantidade"
+    },
     "CARD": {
       "REMAINING": "Faltam {amount}",
       "ACHIEVED": "Meta batida! 🎉",
       "OF": "de",
       "RANK": "#{rank}",
+      "REGISTER": "Registrar progresso",
       "EDIT": "Editar meta",
       "DELETE": "Excluir meta"
+    },
+    "REGISTER": {
+      "TITLE": "Registrar — {name}",
+      "VALUE_LABEL": "Quantidade a adicionar",
+      "VALUE_PLACEHOLDER": "0",
+      "SAVE": "Registrar",
+      "CANCEL": "Cancelar",
+      "SUCCESS": "Progresso registrado! 🎯",
+      "ERROR": "Não foi possível registrar o progresso.",
+      "VALIDATION": "Informe uma quantidade maior que zero."
     },
     "DELETE": {
       "CONFIRM": "Tem certeza que deseja excluir a meta de {name}?",
@@ -28,6 +43,9 @@
       "EDIT_TITLE": "Editar meta",
       "AGENT_LABEL": "Agente",
       "AGENT_PLACEHOLDER": "Selecione um agente",
+      "NAME_LABEL": "Nome da meta",
+      "NAME_PLACEHOLDER": "Ex: Vendas, Depoimentos, Pedidos fechados",
+      "UNIT_LABEL": "Tipo de medição",
       "PERIOD_LABEL": "Período",
       "TARGET_LABEL": "Valor da meta",
       "TARGET_PLACEHOLDER": "0,00",
@@ -39,6 +57,7 @@
       "UPDATE_ERROR": "Não foi possível atualizar a meta.",
       "VALIDATION": {
         "AGENT": "Selecione um agente.",
+        "NAME": "Informe um nome para a meta.",
         "AMOUNT": "Informe um valor de meta maior que zero."
       }
     },
@@ -49,6 +68,9 @@
         "CURRENT_TOTAL": "Valor em compras atual",
         "AMOUNT_LABEL": "Valor da venda",
         "AMOUNT_PLACEHOLDER": "0,00",
+        "ORDER_LABEL": "Nº do pedido",
+        "ORDER_PLACEHOLDER": "Ex: 10245",
+        "PAID_AT_LABEL": "Data do pagamento",
         "SAVE": "Registrar venda",
         "CANCEL": "Cancelar",
         "SUCCESS": "Venda registrada com sucesso! 💰",

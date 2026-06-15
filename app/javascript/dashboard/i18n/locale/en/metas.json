@@ -10,13 +10,28 @@
       "WEEKLY": "Weekly",
       "MONTHLY": "Monthly"
     },
+    "UNIT": {
+      "CURRENCY": "Amount (R$)",
+      "COUNT": "Count"
+    },
     "CARD": {
       "REMAINING": "{amount} to go",
       "ACHIEVED": "Goal reached! 🎉",
       "OF": "of",
       "RANK": "#{rank}",
+      "REGISTER": "Register progress",
       "EDIT": "Edit goal",
       "DELETE": "Delete goal"
+    },
+    "REGISTER": {
+      "TITLE": "Register — {name}",
+      "VALUE_LABEL": "Amount to add",
+      "VALUE_PLACEHOLDER": "0",
+      "SAVE": "Register",
+      "CANCEL": "Cancel",
+      "SUCCESS": "Progress registered! 🎯",
+      "ERROR": "Could not register progress.",
+      "VALIDATION": "Please enter an amount greater than zero."
     },
     "DELETE": {
       "CONFIRM": "Are you sure you want to delete {name}'s goal?",
@@ -28,6 +43,9 @@
       "EDIT_TITLE": "Edit goal",
       "AGENT_LABEL": "Agent",
       "AGENT_PLACEHOLDER": "Select an agent",
+      "NAME_LABEL": "Goal name",
+      "NAME_PLACEHOLDER": "e.g. Sales, Testimonials, Closed orders",
+      "UNIT_LABEL": "Measurement type",
       "PERIOD_LABEL": "Period",
       "TARGET_LABEL": "Target amount",
       "TARGET_PLACEHOLDER": "0.00",
@@ -39,6 +57,7 @@
       "UPDATE_ERROR": "Could not update the goal.",
       "VALIDATION": {
         "AGENT": "Please select an agent.",
+        "NAME": "Please enter a goal name.",
         "AMOUNT": "Please enter a target amount greater than zero."
       }
     },
@@ -49,6 +68,9 @@
         "CURRENT_TOTAL": "Current purchases value",
         "AMOUNT_LABEL": "Sale amount",
         "AMOUNT_PLACEHOLDER": "0,00",
+        "ORDER_LABEL": "Order #",
+        "ORDER_PLACEHOLDER": "e.g. 10245",
+        "PAID_AT_LABEL": "Payment date",
         "SAVE": "Register sale",
         "CANCEL": "Cancel",
         "SUCCESS": "Sale registered successfully! 💰",

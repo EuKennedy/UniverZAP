@@ -30,7 +30,18 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   currency: 'BRL',
 });
 
+const numberFormatter = new Intl.NumberFormat('pt-BR', {
+  maximumFractionDigits: 0,
+});
+
 const formatCurrency = value => currencyFormatter.format(Number(value) || 0);
+
+// Render a goal value honoring its unit: currency goals show BRL, count goals
+// (e.g. "Depoimentos") show a plain number.
+const formatValue = (goal, value) =>
+  goal?.unit === 'count'
+    ? numberFormatter.format(Number(value) || 0)
+    : formatCurrency(value);
 
 const currencySymbol = 'R$';
 
@@ -92,6 +103,8 @@ const isModalOpen = ref(false);
 const editingId = ref(null);
 const form = reactive({
   userId: null,
+  name: '',
+  unit: 'currency',
   period: 'monthly',
   targetAmount: '',
 });
@@ -104,6 +117,8 @@ const selectedAgent = computed(() =>
 
 const resetForm = () => {
   form.userId = null;
+  form.name = '';
+  form.unit = 'currency';
   form.period = 'monthly';
   form.targetAmount = '';
 };
@@ -117,6 +132,8 @@ const openCreate = () => {
 const openEdit = goal => {
   editingId.value = goal.id;
   form.userId = goal.user_id;
+  form.name = goal.name ?? '';
+  form.unit = goal.unit ?? 'currency';
   form.period = goal.period;
   form.targetAmount = String(goal.target_amount ?? '');
   isModalOpen.value = true;
@@ -146,6 +163,10 @@ const handleSubmit = async () => {
     useAlert(t('METAS.MODAL.VALIDATION.AGENT'));
     return;
   }
+  if (!form.name.trim()) {
+    useAlert(t('METAS.MODAL.VALIDATION.NAME'));
+    return;
+  }
   if (!amount || amount <= 0) {
     useAlert(t('METAS.MODAL.VALIDATION.AMOUNT'));
     return;
@@ -153,6 +174,8 @@ const handleSubmit = async () => {
 
   const payload = {
     user_id: form.userId,
+    name: form.name.trim(),
+    unit: form.unit,
     period: form.period,
     target_amount: amount,
   };
@@ -184,6 +207,49 @@ const handleSubmit = async () => {
             : 'METAS.MODAL.CREATE_ERROR'
         )
     );
+  }
+};
+
+// --- per-card register (count goals) -----------------------------------
+const isRegisterOpen = ref(false);
+const registerGoal = ref(null);
+const registerValue = ref('');
+
+const openRegister = goal => {
+  registerGoal.value = goal;
+  registerValue.value = '';
+  isRegisterOpen.value = true;
+};
+
+const closeRegister = () => {
+  isRegisterOpen.value = false;
+  registerGoal.value = null;
+  registerValue.value = '';
+};
+
+const submitRegister = async () => {
+  const goal = registerGoal.value;
+  const value = Number(String(registerValue.value).replace(',', '.'));
+  if (!goal || !value || value <= 0) {
+    useAlert(t('METAS.REGISTER.VALIDATION'));
+    return;
+  }
+  try {
+    const wasBelow = (goal.progress?.percent ?? 0) < 100;
+    await store.dispatch('salesGoals/registerRecord', {
+      userId: goal.user_id,
+      category: goal.category,
+      amount: value,
+    });
+    useAlert(t('METAS.REGISTER.SUCCESS'));
+    const refreshed = salesGoals.value.find(g => g.id === goal.id);
+    if (wasBelow && (refreshed?.progress?.percent ?? 0) >= 100) {
+      await nextTick();
+      celebrate();
+    }
+    closeRegister();
+  } catch (error) {
+    useAlert(error?.message || t('METAS.REGISTER.ERROR'));
   }
 };
 
@@ -293,20 +359,41 @@ onMounted(() => {
               />
               <div class="flex flex-col gap-1 min-w-0">
                 <h3 class="m-0 text-sm font-semibold text-n-slate-12 truncate">
-                  {{ goal.user.name }}
+                  {{ goal.name }}
                 </h3>
-                <span
-                  class="inline-flex items-center gap-1 self-start px-2 py-0.5 rounded-full text-[11px] font-medium"
-                  :class="TIER_STYLES[tierFor(goal.progress.percent)].badge"
-                >
-                  <Icon :icon="PERIOD_ICONS[goal.period]" class="size-3" />
-                  {{ t(`METAS.PERIOD.${goal.period.toUpperCase()}`) }}
+                <span class="text-xs text-n-slate-11 truncate">
+                  {{ goal.user.name }}
                 </span>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    class="inline-flex items-center gap-1 self-start px-2 py-0.5 rounded-full text-[11px] font-medium"
+                    :class="TIER_STYLES[tierFor(goal.progress.percent)].badge"
+                  >
+                    <Icon :icon="PERIOD_ICONS[goal.period]" class="size-3" />
+                    {{ t(`METAS.PERIOD.${goal.period.toUpperCase()}`) }}
+                  </span>
+                  <span
+                    v-if="goal.unit === 'count'"
+                    class="inline-flex items-center gap-1 self-start px-2 py-0.5 rounded-full text-[11px] font-medium bg-n-slate-3 text-n-slate-11"
+                  >
+                    <Icon icon="i-lucide-hash" class="size-3" />
+                    {{ t('METAS.UNIT.COUNT') }}
+                  </span>
+                </div>
               </div>
             </div>
             <div
               class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
             >
+              <Button
+                v-if="goal.unit === 'count'"
+                variant="ghost"
+                color="teal"
+                size="sm"
+                icon="i-lucide-plus-circle"
+                :aria-label="t('METAS.CARD.REGISTER')"
+                @click="openRegister(goal)"
+              />
               <Button
                 variant="ghost"
                 color="slate"
@@ -334,11 +421,11 @@ onMounted(() => {
                   class="text-base font-semibold tabular-nums truncate"
                   :class="TIER_STYLES[tierFor(goal.progress.percent)].text"
                 >
-                  {{ formatCurrency(goal.progress.current) }}
+                  {{ formatValue(goal, goal.progress.current) }}
                 </span>
                 <span class="text-xs text-n-slate-10 shrink-0">
                   {{ t('METAS.CARD.OF') }}
-                  {{ formatCurrency(goal.progress.target) }}
+                  {{ formatValue(goal, goal.progress.target) }}
                 </span>
               </div>
               <span
@@ -370,7 +457,7 @@ onMounted(() => {
             <p v-else class="m-0 text-xs text-n-slate-11">
               {{
                 t('METAS.CARD.REMAINING', {
-                  amount: formatCurrency(goal.progress.remaining),
+                  amount: formatValue(goal, goal.progress.remaining),
                 })
               }}
             </p>
@@ -443,6 +530,55 @@ onMounted(() => {
             </div>
           </div>
 
+          <!-- Goal name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-n-slate-12">
+              {{ t('METAS.MODAL.NAME_LABEL') }}
+            </label>
+            <input
+              v-model="form.name"
+              type="text"
+              maxlength="60"
+              :placeholder="t('METAS.MODAL.NAME_PLACEHOLDER')"
+              class="px-3 h-11 rounded-xl bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+            />
+          </div>
+
+          <!-- Unit toggle -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-n-slate-12">
+              {{ t('METAS.MODAL.UNIT_LABEL') }}
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                class="flex items-center justify-center gap-1.5 py-3 rounded-xl border text-xs font-medium transition-all cursor-pointer"
+                :class="
+                  form.unit === 'currency'
+                    ? 'border-n-teal-8 bg-n-teal-3 text-n-teal-11'
+                    : 'border-n-weak bg-n-alpha-1 text-n-slate-11 hover:border-n-strong'
+                "
+                @click="form.unit = 'currency'"
+              >
+                <Icon icon="i-lucide-circle-dollar-sign" class="size-4" />
+                {{ t('METAS.UNIT.CURRENCY') }}
+              </button>
+              <button
+                type="button"
+                class="flex items-center justify-center gap-1.5 py-3 rounded-xl border text-xs font-medium transition-all cursor-pointer"
+                :class="
+                  form.unit === 'count'
+                    ? 'border-n-teal-8 bg-n-teal-3 text-n-teal-11'
+                    : 'border-n-weak bg-n-alpha-1 text-n-slate-11 hover:border-n-strong'
+                "
+                @click="form.unit = 'count'"
+              >
+                <Icon icon="i-lucide-hash" class="size-4" />
+                {{ t('METAS.UNIT.COUNT') }}
+              </button>
+            </div>
+          </div>
+
           <!-- Period radio cards -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-n-slate-12">
@@ -476,15 +612,19 @@ onMounted(() => {
               class="flex items-center gap-1 px-3 h-11 rounded-xl bg-n-alpha-1 border border-n-weak focus-within:border-n-teal-8"
             >
               <span class="text-sm font-medium text-n-slate-10">{{
-                currencySymbol
+                form.unit === 'count' ? '#' : currencySymbol
               }}</span>
               <input
                 v-model="form.targetAmount"
                 type="number"
                 min="0"
-                step="0.01"
+                :step="form.unit === 'count' ? '1' : '0.01'"
                 inputmode="decimal"
-                :placeholder="t('METAS.MODAL.TARGET_PLACEHOLDER')"
+                :placeholder="
+                  form.unit === 'count'
+                    ? '0'
+                    : t('METAS.MODAL.TARGET_PLACEHOLDER')
+                "
                 class="flex-1 h-full bg-transparent text-sm text-n-slate-12 tabular-nums focus:outline-none"
               />
             </div>
@@ -503,6 +643,66 @@ onMounted(() => {
               :label="t('METAS.MODAL.SAVE')"
               :is-loading="uiFlags.isCreating || uiFlags.isUpdating"
             />
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Register progress modal (count goals) -->
+    <div
+      v-if="isRegisterOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      @click.self="closeRegister"
+    >
+      <div
+        class="flex flex-col w-full max-w-sm gap-5 p-6 rounded-2xl bg-n-solid-1 border border-n-weak shadow-2xl"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex flex-col gap-1 min-w-0">
+            <h2 class="m-0 text-lg font-semibold text-n-slate-12 truncate">
+              {{ t('METAS.REGISTER.TITLE', { name: registerGoal?.name }) }}
+            </h2>
+            <p class="m-0 text-sm text-n-slate-11 truncate">
+              {{ registerGoal?.user?.name }}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            color="slate"
+            size="sm"
+            icon="i-lucide-x"
+            @click="closeRegister"
+          />
+        </div>
+        <form class="flex flex-col gap-5" @submit.prevent="submitRegister">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-n-slate-12">
+              {{ t('METAS.REGISTER.VALUE_LABEL') }}
+            </label>
+            <div
+              class="flex items-center gap-1 px-3 h-11 rounded-xl bg-n-alpha-1 border border-n-weak focus-within:border-n-teal-8"
+            >
+              <span class="text-sm font-medium text-n-slate-10">#</span>
+              <input
+                v-model="registerValue"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                :placeholder="t('METAS.REGISTER.VALUE_PLACEHOLDER')"
+                class="flex-1 h-full bg-transparent text-sm text-n-slate-12 tabular-nums focus:outline-none"
+              />
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              color="slate"
+              :label="t('METAS.REGISTER.CANCEL')"
+              @click="closeRegister"
+            />
+            <Button type="submit" :label="t('METAS.REGISTER.SAVE')" />
           </div>
         </form>
       </div>

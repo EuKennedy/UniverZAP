@@ -16,7 +16,7 @@
 # onto the contact's "Valor em compras" running total.
 class SaleRecord < ApplicationRecord
   belongs_to :account
-  belongs_to :contact
+  belongs_to :contact, optional: true
   belongs_to :user
 
   after_create :bump_contact_total
@@ -24,8 +24,11 @@ class SaleRecord < ApplicationRecord
   private
 
   # Add this sale's amount to the contact's cumulative purchase total stored in
-  # additional_attributes['valor_em_compras'].
+  # additional_attributes['valor_em_compras']. Only sales tied to a contact
+  # bump the total — count goals (e.g. depoimentos) register without one.
   def bump_contact_total
+    return unless contact && category == 'sales'
+
     total = contact.additional_attributes['valor_em_compras'].to_f + amount.to_f
     contact.additional_attributes['valor_em_compras'] = total
     contact.save!
