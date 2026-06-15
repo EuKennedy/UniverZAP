@@ -144,7 +144,10 @@ textarea.border,
 textarea.ring-1,
 textarea.ring-inset,
 textarea.bg-transparent {
-  @apply outline-none;
+  // `!important` is required: the base `.field-base` rule is unlayered and
+  // high-specificity (10+ `:not()` selectors), and its `:focus` variant
+  // otherwise re-paints the brand outline on focus, recreating the double box.
+  @apply !outline-none;
 }
 
 // Add mb-1 when .help-text exists within the same label container
