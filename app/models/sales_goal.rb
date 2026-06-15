@@ -67,6 +67,8 @@ class SalesGoal < ApplicationRecord
   # Currency goals always land on the shared 'sales' bucket so the in-chat sale
   # registration feeds them. Count goals get a slug derived from their name.
   def assign_category
-    self.category = unit_currency? ? 'sales' : (name.to_s.parameterize.presence || 'meta')
+    return self.category = 'sales' if unit_currency?
+
+    self.category = name.to_s.parameterize.presence || 'meta'
   end
 end
