@@ -36,9 +36,12 @@ class Api::V1::Accounts::ChatflowNodesController < Api::V1::Accounts::BaseContro
   end
 
   def permitted_params
-    params.require(:chatflow_node)
-          .permit(:kind, :name, :position_x, :position_y)
-          .merge(config: node_config)
+    permitted = params.require(:chatflow_node).permit(:kind, :name, :position_x, :position_y)
+    # Only touch `config` when the request actually carries it. A drag/position
+    # update sends just the coordinates — merging config:{} there would wipe the
+    # node's text/options/labels. Persist config solely on real config edits.
+    permitted[:config] = node_config if params.require(:chatflow_node).key?(:config)
+    permitted
   end
 
   # `config` is a freeform jsonb payload whose shape depends on the node
