@@ -150,11 +150,19 @@ class Chatflow::NodeRunnerService
   end
 
   def send_menu
-    send_message(
-      content: menu_text,
-      content_type: 'input_select',
-      content_attributes: { items: menu_items }
-    )
+    # Only web widget renders the native `input_select` picker. WhatsApp via
+    # Channel::Api/WAHA rejects that content type, so there we send the plain
+    # numbered text (already baked into `menu_text`) and match the reply by
+    # number/value. Sending input_select to WAHA raised and stalled the flow.
+    if interactive_menu_channel?
+      send_message(content: menu_text, content_type: 'input_select', content_attributes: { items: menu_items })
+    else
+      send_message(content: menu_text)
+    end
+  end
+
+  def interactive_menu_channel?
+    @conversation.inbox&.channel_type == 'Channel::WebWidget'
   end
 
   # Native interactive items for capable channels (Chatwoot input_select +
