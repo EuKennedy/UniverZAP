@@ -114,7 +114,8 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
     params.require(:kanban_task).permit(
       :title, :description, :priority, :position,
       :start_date, :due_date, :funnel_stage_id,
-      :parent_task_id, :estimate_minutes, :completed_at
+      :parent_task_id, :estimate_minutes, :completed_at,
+      files: []
     )
   end
 

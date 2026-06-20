@@ -8,6 +8,7 @@ import {
   watch,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { DirectUpload } from 'activestorage';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import ContactAPI from 'dashboard/api/contacts';
@@ -16,6 +17,7 @@ import KanbanTasksAPI from 'dashboard/api/kanbanTasks';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 
 const props = defineProps({
   task: { type: Object, default: null },
@@ -40,6 +42,63 @@ const { t } = useI18n();
 const agents = useMapGetter('agents/getAgents');
 const labels = useMapGetter('labels/getLabels');
 const taskUiFlags = useMapGetter('kanbanTasks/getUIFlags');
+const accountId = useMapGetter('getCurrentAccountId');
+
+// Attachments authored on the task — photos, docs, archives (zip/tar),
+// videos, etc. Each entry: { signed_id, name, byte_size, url? }. New uploads
+// go through ActiveStorage direct upload; existing ones hydrate from the task.
+const attachedFiles = ref([]);
+const isUploadingFile = ref(false);
+const fileInputRef = ref(null);
+
+const formatBytes = bytes => {
+  const n = Number(bytes) || 0;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const triggerFilePicker = () => fileInputRef.value?.click();
+
+const uploadOneFile = file =>
+  new Promise((resolve, reject) => {
+    const upload = new DirectUpload(
+      file,
+      `/api/v1/accounts/${accountId.value}/chatflow_direct_uploads`
+    );
+    upload.create((error, blob) => {
+      if (error) reject(error);
+      else resolve(blob);
+    });
+  });
+
+const handleFileSelect = async event => {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  isUploadingFile.value = true;
+  try {
+    // Sequential to keep order stable and avoid a burst of parallel uploads.
+    // eslint-disable-next-line no-restricted-syntax
+    for (const file of files) {
+      // eslint-disable-next-line no-await-in-loop
+      const blob = await uploadOneFile(file);
+      attachedFiles.value.push({
+        signed_id: blob.signed_id,
+        name: blob.filename,
+        byte_size: blob.byte_size,
+      });
+    }
+  } catch (error) {
+    useAlert(t('KANBAN.TASK.FORM.ATTACHMENT_UPLOAD_ERROR'));
+  } finally {
+    isUploadingFile.value = false;
+    if (fileInputRef.value) fileInputRef.value.value = '';
+  }
+};
+
+const removeAttachment = index => {
+  attachedFiles.value.splice(index, 1);
+};
 
 const dateToInput = ts => {
   if (!ts) return '';
@@ -101,6 +160,12 @@ watch(
     form.assignee_ids = (t2?.assignees || []).map(a => a.id);
     form.label_ids = (t2?.labels || []).map(l => l.id);
     form.contact_ids = (t2?.contacts || []).map(c => c.id);
+    attachedFiles.value = (t2?.files || []).map(f => ({
+      signed_id: f.signed_id,
+      name: f.name,
+      byte_size: f.byte_size,
+      url: f.url,
+    }));
     selectedContacts.value = [...(t2?.contacts || [])];
     subtasks.value = [...(t2?.subtasks || [])];
     subtaskDraft.value = '';
@@ -389,6 +454,7 @@ const onSubmit = () => {
     label_ids: form.label_ids,
     contact_ids: form.contact_ids,
     custom_values: serializeCustomValues(),
+    files: attachedFiles.value.map(f => f.signed_id),
   });
 };
 </script>
@@ -633,6 +699,77 @@ const onSubmit = () => {
           v-model="form.description"
           rows="3"
           class="px-3 py-2 rounded-md border border-n-weak bg-n-background text-sm text-n-slate-12 focus:outline-none focus:border-n-brand resize-none"
+        />
+      </div>
+
+      <!-- Attachments -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-n-slate-12">
+          {{ t('KANBAN.TASK.FORM.ATTACHMENTS_LABEL') }}
+        </label>
+        <ul v-if="attachedFiles.length" class="flex flex-col gap-1.5">
+          <li
+            v-for="(file, index) in attachedFiles"
+            :key="file.signed_id || index"
+            class="flex items-center gap-2 px-3 py-2 rounded-md border border-n-weak bg-n-alpha-1"
+          >
+            <Icon
+              icon="i-lucide-paperclip"
+              class="size-4 text-n-slate-10 flex-shrink-0"
+            />
+            <a
+              v-if="file.url"
+              :href="file.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex-1 min-w-0 truncate text-[13px] text-n-slate-12 hover:text-n-teal-11"
+            >
+              {{ file.name }}
+            </a>
+            <span
+              v-else
+              class="flex-1 min-w-0 truncate text-[13px] text-n-slate-12"
+            >
+              {{ file.name }}
+            </span>
+            <span
+              class="text-[11px] text-n-slate-10 tabular-nums flex-shrink-0"
+            >
+              {{ formatBytes(file.byte_size) }}
+            </span>
+            <button
+              type="button"
+              class="text-n-slate-10 hover:text-n-ruby-11 transition-colors cursor-pointer flex-shrink-0"
+              :aria-label="t('KANBAN.TASK.FORM.ATTACHMENT_REMOVE')"
+              @click="removeAttachment(index)"
+            >
+              <Icon icon="i-lucide-x" class="size-3.5" />
+            </button>
+          </li>
+        </ul>
+        <button
+          type="button"
+          class="inline-flex self-start items-center gap-2 px-3 h-9 rounded-lg border border-n-weak text-xs font-medium text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="isUploadingFile"
+          @click="triggerFilePicker"
+        >
+          <Icon
+            :icon="isUploadingFile ? 'i-lucide-loader-circle' : 'i-lucide-plus'"
+            class="size-4"
+            :class="{ 'animate-spin': isUploadingFile }"
+          />
+          <span>{{
+            isUploadingFile
+              ? t('KANBAN.TASK.FORM.ATTACHMENT_UPLOADING')
+              : t('KANBAN.TASK.FORM.ATTACHMENT_ADD')
+          }}</span>
+        </button>
+        <input
+          ref="fileInputRef"
+          type="file"
+          multiple
+          class="hidden"
+          @change="handleFileSelect"
         />
       </div>
 

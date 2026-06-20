@@ -47,6 +47,11 @@ class KanbanTask < ApplicationRecord
            dependent: :destroy,
            inverse_of: :kanban_task
 
+  # Operators can attach photos, documents, archives (zip/tar), videos, etc.
+  # when creating/editing a task. Assigned as an array of ActiveStorage
+  # signed_ids from the direct-upload flow.
+  has_many_attached :files
+
   has_many :activities,
            -> { order(created_at: :desc) },
            class_name: 'KanbanTaskActivity',

@@ -305,7 +305,12 @@
         "CONTACT_SEARCH_PLACEHOLDER": "Buscar contato por nome, e-mail ou telefone…",
         "CONTACT_NOT_FOUND": "Nenhum contato encontrado.",
         "NO_CONTACT_DETAILS": "Sem e-mail ou telefone",
-        "REMOVE_CONTACT": "Remover contato"
+        "REMOVE_CONTACT": "Remover contato",
+        "ATTACHMENTS_LABEL": "Anexos",
+        "ATTACHMENT_ADD": "Adicionar anexo",
+        "ATTACHMENT_UPLOADING": "Enviando…",
+        "ATTACHMENT_REMOVE": "Remover anexo",
+        "ATTACHMENT_UPLOAD_ERROR": "Não foi possível enviar o arquivo."
       },
       "LINK_TITLE": "Vincular tarefa existente",
       "LINK_DESCRIPTION": "Escolha uma tarefa para anexar a esta conversa.",

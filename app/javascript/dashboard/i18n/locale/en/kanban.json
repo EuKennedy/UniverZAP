@@ -305,7 +305,12 @@
         "CONTACT_SEARCH_PLACEHOLDER": "Search contact by name, email or phone…",
         "CONTACT_NOT_FOUND": "No contact found.",
         "NO_CONTACT_DETAILS": "No email or phone",
-        "REMOVE_CONTACT": "Remove contact"
+        "REMOVE_CONTACT": "Remove contact",
+        "ATTACHMENTS_LABEL": "Attachments",
+        "ATTACHMENT_ADD": "Add attachment",
+        "ATTACHMENT_UPLOADING": "Uploading…",
+        "ATTACHMENT_REMOVE": "Remove attachment",
+        "ATTACHMENT_UPLOAD_ERROR": "Could not upload the file."
       },
       "LINK_TITLE": "Link existing task",
       "LINK_DESCRIPTION": "Pick a task to attach to this conversation.",
