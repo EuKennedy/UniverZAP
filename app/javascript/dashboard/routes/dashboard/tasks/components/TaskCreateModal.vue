@@ -1,8 +1,12 @@
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { DirectUpload } from 'activestorage';
+import { useAlert } from 'dashboard/composables';
+import { useMapGetter } from 'dashboard/composables/store';
 
 import Button from 'dashboard/components-next/button/Button.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 import TaskAssigneeSelect from './TaskAssigneeSelect.vue';
 import TaskRecurrenceForm from './TaskRecurrenceForm.vue';
 
@@ -42,11 +46,62 @@ const dueDate = ref('');
 const notifyAssignees = ref(true);
 const recurrenceRule = ref({});
 
+const accountId = useMapGetter('getCurrentAccountId');
+const attachedFiles = ref([]);
+const isUploadingFile = ref(false);
+const fileInputRef = ref(null);
+
 onMounted(() => {
   nextTick(() => titleInput.value?.focus());
 });
 
 const isValid = computed(() => title.value.trim().length > 0);
+
+const triggerFilePicker = () => fileInputRef.value?.click();
+
+const uploadOneFile = file =>
+  new Promise((resolve, reject) => {
+    const upload = new DirectUpload(
+      file,
+      `/api/v1/accounts/${accountId.value}/chatflow_direct_uploads`
+    );
+    upload.create((error, blob) => {
+      if (error) reject(error);
+      else resolve(blob);
+    });
+  });
+
+const handleFileSelect = async event => {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  isUploadingFile.value = true;
+  try {
+    const blobs = await Promise.all(files.map(uploadOneFile));
+    blobs.forEach(blob => {
+      attachedFiles.value.push({
+        signed_id: blob.signed_id,
+        name: blob.filename,
+        byte_size: blob.byte_size,
+      });
+    });
+  } catch (error) {
+    useAlert(t('TASKS.CREATE.ATTACHMENT_UPLOAD_ERROR'));
+  } finally {
+    isUploadingFile.value = false;
+    if (fileInputRef.value) fileInputRef.value.value = '';
+  }
+};
+
+const removeAttachment = index => {
+  attachedFiles.value.splice(index, 1);
+};
+
+const formatBytes = bytes => {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / 1024 ** i).toFixed(i ? 1 : 0)} ${units[i]}`;
+};
 
 const submit = () => {
   if (!isValid.value) return;
@@ -60,6 +115,7 @@ const submit = () => {
     notify_assignees: notifyAssignees.value,
     assignee_ids: assigneeIds.value,
     recurrence_rule: recurrenceRule.value || {},
+    files: attachedFiles.value.map(f => f.signed_id),
   });
 };
 </script>
@@ -120,6 +176,68 @@ const submit = () => {
             class="px-3 py-2 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak focus:ring-n-slate-7 outline-none text-sm text-n-slate-12 placeholder:text-n-slate-10 resize-none"
           />
         </label>
+
+        <div class="flex flex-col gap-1.5">
+          <span
+            class="text-[12px] uppercase tracking-wide text-n-slate-10 font-medium"
+          >
+            {{ t('TASKS.CREATE.ATTACHMENTS_LABEL') }}
+          </span>
+          <ul v-if="attachedFiles.length" class="flex flex-col gap-1.5">
+            <li
+              v-for="(file, index) in attachedFiles"
+              :key="file.signed_id || index"
+              class="flex items-center gap-2 px-3 py-2 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak"
+            >
+              <Icon
+                icon="i-lucide-paperclip"
+                class="size-4 text-n-slate-10 flex-shrink-0"
+              />
+              <span class="flex-1 min-w-0 truncate text-[13px] text-n-slate-12">
+                {{ file.name }}
+              </span>
+              <span
+                class="text-[11px] text-n-slate-10 tabular-nums flex-shrink-0"
+              >
+                {{ formatBytes(file.byte_size) }}
+              </span>
+              <button
+                type="button"
+                class="text-n-slate-10 hover:text-n-ruby-11 transition-colors cursor-pointer flex-shrink-0"
+                :aria-label="t('TASKS.CREATE.ATTACHMENT_REMOVE')"
+                @click="removeAttachment(index)"
+              >
+                <Icon icon="i-lucide-x" class="size-3.5" />
+              </button>
+            </li>
+          </ul>
+          <button
+            type="button"
+            class="inline-flex self-start items-center gap-2 px-3 h-9 rounded-lg ring-1 ring-inset ring-n-weak text-xs font-medium text-n-slate-11 cursor-pointer hover:ring-n-teal-7 hover:text-n-teal-11 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isUploadingFile"
+            @click="triggerFilePicker"
+          >
+            <Icon
+              :icon="
+                isUploadingFile ? 'i-lucide-loader-circle' : 'i-lucide-plus'
+              "
+              class="size-4"
+              :class="{ 'animate-spin': isUploadingFile }"
+            />
+            <span>{{
+              isUploadingFile
+                ? t('TASKS.CREATE.ATTACHMENT_UPLOADING')
+                : t('TASKS.CREATE.ATTACHMENT_ADD')
+            }}</span>
+          </button>
+          <input
+            ref="fileInputRef"
+            type="file"
+            multiple
+            class="hidden"
+            @change="handleFileSelect"
+          />
+        </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-1.5">

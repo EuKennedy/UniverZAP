@@ -67,6 +67,11 @@
       "DUE_DATE_LABEL": "Due date",
       "DUE_DATE_PLACEHOLDER": "Pick a date and time",
       "NOTIFY_LABEL": "Notify assignees on creation",
+      "ATTACHMENTS_LABEL": "Attachments",
+      "ATTACHMENT_ADD": "Add attachment",
+      "ATTACHMENT_UPLOADING": "Uploading…",
+      "ATTACHMENT_REMOVE": "Remove attachment",
+      "ATTACHMENT_UPLOAD_ERROR": "Could not upload the file.",
       "CANCEL": "Cancel",
       "SUBMIT": "Create task",
       "SUCCESS": "Task created.",
@@ -86,6 +91,11 @@
         "ACTIVITY": "Activity"
       },
       "DESCRIPTION_PLACEHOLDER": "Add a description…",
+      "ATTACHMENTS_LABEL": "Attachments",
+      "ATTACHMENT_ADD": "Add attachment",
+      "ATTACHMENT_UPLOADING": "Uploading…",
+      "ATTACHMENT_REMOVE": "Remove attachment",
+      "ATTACHMENT_UPLOAD_ERROR": "Could not upload the file.",
       "COMMENTS": {
         "TITLE": "Comments",
         "EMPTY": "No comments yet. Start the conversation.",

@@ -41,6 +41,9 @@ class Task < ApplicationRecord
   has_many :recurrence_children, class_name: 'Task', foreign_key: :recurrence_parent_id, dependent: :nullify,
                                  inverse_of: :recurrence_parent
 
+  # Operators attach photos, documents, archives (zip/tar), videos, etc.
+  has_many_attached :files
+
   enum status: { open: 0, in_progress: 1, blocked: 2, done: 3, cancelled: 4 }, _prefix: :status
   enum urgency: { none: 0, low: 1, medium: 2, high: 3, urgent: 4 }, _prefix: :urgency
 
@@ -72,7 +75,7 @@ class Task < ApplicationRecord
   # cheap: scalars + small association payloads only — anything heavy
   # (full comment bodies, activity log) is fetched on demand.
   def push_event_data
-    attributes_payload.merge(association_summary).merge(timestamps_payload)
+    attributes_payload.merge(association_summary).merge(files_payload).merge(timestamps_payload)
   end
 
   def recurring?
@@ -112,6 +115,20 @@ class Task < ApplicationRecord
 
   def assignee_payload(user)
     { id: user.id, name: user.name, avatar_url: user.avatar_url }
+  end
+
+  def files_payload
+    {
+      files: files.map do |file|
+        {
+          id: file.id,
+          signed_id: file.blob.signed_id,
+          name: file.blob.filename.to_s,
+          byte_size: file.blob.byte_size,
+          url: Rails.application.routes.url_helpers.rails_blob_path(file, only_path: true)
+        }
+      end
+    }
   end
 
   def timestamps_payload

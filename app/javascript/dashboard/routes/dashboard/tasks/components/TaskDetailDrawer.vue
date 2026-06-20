@@ -2,11 +2,13 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
+import { DirectUpload } from 'activestorage';
 import { useAlert } from 'dashboard/composables';
 
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 import TasksAPI from 'dashboard/api/tasks';
 import TaskUrgencyBadge from './TaskUrgencyBadge.vue';
 import TaskDueDateChip from './TaskDueDateChip.vue';
@@ -138,6 +140,58 @@ const saveDescription = async () => {
       : {},
   });
   isSavingDescription.value = false;
+};
+
+const accountId = computed(() => store.getters.getCurrentAccountId);
+const taskFiles = computed(() => props.task?.files || []);
+const isUploadingFile = ref(false);
+const fileInputRef = ref(null);
+
+const triggerFilePicker = () => fileInputRef.value?.click();
+
+const formatBytes = bytes => {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / 1024 ** i).toFixed(i ? 1 : 0)} ${units[i]}`;
+};
+
+const uploadOneFile = file =>
+  new Promise((resolve, reject) => {
+    const upload = new DirectUpload(
+      file,
+      `/api/v1/accounts/${accountId.value}/chatflow_direct_uploads`
+    );
+    upload.create((error, blob) => {
+      if (error) reject(error);
+      else resolve(blob);
+    });
+  });
+
+// has_many_attached replaces the whole set on assign, so we always send the
+// existing signed_ids plus the freshly uploaded ones.
+const handleFileSelect = async event => {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  isUploadingFile.value = true;
+  try {
+    const existing = taskFiles.value.map(f => f.signed_id);
+    const blobs = await Promise.all(files.map(uploadOneFile));
+    const fresh = blobs.map(blob => blob.signed_id);
+    await persistField({ files: [...existing, ...fresh] });
+  } catch (error) {
+    useAlert(t('TASKS.DETAIL.ATTACHMENT_UPLOAD_ERROR'));
+  } finally {
+    isUploadingFile.value = false;
+    if (fileInputRef.value) fileInputRef.value.value = '';
+  }
+};
+
+const removeFile = file => {
+  const next = taskFiles.value
+    .filter(f => f.signed_id !== file.signed_id)
+    .map(f => f.signed_id);
+  persistField({ files: next });
 };
 
 const complete = async () => {
@@ -317,6 +371,80 @@ const formatDate = ts => {
               {{ formatDate(task.updated_at) }}
             </dd>
           </dl>
+
+          <div class="mt-5">
+            <span
+              class="text-[12px] uppercase tracking-wide text-n-slate-10 font-medium"
+            >
+              {{ t('TASKS.DETAIL.ATTACHMENTS_LABEL') }}
+            </span>
+            <ul v-if="taskFiles.length" class="mt-2 flex flex-col gap-1.5">
+              <li
+                v-for="file in taskFiles"
+                :key="file.signed_id || file.id"
+                class="flex items-center gap-2 px-3 py-2 rounded-lg bg-n-alpha-1 ring-1 ring-inset ring-n-weak"
+              >
+                <Icon
+                  icon="i-lucide-paperclip"
+                  class="size-4 text-n-slate-10 flex-shrink-0"
+                />
+                <a
+                  v-if="file.url"
+                  :href="file.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex-1 min-w-0 truncate text-[13px] text-n-slate-12 hover:text-n-teal-11"
+                >
+                  {{ file.name }}
+                </a>
+                <span
+                  v-else
+                  class="flex-1 min-w-0 truncate text-[13px] text-n-slate-12"
+                >
+                  {{ file.name }}
+                </span>
+                <span
+                  class="text-[11px] text-n-slate-10 tabular-nums flex-shrink-0"
+                >
+                  {{ formatBytes(file.byte_size) }}
+                </span>
+                <button
+                  type="button"
+                  class="text-n-slate-10 hover:text-n-ruby-11 transition-colors cursor-pointer flex-shrink-0"
+                  :aria-label="t('TASKS.DETAIL.ATTACHMENT_REMOVE')"
+                  @click="removeFile(file)"
+                >
+                  <Icon icon="i-lucide-x" class="size-3.5" />
+                </button>
+              </li>
+            </ul>
+            <button
+              type="button"
+              class="mt-2 inline-flex self-start items-center gap-2 px-3 h-9 rounded-lg ring-1 ring-inset ring-n-weak text-xs font-medium text-n-slate-11 cursor-pointer hover:ring-n-teal-7 hover:text-n-teal-11 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="isUploadingFile"
+              @click="triggerFilePicker"
+            >
+              <Icon
+                :icon="
+                  isUploadingFile ? 'i-lucide-loader-circle' : 'i-lucide-plus'
+                "
+                class="size-4"
+                :class="{ 'animate-spin': isUploadingFile }"
+              />
+              <span>{{
+                isUploadingFile
+                  ? t('TASKS.DETAIL.ATTACHMENT_UPLOADING')
+                  : t('TASKS.DETAIL.ATTACHMENT_ADD')
+              }}</span>
+            </button>
+            <input
+              ref="fileInputRef"
+              type="file"
+              multiple
+              class="hidden"
+              @change="handleFileSelect"
+            />
+          </div>
 
           <div class="mt-5">
             <TaskRecurrenceForm

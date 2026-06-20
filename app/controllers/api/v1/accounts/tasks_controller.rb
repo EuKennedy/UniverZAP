@@ -142,13 +142,13 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
 
   def create_params
     params.require(:task).permit(:title, :urgency, :status, :due_date, :notify_assignees,
-                                 description: {}, custom_attributes: {}, recurrence_rule: {})
+                                 description: {}, custom_attributes: {}, recurrence_rule: {}, files: [])
   end
 
   def update_params
     params.require(:task).permit(:title, :urgency, :status, :due_date, :completed_at,
                                  :notify_assignees, :position,
-                                 description: {}, custom_attributes: {}, recurrence_rule: {})
+                                 description: {}, custom_attributes: {}, recurrence_rule: {}, files: [])
   end
 
   # Recurrence metadata lives on the task itself but `next_occurrence_at`

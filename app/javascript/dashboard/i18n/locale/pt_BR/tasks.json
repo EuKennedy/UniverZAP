@@ -67,6 +67,11 @@
       "DUE_DATE_LABEL": "Vencimento",
       "DUE_DATE_PLACEHOLDER": "Escolha data e horário",
       "NOTIFY_LABEL": "Notificar responsáveis ao criar",
+      "ATTACHMENTS_LABEL": "Anexos",
+      "ATTACHMENT_ADD": "Adicionar anexo",
+      "ATTACHMENT_UPLOADING": "Enviando…",
+      "ATTACHMENT_REMOVE": "Remover anexo",
+      "ATTACHMENT_UPLOAD_ERROR": "Não foi possível enviar o arquivo.",
       "CANCEL": "Cancelar",
       "SUBMIT": "Criar tarefa",
       "SUCCESS": "Tarefa criada.",
@@ -86,6 +91,11 @@
         "ACTIVITY": "Atividade"
       },
       "DESCRIPTION_PLACEHOLDER": "Adicione uma descrição…",
+      "ATTACHMENTS_LABEL": "Anexos",
+      "ATTACHMENT_ADD": "Adicionar anexo",
+      "ATTACHMENT_UPLOADING": "Enviando…",
+      "ATTACHMENT_REMOVE": "Remover anexo",
+      "ATTACHMENT_UPLOAD_ERROR": "Não foi possível enviar o arquivo.",
       "COMMENTS": {
         "TITLE": "Comentários",
         "EMPTY": "Nenhum comentário ainda. Inicie a conversa.",
