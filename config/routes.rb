@@ -58,6 +58,9 @@ Rails.application.routes.draw do
   get '/privacidade', to: 'legal#privacy'
   get '/terms', to: 'legal#terms'
   get '/privacy', to: 'legal#privacy'
+
+  # Public product documentation — versioned, no auth, self-contained page.
+  get '/docs', to: 'docs#show'
   get '/api', to: 'api#index'
   namespace :api, defaults: { format: 'json' } do
     namespace :v1 do
