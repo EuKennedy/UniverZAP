@@ -61,6 +61,9 @@ Rails.application.routes.draw do
 
   # Public product documentation — versioned, no auth, self-contained page.
   get '/docs', to: 'docs#show'
+
+  # Public marketing landing page — no auth, self-contained page.
+  get '/lp', to: 'landing#show'
   get '/api', to: 'api#index'
   namespace :api, defaults: { format: 'json' } do
     namespace :v1 do

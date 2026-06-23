@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="UniverZAP — a plataforma que transforma o WhatsApp do seu negócio em uma máquina de atendimento e vendas. API oficial Meta, IA Athenas, automação Chatflow e funis de venda." />
+  <title>UniverZAP · Seu WhatsApp, no controle total</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --brand: #13CB8D;
+      --brand-2: #22C55E;
+      --brand-soft: #5FE9B6;
+      --brand-deep: #0B8F63;
+      --ink: #0a0f0e;
+      --ink-2: #0e1514;
+      --paper: #f4f8f6;
+      --paper-2: #ffffff;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background: var(--ink);
+      color: #f1f5f4;
+      line-height: 1.6;
+      letter-spacing: -0.01em;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::selection { background: rgba(19,203,141,0.32); color: #fff; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+
+    /* ---- Section theming (alternating) ---- */
+    .sect { position: relative; padding: 120px 24px; overflow: hidden; }
+    .sect .inner { max-width: 1140px; margin: 0 auto; position: relative; z-index: 2; }
+    .sect-dark { background: var(--ink); color: #eef2f1; }
+    .sect-dark-2 { background: linear-gradient(180deg, #0b1211, var(--ink)); color: #eef2f1; }
+    .sect-light { background: var(--paper); color: #0b1a15; }
+    .sect-light .muted { color: #4b5d57; }
+    .sect-dark .muted, .sect-dark-2 .muted { color: #9fb0ab; }
+
+    /* ---- Typography ---- */
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12.5px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--brand);
+      margin-bottom: 20px;
+    }
+    .eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 12px var(--brand); }
+    h1, h2, h3 { font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; margin: 0; }
+    .display { font-size: clamp(40px, 7vw, 86px); font-weight: 900; }
+    h2.title { font-size: clamp(30px, 4.5vw, 54px); margin-bottom: 18px; }
+    .lede { font-size: clamp(16px, 1.6vw, 20px); font-weight: 400; max-width: 56ch; }
+    .grad-text {
+      background: linear-gradient(100deg, var(--brand-soft), var(--brand) 45%, #38e0ff 90%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    /* ---- Buttons ---- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      font-family: inherit; font-weight: 700; font-size: 15px;
+      padding: 15px 26px; border-radius: 999px; cursor: pointer;
+      border: 1px solid transparent; transition: transform .25s cubic-bezier(.16,1,.3,1), box-shadow .25s, background .25s, color .25s;
+      white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary {
+      color: #04130d;
+      background: linear-gradient(135deg, var(--brand-soft), var(--brand) 55%, var(--brand-deep));
+      box-shadow: 0 12px 38px -10px rgba(19,203,141,.7), inset 0 1px 0 rgba(255,255,255,.4);
+    }
+    .btn-primary:hover { box-shadow: 0 18px 50px -10px rgba(19,203,141,.85); }
+    .btn-ghost {
+      color: #f1f5f4; background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.16); backdrop-filter: blur(12px);
+    }
+    .sect-light .btn-ghost { color: #0b1a15; background: rgba(11,26,21,.04); border-color: rgba(11,26,21,.12); }
+    .btn-ghost:hover { border-color: var(--brand); }
+
+    /* ---- Liquid glass ---- */
+    .glass {
+      position: relative;
+      background: rgba(255,255,255,.055);
+      backdrop-filter: blur(24px) saturate(165%);
+      -webkit-backdrop-filter: blur(24px) saturate(165%);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 22px;
+      box-shadow: 0 24px 70px -28px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.18);
+    }
+    .sect-light .glass {
+      background: rgba(255,255,255,.6);
+      border-color: rgba(11,26,21,.08);
+      box-shadow: 0 24px 60px -30px rgba(11,90,60,.35), inset 0 1px 0 rgba(255,255,255,.8);
+    }
+    /* Iridescent rainbow border on hover-able glass */
+    .glass.iris::before {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+      background: conic-gradient(from 0deg, #13CB8D, #38e0ff, #9b8cff, #ff7ad9, #ffd166, #13CB8D);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      opacity: .0; transition: opacity .4s; pointer-events: none;
+    }
+    .glass.iris:hover::before { opacity: .9; animation: spin 6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Aurora / liquid orbs ---- */
+    .orbs { position: absolute; inset: 0; z-index: 0; pointer-events: none; filter: blur(60px); }
+    .orb { position: absolute; border-radius: 50%; opacity: .55; will-change: transform; }
+    .orb.a { width: 520px; height: 520px; background: radial-gradient(circle, rgba(19,203,141,.9), transparent 65%); top: -120px; left: -80px; }
+    .orb.b { width: 460px; height: 460px; background: radial-gradient(circle, rgba(56,224,255,.7), transparent 65%); top: 30%; right: -120px; }
+    .orb.c { width: 400px; height: 400px; background: radial-gradient(circle, rgba(155,140,255,.6), transparent 65%); bottom: -120px; left: 30%; }
+    @keyframes float-y { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-40px) } }
+
+    /* ---- Nav ---- */
+    nav.bar {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      width: calc(100% - 28px); max-width: 1180px; z-index: 100;
+      display: flex; align-items: center; gap: 16px;
+      padding: 11px 14px 11px 20px; border-radius: 999px;
+      background: rgba(10,15,14,.55); backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid rgba(255,255,255,.1);
+      transition: background .3s, box-shadow .3s, top .3s;
+    }
+    nav.bar.scrolled { background: rgba(10,15,14,.82); box-shadow: 0 14px 40px -16px rgba(0,0,0,.6); top: 8px; }
+    nav.bar .logo { height: 26px; }
+    nav.bar .nav-links { display: flex; gap: 6px; margin-left: 10px; }
+    nav.bar .nav-links a {
+      font-size: 14px; font-weight: 500; color: #cfe3db; padding: 8px 13px; border-radius: 999px;
+      transition: color .2s, background .2s;
+    }
+    nav.bar .nav-links a:hover { color: #fff; background: rgba(255,255,255,.07); }
+    nav.bar .spacer { flex: 1; }
+    nav .menu-btn { display: none; background: none; border: none; color: #fff; cursor: pointer; padding: 6px; }
+
+    /* ---- Hero ---- */
+    .hero { min-height: 100vh; display: flex; align-items: center; padding-top: 130px; }
+    .hero .badge {
+      display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+      padding: 7px 14px; border-radius: 999px; margin-bottom: 26px;
+      background: rgba(19,203,141,.12); border: 1px solid rgba(19,203,141,.3); color: var(--brand-soft);
+    }
+    .hero .cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 34px; }
+    .hero .trust { display: flex; gap: 26px; flex-wrap: wrap; margin-top: 46px; }
+    .hero .trust .t { }
+    .hero .trust .n { font-size: 30px; font-weight: 900; letter-spacing: -.04em; }
+    .hero .trust .l { font-size: 12.5px; color: #9fb0ab; font-weight: 500; }
+    .hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 50px; align-items: center; }
+
+    /* Floating mock chat in hero */
+    .mock { padding: 18px; }
+    .mock .row { display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-end; }
+    .mock .row.me { flex-direction: row-reverse; }
+    .mock .av { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-deep)); flex-shrink: 0; }
+    .mock .bub { max-width: 76%; padding: 10px 14px; border-radius: 16px; font-size: 13.5px; line-height: 1.45; }
+    .mock .bub.them { background: rgba(255,255,255,.08); border-bottom-left-radius: 5px; }
+    .mock .bub.me { background: linear-gradient(135deg, var(--brand), var(--brand-deep)); color: #04130d; font-weight: 600; border-bottom-right-radius: 5px; }
+    .mock .tag { font-size: 11px; color: var(--brand-soft); font-weight: 700; letter-spacing: .04em; }
+
+    /* ---- Reveal motion ---- */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s cubic-bezier(.16,1,.3,1), transform .8s cubic-bezier(.16,1,.3,1); }
+    .reveal.in { opacity: 1; transform: none; }
+    .reveal.d1 { transition-delay: .08s } .reveal.d2 { transition-delay: .16s } .reveal.d3 { transition-delay: .24s } .reveal.d4 { transition-delay: .32s }
+
+    /* ---- Generic grids ---- */
+    .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center; }
+    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+    .bento .cell { padding: 26px; border-radius: 22px; }
+    .bento .span3 { grid-column: span 3; } .bento .span2 { grid-column: span 2; } .bento .span6 { grid-column: span 6; }
+    .feat-ic {
+      width: 46px; height: 46px; border-radius: 13px; display: grid; place-content: center;
+      background: linear-gradient(135deg, rgba(19,203,141,.22), rgba(56,224,255,.16));
+      border: 1px solid rgba(19,203,141,.3); margin-bottom: 16px; color: var(--brand-soft);
+    }
+    .sect-light .feat-ic { color: var(--brand-deep); }
+    h3.card-h { font-size: 19px; margin-bottom: 8px; font-weight: 700; letter-spacing: -.02em; }
+    .card-p { font-size: 14.5px; }
+
+    svg.ic { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    svg.ic-sm { width: 18px; height: 18px; }
+
+    /* ---- Pain vs Gain ---- */
+    .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .vs .panel { padding: 30px; border-radius: 22px; }
+    .vs .bad { background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.22); }
+    .vs .good { background: rgba(19,203,141,.08); border: 1px solid rgba(19,203,141,.3); }
+    .vs ul { list-style: none; padding: 0; margin: 16px 0 0; }
+    .vs li { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 13px; font-size: 14.5px; }
+    .vs .bad li svg { color: #fb7185; flex-shrink: 0; } .vs .good li svg { color: var(--brand); flex-shrink: 0; }
+    .vs h3 { font-size: 20px; margin-bottom: 4px; }
+
+    /* ---- QR ---- */
+    .qr-wrap { display: grid; place-items: center; }
+    .qr {
+      position: relative; width: 230px; height: 230px; padding: 16px; border-radius: 26px;
+      background: #fff; box-shadow: 0 30px 70px -24px rgba(19,203,141,.5);
+    }
+    .qr svg { width: 100%; height: 100%; }
+    .qr .scan {
+      position: absolute; left: 16px; right: 16px; height: 3px; top: 16px;
+      background: linear-gradient(90deg, transparent, var(--brand), transparent);
+      box-shadow: 0 0 16px 3px rgba(19,203,141,.8); border-radius: 3px;
+      animation: scan 2.4s ease-in-out infinite;
+    }
+    @keyframes scan { 0%,100% { transform: translateY(0) } 50% { transform: translateY(196px) } }
+    .qr .corner { position: absolute; width: 26px; height: 26px; border: 3px solid var(--brand); }
+    .qr .corner.tl { top: 6px; left: 6px; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; }
+    .qr .corner.tr { top: 6px; right: 6px; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; }
+    .qr .corner.bl { bottom: 6px; left: 6px; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; }
+    .qr .corner.br { bottom: 6px; right: 6px; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
+    .conn-tabs { display: inline-flex; padding: 5px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); margin-bottom: 24px; }
+    .sect-light .conn-tabs { background: rgba(11,26,21,.05); border-color: rgba(11,26,21,.1); }
+    .conn-tabs button {
+      font-family: inherit; font-weight: 600; font-size: 13.5px; cursor: pointer; border: none;
+      padding: 9px 18px; border-radius: 999px; background: transparent; color: inherit; transition: .25s;
+    }
+    .conn-tabs button.on { background: linear-gradient(135deg, var(--brand), var(--brand-deep)); color: #04130d; }
+
+    /* ---- Carousels ---- */
+    .carousel { display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 2px 22px; -ms-overflow-style: none; scrollbar-width: none; cursor: grab; }
+    .carousel::-webkit-scrollbar { display: none; }
+    .carousel.drag { cursor: grabbing; }
+    .review { scroll-snap-align: start; flex: 0 0 360px; max-width: 86vw; padding: 26px; border-radius: 22px; }
+    .stars { display: flex; gap: 3px; color: #ffd166; margin-bottom: 14px; }
+    .stars svg { width: 17px; height: 17px; fill: currentColor; stroke: none; }
+    .review .who { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+    .review .who .av { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), #38e0ff); flex-shrink: 0; }
+    .review .who .nm { font-weight: 700; font-size: 14.5px; } .review .who .rl { font-size: 12.5px; color: #9fb0ab; }
+    .sect-light .review .who .rl { color: #6b7d77; }
+    .vid { scroll-snap-align: start; flex: 0 0 220px; aspect-ratio: 9/16; border-radius: 20px; position: relative; overflow: hidden;
+      background: linear-gradient(160deg, #10201b, #0b1513); border: 1px solid rgba(255,255,255,.1); display: grid; place-content: center; }
+    .sect-light .vid { background: linear-gradient(160deg, #e7f1ec, #d8e9e1); border-color: rgba(11,26,21,.08); }
+    .vid .play { width: 56px; height: 56px; border-radius: 50%; background: rgba(19,203,141,.92); display: grid; place-content: center; color: #04130d; box-shadow: 0 10px 30px -8px rgba(19,203,141,.7); }
+    .vid .lbl { position: absolute; bottom: 12px; left: 12px; right: 12px; font-size: 12px; font-weight: 600; color: #cfe3db; }
+    .sect-light .vid .lbl { color: #3a4a44; }
+
+    /* ---- Integrations ---- */
+    .logos { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+    .logos .pill {
+      display: inline-flex; align-items: center; gap: 9px; padding: 12px 18px; border-radius: 14px;
+      font-weight: 600; font-size: 14px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    }
+    .sect-light .logos .pill { background: rgba(11,26,21,.03); border-color: rgba(11,26,21,.09); }
+    .logos .pill .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--brand); }
+
+    /* ---- Pricing ---- */
+    .plans { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; align-items: stretch; }
+    .plan { padding: 32px 28px; border-radius: 26px; display: flex; flex-direction: column; }
+    .plan.hot { background: linear-gradient(180deg, rgba(19,203,141,.16), rgba(19,203,141,.04)); border: 1.5px solid var(--brand); transform: translateY(-10px); box-shadow: 0 30px 80px -30px rgba(19,203,141,.55); }
+    .plan .pn { font-size: 15px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--brand); }
+    .plan .pp { font-size: 44px; font-weight: 900; letter-spacing: -.04em; margin: 14px 0 2px; }
+    .plan .pp small { font-size: 15px; font-weight: 600; color: #9fb0ab; }
+    .plan ul { list-style: none; padding: 0; margin: 20px 0 26px; flex: 1; }
+    .plan li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin-bottom: 11px; }
+    .plan li svg { color: var(--brand); flex-shrink: 0; }
+    .plan .tagpop { align-self: flex-start; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 5px 11px; border-radius: 999px; background: var(--brand); color: #04130d; margin-bottom: 14px; }
+
+    /* ---- Footer ---- */
+    footer.ft { background: #060b0a; color: #9fb0ab; padding: 70px 24px 40px; border-top: 1px solid rgba(255,255,255,.07); }
+    footer.ft .inner { max-width: 1140px; margin: 0 auto; }
+    footer.ft .top { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 30px; padding-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,.07); }
+    footer.ft h4 { color: #fff; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 14px; }
+    footer.ft a { display: block; font-size: 14px; color: #9fb0ab; margin-bottom: 9px; transition: color .2s; }
+    footer.ft a:hover { color: var(--brand-soft); }
+    footer.ft .logo { height: 28px; margin-bottom: 16px; }
+    footer.ft .bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 26px; font-size: 12.5px; }
+
+    .center { text-align: center; }
+    .center .lede { margin-left: auto; margin-right: auto; }
+    .mb-sm { margin-bottom: 14px; } .mt-lg { margin-top: 40px; }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 920px) {
+      .hero-grid, .cols-2, .vs { grid-template-columns: 1fr; }
+      .cards-3, .plans { grid-template-columns: 1fr; }
+      .bento { grid-template-columns: 1fr; }
+      .bento .span3, .bento .span2, .bento .span6 { grid-column: auto; }
+      .plan.hot { transform: none; }
+      nav.bar .nav-links { display: none; }
+      nav .menu-btn { display: inline-flex; }
+      .sect { padding: 80px 20px; }
+      footer.ft .top { grid-template-columns: 1fr 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { transition: none; opacity: 1; transform: none; }
+      .orb, .qr .scan, .glass.iris:hover::before { animation: none !important; }
+      .btn:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAV ===== -->
+  <nav class="bar" id="nav">
+    <img class="logo" src="/brand-assets/logo_dark.svg" alt="UniverZAP" />
+    <div class="nav-links">
+      <a href="#dor">O problema</a>
+      <a href="#athenas">Athenas IA</a>
+      <a href="#chatflow">Chatflow</a>
+      <a href="#recursos">Recursos</a>
+      <a href="#planos">Planos</a>
+    </div>
+    <span class="spacer"></span>
+    <a class="btn btn-ghost" style="padding:10px 18px" href="/app">Entrar</a>
+    <a class="btn btn-primary" style="padding:11px 20px" href="/app">Começar grátis</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+  </nav>
+
+  <!-- ===== 01 · HERO ===== -->
+  <header class="sect sect-dark hero">
+    <div class="orbs">
+      <div class="orb a" data-speed="0.18"></div>
+      <div class="orb b" data-speed="0.12"></div>
+      <div class="orb c" data-speed="0.22"></div>
+    </div>
+    <div class="inner">
+      <div class="hero-grid">
+        <div>
+          <span class="badge reveal in">
+            <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+            Parceiro oficial Meta · WhatsApp Business API
+          </span>
+          <h1 class="display reveal d1">Seu WhatsApp,<br><span class="grad-text">no controle total.</span></h1>
+          <p class="lede muted reveal d2" style="margin-top:22px">
+            O UniverZAP transforma o caos de atender pelo WhatsApp em uma operação previsível: múltiplos atendentes em um número, automação com IA, funis de venda e métricas reais. Conecte na API <strong>oficial da Meta</strong> ou via QR — sem burocracia.
+          </p>
+          <div class="cta-row reveal d3">
+            <a class="btn btn-primary" href="/app">Testar grátis agora
+              <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="btn btn-ghost" href="#recursos">Ver recursos</a>
+          </div>
+          <div class="trust reveal d4">
+            <div class="t"><div class="n grad-text">100%</div><div class="l">API oficial Meta</div></div>
+            <div class="t"><div class="n grad-text">24/7</div><div class="l">Atendimento com IA</div></div>
+            <div class="t"><div class="n grad-text">∞</div><div class="l">Atendentes por número</div></div>
+          </div>
+        </div>
+        <div class="glass iris mock reveal d2">
+          <div class="tag">UniverZAP · Atendimento</div>
+          <div style="margin:14px 0 4px">
+            <div class="row"><div class="av"></div><div class="bub them">Oi! Vi o anúncio de vocês 👀 ainda tem vaga?</div></div>
+            <div class="row me"><div class="bub me">Oi, Marina! 💚 Tenho sim. Quer que eu já reserve no seu nome?</div></div>
+            <div class="row"><div class="av"></div><div class="bub them">Quero!! Como faço pra pagar?</div></div>
+            <div class="row me"><div class="bub me">Athenas IA respondeu em 2s e moveu pro funil “Fechamento” 🚀</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== 02 · A DOR ===== -->
+  <section class="sect sect-light" id="dor">
+    <div class="inner">
+      <div class="center" style="max-width:760px;margin:0 auto 12px">
+        <span class="eyebrow reveal">A real de quem vende pelo WhatsApp</span>
+        <h2 class="title reveal d1">Hoje você não tem um negócio.<br>Você tem um <span class="grad-text">celular lotado.</span></h2>
+        <p class="lede muted reveal d2" style="margin-top:16px">
+          Mensagem que some. Cliente que fica sem resposta. Vendedor que sai e leva os contatos. Zero histórico, zero métrica, zero controle. Enquanto isso, dinheiro escorre pelo ralo todo santo dia — e você nem sabe quanto.
+        </p>
+      </div>
+      <div class="cards-3 mt-lg">
+        <div class="glass iris cell reveal d1" style="padding:26px;border-radius:22px">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+          <h3 class="card-h">Lead perdido é venda perdida</h3>
+          <p class="card-p muted">Sem resposta rápida, o cliente compra do concorrente. No WhatsApp comum, ninguém garante que alguém respondeu.</p>
+        </div>
+        <div class="glass iris cell reveal d2" style="padding:26px;border-radius:22px">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+          <h3 class="card-h">Time sem visão nenhuma</h3>
+          <p class="card-p muted">Quem falou com quem? Qual o status? Quanto cada vendedor fechou? No celular, é tudo no escuro.</p>
+        </div>
+        <div class="glass iris cell reveal d3" style="padding:26px;border-radius:22px">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+          <h3 class="card-h">Sem dado, sem crescimento</h3>
+          <p class="card-p muted">Você não melhora o que não mede. Sem relatórios, sua operação é refém do achismo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ATHENAS AI (diferencial) ===== -->
+  <section class="sect sect-dark-2" id="athenas">
+    <div class="orbs"><div class="orb b" data-speed="0.14" style="top:-80px;left:10%"></div><div class="orb c" data-speed="0.2"></div></div>
+    <div class="inner">
+      <div class="cols-2">
+        <div>
+          <span class="eyebrow reveal">Athenas IA · seu vendedor que nunca dorme</span>
+          <h2 class="title reveal d1">Uma <span class="grad-text">inteligência artificial</span> treinada no seu negócio.</h2>
+          <p class="lede muted reveal d2" style="margin-top:14px">
+            A Athenas atende, qualifica e vende sozinha — 24 horas por dia, em segundos. Ela aprende com a sua base de conhecimento (RAG), responde com o tom da sua marca e sabe a hora de chamar um humano.
+          </p>
+          <ul class="vs" style="display:block;margin-top:24px">
+            <li style="display:flex;gap:11px;margin-bottom:14px"><svg class="ic ic-sm" style="color:var(--brand)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted"><strong style="color:#eef2f1">Responde em 2 segundos</strong> — nenhum lead esfria esperando.</span></li>
+            <li style="display:flex;gap:11px;margin-bottom:14px"><svg class="ic ic-sm" style="color:var(--brand)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted"><strong style="color:#eef2f1">Base de conhecimento própria</strong> — preços, produtos, regras, tudo na ponta.</span></li>
+            <li style="display:flex;gap:11px;margin-bottom:14px"><svg class="ic ic-sm" style="color:var(--brand)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted"><strong style="color:#eef2f1">Copiloto para seu time</strong> — sugere a melhor resposta dentro da conversa.</span></li>
+          </ul>
+          <a class="btn btn-primary mt-lg" href="/app">Ativar a Athenas <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+        <div class="glass iris mock reveal d2" style="padding:22px">
+          <div class="tag">⚡ Athenas IA · respondendo</div>
+          <div style="margin-top:14px">
+            <div class="row"><div class="av"></div><div class="bub them">Qual o valor do plano anual?</div></div>
+            <div class="row me"><div class="bub me">O plano anual sai por 12x de R$ 197 com 2 meses grátis 💚 Quer que eu gere seu link de pagamento?</div></div>
+            <div class="row"><div class="av"></div><div class="bub them">Pode ser!</div></div>
+            <div class="row me"><div class="bub me">Prontinho ✅ Link enviado e tarefa criada pro financeiro confirmar.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 03 · CONECTAR / META + QR ===== -->
+  <section class="sect sect-light" id="conectar">
+    <div class="inner">
+      <div class="cols-2">
+        <div>
+          <span class="eyebrow reveal">Parceiros oficiais da Meta</span>
+          <h2 class="title reveal d1">Conecte seu WhatsApp <span class="grad-text">em 1 minuto.</span></h2>
+          <p class="lede muted reveal d2" style="margin-top:14px">
+            Sem burocracia, sem técnico, sem espera. Escolha como quer conectar: na <strong>API oficial da Meta</strong> (máxima segurança e escala) ou via <strong>QR Code</strong> (instantâneo). Os dois funcionam, os dois são seus.
+          </p>
+          <div class="conn-tabs reveal d2" id="connTabs" style="margin-top:24px">
+            <button class="on" data-tab="oficial">API Oficial Meta</button>
+            <button data-tab="qr">QR Code</button>
+          </div>
+          <div id="tab-oficial" class="reveal d3">
+            <ul class="vs" style="display:block">
+              <li style="display:flex;gap:11px;margin-bottom:12px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Número verificado, selo oficial e zero risco de bloqueio.</span></li>
+              <li style="display:flex;gap:11px;margin-bottom:12px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Botões e listas interativas nativas + campanhas em massa.</span></li>
+              <li style="display:flex;gap:11px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Coexistência: rode o app e a API no mesmo número.</span></li>
+            </ul>
+          </div>
+          <div id="tab-qr" class="reveal d3" style="display:none">
+            <ul class="vs" style="display:block">
+              <li style="display:flex;gap:11px;margin-bottom:12px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Aponte a câmera, leia o código e pronto — conectado.</span></li>
+              <li style="display:flex;gap:11px;margin-bottom:12px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Ideal pra começar agora mesmo, sem configuração.</span></li>
+              <li style="display:flex;gap:11px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Migre pra API oficial quando quiser, no mesmo painel.</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="qr-wrap reveal d2">
+          <div class="qr">
+            <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+            <span class="scan"></span>
+            <svg viewBox="0 0 100 100" id="qrCanvas" aria-hidden="true"></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 04 · BENEFÍCIOS x MALEFÍCIOS ===== -->
+  <section class="sect sect-dark">
+    <div class="inner">
+      <div class="center" style="max-width:720px;margin:0 auto 14px">
+        <span class="eyebrow reveal">A diferença é absurda</span>
+        <h2 class="title reveal d1">WhatsApp comum <span style="color:#fb7185">vs.</span> <span class="grad-text">UniverZAP</span></h2>
+      </div>
+      <div class="vs mt-lg">
+        <div class="panel bad reveal d1">
+          <h3>WhatsApp comum 😵</h3>
+          <p class="muted" style="font-size:13.5px">O que você vive hoje</p>
+          <ul>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>Um número, um celular, um gargalo</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>Vendedor sai e leva os contatos</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>Risco de banimento sem aviso</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>Zero automação, zero IA</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>Nenhum relatório, nenhuma métrica</li>
+          </ul>
+        </div>
+        <div class="panel good reveal d2">
+          <h3 class="grad-text">UniverZAP 🚀</h3>
+          <p class="muted" style="font-size:13.5px">O que você passa a ter</p>
+          <ul>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Time inteiro num número só, organizado</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Contatos e histórico são da empresa</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>API oficial Meta, seguro e estável</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Athenas IA + Chatflow trabalham por você</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Funis, metas e relatórios em tempo real</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CHATFLOW (diferencial) ===== -->
+  <section class="sect sect-light" id="chatflow">
+    <div class="inner">
+      <div class="cols-2">
+        <div class="glass iris reveal d2" style="padding:26px;order:2">
+          <div class="tag" style="color:var(--brand-deep)">Chatflow · construtor visual</div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px">
+            <div class="glass" style="padding:13px 16px;border-radius:14px;font-size:13.5px;font-weight:600">👋 Saudação automática</div>
+            <div style="margin-left:24px;border-left:2px dashed rgba(19,203,141,.5);padding-left:18px;display:flex;flex-direction:column;gap:10px">
+              <div class="glass" style="padding:11px 15px;border-radius:12px;font-size:13px">1️⃣ Vendas → atribui à equipe comercial</div>
+              <div class="glass" style="padding:11px 15px;border-radius:12px;font-size:13px">2️⃣ Suporte → abre chamado + etiqueta</div>
+              <div class="glass" style="padding:11px 15px;border-radius:12px;font-size:13px">3️⃣ Financeiro → envia link de pagamento</div>
+            </div>
+            <div class="glass" style="padding:13px 16px;border-radius:14px;font-size:13.5px;font-weight:600;background:rgba(19,203,141,.12)">✅ Move pro funil + cria tarefa</div>
+          </div>
+        </div>
+        <div style="order:1">
+          <span class="eyebrow reveal">Chatflow · automação sem código</span>
+          <h2 class="title reveal d1">Monte fluxos que <span class="grad-text">vendem sozinhos.</span></h2>
+          <p class="lede muted reveal d2" style="margin-top:14px">
+            Arraste, conecte e publique. Menus interativos, atribuição automática, etiquetas, integração com IA e ações no funil — tudo num construtor visual. Teste com segurança antes de ir ao ar com o <strong>modo teste</strong>.
+          </p>
+          <ul class="vs" style="display:block;margin-top:22px">
+            <li style="display:flex;gap:11px;margin-bottom:13px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Atende e direciona 100% dos contatos, na hora.</span></li>
+            <li style="display:flex;gap:11px;margin-bottom:13px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Dispara webhooks e integra com seus sistemas.</span></li>
+            <li style="display:flex;gap:11px"><svg class="ic ic-sm" style="color:var(--brand-deep)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">Combina com a Athenas IA pra um atendimento imbatível.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 05 · RECURSOS (bento) ===== -->
+  <section class="sect sect-dark" id="recursos">
+    <div class="orbs"><div class="orb a" data-speed="0.1" style="top:auto;bottom:-160px;left:auto;right:-100px"></div></div>
+    <div class="inner">
+      <div class="center" style="max-width:720px;margin:0 auto 14px">
+        <span class="eyebrow reveal">Tudo num só lugar</span>
+        <h2 class="title reveal d1">Uma plataforma <span class="grad-text">divina e poderosa.</span></h2>
+        <p class="lede muted reveal d2" style="margin-top:14px">Cada recurso pensado pra você vender mais e trabalhar menos.</p>
+      </div>
+      <div class="bento mt-lg">
+        <div class="glass iris cell span3 reveal d1">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <h3 class="card-h">Caixa de entrada unificada</h3>
+          <p class="card-p muted">WhatsApp, Instagram, e-mail e web num só painel. Atribua, etiquete e resolva — com histórico completo de cada cliente.</p>
+        </div>
+        <div class="glass iris cell span3 reveal d2">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></div>
+          <h3 class="card-h">Funis Kanban de venda</h3>
+          <p class="card-p muted">Arraste oportunidades entre estágios, vincule conversas e veja sua pipeline render. Do lead ao fechamento, visual e claro.</p>
+        </div>
+        <div class="glass iris cell span2 reveal d1">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <h3 class="card-h">Tarefas & recorrência</h3>
+          <p class="card-p muted">Organize o time, com anexos, prazos e tarefas que se repetem.</p>
+        </div>
+        <div class="glass iris cell span2 reveal d2">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg></div>
+          <h3 class="card-h">Metas & relatórios</h3>
+          <p class="card-p muted">Metas de venda em R$ ou contadores, com progresso em tempo real e relatórios de performance.</p>
+        </div>
+        <div class="glass iris cell span2 reveal d3">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+          <h3 class="card-h">Campanhas em massa</h3>
+          <p class="card-p muted">Dispare templates oficiais da Meta com variáveis personalizadas por contato.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 06 · POR QUE NÓS ===== -->
+  <section class="sect sect-light" id="porque">
+    <div class="inner">
+      <div class="center" style="max-width:720px;margin:0 auto 14px">
+        <span class="eyebrow reveal">Por que o UniverZAP</span>
+        <h2 class="title reveal d1">A escolha certa pro <span class="grad-text">seu negócio.</span></h2>
+      </div>
+      <div class="cards-3 mt-lg">
+        <div class="glass iris reveal d1" style="padding:28px;border-radius:22px">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <h3 class="card-h">Oficial e seguro</h3>
+          <p class="card-p muted">Parceria com a Meta. Seu número protegido, seus dados isolados, LGPD em dia.</p>
+        </div>
+        <div class="glass iris reveal d2" style="padding:28px;border-radius:22px">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
+          <h3 class="card-h">Diferencial em IA</h3>
+          <p class="card-p muted">Athenas IA + Chatflow num nível que nenhum WhatsApp comum chega perto.</p>
+        </div>
+        <div class="glass iris reveal d3" style="padding:28px;border-radius:22px">
+          <div class="feat-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M20 7h-9M14 17H5M17 17a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM7 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg></div>
+          <h3 class="card-h">Feito pra escalar</h3>
+          <p class="card-p muted">De 1 a 100 atendentes. A plataforma cresce junto com a sua operação.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 07 · DEPOIMENTOS (texto) ===== -->
+  <section class="sect sect-dark-2" id="depoimentos">
+    <div class="inner">
+      <div class="center" style="max-width:680px;margin:0 auto 8px">
+        <span class="eyebrow reveal">Quem usa, ama</span>
+        <h2 class="title reveal d1">Resultados <span class="grad-text">de verdade.</span></h2>
+      </div>
+    </div>
+    <div class="inner" style="max-width:1240px">
+      <div class="carousel" data-carousel style="margin-top:30px">
+        <% [
+          ['Marina Alves', 'Clínica de Estética', 'Dobrei meu faturamento em 3 meses. A Athenas responde madrugada adentro e eu acordo com agenda cheia.'],
+          ['Rafael Lima', 'Loja de Suplementos', 'Saí do celular lotado pra uma operação de verdade. Hoje sei exatamente quanto cada vendedor fecha.'],
+          ['Juliana Costa', 'Imobiliária', 'O Chatflow filtra os curiosos e me entrega só lead quente. Mudou o jogo.'],
+          ['Pedro Henrique', 'Curso Online', 'Conectei na API oficial em minutos. Disparei campanha e vendi mais que em qualquer Black Friday.'],
+          ['Camila Souza', 'Salão de Beleza', 'Nunca mais perdi mensagem. Meu time todo no mesmo número, organizado e medido.'],
+          ['Diego Martins', 'Agência de Marketing', 'Coloquei meus 8 clientes no UniverZAP. Todos querem saber qual ferramenta eu uso.']
+        ].each_with_index do |(nm, role, txt), i| %>
+        <div class="glass iris review reveal">
+          <div class="stars">
+            <% 5.times do %><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg><% end %>
+          </div>
+          <p style="font-size:15px;line-height:1.55"><%= txt %></p>
+          <div class="who"><div class="av"></div><div><div class="nm"><%= nm %></div><div class="rl"><%= role %></div></div></div>
+        </div>
+        <% end %>
+      </div>
+    </div>
+    <div class="inner" style="max-width:1240px;margin-top:30px">
+      <p class="muted center mb-sm" style="font-size:13.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:700">Depoimentos em vídeo</p>
+      <div class="carousel" data-carousel>
+        <% 8.times do |i| %>
+        <div class="vid reveal">
+          <div class="play"><svg class="ic" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M8 5v14l11-7z"/></svg></div>
+          <div class="lbl">Depoimento <%= i + 1 %> · em breve</div>
+        </div>
+        <% end %>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 08 · INTEGRAÇÕES ===== -->
+  <section class="sect sect-light" id="integracoes">
+    <div class="inner center">
+      <span class="eyebrow reveal" style="display:inline-flex">Conecta com tudo</span>
+      <h2 class="title reveal d1">Integra com as ferramentas <span class="grad-text">que você já usa.</span></h2>
+      <p class="lede muted reveal d2" style="margin:16px auto 0">Um ecossistema aberto via API e webhooks.</p>
+      <div class="logos mt-lg reveal d2">
+        <% %w[WhatsApp Instagram Meta\ Business E-mail Telegram Webhooks API\ REST Google Dialogflow OpenAI Zapier Slack Make Pagamentos].each do |name| %>
+          <span class="pill"><span class="dot"></span><%= name %></span>
+        <% end %>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 09 · PRICING / CTA ===== -->
+  <section class="sect sect-dark" id="planos">
+    <div class="orbs"><div class="orb b" data-speed="0.12" style="top:-120px"></div><div class="orb a" data-speed="0.18" style="top:auto;bottom:-160px;left:40%"></div></div>
+    <div class="inner">
+      <div class="center" style="max-width:700px;margin:0 auto 16px">
+        <span class="eyebrow reveal">Comece hoje</span>
+        <h2 class="title reveal d1">Escolha seu plano e <span class="grad-text">domine seu WhatsApp.</span></h2>
+        <p class="lede muted reveal d2" style="margin:14px auto 0">Sem fidelidade. Teste grátis. Cancele quando quiser.</p>
+      </div>
+      <div class="plans mt-lg">
+        <div class="glass plan reveal d1">
+          <div class="pn">Essencial</div>
+          <div class="pp">R$ 97<small>/mês</small></div>
+          <p class="muted" style="font-size:13.5px">Pra quem está começando a organizar.</p>
+          <ul>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>1 número WhatsApp</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Até 3 atendentes</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Caixa unificada + funis</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Chatflow básico</li>
+          </ul>
+          <a class="btn btn-ghost" href="/app">Começar agora</a>
+        </div>
+        <div class="glass plan hot reveal d2">
+          <span class="tagpop">Mais popular</span>
+          <div class="pn">Profissional</div>
+          <div class="pp">R$ 197<small>/mês</small></div>
+          <p class="muted" style="font-size:13.5px">A escolha de quem quer vender de verdade.</p>
+          <ul>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Tudo do Essencial +</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>API oficial Meta</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Athenas IA + Chatflow completo</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Atendentes ilimitados</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Campanhas + relatórios</li>
+          </ul>
+          <a class="btn btn-primary" href="/app">Testar grátis</a>
+        </div>
+        <div class="glass plan reveal d3">
+          <div class="pn">Escala</div>
+          <div class="pp">R$ 397<small>/mês</small></div>
+          <p class="muted" style="font-size:13.5px">Pra operações grandes e múltiplas marcas.</p>
+          <ul>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Tudo do Profissional +</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Múltiplos números</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>IA com mais créditos</li>
+            <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Suporte prioritário</li>
+          </ul>
+          <a class="btn btn-ghost" href="/app">Falar com vendas</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DEPOIMENTOS (repete, curto) ===== -->
+  <section class="sect sect-light" style="padding-top:90px;padding-bottom:90px">
+    <div class="inner center" style="max-width:680px">
+      <span class="eyebrow reveal" style="display:inline-flex">Junte-se a quem já decidiu</span>
+      <h2 class="title reveal d1">Mais de <span class="grad-text">milhares de conversas</span> atendidas todo dia.</h2>
+    </div>
+    <div class="inner" style="max-width:1240px;margin-top:28px">
+      <div class="carousel" data-carousel>
+        <% [
+          ['Lucas Pereira', 'Pet Shop', 'Atendimento automático que parece humano. Meus clientes adoram a rapidez.'],
+          ['Fernanda Dias', 'Consultório', 'Agendamentos triplicaram. A IA confirma e remarca sozinha.'],
+          ['Bruno Teixeira', 'E-commerce', 'Recuperei carrinho abandonado por WhatsApp. ROI absurdo.'],
+          ['Aline Rocha', 'Escola de Idiomas', 'Centralizei 4 unidades num painel só. Visão total da operação.']
+        ].each do |(nm, role, txt)| %>
+        <div class="glass iris review reveal">
+          <div class="stars"><% 5.times do %><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg><% end %></div>
+          <p style="font-size:15px;line-height:1.55"><%= txt %></p>
+          <div class="who"><div class="av"></div><div><div class="nm"><%= nm %></div><div class="rl"><%= role %></div></div></div>
+        </div>
+        <% end %>
+      </div>
+      <div class="center" style="margin-top:36px">
+        <a class="btn btn-primary" href="/app">Quero meu WhatsApp no controle <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="ft">
+    <div class="inner">
+      <div class="top">
+        <div>
+          <img class="logo" src="/brand-assets/logo_dark.svg" alt="UniverZAP" />
+          <p style="font-size:14px;max-width:30ch">Seu WhatsApp, no controle total. Atendimento, automação e vendas numa só plataforma.</p>
+        </div>
+        <div>
+          <h4>Produto</h4>
+          <a href="#recursos">Recursos</a>
+          <a href="#athenas">Athenas IA</a>
+          <a href="#chatflow">Chatflow</a>
+          <a href="#planos">Planos</a>
+          <a href="/docs">Documentação</a>
+        </div>
+        <div>
+          <h4>Empresa</h4>
+          <a href="/app">Entrar</a>
+          <a href="mailto:suporte@univerbeauty.com.br">Suporte</a>
+          <a href="mailto:privacidade@univerbeauty.com.br">Privacidade / DPO</a>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <a href="/termos">Termos de Uso</a>
+          <a href="/privacidade">Política de Privacidade</a>
+        </div>
+      </div>
+      <div class="bottom">
+        <span>© <%= Date.current.year %> UniverZAP · operado por UniverBeauty / UniverZap.</span>
+        <span>Parceiro oficial Meta · WhatsApp Business Platform</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Reveal on scroll
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+
+      // Nav scrolled state
+      var nav = document.getElementById('nav');
+      var onScroll = function () { nav.classList.toggle('scrolled', window.scrollY > 30); };
+      onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Parallax orbs
+      if (!reduce) {
+        var orbs = Array.prototype.slice.call(document.querySelectorAll('.orb'));
+        var ticking = false;
+        window.addEventListener('scroll', function () {
+          if (ticking) return; ticking = true;
+          requestAnimationFrame(function () {
+            var y = window.scrollY;
+            orbs.forEach(function (o) {
+              var s = parseFloat(o.getAttribute('data-speed') || '0.1');
+              o.style.transform = 'translateY(' + (y * s) + 'px)';
+            });
+            ticking = false;
+          });
+        }, { passive: true });
+      }
+
+      // Faux animated QR (decorative)
+      var qr = document.getElementById('qrCanvas');
+      if (qr) {
+        var N = 21, cell = 100 / N, ns = 'http://www.w3.org/2000/svg', html = '';
+        function finder(x, y) {
+          html += '<rect x="' + (x*cell) + '" y="' + (y*cell) + '" width="' + (cell*7) + '" height="' + (cell*7) + '" rx="3" fill="#0a0f0e"/>';
+          html += '<rect x="' + ((x+1)*cell) + '" y="' + ((y+1)*cell) + '" width="' + (cell*5) + '" height="' + (cell*5) + '" rx="2" fill="#fff"/>';
+          html += '<rect x="' + ((x+2)*cell) + '" y="' + ((y+2)*cell) + '" width="' + (cell*3) + '" height="' + (cell*3) + '" rx="1.5" fill="#13CB8D"/>';
+        }
+        // pseudo-random but stable modules
+        var seed = 7;
+        function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+        for (var r = 0; r < N; r++) {
+          for (var c = 0; c < N; c++) {
+            var inFinder = (r < 8 && c < 8) || (r < 8 && c > N-9) || (r > N-9 && c < 8);
+            if (inFinder) continue;
+            if (rnd() > 0.55) {
+              html += '<rect x="' + (c*cell) + '" y="' + (r*cell) + '" width="' + (cell*0.92) + '" height="' + (cell*0.92) + '" rx="1" fill="#0a0f0e"/>';
+            }
+          }
+        }
+        finder(0, 0); finder(N-7, 0); finder(0, N-7);
+        qr.innerHTML = html;
+      }
+
+      // Connect tabs
+      var tabs = document.getElementById('connTabs');
+      if (tabs) {
+        tabs.addEventListener('click', function (ev) {
+          var b = ev.target.closest('button'); if (!b) return;
+          tabs.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
+          b.classList.add('on');
+          var t = b.getAttribute('data-tab');
+          document.getElementById('tab-oficial').style.display = t === 'oficial' ? '' : 'none';
+          document.getElementById('tab-qr').style.display = t === 'qr' ? '' : 'none';
+        });
+      }
+
+      // Drag-to-scroll + gentle autoplay for carousels
+      document.querySelectorAll('[data-carousel]').forEach(function (car) {
+        var down = false, startX, startScroll;
+        car.addEventListener('pointerdown', function (e) { down = true; car.classList.add('drag'); startX = e.pageX; startScroll = car.scrollLeft; });
+        window.addEventListener('pointerup', function () { down = false; car.classList.remove('drag'); });
+        car.addEventListener('pointermove', function (e) { if (!down) return; e.preventDefault(); car.scrollLeft = startScroll - (e.pageX - startX); });
+        if (!reduce) {
+          var paused = false;
+          car.addEventListener('pointerenter', function () { paused = true; });
+          car.addEventListener('pointerleave', function () { paused = false; });
+          setInterval(function () {
+            if (paused || down) return;
+            if (car.scrollLeft + car.clientWidth >= car.scrollWidth - 4) car.scrollTo({ left: 0, behavior: 'smooth' });
+            else car.scrollBy({ left: 1, behavior: 'auto' });
+          }, 28);
+        }
+      });
+
+      // Mobile menu → smooth scroll to anchors (links already anchor); just toggle nothing heavy
+      var mb = document.getElementById('menuBtn');
+      if (mb) mb.addEventListener('click', function () { document.getElementById('planos').scrollIntoView({ behavior: 'smooth' }); });
+    })();
+  </script>
+</body>
+</html>
