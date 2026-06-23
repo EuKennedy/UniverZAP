@@ -276,6 +276,52 @@
     .center .lede { margin-left: auto; margin-right: auto; }
     .mb-sm { margin-bottom: 14px; } .mt-lg { margin-top: 40px; }
 
+    /* ---- Scroll progress ---- */
+    .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; z-index: 200;
+      background: linear-gradient(90deg, var(--brand-soft), var(--brand), #38e0ff); box-shadow: 0 0 12px rgba(19,203,141,.7); transition: width .08s linear; }
+
+    /* ---- Cursor glow (liquid spotlight) ---- */
+    .cursor-glow { position: fixed; top: 0; left: 0; width: 460px; height: 460px; border-radius: 50%; pointer-events: none; z-index: 1;
+      transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(19,203,141,.16), transparent 60%);
+      mix-blend-mode: screen; opacity: 0; transition: opacity .4s; will-change: left, top; }
+    .sect-light ~ .cursor-glow { } /* glow lives on body, fine over all */
+
+    /* ---- 3D tilt ---- */
+    .tilt { transform-style: preserve-3d; transition: transform .3s cubic-bezier(.16,1,.3,1); will-change: transform; }
+
+    /* ---- Nav scrollspy active ---- */
+    nav.bar .nav-links a.active { color: #fff; background: rgba(19,203,141,.18); }
+
+    /* ---- Mesh grid backdrop (hero) ---- */
+    .mesh { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .5;
+      background-image: linear-gradient(rgba(19,203,141,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(19,203,141,.06) 1px, transparent 1px);
+      background-size: 54px 54px; mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 35%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 35%, transparent 75%); }
+
+    /* ---- Live pulse ---- */
+    .live { display: inline-flex; align-items: center; gap: 7px; }
+    .live .dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+    .live .dot::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--brand); animation: ping 1.8s cubic-bezier(0,0,.2,1) infinite; }
+    @keyframes ping { 0% { transform: scale(.6); opacity: .9 } 80%,100% { transform: scale(2.2); opacity: 0 } }
+
+    /* ---- Social-proof marquee ---- */
+    .marquee { margin-top: 56px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); overflow: hidden; }
+    .marquee .track { display: flex; gap: 44px; width: max-content; animation: slide 26s linear infinite; }
+    .marquee:hover .track { animation-play-state: paused; }
+    .marquee .item { font-weight: 800; font-size: 17px; letter-spacing: -.01em; color: #cfe3db; opacity: .72; display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; }
+    .marquee .item svg { width: 18px; height: 18px; color: var(--brand); }
+    @keyframes slide { to { transform: translateX(-50%); } }
+
+    /* ---- Pricing billing toggle ---- */
+    .bill { display: inline-flex; align-items: center; gap: 12px; margin-top: 22px; font-weight: 600; font-size: 14px; }
+    .bill .sw { width: 52px; height: 28px; border-radius: 999px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2); position: relative; cursor: pointer; transition: background .25s; }
+    .bill .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .28s cubic-bezier(.16,1,.3,1); }
+    .bill.annual .sw { background: var(--brand); }
+    .bill.annual .sw::after { transform: translateX(24px); }
+    .bill .save { font-size: 12px; font-weight: 800; color: var(--brand-soft); background: rgba(19,203,141,.14); padding: 4px 10px; border-radius: 999px; }
+    .bill .opt { color: #9fb0ab; } .bill .opt.on { color: #fff; }
+
     /* ---- Responsive ---- */
     @media (max-width: 920px) {
       .hero-grid, .cols-2, .vs { grid-template-columns: 1fr; }
@@ -297,6 +343,8 @@
   </style>
 </head>
 <body>
+  <div class="progress" id="progress"></div>
+  <div class="cursor-glow" id="cursorGlow"></div>
 
   <!-- ===== NAV ===== -->
   <nav class="bar" id="nav">
@@ -316,6 +364,7 @@
 
   <!-- ===== 01 · HERO ===== -->
   <header class="sect sect-dark hero">
+    <div class="mesh"></div>
     <div class="orbs">
       <div class="orb a" data-speed="0.18"></div>
       <div class="orb b" data-speed="0.12"></div>
@@ -324,8 +373,8 @@
     <div class="inner">
       <div class="hero-grid">
         <div>
-          <span class="badge reveal in">
-            <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          <span class="badge reveal in live">
+            <span class="dot"></span>
             Parceiro oficial Meta · WhatsApp Business API
           </span>
           <h1 class="display reveal d1">Seu WhatsApp,<br><span class="grad-text">no controle total.</span></h1>
@@ -343,14 +392,25 @@
             <div class="t"><div class="n grad-text">∞</div><div class="l">Atendentes por número</div></div>
           </div>
         </div>
-        <div class="glass iris mock reveal d2">
-          <div class="tag">UniverZAP · Atendimento</div>
+        <div class="glass iris mock tilt reveal d2">
+          <div class="tag live"><span class="dot"></span> UniverZAP · ao vivo</div>
           <div style="margin:14px 0 4px">
             <div class="row"><div class="av"></div><div class="bub them">Oi! Vi o anúncio de vocês 👀 ainda tem vaga?</div></div>
             <div class="row me"><div class="bub me">Oi, Marina! 💚 Tenho sim. Quer que eu já reserve no seu nome?</div></div>
             <div class="row"><div class="av"></div><div class="bub them">Quero!! Como faço pra pagar?</div></div>
             <div class="row me"><div class="bub me">Athenas IA respondeu em 2s e moveu pro funil “Fechamento” 🚀</div></div>
           </div>
+        </div>
+      </div>
+
+      <div class="marquee reveal d3">
+        <div class="track" id="marquee">
+          <% mq = ['Clínicas & Estética','E-commerce','Imobiliárias','Cursos Online','Salões de Beleza','Agências','Pet Shops','Consultórios','Restaurantes','Infoprodutos'] %>
+          <% 2.times do %>
+            <% mq.each do |m| %>
+              <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><%= m %></span>
+            <% end %>
+          <% end %>
         </div>
       </div>
     </div>
@@ -404,8 +464,8 @@
           </ul>
           <a class="btn btn-primary mt-lg" href="/app">Ativar a Athenas <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
-        <div class="glass iris mock reveal d2" style="padding:22px">
-          <div class="tag">⚡ Athenas IA · respondendo</div>
+        <div class="glass iris mock tilt reveal d2" style="padding:22px">
+          <div class="tag live"><span class="dot"></span> Athenas IA · respondendo</div>
           <div style="margin-top:14px">
             <div class="row"><div class="av"></div><div class="bub them">Qual o valor do plano anual?</div></div>
             <div class="row me"><div class="bub me">O plano anual sai por 12x de R$ 197 com 2 meses grátis 💚 Quer que eu gere seu link de pagamento?</div></div>
@@ -652,11 +712,17 @@
         <span class="eyebrow reveal">Comece hoje</span>
         <h2 class="title reveal d1">Escolha seu plano e <span class="grad-text">domine seu WhatsApp.</span></h2>
         <p class="lede muted reveal d2" style="margin:14px auto 0">Sem fidelidade. Teste grátis. Cancele quando quiser.</p>
+        <div class="bill reveal d2" id="bill" style="justify-content:center">
+          <span class="opt on" id="optM">Mensal</span>
+          <span class="sw" id="billSw" role="switch" aria-label="Alternar cobrança"></span>
+          <span class="opt" id="optA">Anual</span>
+          <span class="save">2 meses grátis</span>
+        </div>
       </div>
       <div class="plans mt-lg">
         <div class="glass plan reveal d1">
           <div class="pn">Essencial</div>
-          <div class="pp">R$ 97<small>/mês</small></div>
+          <div class="pp">R$ <span class="amt" data-m="97" data-a="81">97</span><small>/mês</small></div>
           <p class="muted" style="font-size:13.5px">Pra quem está começando a organizar.</p>
           <ul>
             <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>1 número WhatsApp</li>
@@ -669,7 +735,7 @@
         <div class="glass plan hot reveal d2">
           <span class="tagpop">Mais popular</span>
           <div class="pn">Profissional</div>
-          <div class="pp">R$ 197<small>/mês</small></div>
+          <div class="pp">R$ <span class="amt" data-m="197" data-a="164">197</span><small>/mês</small></div>
           <p class="muted" style="font-size:13.5px">A escolha de quem quer vender de verdade.</p>
           <ul>
             <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Tudo do Essencial +</li>
@@ -682,7 +748,7 @@
         </div>
         <div class="glass plan reveal d3">
           <div class="pn">Escala</div>
-          <div class="pp">R$ 397<small>/mês</small></div>
+          <div class="pp">R$ <span class="amt" data-m="397" data-a="331">397</span><small>/mês</small></div>
           <p class="muted" style="font-size:13.5px">Pra operações grandes e múltiplas marcas.</p>
           <ul>
             <li><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Tudo do Profissional +</li>
@@ -849,6 +915,64 @@
       // Mobile menu → smooth scroll to anchors (links already anchor); just toggle nothing heavy
       var mb = document.getElementById('menuBtn');
       if (mb) mb.addEventListener('click', function () { document.getElementById('planos').scrollIntoView({ behavior: 'smooth' }); });
+
+      // Scroll progress bar
+      var prog = document.getElementById('progress');
+      var setProg = function () {
+        var h = document.documentElement.scrollHeight - window.innerHeight;
+        prog.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      };
+      setProg(); window.addEventListener('scroll', setProg, { passive: true });
+
+      // Cursor glow (liquid spotlight) — pointer devices only
+      var glow = document.getElementById('cursorGlow');
+      if (glow && !reduce && window.matchMedia('(pointer:fine)').matches) {
+        window.addEventListener('pointermove', function (e) {
+          glow.style.opacity = '1';
+          glow.style.left = e.clientX + 'px';
+          glow.style.top = e.clientY + 'px';
+        }, { passive: true });
+      }
+
+      // 3D tilt on glass cards
+      if (!reduce && window.matchMedia('(pointer:fine)').matches) {
+        document.querySelectorAll('.tilt').forEach(function (card) {
+          card.addEventListener('pointermove', function (e) {
+            var r = card.getBoundingClientRect();
+            var px = (e.clientX - r.left) / r.width - 0.5;
+            var py = (e.clientY - r.top) / r.height - 0.5;
+            card.style.transform = 'perspective(900px) rotateY(' + (px * 9) + 'deg) rotateX(' + (-py * 9) + 'deg) translateZ(0)';
+          });
+          card.addEventListener('pointerleave', function () { card.style.transform = ''; });
+        });
+      }
+
+      // Nav scrollspy
+      var navLinks = Array.prototype.slice.call(document.querySelectorAll('nav.bar .nav-links a'));
+      var spyTargets = navLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+      var spy = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          navLinks.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id); });
+        });
+      }, { rootMargin: '-45% 0px -50% 0px' });
+      spyTargets.forEach(function (t) { if (t) spy.observe(t); });
+
+      // Pricing billing toggle
+      var bill = document.getElementById('bill');
+      if (bill) {
+        var sw = document.getElementById('billSw');
+        var amts = Array.prototype.slice.call(document.querySelectorAll('.amt'));
+        var toggle = function () {
+          var annual = bill.classList.toggle('annual');
+          document.getElementById('optM').classList.toggle('on', !annual);
+          document.getElementById('optA').classList.toggle('on', annual);
+          amts.forEach(function (s) { s.textContent = annual ? s.getAttribute('data-a') : s.getAttribute('data-m'); });
+        };
+        sw.addEventListener('click', toggle);
+        document.getElementById('optA').addEventListener('click', function () { if (!bill.classList.contains('annual')) toggle(); });
+        document.getElementById('optM').addEventListener('click', function () { if (bill.classList.contains('annual')) toggle(); });
+      }
     })();
   </script>
 </body>
