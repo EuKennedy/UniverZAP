@@ -26,14 +26,19 @@
       font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background: var(--ink);
       color: #f1f5f4;
-      line-height: 1.6;
-      letter-spacing: -0.01em;
+      line-height: 1.7;
+      letter-spacing: -0.004em;
+      font-size: 16px;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
     ::selection { background: rgba(19,203,141,0.32); color: #fff; }
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; display: block; }
+    a:focus-visible, button:focus-visible, [role="switch"]:focus-visible {
+      outline: 2px solid var(--brand-soft); outline-offset: 3px; border-radius: 8px;
+    }
+    .conn-tabs button:focus-visible { outline-offset: -2px; }
 
     /* ---- Section theming (alternating) ---- */
     .sect { position: relative; padding: 120px 24px; overflow: hidden; }
@@ -41,8 +46,8 @@
     .sect-dark { background: var(--ink); color: #eef2f1; }
     .sect-dark-2 { background: linear-gradient(180deg, #0b1211, var(--ink)); color: #eef2f1; }
     .sect-light { background: var(--paper); color: #0b1a15; }
-    .sect-light .muted { color: #4b5d57; }
-    .sect-dark .muted, .sect-dark-2 .muted { color: #9fb0ab; }
+    .sect-light .muted { color: #44544e; }
+    .sect-dark .muted, .sect-dark-2 .muted { color: #b6c4bf; }
 
     /* ---- Typography ---- */
     .eyebrow {
@@ -55,7 +60,7 @@
     h1, h2, h3 { font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; margin: 0; }
     .display { font-size: clamp(40px, 7vw, 86px); font-weight: 900; }
     h2.title { font-size: clamp(30px, 4.5vw, 54px); margin-bottom: 18px; }
-    .lede { font-size: clamp(16px, 1.6vw, 20px); font-weight: 400; max-width: 56ch; }
+    .lede { font-size: clamp(16.5px, 1.7vw, 20px); font-weight: 450; line-height: 1.65; max-width: 58ch; }
     .grad-text {
       background: linear-gradient(100deg, var(--brand-soft), var(--brand) 45%, #38e0ff 90%);
       -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -106,8 +111,8 @@
       -webkit-mask-composite: xor; mask-composite: exclude;
       opacity: .0; transition: opacity .4s; pointer-events: none;
     }
-    .glass.iris:hover::before { opacity: .9; animation: spin 6s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .glass.iris:hover::before { opacity: .9; animation: irisShift 6s linear infinite; }
+    @keyframes irisShift { to { filter: hue-rotate(360deg); } }
 
     /* ---- Aurora / liquid orbs ---- */
     .orbs { position: absolute; inset: 0; z-index: 0; pointer-events: none; filter: blur(60px); }
@@ -180,7 +185,7 @@
     }
     .sect-light .feat-ic { color: var(--brand-deep); }
     h3.card-h { font-size: 19px; margin-bottom: 8px; font-weight: 700; letter-spacing: -.02em; }
-    .card-p { font-size: 14.5px; }
+    .card-p { font-size: 15.5px; line-height: 1.6; }
 
     svg.ic { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     svg.ic-sm { width: 18px; height: 18px; }
@@ -191,7 +196,7 @@
     .vs .bad { background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.22); }
     .vs .good { background: rgba(19,203,141,.08); border: 1px solid rgba(19,203,141,.3); }
     .vs ul { list-style: none; padding: 0; margin: 16px 0 0; }
-    .vs li { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 13px; font-size: 14.5px; }
+    .vs li { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 13px; font-size: 15.5px; line-height: 1.55; }
     .vs .bad li svg { color: #fb7185; flex-shrink: 0; } .vs .good li svg { color: var(--brand); flex-shrink: 0; }
     .vs h3 { font-size: 20px; margin-bottom: 4px; }
 
@@ -223,17 +228,17 @@
     .conn-tabs button.on { background: linear-gradient(135deg, var(--brand), var(--brand-deep)); color: #04130d; }
 
     /* ---- Carousels ---- */
-    .carousel { display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 2px 22px; -ms-overflow-style: none; scrollbar-width: none; cursor: grab; }
+    .carousel { display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x proximity; scroll-behavior: smooth; touch-action: pan-x; overscroll-behavior-x: contain; padding: 8px 2px 22px; -ms-overflow-style: none; scrollbar-width: none; cursor: grab; }
     .carousel::-webkit-scrollbar { display: none; }
     .carousel.drag { cursor: grabbing; }
-    .review { scroll-snap-align: start; flex: 0 0 360px; max-width: 86vw; padding: 26px; border-radius: 22px; }
+    .review { scroll-snap-align: start; flex: 0 0 clamp(258px, 84vw, 350px); padding: 24px; border-radius: 22px; }
     .stars { display: flex; gap: 3px; color: #ffd166; margin-bottom: 14px; }
     .stars svg { width: 17px; height: 17px; fill: currentColor; stroke: none; }
     .review .who { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
     .review .who .av { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), #38e0ff); flex-shrink: 0; }
     .review .who .nm { font-weight: 700; font-size: 14.5px; } .review .who .rl { font-size: 12.5px; color: #9fb0ab; }
     .sect-light .review .who .rl { color: #6b7d77; }
-    .vid { scroll-snap-align: start; flex: 0 0 220px; aspect-ratio: 9/16; border-radius: 20px; position: relative; overflow: hidden;
+    .vid { scroll-snap-align: start; flex: 0 0 clamp(150px, 46vw, 210px); aspect-ratio: 9/16; border-radius: 20px; position: relative; overflow: hidden;
       background: linear-gradient(160deg, #10201b, #0b1513); border: 1px solid rgba(255,255,255,.1); display: grid; place-content: center; }
     .sect-light .vid { background: linear-gradient(160deg, #e7f1ec, #d8e9e1); border-color: rgba(11,26,21,.08); }
     .vid .play { width: 56px; height: 56px; border-radius: 50%; background: rgba(19,203,141,.92); display: grid; place-content: center; color: #04130d; box-shadow: 0 10px 30px -8px rgba(19,203,141,.7); }
@@ -322,17 +327,43 @@
     .bill .save { font-size: 12px; font-weight: 800; color: var(--brand-soft); background: rgba(19,203,141,.14); padding: 4px 10px; border-radius: 999px; }
     .bill .opt { color: #9fb0ab; } .bill .opt.on { color: #fff; }
 
+    /* ---- Mobile menu ---- */
+    .mobile-menu { position: fixed; inset: 0; z-index: 90; display: none; }
+    .mobile-menu.open { display: block; }
+    .mobile-menu .backdrop { position: absolute; inset: 0; background: rgba(6,11,10,.6); backdrop-filter: blur(6px); }
+    .mobile-menu .panel { position: absolute; top: 70px; left: 14px; right: 14px; padding: 14px;
+      border-radius: 20px; background: rgba(12,18,17,.96); border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 30px 70px -20px rgba(0,0,0,.7); display: flex; flex-direction: column; gap: 4px; }
+    .mobile-menu .panel a { font-size: 16px; font-weight: 600; color: #eef2f1; padding: 14px 14px; border-radius: 12px; }
+    .mobile-menu .panel a:active { background: rgba(255,255,255,.06); }
+    .mobile-menu .panel .btn { margin-top: 8px; }
+
     /* ---- Responsive ---- */
     @media (max-width: 920px) {
-      .hero-grid, .cols-2, .vs { grid-template-columns: 1fr; }
+      .hero-grid, .cols-2, .vs { grid-template-columns: 1fr; gap: 36px; }
       .cards-3, .plans { grid-template-columns: 1fr; }
       .bento { grid-template-columns: 1fr; }
       .bento .span3, .bento .span2, .bento .span6 { grid-column: auto; }
       .plan.hot { transform: none; }
+      .cols-2 > [style*="order:2"], .cols-2 > [style*="order: 2"] { order: 0 !important; }
+      .cols-2 > [style*="order:1"], .cols-2 > [style*="order: 1"] { order: 0 !important; }
       nav.bar .nav-links { display: none; }
+      nav.bar .btn-ghost { display: none; }
       nav .menu-btn { display: inline-flex; }
-      .sect { padding: 80px 20px; }
+      .sect { padding: 76px 18px; }
+      .hero { min-height: auto; padding-top: 112px; }
       footer.ft .top { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .display { font-size: clamp(33px, 10vw, 46px); }
+      h2.title { font-size: clamp(26px, 7vw, 34px); }
+      .sect { padding: 60px 16px; }
+      nav.bar { padding: 9px 10px 9px 16px; }
+      nav.bar .btn-primary { padding: 9px 15px !important; font-size: 14px; }
+      .hero .trust { gap: 18px; }
+      .hero .trust .n { font-size: 25px; }
+      .glass, .vs .panel, .plan, .bento .cell, .review { border-radius: 18px; }
+      footer.ft .top { grid-template-columns: 1fr; gap: 22px; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -359,8 +390,21 @@
     <span class="spacer"></span>
     <a class="btn btn-ghost" style="padding:10px 18px" href="/app">Entrar</a>
     <a class="btn btn-primary" style="padding:11px 20px" href="/app">Começar grátis</a>
-    <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+    <button class="menu-btn" id="menuBtn" aria-label="Abrir menu" aria-expanded="false"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
   </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="backdrop" data-close></div>
+    <div class="panel">
+      <a href="#dor" data-close>O problema</a>
+      <a href="#athenas" data-close>Athenas IA</a>
+      <a href="#chatflow" data-close>Chatflow</a>
+      <a href="#recursos" data-close>Recursos</a>
+      <a href="#planos" data-close>Planos</a>
+      <a class="btn btn-ghost" href="/app" data-close>Entrar</a>
+      <a class="btn btn-primary" href="/app" data-close>Começar grátis</a>
+    </div>
+  </div>
 
   <!-- ===== 01 · HERO ===== -->
   <header class="sect sect-dark hero">
@@ -894,27 +938,66 @@
         });
       }
 
-      // Drag-to-scroll + gentle autoplay for carousels
+      // Drag-to-scroll (fine pointers only) + card-by-card autoplay.
+      // We advance by a whole card every few seconds instead of nudging 1px
+      // per tick — the old approach fought scroll-snap and produced the
+      // flicker/teleport/jitter on touch devices.
       document.querySelectorAll('[data-carousel]').forEach(function (car) {
-        var down = false, startX, startScroll;
-        car.addEventListener('pointerdown', function (e) { down = true; car.classList.add('drag'); startX = e.pageX; startScroll = car.scrollLeft; });
-        window.addEventListener('pointerup', function () { down = false; car.classList.remove('drag'); });
-        car.addEventListener('pointermove', function (e) { if (!down) return; e.preventDefault(); car.scrollLeft = startScroll - (e.pageX - startX); });
+        var fine = window.matchMedia('(pointer:fine)').matches;
+        var down = false, moved = false, startX = 0, startScroll = 0;
+
+        if (fine) {
+          car.addEventListener('pointerdown', function (e) {
+            down = true; moved = false; car.classList.add('drag');
+            startX = e.pageX; startScroll = car.scrollLeft;
+          });
+          window.addEventListener('pointerup', function () { down = false; car.classList.remove('drag'); });
+          car.addEventListener('pointermove', function (e) {
+            if (!down) return;
+            var dx = e.pageX - startX;
+            if (Math.abs(dx) > 3) moved = true;
+            car.scrollLeft = startScroll - dx;
+          });
+          // Swallow click after a real drag so links don't fire mid-drag.
+          car.addEventListener('click', function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
+        }
+
         if (!reduce) {
           var paused = false;
+          var step = function () {
+            var card = car.firstElementChild;
+            return card ? card.getBoundingClientRect().width + 18 : car.clientWidth;
+          };
           car.addEventListener('pointerenter', function () { paused = true; });
           car.addEventListener('pointerleave', function () { paused = false; });
+          car.addEventListener('touchstart', function () { paused = true; }, { passive: true });
+          car.addEventListener('touchend', function () { setTimeout(function () { paused = false; }, 4000); });
           setInterval(function () {
             if (paused || down) return;
-            if (car.scrollLeft + car.clientWidth >= car.scrollWidth - 4) car.scrollTo({ left: 0, behavior: 'smooth' });
-            else car.scrollBy({ left: 1, behavior: 'auto' });
-          }, 28);
+            if (car.scrollLeft + car.clientWidth >= car.scrollWidth - 8) {
+              car.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+              car.scrollBy({ left: step(), behavior: 'smooth' });
+            }
+          }, 3800);
         }
       });
 
-      // Mobile menu → smooth scroll to anchors (links already anchor); just toggle nothing heavy
+      // Mobile menu toggle
       var mb = document.getElementById('menuBtn');
-      if (mb) mb.addEventListener('click', function () { document.getElementById('planos').scrollIntoView({ behavior: 'smooth' }); });
+      var mm = document.getElementById('mobileMenu');
+      if (mb && mm) {
+        var setMenu = function (open) {
+          mm.classList.toggle('open', open);
+          mb.setAttribute('aria-expanded', open ? 'true' : 'false');
+          document.body.style.overflow = open ? 'hidden' : '';
+        };
+        mb.addEventListener('click', function () { setMenu(!mm.classList.contains('open')); });
+        mm.querySelectorAll('[data-close]').forEach(function (el) {
+          el.addEventListener('click', function () { setMenu(false); });
+        });
+        window.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
+      }
 
       // Scroll progress bar
       var prog = document.getElementById('progress');
