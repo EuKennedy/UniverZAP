@@ -385,10 +385,23 @@ const conversationList = computed(() => {
   return localConversationList;
 });
 
+// Stop paginating once we already hold everything the tab badge promises.
+// `buildConversationList` only marks the list "end reached" when a page comes
+// back empty, so on short tabs (e.g. Grupos with a single conversation) the
+// IntersectionObserver could keep firing loadMore → refetch in a loop and
+// hammer the server. Comparing the loaded count against the backend-computed
+// badge count gives us a hard, request-free stop.
+const hasLoadedAllForTab = computed(
+  () =>
+    !hasAppliedFiltersOrActiveFolders.value &&
+    activeAssigneeTabCount.value > 0 &&
+    conversationList.value.length >= activeAssigneeTabCount.value
+);
+
 const showEndOfListMessage = computed(() => {
   return !!(
     conversationList.value.length &&
-    hasCurrentPageEndReached.value &&
+    (hasCurrentPageEndReached.value || hasLoadedAllForTab.value) &&
     !chatListLoading.value
   );
 });
@@ -618,6 +631,12 @@ function resetAndFetchData() {
 
 function loadMoreConversations() {
   if (hasCurrentPageEndReached.value || chatListLoading.value) {
+    return;
+  }
+
+  // Hard stop: never refetch once we already hold the whole tab. Prevents the
+  // loadMore/refetch loop on short tabs (Grupos) from spamming the backend.
+  if (hasLoadedAllForTab.value) {
     return;
   }
 
