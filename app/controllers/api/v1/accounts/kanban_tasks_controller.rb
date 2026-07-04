@@ -110,13 +110,42 @@ class Api::V1::Accounts::KanbanTasksController < Api::V1::Accounts::BaseControll
     Current.account.conversations.find_by!(display_id: identifier)
   end
 
+  TIMESTAMP_PARAMS = %i[start_date due_date completed_at].freeze
+
   def permitted_params
-    params.require(:kanban_task).permit(
-      :title, :description, :priority, :position,
-      :start_date, :due_date, :funnel_stage_id,
-      :parent_task_id, :estimate_minutes, :completed_at,
-      files: []
+    normalize_timestamps(
+      params.require(:kanban_task).permit(
+        :title, :description, :priority, :position,
+        :start_date, :due_date, :funnel_stage_id,
+        :parent_task_id, :estimate_minutes, :completed_at,
+        files: []
+      )
     )
+  end
+
+  # O front envia start_date/due_date/completed_at como epoch em segundos.
+  # Atribuir o Integer cru numa coluna :datetime faz o Postgres recusar o
+  # INSERT/UPDATE e o save! estourar — era por isso que tarefas com prazo
+  # "não salvavam". Convertemos na fronteira da API, no mesmo espírito do
+  # helper parse_date_time usado no resto do app.
+  def normalize_timestamps(permitted)
+    TIMESTAMP_PARAMS.each do |field|
+      next unless permitted.key?(field)
+
+      permitted[field] = epoch_to_time(permitted[field])
+    end
+    permitted
+  end
+
+  def epoch_to_time(value)
+    return nil if value.blank?
+    return value if value.acts_like?(:time)
+    return Time.zone.at(value) if value.is_a?(Numeric)
+
+    digits = value.to_s
+    digits.match?(/\A\d+\z/) ? Time.zone.at(digits.to_i) : Time.zone.parse(digits)
+  rescue ArgumentError, TypeError
+    nil
   end
 
   def apply_associations(task)
