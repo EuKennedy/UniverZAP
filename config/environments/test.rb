@@ -10,10 +10,17 @@ Rails.application.configure do
 
   config.cache_classes = false
 
-  # Do not eager load code on boot. This avoids loading your whole application
-  # just for the purpose of running a single test. If you are using a tool that
-  # preloads Rails for running tests, you may have to set it to true.
-  config.eager_load = false
+  # Eager load the whole app in CI so every constant is loaded once, up front,
+  # in a deterministic state — matching how production boots. Locally we keep
+  # it off so a single spec runs fast.
+  #
+  # Why this matters: with lazy loading + reloading enabled (cache_classes
+  # false), autoloaded constants can be first-loaded/reloaded in an order that
+  # depends on which specs run together. That made `rescue`/`is_a?` checks
+  # against constants like Kanban::Automations::Actions::Base::ExecutionError
+  # occasionally miss, so the executor suite failed depending only on spec
+  # sharding order. Eager loading in CI removes that nondeterminism.
+  config.eager_load = ENV['CI'].present?
 
   # Configure public file server for tests with Cache-Control for performance.
   config.public_file_server.enabled = true
