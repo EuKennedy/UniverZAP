@@ -5,4 +5,6 @@ class LandingController < ActionController::Base # rubocop:disable Rails/Applica
   layout false
 
   def show; end
+
+  def lpteste; end
 end

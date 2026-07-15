@@ -64,6 +64,7 @@ Rails.application.routes.draw do
 
   # Public marketing landing page — no auth, self-contained page.
   get '/lp', to: 'landing#show'
+  get '/lpteste', to: 'landing#lpteste'
   get '/api', to: 'api#index'
   namespace :api, defaults: { format: 'json' } do
     namespace :v1 do
