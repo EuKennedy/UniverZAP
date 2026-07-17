@@ -65,6 +65,8 @@ header.stuck .hd{height:60px}
 .brand{display:inline-flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:-.03em;color:var(--ink);text-decoration:none;position:relative}
 .brand .mk{width:32px;height:32px;border-radius:10px;background:linear-gradient(145deg,#34D26B,#12833F);display:grid;place-items:center;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 14px -5px rgba(21,140,64,.6)}
 .brand .mk i{width:17px;height:17px}
+.brand .logo{height:clamp(26px,5.5vw,30px);width:auto;display:block}
+footer .brand .logo{height:32px}
 .nav{display:none;align-items:center;gap:2px}
 .nav a{position:relative;color:var(--slate);text-decoration:none;font-weight:500;font-size:14.5px;padding:8px 14px;border-radius:10px;transition:color .2s}
 .nav a::after{content:"";position:absolute;left:14px;right:14px;bottom:5px;height:1.5px;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
@@ -323,7 +325,7 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
 <header id="hd">
   <div class="hd-bg"></div>
   <div class="wrap"><div class="hd">
-    <a href="#top" class="brand"><span class="mk"><i data-lucide="message-circle-more"></i></span>UniverZAP</a>
+    <a href="#top" class="brand" aria-label="UniverZAP"><svg class="logo" viewBox="0 0 768 192" fill="none" role="img" xmlns="http://www.w3.org/2000/svg"><title>UniverZAP</title><circle cx="96" cy="96" r="72" fill="#22C55E"/><path d="M96 44c-28.7 0-52 21.3-52 47.6 0 9.4 3 18 8 25.4L40 152l34.7-7.4c5.2 1.9 10.8 3 16.6 3 28.7 0 52-21.3 52-47.6S124.7 44 96 44z" fill="#FFFFFF"/><ellipse cx="77.5" cy="91" rx="6.2" ry="6.2" fill="#22C55E"/><path d="M93.5 88.5c-.5 1-.7 2.3-.5 3.5 .5 3 3 5 6 4.5 2.5-.5 4.5-2.5 5-5" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M73 107c5.5 7 13.5 11.5 22 11.5s16.5-4.5 22-11.5" stroke="#22C55E" stroke-width="5.5" stroke-linecap="round" fill="none"/><g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Helvetica,Arial,sans-serif" font-weight="700"><text x="200" y="130" font-size="100" fill="#9CA3AF" letter-spacing="-3">univer</text><text x="510" y="130" font-size="100" fill="#22C55E" letter-spacing="-3">ZAP</text></g></svg></a>
     <nav class="nav">
       <a href="#como">Como funciona</a><a href="#conexao">Conexão</a><a href="#athenas">Athenas IA</a>
       <a href="#recursos">Recursos</a><a href="#clientes">Clientes</a><a href="#faq">Dúvidas</a>
@@ -665,7 +667,7 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
   <div class="wrap">
     <div class="ft">
       <div class="ft-b">
-        <a href="#top" class="brand"><span class="mk"><i data-lucide="message-circle-more"></i></span>UniverZAP</a>
+        <a href="#top" class="brand" aria-label="UniverZAP"><svg class="logo" viewBox="0 0 768 192" fill="none" role="img" xmlns="http://www.w3.org/2000/svg"><title>UniverZAP</title><circle cx="96" cy="96" r="72" fill="#22C55E"/><path d="M96 44c-28.7 0-52 21.3-52 47.6 0 9.4 3 18 8 25.4L40 152l34.7-7.4c5.2 1.9 10.8 3 16.6 3 28.7 0 52-21.3 52-47.6S124.7 44 96 44z" fill="#FFFFFF"/><ellipse cx="77.5" cy="91" rx="6.2" ry="6.2" fill="#22C55E"/><path d="M93.5 88.5c-.5 1-.7 2.3-.5 3.5 .5 3 3 5 6 4.5 2.5-.5 4.5-2.5 5-5" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M73 107c5.5 7 13.5 11.5 22 11.5s16.5-4.5 22-11.5" stroke="#22C55E" stroke-width="5.5" stroke-linecap="round" fill="none"/><g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Helvetica,Arial,sans-serif" font-weight="700"><text x="200" y="130" font-size="100" fill="#9CA3AF" letter-spacing="-3">univer</text><text x="510" y="130" font-size="100" fill="#22C55E" letter-spacing="-3">ZAP</text></g></svg></a>
         <p>Seu WhatsApp, no controle total. Atendimento, automação e vendas numa só plataforma.</p>
       </div>
       <div class="ft-c"><h4>Produto</h4><a href="#recursos">Recursos</a><a href="#athenas">Athenas IA</a><a href="#chatflow">Chatflow</a><a href="#conexao">Conexão</a><a href="#casos">Casos de uso</a></div>
