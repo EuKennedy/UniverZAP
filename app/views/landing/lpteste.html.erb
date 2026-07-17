@@ -227,6 +227,25 @@ h1.hero-h{font-size:clamp(2.9rem,9vw,5.2rem);letter-spacing:-.045em;margin-top:2
 .lb-inner,.lb-inner iframe,.lb-inner video{width:100%;height:100%;border:0;display:block;object-fit:cover}
 .lb-x{position:fixed;top:20px;right:22px;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);color:#fff;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:2}
 .lb-x i{width:20px;height:20px}
+.rcarousel{position:relative;margin-top:44px}
+.rtrack{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:36px max(16px,calc(50% - 156px));scrollbar-width:none;cursor:grab;-webkit-overflow-scrolling:touch}
+.rtrack:active{cursor:grabbing}.rtrack::-webkit-scrollbar{display:none}
+.rcard{flex:0 0 300px;scroll-snap-align:center;aspect-ratio:9/16;border-radius:28px;position:relative;overflow:hidden;border:0;padding:0;cursor:pointer;background:linear-gradient(165deg,#0B2A1C,#12833F);box-shadow:var(--sh-2);transform:scale(var(--s,1));opacity:var(--o,1);transition:box-shadow .45s var(--ease);-webkit-tap-highlight-color:transparent}
+.rthumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rcard::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,19,13,.02),rgba(7,19,13,.52))}
+.rcard.active{box-shadow:0 34px 74px -26px rgba(21,140,64,.55),0 0 0 1.5px rgba(52,210,107,.55),0 0 48px -8px rgba(52,210,107,.5)}
+.rplay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:66px;height:66px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;z-index:2;transition:transform .3s var(--ease)}
+.rcard:hover .rplay{transform:translate(-50%,-50%) scale(1.1)}
+.rplay i{width:25px;height:25px;margin-left:3px}
+.rwho{position:absolute;left:0;right:0;bottom:0;padding:18px;color:#fff;z-index:2;text-align:left}
+.rwho b{font-family:var(--disp);font-weight:600;font-size:16px;display:block;letter-spacing:-.01em}
+.rwho small{opacity:.86;font-size:12.5px}
+.rnav{position:absolute;top:calc(50% - 10px);transform:translateY(-50%);z-index:5;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--ink);background:linear-gradient(150deg,rgba(255,255,255,.88),rgba(255,255,255,.62));border:1px solid var(--lg-bd);box-shadow:var(--sh-2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .2s var(--ease)}
+.rnav:hover{transform:translateY(-50%) scale(1.09)}.rnav.prev{left:4px}.rnav.next{right:4px}.rnav i{width:22px;height:22px}
+.rdots{display:flex;gap:8px;justify-content:center;margin-top:22px}
+.rdot{width:8px;height:8px;border-radius:50%;border:0;padding:0;cursor:pointer;background:rgba(7,19,13,.16);transition:width .3s var(--ease),background .3s}
+.rdot.on{width:26px;border-radius:5px;background:linear-gradient(90deg,#22C55E,#15803D)}
+@media(max-width:640px){.rcard{flex-basis:76vw}.rnav{display:none}.rtrack{padding:28px 12vw}}
 
 .integ{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:760px;margin:0 auto}
 .integ .ch{display:inline-flex;align-items:center;gap:9px;font-weight:500;font-size:14.5px;padding:12px 18px;border-radius:14px;color:var(--green-800)}
@@ -563,16 +582,17 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
 
 <section id="clientes">
   <div class="wrap">
-    <div class="quote lg rv">
-      <div class="stars"><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i></div>
-      <blockquote>“Meu WhatsApp era um caos. Hoje o time inteiro atende no mesmo número, a IA responde de madrugada e eu vejo cada venda no funil. Foi o divisor de águas da operação.”</blockquote>
-      <div class="by"><span class="av">BS</span><div style="text-align:left"><b>Bianca Souza</b><small>Loja da Bia · +38% em vendas</small></div></div>
+    <div class="eyeline c rv">
+      <span class="kicker">Depoimentos reais</span>
+      <h2>Quem usa, não larga mais.</h2>
+      <p class="lead">Histórias de verdade de quem colocou o WhatsApp no controle com o UniverZAP. Arraste e aperte o play.</p>
     </div>
-    <div class="eyeline c rv" style="margin-top:60px;margin-bottom:30px">
-      <span class="kicker">Quem usa, ama</span>
-      <h2>Histórias de quem colocou<br>o WhatsApp no controle.</h2>
+    <div class="rcarousel rv">
+      <button class="rnav prev" id="rPrev" aria-label="Anterior"><i data-lucide="chevron-left"></i></button>
+      <div class="rtrack" id="rtrack"></div>
+      <button class="rnav next" id="rNext" aria-label="Próximo"><i data-lucide="chevron-right"></i></button>
+      <div class="rdots" id="rdots"></div>
     </div>
-    <div class="vids rv" id="vids"></div>
   </div>
 </section>
 
@@ -695,29 +715,48 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
 <div class="lb" id="lb"><button class="lb-x" id="lbX" aria-label="Fechar"><i data-lucide="x"></i></button><div class="lb-frame"><div class="lb-inner" id="lbInner"></div></div></div>
 <script>
 /* ============ BUNNY STREAM — preencha estes 3 campos ============ */
-window.BUNNY_LIB  = "";                 /* Library ID do Stream, ex: "123456"            */
-window.BUNNY_HOST = "";                 /* Pull zone host, ex: "vz-xxxxxxxx.b-cdn.net"   */
+window.BUNNY_LIB  = "706484";
+window.BUNNY_HOST = "vz-df16a48e-aa1.b-cdn.net";
 window.TESTIMONIALS = [
-  { guid:"", name:"Loja da Bia",  tag:"+38% em vendas no WhatsApp" },
-  { guid:"", name:"Studio Rafa",  tag:"time de 6 vendedores organizado" },
-  { guid:"", name:"UniverBeauty", tag:"carrinho abandonado recuperado" },
-  { guid:"", name:"Depoimento 4", tag:"resultado real" },
-  { guid:"", name:"Depoimento 5", tag:"resultado real" }
+  { guid:"c99fce6f-73f4-41a8-9790-99d2e85890ec", name:"Cliente UniverZAP", tag:"depoimento em vídeo" },
+  { guid:"033f8812-cc1b-4d98-93c0-66662f27af25", name:"Cliente UniverZAP", tag:"depoimento em vídeo" },
+  { guid:"388658a4-c91e-4651-82e1-a4724019915d", name:"Cliente UniverZAP", tag:"depoimento em vídeo" },
+  { guid:"9cb99d1a-d879-4ba8-acb0-92cec44493ee", name:"Cliente UniverZAP", tag:"depoimento em vídeo" },
+  { guid:"524f4f08-ad4e-44fb-a14f-b5cd5efa841b", name:"Cliente UniverZAP", tag:"depoimento em vídeo" },
+  { guid:"bb254562-0ca1-461a-9a8b-a1a3bdaad5eb", name:"Cliente UniverZAP", tag:"depoimento em vídeo" }
 ];
 /* =============================================================== */
 (function(){
   var LIB=window.BUNNY_LIB,HOST=window.BUNNY_HOST,T=window.TESTIMONIALS||[];
-  var vids=document.getElementById('vids'),lb=document.getElementById('lb'),inner=document.getElementById('lbInner');
+  var lb=document.getElementById('lb'),inner=document.getElementById('lbInner');
   function open(guid){inner.innerHTML='<iframe src="https://iframe.mediadelivery.net/embed/'+LIB+'/'+guid+'?autoplay=true&preload=true" loading="lazy" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>';lb.classList.add('open');document.body.style.overflow='hidden'}
   function close(){lb.classList.remove('open');document.body.style.overflow='';setTimeout(function(){inner.innerHTML=''},320)}
-  if(vids){T.forEach(function(t){
-    var ready=t.guid&&HOST,el=document.createElement('div');el.className='vid'+(ready?' has':' soon');
-    if(ready)el.style.backgroundImage='url(https://'+HOST+'/'+t.guid+'/thumbnail.jpg)';
-    el.innerHTML='<div class="pl"><span><i data-lucide="play"></i></span></div><div class="who"><b>'+t.name+'</b><small>'+t.tag+'</small></div>';
-    if(ready)el.addEventListener('click',function(){open(t.guid)});
-    vids.appendChild(el);
-  });}
   if(lb){document.getElementById('lbX').addEventListener('click',close);lb.addEventListener('click',function(e){if(e.target===lb)close()});addEventListener('keydown',function(e){if(e.key==='Escape')close()});}
+  var track=document.getElementById('rtrack'),dots=document.getElementById('rdots');
+  if(track&&T.length){
+    var moved=false;
+    T.forEach(function(t,idx){
+      var ready=t.guid&&HOST;
+      var card=document.createElement('button');card.type='button';card.className='rcard';card.setAttribute('aria-label','Ver depoimento '+(idx+1));
+      card.innerHTML=(ready?'<img class="rthumb" src="https://'+HOST+'/'+t.guid+'/thumbnail.jpg" alt="" loading="lazy" onerror="this.remove()">':'')+'<span class="rplay"><i data-lucide="play"></i></span><span class="rwho"><b>'+t.name+'</b><small>'+t.tag+'</small></span>';
+      card.addEventListener('click',function(){if(moved||!ready)return;open(t.guid)});
+      track.appendChild(card);
+      var d=document.createElement('button');d.type='button';d.className='rdot';d.setAttribute('aria-label','Ir para depoimento '+(idx+1));d.addEventListener('click',function(){go(idx)});dots.appendChild(d);
+    });
+    var cards=[].slice.call(track.children),ds=[].slice.call(dots.children);
+    function update(){var cx=track.scrollLeft+track.clientWidth/2,best=1e9,act=0;cards.forEach(function(c,i){var cc=c.offsetLeft+c.offsetWidth/2,dist=Math.abs(cc-cx),n=Math.min(dist/c.offsetWidth,1);c.style.setProperty('--s',(1-0.15*n).toFixed(3));c.style.setProperty('--o',(1-0.42*n).toFixed(3));c.classList.toggle('active',n<0.5);if(dist<best){best=dist;act=i}});ds.forEach(function(d,i){d.classList.toggle('on',i===act)})}
+    function go(i){var c=cards[i];track.scrollTo({left:c.offsetLeft+c.offsetWidth/2-track.clientWidth/2,behavior:'smooth'})}
+    track.addEventListener('scroll',function(){requestAnimationFrame(update)},{passive:true});
+    document.getElementById('rPrev').addEventListener('click',function(){track.scrollBy({left:-(cards[0].offsetWidth+18),behavior:'smooth'})});
+    document.getElementById('rNext').addEventListener('click',function(){track.scrollBy({left:cards[0].offsetWidth+18,behavior:'smooth'})});
+    var down=false,sx=0,sl=0;
+    track.addEventListener('pointerdown',function(e){down=true;moved=false;sx=e.clientX;sl=track.scrollLeft;track.style.scrollSnapType='none'});
+    track.addEventListener('pointermove',function(e){if(!down)return;var dx=e.clientX-sx;if(Math.abs(dx)>6)moved=true;track.scrollLeft=sl-dx});
+    function end(){if(!down)return;down=false;track.style.scrollSnapType='';setTimeout(function(){moved=false},20)}
+    track.addEventListener('pointerup',end);track.addEventListener('pointerleave',end);
+    addEventListener('resize',update);
+    setTimeout(function(){go(Math.floor(T.length/2));setTimeout(update,60)},60);
+  }
   try{window.lucide&&lucide.createIcons()}catch(e){}
 })();
 </script>
