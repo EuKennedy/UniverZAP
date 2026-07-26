@@ -23,6 +23,9 @@ Rails.application.routes.draw do
   if ActiveModel::Type::Boolean.new.cast(ENV.fetch('CW_API_ONLY_SERVER', false))
     root to: 'api#index'
   else
+    # Domínio de marketing (univerzap.cloud e www) serve a landing; o app continua em app.*
+    get '/', to: 'landing#lpteste', constraints: { host: /\A(www\.)?univerzap\.cloud\z/i }
+
     root to: 'dashboard#index'
 
     get '/app', to: 'dashboard#index'
