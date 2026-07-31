@@ -49,9 +49,11 @@ class Ai::Belezaki::SchedulingTools
     { type: 'string', description: description }
   end
 
-  def initialize(client, idempotency_key:)
+  def initialize(client, scope:)
     @client = client
-    @idempotency_key = idempotency_key
+    # Namespace for booking idempotency keys — keeps this conversation's
+    # bookings from ever colliding with another conversation's on belezaki.
+    @scope = scope
   end
 
   # Returns a JSON string for the tool_result. Never raises — belezaki errors
@@ -91,7 +93,19 @@ class Ai::Belezaki::SchedulingTools
       professional_id: input['professional_id'],
       client: { name: input['client_name'], phone: input['client_phone'] },
       source: 'whatsapp_agent',
-      idempotency_key: @idempotency_key
+      idempotency_key: booking_idempotency_key(input)
     )
+  end
+
+  # Idempotency must key on the ACTION (this specific appointment), not on the
+  # conversation tick. Hashing service + start + professional + phone means:
+  #   - a re-book of the SAME slot (client confirms again in a later turn)
+  #     yields the SAME key, so belezaki dedups it (no duplicate booking);
+  #   - two DIFFERENT bookings in the same turn ("corte terca e escova quinta")
+  #     get DIFFERENT keys, so both go through.
+  # The old "conv-<id>-<maxmsgid>" key did the opposite on both counts.
+  def booking_idempotency_key(input)
+    action = [input['service_id'], input['start'], input['professional_id'], input['client_phone']].join('|')
+    "#{@scope}:#{Digest::SHA256.hexdigest(action)[0, 24]}"
   end
 end

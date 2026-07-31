@@ -156,7 +156,7 @@ class Ai::AutopilotReplyService
 
     Rails.logger.info("[Athenas agent] belezaki scheduling enabled conv=#{@conversation.display_id}")
     executor = Ai::Belezaki::SchedulingTools.new(
-      client, idempotency_key: "conv-#{@conversation.id}-#{@conversation.messages.maximum(:id)}"
+      client, scope: "conv-#{@conversation.id}"
     )
     Ai::Agent::ToolLoopService.new(
       assistant: @assistant,

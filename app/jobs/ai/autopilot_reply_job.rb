@@ -35,12 +35,14 @@ class Ai::AutopilotReplyJob < ApplicationJob
     # transaction silently commits with whatever side-effects already ran).
     Conversation.transaction do
       conversation.lock!
+      next if already_replied_to?(conversation, message_id)
       next if rate_limited?(conversation, assistant)
 
       reply_text = generate_reply_text(conversation, assistant)
       next if reply_text.blank?
 
       send_outgoing(conversation, assistant, reply_text)
+      mark_replied!(conversation, message_id)
     end
   rescue Ai::AutopilotReplyService::LoopSuppressed => e
     # Intentional silence: the reply would have repeated a recent turn.
@@ -73,6 +75,22 @@ class Ai::AutopilotReplyJob < ApplicationJob
                                 .where('created_at > ?', RATE_LIMIT_WINDOW.ago)
                                 .count
     sent_recently >= limit
+  end
+
+  # Idempotency for the reply itself: a retried job (Sidekiq re-run after the
+  # lock was released, e.g. a failure downstream of send_outgoing) must not post
+  # a second reply to the same trigger message. We stamp the trigger id on the
+  # conversation inside the SAME locked transaction as the outgoing message, so
+  # a retry reads it and bails.
+  def already_replied_to?(conversation, message_id)
+    conversation.additional_attributes.to_h['autopilot_last_replied_message_id'] == message_id
+  end
+
+  def mark_replied!(conversation, message_id)
+    attrs = conversation.additional_attributes.to_h.merge('autopilot_last_replied_message_id' => message_id)
+    # rubocop:disable Rails/SkipsModelValidations
+    conversation.update_column(:additional_attributes, attrs)
+    # rubocop:enable Rails/SkipsModelValidations
   end
 
   def assistant_user(_assistant)
