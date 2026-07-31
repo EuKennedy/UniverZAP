@@ -40,6 +40,16 @@
       "REGRESSED_HINT": "Terminar o que ficou pra trás",
       "DISMISS": "Ocultar onboarding"
     },
+    "HELP": {
+      "ARIA_LABEL": "Abrir menu de ajuda",
+      "TOOLTIP": "Ajuda",
+      "TITLE": "Precisa de ajuda?",
+      "SUBTITLE": "Refaça o tour ou acesse a documentação.",
+      "RETAKE_TOUR": "Refazer o tour guiado",
+      "RETAKE_TOUR_DESC": "Um passo a passo pelas telas do UniverZAP",
+      "DOCS": "Documentação",
+      "DOCS_DESC": "Guias e artigos de ajuda"
+    },
     "PANEL": {
       "TITLE": "Configure o UniverZAP",
       "EYEBROW": "Início rápido",

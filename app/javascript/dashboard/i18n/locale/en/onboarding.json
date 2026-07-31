@@ -40,6 +40,16 @@
       "REGRESSED_HINT": "Finish what you undid",
       "DISMISS": "Hide onboarding"
     },
+    "HELP": {
+      "ARIA_LABEL": "Open help menu",
+      "TOOLTIP": "Help",
+      "TITLE": "Need a hand?",
+      "SUBTITLE": "Replay the tour or open the docs.",
+      "RETAKE_TOUR": "Replay the guided tour",
+      "RETAKE_TOUR_DESC": "A walkthrough of the UniverZAP screens",
+      "DOCS": "Documentation",
+      "DOCS_DESC": "Guides and help articles"
+    },
     "PANEL": {
       "TITLE": "Set up UniverZAP",
       "EYEBROW": "Quick start",

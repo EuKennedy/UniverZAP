@@ -319,15 +319,19 @@ const toggleVoice = () => {
   }
 };
 
-const startTour = async () => {
-  // Main tour entry — always pulls the canonical catalogue.
+const startTour = async ({ restart = false } = {}) => {
+  // Main tour entry — always pulls the canonical catalogue. `restart` forces
+  // the journey to replay from step 0 (fired by the "?" help launcher); the
+  // FAB/panel emit START with no payload and resume from `lastStepIndex`.
   activeContextualKey.value = null;
   tourSteps.value = buildTourSteps({ t });
   isActive.value = true;
-  const resumeIndex = Math.min(
-    Math.max(lastStepIndex.value || 0, 0),
-    Math.max(tourSteps.value.length - 1, 0)
-  );
+  const resumeIndex = restart
+    ? 0
+    : Math.min(
+        Math.max(lastStepIndex.value || 0, 0),
+        Math.max(tourSteps.value.length - 1, 0)
+      );
   await goToStep(resumeIndex);
 };
 
