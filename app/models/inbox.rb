@@ -257,7 +257,7 @@ class Inbox < ApplicationRecord
   # the controller scoping and the autopilot job guard are defense-in-depth.
   def ai_assistant_belongs_to_same_account
     return if ai_assistant_id.blank?
-    return if ai_assistant && ai_assistant.account_id == account_id
+    return if ai_assistant&.account_id == account_id
 
     errors.add(:ai_assistant, 'must belong to the same account')
   end

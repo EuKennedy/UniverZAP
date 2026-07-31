@@ -9,30 +9,40 @@ class Ai::AutopilotReplyJob < ApplicationJob
     return unless message && assistant
 
     conversation = message.conversation
+    return unless same_account?(assistant, conversation)
 
-    # Defense-in-depth tenant guard: never let an assistant from another account
-    # answer this conversation, even if a cross-account ai_assistant_id somehow
-    # slipped past the model validation (raw SQL, data migration, job replay).
-    unless assistant.account_id == conversation.account_id
-      Rails.logger.error(
-        "[Athenas autopilot] cross-account guard tripped: assistant=#{assistant.id} " \
-        "(account #{assistant.account_id}) vs conversation=#{conversation.id} " \
-        "(account #{conversation.account_id}); aborting"
-      )
-      return
-    end
+    deliver_reply(conversation, assistant, message_id)
+  rescue Ai::AutopilotReplyService::LoopSuppressed => e
+    # Intentional silence: the reply would have repeated a recent turn.
+    # Logged at info — this is the loop-breaker working as designed.
+    Rails.logger.info("[Athenas autopilot] #{e.message}")
+  rescue Ai::ClaudeService::Error => e
+    Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
+  end
 
-    # NOTE: the listener already gated on ai_mode='autopilot'. Autopilot
-    # intentionally overrides a human assignee when the conversation opted in.
-    #
-    # Wrap the rate-limit check + outgoing message in a single transaction
-    # with a row lock on the conversation. Without the lock, two concurrent
-    # jobs (e.g. two inbound messages within the same window) can both pass
-    # the count check before either has written its reply, blowing past
-    # `max_messages_per_minute` and triggering the loop-prevention rules
-    # downstream. Using nested ifs instead of `return` so rubocop's
-    # Rails/TransactionExitStatement stays happy (a bare return inside a
-    # transaction silently commits with whatever side-effects already ran).
+  private
+
+  # Defense-in-depth tenant guard: never let an assistant from another account
+  # answer this conversation, even if a cross-account ai_assistant_id somehow
+  # slipped past the model validation (raw SQL, data migration, job replay).
+  def same_account?(assistant, conversation)
+    return true if assistant.account_id == conversation.account_id
+
+    Rails.logger.error(
+      "[Athenas autopilot] cross-account guard tripped: assistant=#{assistant.id} " \
+      "(account #{assistant.account_id}) vs conversation=#{conversation.id} " \
+      "(account #{conversation.account_id}); aborting"
+    )
+    false
+  end
+
+  # Wrap the dedup + rate-limit check + outgoing message in a single transaction
+  # with a row lock on the conversation. Without the lock, two concurrent jobs
+  # (two inbound messages within the same window) can both pass the count check
+  # before either has written its reply, blowing past max_messages_per_minute
+  # and tripping the loop-prevention rules downstream. `next` (not `return`)
+  # keeps rubocop's Rails/TransactionExitStatement happy.
+  def deliver_reply(conversation, assistant, message_id)
     Conversation.transaction do
       conversation.lock!
       next if already_replied_to?(conversation, message_id)
@@ -44,15 +54,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
       send_outgoing(conversation, assistant, reply_text)
       mark_replied!(conversation, message_id)
     end
-  rescue Ai::AutopilotReplyService::LoopSuppressed => e
-    # Intentional silence: the reply would have repeated a recent turn.
-    # Logged at info — this is the loop-breaker working as designed.
-    Rails.logger.info("[Athenas autopilot] #{e.message}")
-  rescue Ai::ClaudeService::Error => e
-    Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
   end
-
-  private
 
   def generate_reply_text(conversation, assistant)
     result = Ai::AutopilotReplyService.new(conversation: conversation, assistant: assistant).perform
