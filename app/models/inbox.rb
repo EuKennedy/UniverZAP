@@ -53,6 +53,7 @@ class Inbox < ApplicationRecord
   validates :out_of_office_message, length: { maximum: Limits::OUT_OF_OFFICE_MESSAGE_MAX_LENGTH }
   validates :greeting_message, length: { maximum: Limits::GREETING_MESSAGE_MAX_LENGTH }
   validate :ensure_valid_max_assignment_limit
+  validate :ai_assistant_belongs_to_same_account
 
   belongs_to :account
   belongs_to :portal, optional: true
@@ -247,6 +248,18 @@ class Inbox < ApplicationRecord
 
   def ensure_valid_max_assignment_limit
     # overridden in enterprise/app/models/enterprise/inbox.rb
+  end
+
+  # Tenant safety: an inbox must never point at an AI assistant owned by a
+  # different account. Without this, a foreign ai_assistant_id slipped through
+  # the API would make Athenas answer with another tenant's knowledge base and
+  # bill their credits. This is the primary backstop (covers every write path);
+  # the controller scoping and the autopilot job guard are defense-in-depth.
+  def ai_assistant_belongs_to_same_account
+    return if ai_assistant_id.blank?
+    return if ai_assistant && ai_assistant.account_id == account_id
+
+    errors.add(:ai_assistant, 'must belong to the same account')
   end
 
   def delete_round_robin_agents

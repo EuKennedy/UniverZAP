@@ -9,6 +9,19 @@ class Ai::AutopilotReplyJob < ApplicationJob
     return unless message && assistant
 
     conversation = message.conversation
+
+    # Defense-in-depth tenant guard: never let an assistant from another account
+    # answer this conversation, even if a cross-account ai_assistant_id somehow
+    # slipped past the model validation (raw SQL, data migration, job replay).
+    unless assistant.account_id == conversation.account_id
+      Rails.logger.error(
+        "[Athenas autopilot] cross-account guard tripped: assistant=#{assistant.id} " \
+        "(account #{assistant.account_id}) vs conversation=#{conversation.id} " \
+        "(account #{conversation.account_id}); aborting"
+      )
+      return
+    end
+
     # NOTE: the listener already gated on ai_mode='autopilot'. Autopilot
     # intentionally overrides a human assignee when the conversation opted in.
     #

@@ -85,4 +85,65 @@ RSpec.describe 'Cross-tenant isolation for UniverZAP endpoints', type: :request 
       expect(response.status).to be_in([401, 403, 404])
     end
   end
+
+  # Regression guard for the cross-tenant assistant-bind hole: an account must
+  # never be able to attach another account's Ai::Assistant to its inbox /
+  # conversation, and the autopilot job must never answer with a foreign
+  # assistant even if a bad row slipped through. Covers the EXECUTION path (the
+  # REST index/show sweep above did not reach it).
+  describe 'AI assistant cross-tenant binding (execution path)' do
+    let(:assistant_b) { create(:ai_assistant, account: account_b) }
+
+    before { assistant_b }
+
+    it 'rejects binding a cross-account assistant to an inbox (model backstop)' do
+      inbox = create(:inbox, account: account_a)
+      expect(inbox.update(ai_assistant: assistant_b)).to be(false)
+      expect(inbox.errors[:ai_assistant]).to be_present
+      expect(inbox.reload.ai_assistant_id).to be_nil
+    end
+
+    it 'rejects binding a cross-account assistant to a conversation (model backstop)' do
+      conversation = create(:conversation, account: account_a)
+      expect(conversation.update(ai_assistant: assistant_b)).to be(false)
+      expect(conversation.errors[:ai_assistant]).to be_present
+      expect(conversation.reload.ai_assistant_id).to be_nil
+    end
+
+    it 'still allows binding an assistant owned by the same account' do
+      inbox = create(:inbox, account: account_a)
+      own = create(:ai_assistant, account: account_a)
+      expect(inbox.update(ai_assistant: own)).to be(true)
+    end
+
+    it 'refuses via the API to bind account B assistant to an account A inbox' do
+      inbox = create(:inbox, account: account_a)
+      patch "/api/v1/accounts/#{account_a.id}/inboxes/#{inbox.id}",
+            params: { ai_assistant_id: assistant_b.id },
+            headers: admin_a.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(inbox.reload.ai_assistant_id).to be_nil
+    end
+
+    it 'refuses via the API to bind account B assistant to an account A conversation' do
+      conversation = create(:conversation, account: account_a)
+      patch "/api/v1/accounts/#{account_a.id}/conversations/#{conversation.display_id}",
+            params: { ai_assistant_id: assistant_b.id },
+            headers: admin_a.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(conversation.reload.ai_assistant_id).to be_nil
+    end
+
+    it 'the autopilot job refuses to reply with an assistant from another account' do
+      conversation = create(:conversation, account: account_a)
+      message = create(:message, conversation: conversation, account: account_a, inbox: conversation.inbox)
+
+      expect(Ai::AutopilotReplyService).not_to receive(:new)
+      expect do
+        Ai::AutopilotReplyJob.perform_now(message.id, assistant_b.id)
+      end.not_to(change { conversation.reload.messages.count })
+    end
+  end
 end

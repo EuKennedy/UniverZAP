@@ -44,6 +44,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   end
 
   def update
+    ensure_ai_assistant_in_account!
     @conversation.update!(permitted_update_params)
   end
 
@@ -222,6 +223,16 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   def permitted_update_params
     # TODO: Move the other conversation attributes to this method and remove specific endpoints for each attribute
     params.permit(:priority, :ai_mode, :ai_assistant_id)
+  end
+
+  # Tenant safety (defense-in-depth over the Conversation model validation):
+  # resolve an incoming ai_assistant_id through the account scope so a foreign id
+  # is a clean 404 instead of a cross-tenant bind attempt.
+  def ensure_ai_assistant_in_account!
+    id = params[:ai_assistant_id]
+    return if id.blank?
+
+    current_account.ai_assistants.find(id)
   end
 
   def attachment_params

@@ -111,6 +111,7 @@ class Conversation < ApplicationRecord
   validates :custom_attributes, jsonb_attributes_length: true
   validates :uuid, uniqueness: true
   validate :validate_referer_url
+  validate :ai_assistant_belongs_to_same_account
 
   enum status: { open: 0, resolved: 1, pending: 2, snoozed: 3 }
   enum priority: { low: 0, medium: 1, high: 2, urgent: 3 }
@@ -422,6 +423,17 @@ class Conversation < ApplicationRecord
     return unless additional_attributes['referer']
 
     self['additional_attributes']['referer'] = nil unless url_valid?(additional_attributes['referer'])
+  end
+
+  # Tenant safety: a conversation must never be bound to an AI assistant from a
+  # different account (Athenas would then reply with another tenant's knowledge
+  # base and bill their credits). Primary backstop for every write path; the
+  # controller scoping and the autopilot job guard are defense-in-depth.
+  def ai_assistant_belongs_to_same_account
+    return if ai_assistant_id.blank?
+    return if ai_assistant && ai_assistant.account_id == account_id
+
+    errors.add(:ai_assistant, 'must belong to the same account')
   end
 
   # creating db triggers

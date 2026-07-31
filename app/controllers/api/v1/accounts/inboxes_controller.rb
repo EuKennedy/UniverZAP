@@ -5,6 +5,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   before_action :validate_limit, only: [:create]
   # we are already handling the authorization in fetch inbox
   before_action :check_authorization, except: [:show]
+  before_action :ensure_ai_assistant_in_account!, only: [:create, :update]
 
   include Api::V1::Accounts::Concerns::WhatsappHealthManagement
 
@@ -168,6 +169,16 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     # We will remove this line after fixing https://linear.app/chatwoot/issue/CW-1567/null-value-passed-as-null-string-to-backend
     params.each { |k, v| params[k] = params[k] == 'null' ? nil : v }
     params.permit(*inbox_attributes, channel: [:type, *channel_attributes])
+  end
+
+  # Tenant safety (defense-in-depth over the Inbox model validation): resolve an
+  # incoming ai_assistant_id through the account scope so a foreign id is a clean
+  # 404 instead of a cross-tenant bind attempt.
+  def ensure_ai_assistant_in_account!
+    id = params[:ai_assistant_id]
+    return if id.blank?
+
+    Current.account.ai_assistants.find(id)
   end
 
   def channel_type_from_params
