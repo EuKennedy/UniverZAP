@@ -9,6 +9,8 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
   # locking / dedup / guard logic here.
   let(:service) { instance_double(Ai::AutopilotReplyService, perform: { content: 'Olá!' }) }
 
+  after { Current.reset }
+
   def outgoing_count
     conversation.reload.messages.where(message_type: :outgoing).count
   end
@@ -32,5 +34,14 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
 
     expect(Ai::AutopilotReplyService).not_to receive(:new)
     expect { described_class.perform_now(message.id, other_assistant.id) }.not_to(change { outgoing_count })
+  end
+
+  it 'resets Current on the way out so it never leaks to the next job on the thread' do
+    allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+    Current.account = create(:account) # stale value a previous job could have left on the thread
+
+    described_class.perform_now(message.id, assistant.id)
+
+    expect(Current.account).to be_nil
   end
 end

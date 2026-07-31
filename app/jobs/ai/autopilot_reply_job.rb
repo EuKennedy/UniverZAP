@@ -11,7 +11,9 @@ class Ai::AutopilotReplyJob < ApplicationJob
     conversation = message.conversation
     return unless same_account?(assistant, conversation)
 
-    deliver_reply(conversation, assistant, message_id)
+    with_tenant_context(conversation) do
+      deliver_reply(conversation, assistant, message_id)
+    end
   rescue Ai::AutopilotReplyService::LoopSuppressed => e
     # Intentional silence: the reply would have repeated a recent turn.
     # Logged at info — this is the loop-breaker working as designed.
@@ -21,6 +23,19 @@ class Ai::AutopilotReplyJob < ApplicationJob
   end
 
   private
+
+  # Give the agent turn a clean, correctly-scoped Current so the outgoing
+  # message event is never attributed to a stale actor/tenant left on this
+  # Sidekiq thread by an earlier job (Current is a bare thread-local with no
+  # per-job auto-reset). Scoped fix for the agent path; the app-wide migration
+  # to ActiveSupport::CurrentAttributes is tracked separately.
+  def with_tenant_context(conversation)
+    Current.reset
+    Current.account = conversation.account
+    yield
+  ensure
+    Current.reset
+  end
 
   # Defense-in-depth tenant guard: never let an assistant from another account
   # answer this conversation, even if a cross-account ai_assistant_id somehow
@@ -36,20 +51,30 @@ class Ai::AutopilotReplyJob < ApplicationJob
     false
   end
 
-  # Wrap the dedup + rate-limit check + outgoing message in a single transaction
-  # with a row lock on the conversation. Without the lock, two concurrent jobs
-  # (two inbound messages within the same window) can both pass the count check
-  # before either has written its reply, blowing past max_messages_per_minute
-  # and tripping the loop-prevention rules downstream. `next` (not `return`)
-  # keeps rubocop's Rails/TransactionExitStatement happy.
+  # Two-phase reply so the Claude/belezaki HTTP round-trip never runs while a DB
+  # row lock is held (that used to pin a Postgres connection for the whole call,
+  # choking the pool under load):
+  #   1. cheap lock-free pre-check to bail early on retries / throttling;
+  #   2. generate the reply with NO lock held;
+  #   3. a SHORT locked transaction that re-checks (a concurrent job may have
+  #      answered meanwhile) and then writes the outgoing message + dedup stamp.
   def deliver_reply(conversation, assistant, message_id)
+    return if already_replied_to?(conversation, message_id)
+    return if rate_limited?(conversation, assistant)
+
+    reply_text = generate_reply_text(conversation, assistant)
+    return if reply_text.blank?
+
+    commit_reply(conversation, assistant, message_id, reply_text)
+  end
+
+  def commit_reply(conversation, assistant, message_id, reply_text)
     Conversation.transaction do
+      # lock! reloads under SELECT ... FOR UPDATE, so the re-checks below see a
+      # concurrent job's write and we never post twice for the same trigger.
       conversation.lock!
       next if already_replied_to?(conversation, message_id)
       next if rate_limited?(conversation, assistant)
-
-      reply_text = generate_reply_text(conversation, assistant)
-      next if reply_text.blank?
 
       send_outgoing(conversation, assistant, reply_text)
       mark_replied!(conversation, message_id)
