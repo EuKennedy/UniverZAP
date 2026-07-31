@@ -300,17 +300,25 @@ class Ai::AutopilotReplyService
     contact = @conversation.contact
     return nil if contact.blank?
 
-    lines = [
-      ("Nome: #{contact.name}" if contact.name.present?),
-      ("Telefone: #{contact.phone_number}" if contact.phone_number.present?),
-      ("E-mail: #{contact.email}" if contact.email.present?)
-    ].compact
-    (contact.custom_attributes || {}).reject { |_k, v| v.blank? }.first(8).each do |k, v|
-      lines << "#{k}: #{v.to_s.truncate(120)}"
-    end
+    lines = contact_identity_lines(contact) + contact_custom_lines(contact)
     return nil if lines.empty?
 
     "DADOS DO CLIENTE (fonte de verdade, use para personalizar e NÃO re-pergunte o que já está aqui):\n#{lines.join("\n")}"
+  end
+
+  def contact_identity_lines(contact)
+    {
+      'Nome' => contact.name,
+      'Telefone' => contact.phone_number,
+      'E-mail' => contact.email
+    }.filter_map { |label, value| "#{label}: #{value}" if value.present? }
+  end
+
+  # Operator-defined custom fields, capped so a contact with dozens of attrs
+  # can't blow up the prompt. Blank values are dropped (nothing to personalise).
+  def contact_custom_lines(contact)
+    attrs = (contact.custom_attributes || {}).reject { |_key, value| value.blank? }
+    attrs.first(8).map { |key, value| "#{key}: #{value.to_s.truncate(120)}" }
   end
 
   def build_system_prompt(override: nil)
