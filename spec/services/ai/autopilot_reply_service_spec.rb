@@ -61,4 +61,31 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(msgs.each_cons(2).none? { |a, b| a[:role] == b[:role] }).to be(true)
     end
   end
+
+  describe 'contact personalisation + knowledge relevance (Sprint 5)' do
+    it 'injects the contact name / phone / custom fields into the system prompt block' do
+      conversation.contact.update!(
+        name: 'Marina', phone_number: '+5531999990000',
+        custom_attributes: { 'tipo_de_fio' => 'cacheado' }
+      )
+
+      block = described_class.new(conversation: conversation, assistant: assistant).send(:contact_block)
+
+      expect(block).to include('Marina', '+5531999990000', 'tipo_de_fio', 'cacheado')
+    end
+
+    it 'omits the contact block when the contact has no usable data' do
+      conversation.contact.update!(name: '', phone_number: nil, email: nil, custom_attributes: {})
+
+      block = described_class.new(conversation: conversation, assistant: assistant).send(:contact_block)
+
+      expect(block).to be_nil
+    end
+
+    it 'builds the knowledge query from the recent incoming messages' do
+      query = described_class.new(conversation: conversation, assistant: assistant).send(:knowledge_query)
+
+      expect(query).to include('quero comprar')
+    end
+  end
 end

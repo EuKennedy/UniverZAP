@@ -155,7 +155,11 @@ class Ai::AutopilotReplyService
     return call_claude(messages) if client.nil?
 
     Rails.logger.info("[Athenas agent] belezaki scheduling enabled conv=#{@conversation.display_id}")
-    executor = Ai::Belezaki::SchedulingTools.new(client, scope: "conv-#{@conversation.id}")
+    executor = Ai::Belezaki::SchedulingTools.new(
+      client,
+      scope: "conv-#{@conversation.id}",
+      contact: { name: @conversation.contact&.name, phone: @conversation.contact&.phone_number }
+    )
     Ai::Agent::ToolLoopService.new(
       assistant: @assistant,
       conversation: @conversation,
@@ -288,6 +292,27 @@ class Ai::AutopilotReplyService
     ((@conversation.additional_attributes || {})['autopilot_summary'] || {})['text'].to_s.strip
   end
 
+  # Inject the contact record (name, phone, operator custom fields) so the agent
+  # personalises per-CONTACT, not just per-conversation, and treats the known
+  # data as truth instead of re-asking it. Also the source of truth for booking
+  # (see Ai::Belezaki::SchedulingTools).
+  def contact_block
+    contact = @conversation.contact
+    return nil if contact.blank?
+
+    lines = [
+      ("Nome: #{contact.name}" if contact.name.present?),
+      ("Telefone: #{contact.phone_number}" if contact.phone_number.present?),
+      ("E-mail: #{contact.email}" if contact.email.present?)
+    ].compact
+    (contact.custom_attributes || {}).reject { |_k, v| v.blank? }.first(8).each do |k, v|
+      lines << "#{k}: #{v.to_s.truncate(120)}"
+    end
+    return nil if lines.empty?
+
+    "DADOS DO CLIENTE (fonte de verdade, use para personalizar e NÃO re-pergunte o que já está aqui):\n#{lines.join("\n")}"
+  end
+
   def build_system_prompt(override: nil)
     # Three-band layout — the in-progress guardrail goes BOTH at the
     # very top (so it primes the model's attention before any tenant
@@ -305,6 +330,7 @@ class Ai::AutopilotReplyService
       override,
       continuity_rules_priority,
       summary_block,
+      contact_block,
       'Você é o atendente real falando com o cliente agora. Responda no fluxo natural da conversa.',
       "Persona: #{@assistant.name}, #{@assistant.role}.",
       sanitised_tenant_prompt,
@@ -477,7 +503,7 @@ class Ai::AutopilotReplyService
   end
 
   def knowledge_snippets
-    chunks = @assistant.trainings.ready.limit(6).pluck(:title, :content)
+    chunks = relevant_trainings
     return nil if chunks.empty?
 
     bullets = chunks.map { |title, content| "- #{title}: #{content.to_s.truncate(240)}" }.join("\n")
@@ -494,6 +520,35 @@ class Ai::AutopilotReplyService
       na MEMÓRIA DA CONVERSA. Com os dados em mãos, avance para recomendação.
       #{bullets}
     KNOW
+  end
+
+  # Rank the assistant's training docs by relevance to what the customer just
+  # asked (pg_trgm word_similarity over title+content) instead of an arbitrary
+  # first-6. Falls back to the plain first-6 when there is no query text yet.
+  # NOTE: no trgm index yet, so this seq-scans the assistant's trainings; fine
+  # while training counts are small, revisit if they grow.
+  def relevant_trainings
+    scope = @assistant.trainings.ready
+    query = knowledge_query
+    return scope.limit(6).pluck(:title, :content) if query.blank?
+
+    quoted = ActiveRecord::Base.connection.quote(query)
+    ranked = "word_similarity(#{quoted}, coalesce(title, '') || ' ' || coalesce(content, '')) DESC"
+    scope.order(Arel.sql(ranked)).limit(6).pluck(:title, :content)
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas] relevance ranking failed, using default order: #{e.message}")
+    @assistant.trainings.ready.limit(6).pluck(:title, :content)
+  end
+
+  def knowledge_query
+    @conversation.messages
+                 .where(message_type: :incoming, private: false)
+                 .order(created_at: :desc)
+                 .limit(2)
+                 .pluck(:content)
+                 .compact
+                 .join(' ')
+                 .strip
   end
 
   def build_recent_messages

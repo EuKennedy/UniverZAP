@@ -67,6 +67,31 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       expect(keys.uniq.size).to eq(2)
     end
 
+    it 'prefers the contact record name/phone over the LLM-extracted input' do
+      captured = nil
+      allow(client).to receive(:create_appointment) do |**kwargs|
+        captured = kwargs
+        { 'appointment' => { 'id' => 'a1' } }
+      end
+      contact_tools = described_class.new(client, scope: 'conv-1', contact: { name: 'Ana Real', phone: '+5531988887777' })
+
+      contact_tools.call('agendar', booking_input('client_name' => 'nome errado', 'client_phone' => '+550000000000'))
+
+      expect(captured[:client]).to eq({ name: 'Ana Real', phone: '+5531988887777' })
+    end
+
+    it 'falls back to the LLM input when the contact has no name/phone on file' do
+      captured = nil
+      allow(client).to receive(:create_appointment) do |**kwargs|
+        captured = kwargs
+        { 'appointment' => { 'id' => 'a1' } }
+      end
+
+      tools.call('agendar', booking_input('client_name' => 'Bia', 'client_phone' => '+5531977776666'))
+
+      expect(captured[:client]).to eq({ name: 'Bia', phone: '+5531977776666' })
+    end
+
     it 'returns belezaki errors as data instead of raising' do
       allow(client).to receive(:services).and_raise(Ai::Belezaki::AgentClient::Error, 'boom')
 

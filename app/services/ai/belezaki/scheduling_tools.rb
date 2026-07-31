@@ -49,11 +49,14 @@ class Ai::Belezaki::SchedulingTools
     { type: 'string', description: description }
   end
 
-  def initialize(client, scope:)
+  def initialize(client, scope:, contact: {})
     @client = client
     # Namespace for booking idempotency keys — keeps this conversation's
     # bookings from ever colliding with another conversation's on belezaki.
     @scope = scope
+    # Contact record (name/phone) is the source of truth for who is booking;
+    # the LLM-extracted fields are only a fallback.
+    @contact = contact || {}
   end
 
   # Returns a JSON string for the tool_result. Never raises — belezaki errors
@@ -91,7 +94,7 @@ class Ai::Belezaki::SchedulingTools
       service_id: input['service_id'],
       start: input['start'],
       professional_id: input['professional_id'],
-      client: { name: input['client_name'], phone: input['client_phone'] },
+      client: { name: booking_name(input), phone: booking_phone(input) },
       source: 'whatsapp_agent',
       idempotency_key: booking_idempotency_key(input)
     )
@@ -105,7 +108,17 @@ class Ai::Belezaki::SchedulingTools
   #     get DIFFERENT keys, so both go through.
   # The old "conv-<id>-<maxmsgid>" key did the opposite on both counts.
   def booking_idempotency_key(input)
-    action = [input['service_id'], input['start'], input['professional_id'], input['client_phone']].join('|')
+    action = [input['service_id'], input['start'], input['professional_id'], booking_phone(input)].join('|')
     "#{@scope}:#{Digest::SHA256.hexdigest(action)[0, 24]}"
+  end
+
+  # Contact record wins over whatever the model extracted from the chat text, so
+  # a hallucinated / mistyped name or number never lands in the salon's agenda.
+  def booking_name(input)
+    @contact[:name].presence || input['client_name']
+  end
+
+  def booking_phone(input)
+    @contact[:phone].presence || input['client_phone']
   end
 end
