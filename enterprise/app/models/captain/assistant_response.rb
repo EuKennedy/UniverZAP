@@ -46,9 +46,14 @@ class Captain::AssistantResponse < ApplicationRecord
 
   enum status: { pending: 0, approved: 1 }
 
-  def self.search(query, account_id: nil)
+  # account_id is REQUIRED and enforced in the query (not only used to pick the
+  # embedding model): the vector search must NEVER cross tenants. Passing the
+  # owning account explicitly means even a direct `AssistantResponse.search`
+  # (not chained off an account-scoped relation) can't leak another tenant's
+  # answers. The `by_account` scope existed but was previously never applied.
+  def self.search(query, account_id:)
     embedding = Captain::Llm::EmbeddingService.new(account_id: account_id).get_embedding(query)
-    nearest_neighbors(:embedding, embedding, distance: 'cosine').limit(5)
+    by_account(account_id).nearest_neighbors(:embedding, embedding, distance: 'cosine').limit(5)
   end
 
   private
