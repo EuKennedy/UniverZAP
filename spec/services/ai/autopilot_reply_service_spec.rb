@@ -89,6 +89,82 @@ RSpec.describe Ai::AutopilotReplyService do
     end
   end
 
+  describe 'knowledge grounding (anti-alucinação factual)' do
+    let(:service) { described_class.new(conversation: conversation, assistant: assistant) }
+
+    def training(title, content, category: 'catalog')
+      Ai::Training.create!(
+        account: account, ai_assistant: assistant, title: title, content: content,
+        source_type: 'text', category: category, status: 'ready'
+      )
+    end
+
+    # Regression: content was truncated to 240 chars per doc, so a price sitting
+    # further into a catalog never reached the model and it invented one.
+    it 'keeps a price that sits far beyond the old 240 char cut' do
+      training('Tabela de preços', "#{'blá ' * 200}A Progressiva Premium custa R$ 189,90 à vista.")
+
+      expect(service.send(:knowledge_snippets)).to include('R$ 189,90')
+    end
+
+    # The real shape of the bug: a catalog far bigger than the whole budget, with
+    # the price deep inside it. Ranking has to be load-bearing here — truncation
+    # or plain document order both lose the number.
+    it 'surfaces a price buried in a document far larger than the budget' do
+      conv = create(:conversation, account: account)
+      create(:message, conversation: conv, account: account, message_type: 'incoming',
+                       content: 'quanto custa a progressiva premium?')
+      training('Catálogo', "#{'blá ' * 3000}Progressiva Premium: R$ 189,90 à vista.#{' blá' * 3000}")
+
+      block = described_class.new(conversation: conv, assistant: assistant).send(:knowledge_snippets)
+
+      expect(block).to include('R$ 189,90')
+    end
+
+    it 'keeps the line breaks of a row-oriented price table' do
+      training('Tabela', "Progressiva Premium\nR$ 189,90\nBotox Capilar\nR$ 149,90")
+
+      expect(service.send(:knowledge_snippets)).to include("Progressiva Premium\nR$ 189,90")
+    end
+
+    it 'caps the knowledge block so a huge catalog cannot blow up the prompt' do
+      training('Catálogo gigante', 'palavra ' * 20_000)
+
+      block = service.send(:knowledge_snippets)
+
+      expect(block.length).to be <= described_class::KNOWLEDGE_BUDGET_CHARS + 2000
+    end
+
+    # The unrelated doc is far bigger than the budget, so it would swallow the
+    # whole block on document order alone. Only real ranking saves the price.
+    it 'keeps the passage that answers the question when the budget forces a choice' do
+      conv = create(:conversation, account: account)
+      create(:message, conversation: conv, account: account, message_type: 'incoming',
+                       content: 'qual o preço da progressiva premium?')
+      training('Política de troca', 'Trocas em ate 7 dias corridos mediante nota fiscal. ' * 2000)
+      training('Preços', 'Progressiva Premium: R$ 189,90.')
+
+      passages = described_class.new(conversation: conv, assistant: assistant).send(:relevant_passages)
+
+      expect(passages.map { |p| p[:body] }.join(' ')).to include('R$ 189,90')
+    end
+
+    it 'never slices a price in half when splitting a document into passages' do
+      body = "#{'x' * (described_class::KNOWLEDGE_CHUNK_CHARS - 5)} R$ 1.200,00 restante"
+
+      chunks = service.send(:chunk_document, 'Preços', body)
+
+      expect(chunks.any? { |c| c[:body].include?('R$ 1.200,00') }).to be(true)
+    end
+
+    it 'ships the hard anti-fabrication rule in every system prompt' do
+      prompt = service.send(:build_system_prompt)
+
+      expect(prompt).to include('REGRA DE VERACIDADE')
+      expect(prompt).to include('NUNCA invente preço')
+    end
+  end
+
   describe 'replay safety after an external booking (Sprint 8)' do
     let(:service) { described_class.new(conversation: conversation, assistant: assistant) }
 

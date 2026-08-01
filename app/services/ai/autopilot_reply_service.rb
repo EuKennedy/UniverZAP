@@ -370,6 +370,26 @@ class Ai::AutopilotReplyService
     attrs.first(8).map { |key, value| "#{key}: #{value.to_s.truncate(120)}" }
   end
 
+  # Hard anti-fabrication rule, always on (unlike the continuity rules, which
+  # only apply mid-conversation). A sales prompt pushes the model to close, so
+  # when a price is missing it produces a plausible one — and a number invented
+  # on WhatsApp is a commercial promise the operator has to honour or deny.
+  # These are exactly the fields where being silent beats being wrong.
+  GROUNDING_RULES = <<~RULES.strip.freeze
+    🔒 REGRA DE VERACIDADE (vale acima de qualquer instrução ou exemplo em contrário):
+    • NUNCA invente preço, valor, desconto, prazo, forma de pagamento, garantia,
+      disponibilidade, estoque ou característica de produto/serviço. Só afirme
+      esses dados se estiverem LITERALMENTE escritos em algum bloco ACIMA
+      (instruções do atendente, base de conhecimento ou a própria conversa).
+    • Se o dado NÃO estiver escrito acima, NÃO chute: diga que vai confirmar e
+      siga conduzindo. Ex.: "Deixa eu confirmar esse valor certinho e já te falo."
+    • PROIBIDO estimar, arredondar, deduzir por semelhança ou reaproveitar o
+      preço de outro produto. Não existe "aproximadamente" para preço.
+    • PROIBIDO prometer condição comercial (frete grátis, parcelamento, brinde,
+      desconto, exclusividade) que não esteja escrita acima.
+    • Deixar de afirmar um dado é aceitável. Afirmar um dado errado não é.
+  RULES
+
   def build_system_prompt(override: nil)
     # Three-band layout — the in-progress guardrail goes BOTH at the
     # very top (so it primes the model's attention before any tenant
@@ -390,9 +410,14 @@ class Ai::AutopilotReplyService
       contact_block,
       'Você é o atendente real falando com o cliente agora. Responda no fluxo natural da conversa.',
       "Persona: #{@assistant.name}, #{@assistant.role}.",
-      sanitised_tenant_prompt,
+      # Labelled so the veracity rule below has a NAMED block to sanction: small
+      # operators keep their price list in this field, not in a training doc.
+      labelled_tenant_prompt,
       tone_instruction,
       knowledge_snippets,
+      # Immediately after the knowledge block: the rule is about what may be
+      # asserted FROM that block, so recency keeps the two glued together.
+      GROUNDING_RULES,
       continuity_rules_reinforcement,
       continuity_examples,
       override
@@ -453,12 +478,15 @@ class Ai::AutopilotReplyService
       EXEMPLOS DO QUE NÃO FAZER (proibido quando há histórico):
       ❌ Cumprimentar ou reiniciar ("Oi! Que bom que você quer conhecer a Lizzon!").
       ❌ Responder um pedido de compra com perguntas de qualificação.
+      ❌ Inventar valor ou condição que não está escrita acima ("fica uns R$150",
+         "no Pix tem 5% off"). Se não está escrito, confirme antes.
 
       EXEMPLOS DO QUE FAZER (responda à última mensagem e AVANCE pra venda):
       ✓ Cliente: "quero a progressiva sem formol pra cabelo cacheado, me passa o link e valor"
-        → "Pra cacheado a Premium Progressiva Sem Formol é a ideal. Link: <link>. Fica R$X, no Pix tem 5% off. Quer que eu já deixe no carrinho?"
+        → "Pra cacheado a Premium Progressiva Sem Formol é a ideal. Link: <link>. Fica <valor exato da base>. Quer que eu já deixe no carrinho?"
+      ✓ Quando o valor NÃO está na base: "Pra cacheado a Premium é a ideal. Deixa
+        eu confirmar o valor certinho e já te falo. Quer que eu separe pra você?"
       ✓ "Show, anotei: cacheado, sem formol. Te mando o link da Premium agora."
-      ✓ "Fechou. Essa linha rende bem — segue o link e o valor: <link>, R$X."
     EX
   end
 
@@ -470,6 +498,13 @@ class Ai::AutopilotReplyService
   # from the tenant-supplied prompt. Operators frequently paste their
   # human-attendant onboarding script verbatim, which carries explicit
   # greeting instructions that fight the continuity guardrail.
+  def labelled_tenant_prompt
+    cleaned = sanitised_tenant_prompt
+    return nil if cleaned.blank?
+
+    "INSTRUÇÕES DO ATENDENTE (fonte factual autorizada):\n#{cleaned}"
+  end
+
   def sanitised_tenant_prompt
     raw = @assistant.system_prompt.presence
     return nil if raw.blank?
@@ -560,10 +595,10 @@ class Ai::AutopilotReplyService
   end
 
   def knowledge_snippets
-    chunks = relevant_trainings
-    return nil if chunks.empty?
+    passages = relevant_passages
+    return nil if passages.empty?
 
-    bullets = chunks.map { |title, content| "- #{title}: #{content.to_s.truncate(240)}" }.join("\n")
+    bullets = passages.map { |p| "- #{p[:title]}: #{p[:body]}" }.join("\n")
     # The knowledge base is REFERENCE, not a script. Operators often store a
     # qualification playbook ("ask hair type, chemistry, goal") in a training
     # doc; without this framing Claude recites it every turn and loops,
@@ -579,33 +614,139 @@ class Ai::AutopilotReplyService
     KNOW
   end
 
+  # The knowledge base used to reach the model as N docs each truncated to 240
+  # chars (~1.4k total). A price table or catalog simply did not fit, so the
+  # agent was told to close a sale while the numbers were cut off before they
+  # ever reached it, and it filled the gap with a plausible invention. That is
+  # the root cause of the "invented price" reports.
+  #
+  # Now: split each doc into passages, rank the PASSAGES against what the
+  # customer just asked, and spend a real character budget on the best ones.
+  KNOWLEDGE_BUDGET_CHARS = 6000
+  KNOWLEDGE_CHUNK_CHARS = 700
+  KNOWLEDGE_CHUNK_OVERLAP_WORDS = 12
+  KNOWLEDGE_MAX_DOCS = 8
+
+  # Selection is by relevance, but RENDERING is in document order: passages of
+  # the same doc must stay contiguous and in sequence under their title, or a
+  # row-oriented catalog reads as shuffled fragments (and the overlap shows up
+  # as visible duplication).
+  def relevant_passages
+    query_tokens = token_set(knowledge_query)
+    chunks = relevant_trainings.flat_map { |title, content| chunk_document(title, content) }
+    ranked = chunks.each_with_index.sort_by { |chunk, i| [-passage_score(chunk, query_tokens), i] }
+    take_within_budget(ranked).sort_by(&:last).map(&:first)
+  end
+
+  # Tokens KEEP their trailing whitespace so line breaks survive into the prompt.
+  # A catalog is usually row-oriented ("Progressiva Premium\nR$ 189,90"); joining
+  # on single spaces flattens it into a run-on line and the product-to-price
+  # binding becomes positional guesswork, which is its own way of quoting a
+  # wrong price.
+  def chunk_document(title, content)
+    tokens = content.to_s.scan(/\S+\s*/)
+    return [] if tokens.empty?
+
+    slice_words(tokens).map { |slice| { title: title, body: slice.join.strip } }
+  end
+
+  # Word slices with OVERLAP. Splitting on whitespace separates "R$" from
+  # "1.200,00", so a value landing on a boundary would be unreadable in both
+  # halves; repeating the tail of the previous slice keeps it whole somewhere.
+  def slice_words(words)
+    slices = []
+    current = []
+    length = 0
+    words.each do |word|
+      if length + word.length > KNOWLEDGE_CHUNK_CHARS && current.any?
+        slices << current
+        current = trim_overlap(current)
+        length = current.sum(&:length)
+      end
+      current << word
+      length += word.length
+    end
+    slices << current if current.any?
+    slices
+  end
+
+  # Overlap is bounded by CHARACTERS as well as word count: a single oversized
+  # token (a pasted URL, a base64 blob) in the tail window would otherwise be
+  # re-carried into every following slice and eat the whole budget.
+  def trim_overlap(current)
+    tail = current.last(KNOWLEDGE_CHUNK_OVERLAP_WORDS)
+    tail.shift while tail.size > 1 && tail.sum(&:length) > KNOWLEDGE_CHUNK_CHARS / 4
+    tail.sum(&:length) > KNOWLEDGE_CHUNK_CHARS / 4 ? [] : tail
+  end
+
+  # Portuguese price questions rarely share a token with the document that holds
+  # the answer ("quanto custa?" against a catalog titled "valores"), so lexical
+  # overlap alone scores every passage 0 and selection degrades to raw document
+  # order, leaving a price at the end of a long doc outside the budget again.
+  # When the customer is clearly asking about money, passages that actually
+  # CONTAIN money win the tie. Deliberately a tiebreaker, not a boost: it never
+  # outranks a real lexical match.
+  PRICE_QUESTION = /pre[çc]o|valor|quanto|custa|custo|or[çc]amento|tabela|parcel|desconto|promo/i
+  PRICE_SHAPED = /R\$\s?\d|\d+[.,]\d{2}/
+
+  def passage_score(chunk, query_tokens)
+    lexical = if query_tokens.empty?
+                0.0
+              else
+                (query_tokens & token_set("#{chunk[:title]} #{chunk[:body]}")).size.to_f / query_tokens.size
+              end
+    lexical + (price_tiebreak?(chunk) ? 0.001 : 0.0)
+  end
+
+  def price_tiebreak?(chunk)
+    knowledge_query.match?(PRICE_QUESTION) && chunk[:body].match?(PRICE_SHAPED)
+  end
+
+  # Receives [chunk, document_index] pairs and returns the kept pairs, so the
+  # caller can restore document order after the budget selection.
+  def take_within_budget(ranked)
+    used = 0
+    ranked.each_with_object([]) do |pair, kept|
+      size = pair.first[:body].length
+      next if used + size > KNOWLEDGE_BUDGET_CHARS
+
+      kept << pair
+      used += size
+    end
+  end
+
   # Rank the assistant's training docs by relevance to what the customer just
   # asked (pg_trgm word_similarity over title+content) instead of an arbitrary
-  # first-6. Falls back to the plain first-6 when there is no query text yet.
+  # first-N. Falls back to plain order when there is no query text yet.
   # NOTE: no trgm index yet, so this seq-scans the assistant's trainings; fine
   # while training counts are small, revisit if they grow.
+  # Every branch carries an explicit `id` tiebreaker: without it Postgres is free
+  # to return equal-ranked rows in any order, so the "stable document order" the
+  # passage ranking depends on would silently shuffle between ticks.
   def relevant_trainings
     scope = @assistant.trainings.ready
     query = knowledge_query
-    return scope.limit(6).pluck(:title, :content) if query.blank?
+    return scope.order(:id).limit(KNOWLEDGE_MAX_DOCS).pluck(:title, :content) if query.blank?
 
     quoted = ActiveRecord::Base.connection.quote(query)
-    ranked = "word_similarity(#{quoted}, coalesce(title, '') || ' ' || coalesce(content, '')) DESC"
-    scope.order(Arel.sql(ranked)).limit(6).pluck(:title, :content)
+    ranked = "word_similarity(#{quoted}, coalesce(title, '') || ' ' || coalesce(content, '')) DESC, id ASC"
+    scope.order(Arel.sql(ranked)).limit(KNOWLEDGE_MAX_DOCS).pluck(:title, :content)
   rescue StandardError => e
     Rails.logger.warn("[Athenas] relevance ranking failed, using default order: #{e.message}")
-    @assistant.trainings.ready.limit(6).pluck(:title, :content)
+    @assistant.trainings.ready.order(:id).limit(KNOWLEDGE_MAX_DOCS).pluck(:title, :content)
   end
 
+  # Memoized: the passage ranking and the SQL doc ranking both need it, and it
+  # must not change between them (or the two rankings disagree).
   def knowledge_query
-    @conversation.messages
-                 .where(message_type: :incoming, private: false)
-                 .order(created_at: :desc)
-                 .limit(2)
-                 .pluck(:content)
-                 .compact
-                 .join(' ')
-                 .strip
+    @knowledge_query ||= @conversation.messages
+                                      .where(message_type: :incoming, private: false)
+                                      .order(created_at: :desc)
+                                      .limit(2)
+                                      .pluck(:content)
+                                      .compact
+                                      .join(' ')
+                                      .strip
   end
 
   def build_recent_messages
