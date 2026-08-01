@@ -87,7 +87,11 @@ class Api::V1::Accounts::PortalsController < Api::V1::Accounts::BaseController
     return {} unless permitted_params.key?(:inbox_id)
     return { channel_web_widget_id: nil } if permitted_params[:inbox_id].blank?
 
-    inbox = Inbox.find(permitted_params[:inbox_id])
+    # Scoped to the current account: an unscoped Inbox.find let an authenticated
+    # user of account A pass account B's inbox_id and bind B's live chat widget
+    # to their own portal (every other query in this controller is already
+    # account-scoped). Raises RecordNotFound for a foreign id, same as the rest.
+    inbox = Current.account.inboxes.find(permitted_params[:inbox_id])
     return {} unless inbox.web_widget?
 
     { channel_web_widget_id: inbox.channel.id }

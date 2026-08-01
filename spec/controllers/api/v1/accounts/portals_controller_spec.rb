@@ -210,6 +210,19 @@ RSpec.describe 'Api::V1::Accounts::Portals', type: :request do
         expect(portal.channel_web_widget_id).to be_nil
         expect(response.parsed_body['inbox']).to be_nil
       end
+
+      # Regression: Inbox.find was unscoped here, so an authenticated user of
+      # this account could bind ANOTHER account's live chat widget to a portal.
+      it 'refuses to bind a web widget that belongs to another account' do
+        foreign_inbox = create(:inbox, account: create(:account))
+
+        put "/api/v1/accounts/#{account.id}/portals/#{portal.slug}",
+            params: { portal: { name: portal.name }, inbox_id: foreign_inbox.id },
+            headers: admin.create_new_auth_token
+
+        expect(response).to have_http_status(:not_found)
+        expect(portal.reload.channel_web_widget_id).to be_nil
+      end
     end
   end
 
