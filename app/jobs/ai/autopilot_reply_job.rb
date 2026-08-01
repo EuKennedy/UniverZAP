@@ -42,6 +42,12 @@ class Ai::AutopilotReplyJob < ApplicationJob
     # Intentional silence: the reply would have repeated a recent turn.
     # Logged at info — this is the loop-breaker working as designed.
     Rails.logger.info("[Athenas autopilot] #{e.message}")
+  rescue Ai::AutopilotReplyService::UngroundedClaim => e
+    # The bot kept quoting a value that exists nowhere in the operator's data.
+    # Staying silent hands the turn to a human instead of making up a price, but
+    # it IS a lost reply, so this pages instead of just logging.
+    Rails.logger.error("[Athenas autopilot] #{e.message}")
+    ChatwootExceptionTracker.new(e, account: message&.account).capture_exception
   rescue Ai::ClaudeService::TransientError
     # Must precede the Error clause (TransientError is a subclass): re-raised so
     # `retry_on` above gets it instead of the failure being swallowed.

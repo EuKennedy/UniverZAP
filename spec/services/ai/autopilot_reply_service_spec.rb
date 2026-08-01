@@ -167,6 +167,150 @@ RSpec.describe Ai::AutopilotReplyService do
     end
   end
 
+  describe 'deterministic grounding check (verificação de saída)' do
+    let(:service) { described_class.new(conversation: conversation, assistant: assistant) }
+
+    def training(title, content)
+      Ai::Training.create!(
+        account: account, ai_assistant: assistant, title: title, content: content,
+        source_type: 'text', category: 'catalog', status: 'ready'
+      )
+    end
+
+    def reply(content)
+      { content: content, model: 'claude' }
+    end
+
+    it 'lets a price through when it exists in the knowledge base' do
+      training('Preços', 'Progressiva Premium: R$ 189,90.')
+      allow(claude).to receive(:chat).and_return(reply('A Premium fica R$ 189,90. Quer que eu separe?'))
+
+      expect(service.perform[:content]).to include('R$ 189,90')
+    end
+
+    it 'matches on digits, so formatting differences do not block a real price' do
+      training('Preços', 'Progressiva Premium: R$189.90 no pix.')
+      allow(claude).to receive(:chat).and_return(reply('Fica R$ 189,90 no pix. Quer que eu separe?'))
+
+      expect(service.perform[:content]).to include('R$ 189,90')
+    end
+
+    it 'regenerates once when the reply invents a value, and returns the clean rewrite' do
+      training('Preços', 'Progressiva Premium: R$ 189,90.')
+      allow(claude).to receive(:chat).and_return(
+        reply('A Premium fica R$ 250,00 hoje.'),
+        reply('A Premium é a ideal pro seu caso. Deixa eu confirmar o valor e já te falo.')
+      )
+
+      result = service.perform
+
+      expect(result[:content]).not_to include('250')
+      expect(claude).to have_received(:chat).twice
+    end
+
+    it 'stays silent instead of quoting a value the operator never set' do
+      training('Preços', 'Progressiva Premium: R$ 189,90.')
+      allow(claude).to receive(:chat).and_return(reply('Sai por R$ 250,00 hoje.'))
+
+      expect { service.perform }.to raise_error(described_class::UngroundedClaim)
+    end
+
+    it 'accepts a value the customer already quoted in the conversation' do
+      create(:message, conversation: conversation, account: account, message_type: 'incoming',
+                       content: 'vi que custa R$ 250,00, confere?')
+      allow(claude).to receive(:chat).and_return(reply('Isso mesmo, R$ 250,00. Quer que eu separe?'))
+
+      expect(service.perform[:content]).to include('R$ 250,00')
+    end
+
+    it 'ignores bare numbers that are not a commercial promise' do
+      allow(claude).to receive(:chat).and_return(reply('São 2 aplicações e dura 3 meses. Quer que eu separe?'))
+
+      result = service.perform
+
+      expect(result[:content]).to include('2 aplicações')
+      expect(claude).to have_received(:chat).once
+    end
+
+    it 'does not treat product copy like "100% sem formol" as a price claim' do
+      allow(claude).to receive(:chat).and_return(reply('A Premium é 100% sem formol. Quer que eu separe?'))
+
+      result = service.perform
+
+      expect(result[:content]).to include('100% sem formol')
+      expect(claude).to have_received(:chat).once
+    end
+
+    # Otherwise the guard goes blind exactly on the repeat offence: a value the
+    # bot invented last turn would justify itself this turn.
+    it 'does not accept a value the bot itself invented in a previous reply' do
+      create(:message, conversation: conversation, account: account, message_type: 'outgoing',
+                       content: 'Fica R$ 250,00.').update!(sender: nil)
+      allow(claude).to receive(:chat).and_return(reply('Confirmando, sai por R$ 250,00.'))
+
+      expect { service.perform }.to raise_error(described_class::UngroundedClaim)
+    end
+
+    it 'skips the check after a booking so the confirmation is never dropped' do
+      allow(claude).to receive(:chat).and_return(reply('Agendado! Fica R$ 250,00 no dia 20.'))
+      service.instance_variable_set(:@performed_external_write, true)
+
+      expect(service.perform[:content]).to include('R$ 250,00')
+    end
+
+    # The operator answering from their own phone lands as outgoing WITH NO
+    # SENDER, exactly like a bot post, so it needs the echo carve-out.
+    it 'accepts a value the operator quoted by hand from their own phone' do
+      create(:message, conversation: conversation, account: account, message_type: 'outgoing',
+                       content: 'Fica R$ 250,00.',
+                       content_attributes: { external_echo: true }).update!(sender: nil)
+      allow(claude).to receive(:chat).and_return(reply('Isso mesmo, R$ 250,00. Quer que eu separe?'))
+
+      expect(service.perform[:content]).to include('R$ 250,00')
+    end
+
+    it 'still blocks a percentage that is a real commercial promise' do
+      allow(claude).to receive(:chat).and_return(reply('Hoje tem 100% de desconto pra você.'))
+
+      expect { service.perform }.to raise_error(described_class::UngroundedClaim)
+    end
+  end
+
+  # Message carries `default_scope { order(created_at: :asc) }`, so a plain
+  # `.order(created_at: :desc)` only APPENDS and the ascending key still wins:
+  # `limit` then returns the OLDEST rows. Every ordered read here must use
+  # `reorder`, or the agent reasons over the wrong end of the conversation.
+  describe 'message ordering' do
+    it 'feeds Claude the conversation in chronological order' do
+      conv = create(:conversation, account: account)
+      create(:message, conversation: conv, account: account, message_type: 'incoming',
+                       content: 'primeira', created_at: 5.minutes.ago)
+      create(:message, conversation: conv, account: account, message_type: 'outgoing',
+                       content: 'resposta do meio', created_at: 3.minutes.ago)
+      create(:message, conversation: conv, account: account, message_type: 'incoming',
+                       content: 'ultima', created_at: 1.minute.ago)
+
+      msgs = described_class.new(conversation: conv, assistant: assistant).send(:build_recent_messages)
+
+      expect(msgs.first[:content]).to include('primeira')
+      expect(msgs.last[:content]).to include('ultima')
+    end
+
+    it 'ranks knowledge against the LATEST customer message, not the oldest' do
+      conv = create(:conversation, account: account)
+      create(:message, conversation: conv, account: account, message_type: 'incoming',
+                       content: 'oi tudo bem', created_at: 5.minutes.ago)
+      create(:message, conversation: conv, account: account, message_type: 'incoming',
+                       content: 'me fala mais', created_at: 3.minutes.ago)
+      create(:message, conversation: conv, account: account, message_type: 'incoming',
+                       content: 'qual o preço da progressiva', created_at: 1.minute.ago)
+
+      query = described_class.new(conversation: conv, assistant: assistant).send(:knowledge_query)
+
+      expect(query).to include('progressiva')
+    end
+  end
+
   describe 'replay safety after an external booking (Sprint 8)' do
     let(:service) { described_class.new(conversation: conversation, assistant: assistant) }
 

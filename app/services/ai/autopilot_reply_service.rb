@@ -19,6 +19,12 @@ class Ai::AutopilotReplyService
   # human can take over instead of the bot spamming the same questions.
   class LoopSuppressed < StandardError; end
 
+  # Raised when the reply still asserts a money value that appears nowhere in
+  # the sanctioned sources, even after a forced rewrite. Staying silent and
+  # handing over to a human beats sending a price the operator never set: a
+  # number on WhatsApp is a commercial promise.
+  class UngroundedClaim < StandardError; end
+
   # Bigger window so customer answers from earlier in the conversation
   # (hair type, química, objetivo) stay in Claude's view instead of
   # rolling off after a 25-message burst. The summary block below
@@ -68,7 +74,12 @@ class Ai::AutopilotReplyService
     # Deterministic loop-breaker (see LOOP_SIMILARITY_THRESHOLD). When the
     # candidate echoes a recent assistant turn we retry once with a hard
     # override, then suppress if it still loops.
-    break_loop_if_needed(messages, response)
+    reply = break_loop_if_needed(messages, response)
+
+    # Deterministic grounding check. GROUNDING_RULES tells the model not to
+    # invent values; this VERIFIES it, because a soft prompt rule is exactly
+    # what the loop-breaker above already proved is routinely ignored.
+    enforce_grounding(messages, reply)
   rescue Ai::ClaudeService::TransientError => e
     # Guards the WHOLE turn, not just the tool loop: once an appointment has
     # been written to the salon agenda, replaying this turn could book a second
@@ -120,6 +131,108 @@ class Ai::AutopilotReplyService
     retry_response
   end
 
+  # Only values PRESENTED as money or a percentage are checked. A bare number
+  # ("2 aplicações", "sexta") is not a commercial promise; "R$ 189,90", "189,90
+  # reais" and "5%" are.
+  MONETARY_CLAIM = /R\$\s*[\d.,]+|\d[\d.,]*\s*(?:reais|%)/i
+  # "100% sem formol", "0% formol", "100% vegano" is product copy on a beauty
+  # catalogue, not a commercial promise. Treating it as one would regenerate and
+  # then DROP the whole reply — the most expensive false positive here.
+  MARKETING_PERCENTAGES = %w[0 100].freeze
+
+  # Returns the money-shaped claims in the text that appear NOWHERE in the
+  # sanctioned sources. Comparison is on digits only, so "R$ 189,90" in the
+  # reply matches "R$189.90" or "189,90" in the catalog.
+  def ungrounded_claims(text)
+    known = digit_set(grounding_sources)
+    body = text.to_s
+    body.scan(MONETARY_CLAIM)
+        .map { |claim| [claim, claim.gsub(/\D/, '')] }
+        .reject { |claim, digits| digits.blank? || known.include?(digits) || marketing_percentage?(body, claim, digits) }
+        .map(&:first).uniq
+  end
+
+  # "100% sem formol" is product copy and must pass; "100% de desconto" or
+  # "0% de juros" is a commercial promise and must NOT, so the carve-out only
+  # applies when no commercial noun follows the percentage.
+  COMMERCIAL_PERCENTAGE = /(?:de\s+)?(?:desconto|off|juros|entrada|cashback)/i
+
+  def marketing_percentage?(body, claim, digits)
+    return false unless claim.include?('%') && MARKETING_PERCENTAGES.include?(digits)
+
+    !body.match?(/#{Regexp.escape(claim)}\s*#{COMMERCIAL_PERCENTAGE.source}/i)
+  end
+
+  def digit_set(text)
+    text.to_s.scan(/\d[\d.,]*/).map { |number| number.gsub(/\D/, '') }.reject(&:blank?).to_set
+  end
+
+  # Everything the agent is allowed to quote from: the passages actually sent in
+  # this prompt, the operator instructions, the rolling summary, and the
+  # conversation itself (a value the operator already quoted by hand counts).
+  def grounding_sources
+    @grounding_sources ||= [
+      relevant_passages.pluck(:body).join(' '),
+      @assistant.system_prompt.to_s,
+      cached_summary_text,
+      human_authored_history
+    ].join(' ')
+  end
+
+  # Customer messages, plus outgoing ones a HUMAN actually typed. The bot's own
+  # replies are excluded on purpose: a value it invented on turn N must never
+  # become its own justification on turn N+1, which is exactly when this guard
+  # needs to bite.
+  #
+  # Reuses the model's own `human_response?` instead of reinventing the rule in
+  # SQL: it already covers the WhatsApp echo (an operator answering from their
+  # own phone lands as outgoing with NO sender, byte-identical to a bot post) and
+  # also rules out automation-rule and campaign sends. Filtered in Ruby because
+  # `content_attributes` is a json column that ALSO goes through
+  # `store ..., coder: JSON`, so it is double-encoded and `->>` never matches.
+  def human_authored_history
+    @conversation.messages.where(private: false)
+                 .reorder(created_at: :desc, id: :desc).limit(RECENT_WINDOW)
+                 .select { |message| message.incoming? || message.human_response? }
+                 .filter_map(&:content).join(' ')
+  end
+
+  # Regenerate ONCE naming the offending numbers, then suppress. Mirrors the
+  # loop-breaker: the model complies with a hard, specific override far more
+  # reliably than with a general rule buried in the system prompt.
+  def enforce_grounding(messages, response)
+    # After a real booking the tool results (the slot, the price the salon
+    # returned) are NOT among the sanctioned sources, so a legitimate
+    # confirmation would look ungrounded and the customer would end up with an
+    # appointment and no confirmation. Same carve-out as the loop-breaker.
+    return response if @performed_external_write
+
+    claims = ungrounded_claims(response[:content])
+    return response if claims.empty?
+
+    Rails.logger.warn(
+      "[Athenas] ungrounded values #{claims.inspect} conv=#{@conversation.display_id}; regenerating"
+    )
+    rewritten = call_claude(messages, override: grounding_override(claims))
+    # The rewrite is a fresh generation, so it needs the same greeting scrub the
+    # loop-breaker applies to its own retry.
+    rewritten[:content] = strip_leading_greeting(rewritten[:content].to_s) if conversation_in_progress?
+    remaining = ungrounded_claims(rewritten[:content])
+    return rewritten if remaining.empty?
+
+    raise UngroundedClaim, "ungrounded values #{remaining.inspect} conv=#{@conversation.display_id}"
+  end
+
+  def grounding_override(claims)
+    <<~OVERRIDE.strip
+      🚨 STOP — VOCÊ CITOU UM VALOR QUE NÃO EXISTE EM NENHUM BLOCO ACIMA.
+      Valores não confirmados nesta resposta: #{claims.join(', ')}.
+      É TERMINANTEMENTE PROIBIDO citar preço, desconto ou percentual que não
+      esteja escrito acima. REESCREVA a resposta SEM esses números: diga que vai
+      confirmar o valor certinho e siga conduzindo a conversa normalmente.
+    OVERRIDE
+  end
+
   # Compares the candidate against the last LOOP_LOOKBACK assistant
   # messages using token-set Jaccard similarity. Returns the first
   # recent message that crosses the threshold, or nil.
@@ -135,7 +248,7 @@ class Ai::AutopilotReplyService
   def recent_assistant_contents
     @conversation.messages
                  .where(message_type: :outgoing, private: false)
-                 .order(created_at: :desc)
+                 .reorder(created_at: :desc, id: :desc)
                  .limit(LOOP_LOOKBACK)
                  .pluck(:content)
                  .compact
@@ -631,7 +744,13 @@ class Ai::AutopilotReplyService
   # the same doc must stay contiguous and in sequence under their title, or a
   # row-oriented catalog reads as shuffled fragments (and the overlap shows up
   # as visible duplication).
+  # Memoized: the grounding check must validate against EXACTLY the passages the
+  # model was given, not a fresh retrieval that could differ.
   def relevant_passages
+    @relevant_passages ||= compute_relevant_passages
+  end
+
+  def compute_relevant_passages
     query_tokens = token_set(knowledge_query)
     chunks = relevant_trainings.flat_map { |title, content| chunk_document(title, content) }
     ranked = chunks.each_with_index.sort_by { |chunk, i| [-passage_score(chunk, query_tokens), i] }
@@ -741,7 +860,7 @@ class Ai::AutopilotReplyService
   def knowledge_query
     @knowledge_query ||= @conversation.messages
                                       .where(message_type: :incoming, private: false)
-                                      .order(created_at: :desc)
+                                      .reorder(created_at: :desc, id: :desc)
                                       .limit(2)
                                       .pluck(:content)
                                       .compact
@@ -753,7 +872,7 @@ class Ai::AutopilotReplyService
     history = @conversation.messages
                            .where(message_type: %i[incoming outgoing])
                            .where(private: false)
-                           .order(created_at: :desc)
+                           .reorder(created_at: :desc, id: :desc)
                            .limit(RECENT_WINDOW)
                            .reverse
     raw = history.map { |m| { role: role_for(m), content: m.content_for_llm.to_s } }
