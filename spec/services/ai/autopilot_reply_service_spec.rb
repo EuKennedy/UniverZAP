@@ -92,6 +92,8 @@ RSpec.describe Ai::AutopilotReplyService do
   describe 'knowledge grounding (anti-alucinação factual)' do
     let(:service) { described_class.new(conversation: conversation, assistant: assistant) }
 
+    # ApplicationRecord caps every text column at 20_000 chars, so a fixture doc
+    # has to stay under that while still dwarfing KNOWLEDGE_BUDGET_CHARS (6000).
     def training(title, content, category: 'catalog')
       Ai::Training.create!(
         account: account, ai_assistant: assistant, title: title, content: content,
@@ -114,7 +116,7 @@ RSpec.describe Ai::AutopilotReplyService do
       conv = create(:conversation, account: account)
       create(:message, conversation: conv, account: account, message_type: 'incoming',
                        content: 'quanto custa a progressiva premium?')
-      training('Catálogo', "#{'blá ' * 3000}Progressiva Premium: R$ 189,90 à vista.#{' blá' * 3000}")
+      training('Catálogo', "#{'blá ' * 2000}Progressiva Premium: R$ 189,90 à vista.#{' blá' * 2000}")
 
       block = described_class.new(conversation: conv, assistant: assistant).send(:knowledge_snippets)
 
@@ -128,7 +130,7 @@ RSpec.describe Ai::AutopilotReplyService do
     end
 
     it 'caps the knowledge block so a huge catalog cannot blow up the prompt' do
-      training('Catálogo gigante', 'palavra ' * 20_000)
+      training('Catálogo gigante', 'palavra ' * 2000)
 
       block = service.send(:knowledge_snippets)
 
@@ -141,7 +143,7 @@ RSpec.describe Ai::AutopilotReplyService do
       conv = create(:conversation, account: account)
       create(:message, conversation: conv, account: account, message_type: 'incoming',
                        content: 'qual o preço da progressiva premium?')
-      training('Política de troca', 'Trocas em ate 7 dias corridos mediante nota fiscal. ' * 2000)
+      training('Política de troca', 'Trocas em ate 7 dias corridos mediante nota fiscal. ' * 350)
       training('Preços', 'Progressiva Premium: R$ 189,90.')
 
       passages = described_class.new(conversation: conv, assistant: assistant).send(:relevant_passages)
