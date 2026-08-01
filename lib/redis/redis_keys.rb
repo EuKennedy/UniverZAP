@@ -57,4 +57,13 @@ module Redis::RedisKeys
 
   ## Account Email Rate Limiting
   ACCOUNT_OUTBOUND_EMAIL_COUNT_KEY = 'OUTBOUND_EMAIL_COUNT::%<account_id>d::%<date>s'.freeze
+
+  ## Athenas autopilot (agent) hot-path
+  # Sorted set: sliding-window of the bot's own replies per conversation, so the
+  # per-reply rate check stays off Postgres. Scored by epoch, pruned by window.
+  AUTOPILOT_REPLY_RATE = 'AUTOPILOT_REPLY_RATE::%<conversation_id>d'.freeze
+  # Cache of the belezaki external_user_id per account (rarely changes; stamped
+  # once at the login bridge). Short TTL + negative caching spares 2-3 DB queries
+  # on every autopilot reply.
+  BELEZAKI_EXTERNAL_ID = 'BELEZAKI_EXTERNAL_ID::%<account_id>d'.freeze
 end

@@ -9,7 +9,10 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
   # locking / dedup / guard logic here.
   let(:service) { instance_double(Ai::AutopilotReplyService, perform: { content: 'Olá!' }) }
 
-  after { Current.reset }
+  after do
+    Current.reset
+    Redis::Alfred.delete(format(Redis::RedisKeys::AUTOPILOT_REPLY_RATE, conversation_id: conversation.id))
+  end
 
   def outgoing_count
     conversation.reload.messages.where(message_type: :outgoing).count
@@ -43,5 +46,23 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     described_class.perform_now(message.id, assistant.id)
 
     expect(Current.account).to be_nil
+  end
+
+  describe 'rate limiting (Redis sliding window)' do
+    it 'stops replying once the per-minute limit is reached' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      assistant.update!(guardrails: { 'max_messages_per_minute' => 1 })
+      described_class.perform_now(message.id, assistant.id) # first reply records one hit
+      next_trigger = create(:message, conversation: conversation, account: account, inbox: conversation.inbox)
+
+      expect { described_class.perform_now(next_trigger.id, assistant.id) }.not_to(change { outgoing_count })
+    end
+
+    it 'falls back to the DB count and still replies when Redis is unavailable' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      allow(Redis::SlidingWindowRateLimiter).to receive(:new).and_raise(StandardError, 'redis down')
+
+      expect { described_class.perform_now(message.id, assistant.id) }.to change { outgoing_count }.by(1)
+    end
   end
 end

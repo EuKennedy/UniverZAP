@@ -78,6 +78,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
 
       send_outgoing(conversation, assistant, reply_text)
       mark_replied!(conversation, message_id)
+      record_reply_rate!(conversation)
     end
   end
 
@@ -95,13 +96,54 @@ class Ai::AutopilotReplyJob < ApplicationJob
     ).perform
   end
 
+  # Redis sliding-window over the bot's own replies (recorded on send), so the
+  # hot-path check never touches Postgres. Falls back to a DB COUNT if Redis is
+  # unreachable, so a Redis hiccup can never silently drop the guardrail.
   def rate_limited?(conversation, assistant)
-    limit = (assistant.guardrails.is_a?(Hash) ? assistant.guardrails['max_messages_per_minute'] : nil) || 4
+    reply_rate_limiter(conversation, assistant).exceeded?
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas autopilot] Redis rate-limit unavailable (#{e.message}); DB fallback")
+    rate_limited_via_db?(conversation, assistant)
+  end
+
+  # Best-effort: records this reply in the sliding window. Never breaks the send
+  # (the reply already went out) if Redis is momentarily unavailable. Hits made
+  # during a Redis outage aren't recorded, so the minute spanning a recovery can
+  # allow a one-time overage before the window refills — acceptable for a soft
+  # chattiness limiter (the row lock + message-id dedup guarantee correctness
+  # independently of this counter).
+  def record_reply_rate!(conversation)
+    reply_rate_limiter(conversation, nil).record!
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas autopilot] Redis rate-limit record failed (#{e.message})")
+  end
+
+  def reply_rate_limiter(conversation, assistant)
+    Redis::SlidingWindowRateLimiter.new(
+      format(Redis::RedisKeys::AUTOPILOT_REPLY_RATE, conversation_id: conversation.id),
+      limit: reply_limit(assistant),
+      window: RATE_LIMIT_WINDOW.to_i
+    )
+  end
+
+  # `limit` is only consulted by `exceeded?`, never by `record!`, so a nil
+  # assistant on the record path is fine (falls back to the default).
+  def reply_limit(assistant)
+    guardrails = assistant&.guardrails
+    (guardrails.is_a?(Hash) ? guardrails['max_messages_per_minute'] : nil) || 4
+  end
+
+  # Redis-outage fallback. Intentionally conservative: it counts ALL outgoing
+  # (not only the bot replies the Redis window tracks), so during an outage we
+  # err toward silence rather than risk spamming. Fail-safe by construction —
+  # bot replies are a subset of outgoing, so this can only throttle more, never
+  # let the bot exceed the cap.
+  def rate_limited_via_db?(conversation, assistant)
     sent_recently = conversation.messages
                                 .where(message_type: :outgoing)
                                 .where('created_at > ?', RATE_LIMIT_WINDOW.ago)
                                 .count
-    sent_recently >= limit
+    sent_recently >= reply_limit(assistant)
   end
 
   # Idempotency for the reply itself: a retried job (Sidekiq re-run after the
