@@ -92,6 +92,24 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       expect(captured[:client]).to eq({ name: 'Bia', phone: '+5531977776666' })
     end
 
+    it 'reports no external write before any booking is attempted' do
+      allow(client).to receive(:services).and_return({ 'services' => [] })
+      executor = tools
+
+      executor.call('listar_servicos', {})
+
+      expect(executor.performed_write?).to be(false)
+    end
+
+    it 'flags the external write even when the booking call blows up mid-flight' do
+      allow(client).to receive(:create_appointment).and_raise(Ai::Belezaki::AgentClient::Error, 'timeout')
+      executor = tools
+
+      executor.call('agendar', booking_input)
+
+      expect(executor.performed_write?).to be(true)
+    end
+
     it 'returns belezaki errors as data instead of raising' do
       allow(client).to receive(:services).and_raise(Ai::Belezaki::AgentClient::Error, 'boom')
 

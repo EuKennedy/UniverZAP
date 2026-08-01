@@ -69,6 +69,21 @@ class Ai::AutopilotReplyService
     # candidate echoes a recent assistant turn we retry once with a hard
     # override, then suppress if it still loops.
     break_loop_if_needed(messages, response)
+  rescue Ai::ClaudeService::TransientError => e
+    # Guards the WHOLE turn, not just the tool loop: once an appointment has
+    # been written to the salon agenda, replaying this turn could book a second
+    # slot. Downgrade to a permanent error so the job logs instead of retrying —
+    # at-most-once beats at-least-once when the side effect is a real booking.
+    raise unless @performed_external_write
+
+    Rails.logger.error(
+      "[Athenas agent] transient failure AFTER a booking conv=#{@conversation.display_id}; " \
+      "not retrying to avoid a duplicate appointment: #{e.message}"
+    )
+    # The customer is left without a reply on a turn that DID book — page
+    # on-call, this is the one failure mode the guard trades away.
+    ChatwootExceptionTracker.new(e, account: @conversation.account).capture_exception
+    raise Ai::ClaudeService::Error, e.message
   end
 
   private
@@ -80,6 +95,11 @@ class Ai::AutopilotReplyService
   def break_loop_if_needed(messages, response)
     duplicated = matching_recent_reply(response[:content])
     return response if duplicated.nil?
+    # A regeneration runs with NO tools and no tool_result context, so after a
+    # real booking it could tell the customer something that contradicts the
+    # appointment just created. A slightly repetitive confirmation is far less
+    # damaging than denying an appointment that exists.
+    return response if @performed_external_write
 
     Rails.logger.warn(
       "[Athenas autopilot] loop detected conv=#{@conversation.display_id} " \
@@ -160,6 +180,16 @@ class Ai::AutopilotReplyService
       scope: "conv-#{@conversation.id}",
       contact: { name: @conversation.contact&.name, phone: @conversation.contact&.phone_number }
     )
+    run_tool_loop(messages, executor)
+  end
+
+  # The tool loop can COMMIT external writes (an appointment on the salon
+  # agenda) before Claude fails on a later turn of the loop. Those writes are
+  # not covered by the reply dedup stamp, so replaying the turn could book a
+  # second slot. Once a booking has been attempted we therefore downgrade a
+  # transient failure to a permanent one: the job logs it instead of retrying.
+  # At-most-once beats at-least-once when the side effect is a real appointment.
+  def run_tool_loop(messages, executor)
     Ai::Agent::ToolLoopService.new(
       assistant: @assistant,
       conversation: @conversation,
@@ -168,6 +198,11 @@ class Ai::AutopilotReplyService
       tools: Ai::Belezaki::SchedulingTools.definitions(include_booking: true),
       tool_executor: executor
     ).perform
+  ensure
+    # `ensure`, so the flag is recorded whether the loop returned or blew up.
+    # Turn-scoped state (not the executor local) because the guard in #perform
+    # must also cover everything that runs AFTER the tool loop.
+    @performed_external_write ||= executor.performed_write?
   end
 
   # Never let belezaki resolution (DB lookup / ENV) break the reply for
@@ -271,16 +306,29 @@ class Ai::AutopilotReplyService
     (total - cached['message_count'].to_i) < SUMMARY_REFRESH_AFTER
   end
 
+  # Writes ONLY the summary key, in SQL. Saving the whole jsonb from this
+  # object's snapshot would clobber keys written concurrently by another job —
+  # notably `autopilot_last_replied_message_id`, which is the sole basis of the
+  # reply dedup and the superseded-turn guard. Losing it means a double reply.
   def persist_summary(summary)
-    total = @conversation.messages.where(message_type: %i[incoming outgoing]).count
-    @conversation.additional_attributes = (@conversation.additional_attributes || {}).merge(
-      'autopilot_summary' => {
-        'text' => summary,
-        'message_count' => total,
-        'generated_at' => Time.current.to_i
-      }
+    payload = {
+      'text' => summary,
+      'message_count' => @conversation.messages.where(message_type: %i[incoming outgoing]).count,
+      'generated_at' => Time.current.to_i
+    }
+    # rubocop:disable Rails/SkipsModelValidations
+    Conversation.where(id: @conversation.id).update_all(
+      [
+        "additional_attributes = jsonb_set(coalesce(additional_attributes, '{}'::jsonb), '{autopilot_summary}', ?::jsonb)",
+        payload.to_json
+      ]
     )
-    @conversation.save!(touch: false)
+    # rubocop:enable Rails/SkipsModelValidations
+    # reload, never an in-memory assignment: the caller LOCKS this same object
+    # later (conversation.lock!), and Rails refuses to lock a record carrying
+    # unpersisted changes. Reloading also picks up whatever a concurrent job
+    # wrote to the column meanwhile.
+    @conversation.reload
   end
 
   def generate_summary

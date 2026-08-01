@@ -65,4 +65,31 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       expect { described_class.perform_now(message.id, assistant.id) }.to change { outgoing_count }.by(1)
     end
   end
+
+  describe 'pipeline hardening (Sprint 8)' do
+    it 'runs on its own lane so a customer turn never waits behind bulk jobs' do
+      expect(described_class.new.queue_name).to eq('ai_replies')
+    end
+
+    it 'retries the turn instead of swallowing a transient upstream failure' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      allow(service).to receive(:perform).and_raise(Ai::ClaudeService::TransientError, 'Claude API 503')
+
+      expect { described_class.perform_now(message.id, assistant.id) }.to have_enqueued_job(described_class)
+    end
+
+    it 'does not retry a permanent failure (no retry storm on a bad key)' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      allow(service).to receive(:perform).and_raise(Ai::ClaudeService::Error, 'Anthropic API key not configured')
+
+      expect { described_class.perform_now(message.id, assistant.id) }.not_to have_enqueued_job(described_class)
+    end
+
+    it 'drops a stale turn when a newer message was already answered' do
+      conversation.update!(additional_attributes: { 'autopilot_last_replied_message_id' => message.id + 10 })
+
+      expect(Ai::AutopilotReplyService).not_to receive(:new)
+      expect { described_class.perform_now(message.id, assistant.id) }.not_to(change { outgoing_count })
+    end
+  end
 end

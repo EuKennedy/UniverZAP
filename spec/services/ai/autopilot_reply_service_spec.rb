@@ -88,4 +88,59 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(query).to include('quero comprar')
     end
   end
+
+  describe 'replay safety after an external booking (Sprint 8)' do
+    let(:service) { described_class.new(conversation: conversation, assistant: assistant) }
+
+    it 'downgrades to a permanent error once a booking landed, so the turn is never replayed' do
+      allow(service).to receive(:generate_response) do
+        service.instance_variable_set(:@performed_external_write, true)
+        raise Ai::ClaudeService::TransientError, 'Claude API 503'
+      end
+
+      expect { service.perform }.to raise_error(an_instance_of(Ai::ClaudeService::Error))
+    end
+
+    it 'keeps the failure retryable when no booking was attempted' do
+      allow(service).to receive(:generate_response).and_raise(Ai::ClaudeService::TransientError, 'Claude API 503')
+
+      expect { service.perform }.to raise_error(Ai::ClaudeService::TransientError)
+    end
+
+    it 'records the external write for the whole turn, not just inside the tool loop' do
+      executor = instance_double(Ai::Belezaki::SchedulingTools, performed_write?: true)
+      loop_service = instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' })
+      allow(Ai::Agent::ToolLoopService).to receive(:new).and_return(loop_service)
+
+      service.send(:run_tool_loop, [], executor)
+
+      expect(service.instance_variable_get(:@performed_external_write)).to be(true)
+    end
+  end
+
+  describe 'summary persistence (Sprint 8)' do
+    it 'does not clobber the reply dedup stamp written concurrently by another job' do
+      # The service captures its snapshot here, BEFORE the concurrent write.
+      service = described_class.new(conversation: conversation, assistant: assistant)
+      # Another job stamps the dedup key out-of-band (same row, different object),
+      # exactly like AutopilotReplyJob#mark_replied! does under the row lock.
+      Conversation.find(conversation.id).update!(additional_attributes: { 'autopilot_last_replied_message_id' => 4242 })
+
+      service.send(:persist_summary, 'memo novo')
+
+      attrs = conversation.reload.additional_attributes
+      expect(attrs['autopilot_last_replied_message_id']).to eq(4242)
+      expect(attrs.dig('autopilot_summary', 'text')).to eq('memo novo')
+    end
+
+    # Regression: an in-memory mirror left the record dirty and the job's
+    # conversation.lock! then raised "Locking a record with unpersisted changes".
+    it 'leaves the conversation clean so the caller can still lock it' do
+      service = described_class.new(conversation: conversation, assistant: assistant)
+
+      service.send(:persist_summary, 'memo novo')
+
+      expect(conversation.has_changes_to_save?).to be(false)
+    end
+  end
 end

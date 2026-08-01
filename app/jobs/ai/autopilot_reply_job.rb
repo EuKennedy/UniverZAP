@@ -1,7 +1,31 @@
 class Ai::AutopilotReplyJob < ApplicationJob
-  queue_as :default
+  # Dedicated lane (see config/sidekiq.yml): below :high so a message a human
+  # agent typed always goes out first, above :medium so a customer-facing AI
+  # reply never waits behind bulk imports/exports. The lane gives per-feature
+  # queue depth/latency and room to split into its own process later; it does
+  # not isolate the thread pool while one sidekiq drains every queue.
+  queue_as :ai_replies
 
   RATE_LIMIT_WINDOW = 1.minute
+  MAX_ATTEMPTS = 5
+
+  # An Anthropic blip used to be swallowed here and the customer simply never
+  # got an answer. Now the turn is retried with a growing delay, and when the
+  # attempts run out it dies LOUDLY (dead-letter log) instead of silently.
+  # Safe to retry: the reply is deduped by trigger message id under the
+  # conversation row lock, and a superseded turn is dropped (see #superseded?).
+  retry_on Ai::ClaudeService::TransientError, wait: :polynomially_longer, attempts: MAX_ATTEMPTS do |job, error|
+    message_id, assistant_id = job.arguments
+    Rails.logger.error(
+      "[Athenas autopilot] dead-letter after #{MAX_ATTEMPTS} attempts " \
+      "message=#{message_id} assistant=#{assistant_id}: #{error.message}"
+    )
+    # Handling the error here keeps the job out of Sidekiq's Dead set, so
+    # without this the customer's dropped turn would be invisible to on-call.
+    # Report it explicitly instead of re-raising (re-raising would hand the job
+    # back to Sidekiq's own retry cycle on top of the attempts above).
+    ChatwootExceptionTracker.new(error, account: Message.find_by(id: message_id)&.account).capture_exception
+  end
 
   def perform(message_id, assistant_id)
     message = Message.find_by(id: message_id)
@@ -12,12 +36,16 @@ class Ai::AutopilotReplyJob < ApplicationJob
     return unless same_account?(assistant, conversation)
 
     with_tenant_context(conversation) do
-      deliver_reply(conversation, assistant, message_id)
+      deliver_reply(conversation, assistant, message)
     end
   rescue Ai::AutopilotReplyService::LoopSuppressed => e
     # Intentional silence: the reply would have repeated a recent turn.
     # Logged at info — this is the loop-breaker working as designed.
     Rails.logger.info("[Athenas autopilot] #{e.message}")
+  rescue Ai::ClaudeService::TransientError
+    # Must precede the Error clause (TransientError is a subclass): re-raised so
+    # `retry_on` above gets it instead of the failure being swallowed.
+    raise
   rescue Ai::ClaudeService::Error => e
     Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
   end
@@ -58,28 +86,50 @@ class Ai::AutopilotReplyJob < ApplicationJob
   #   2. generate the reply with NO lock held;
   #   3. a SHORT locked transaction that re-checks (a concurrent job may have
   #      answered meanwhile) and then writes the outgoing message + dedup stamp.
-  def deliver_reply(conversation, assistant, message_id)
-    return if already_replied_to?(conversation, message_id)
+  def deliver_reply(conversation, assistant, message)
+    return if already_replied_to?(conversation, message.id)
+    return if superseded?(conversation, message.id)
     return if rate_limited?(conversation, assistant)
 
     reply_text = generate_reply_text(conversation, assistant)
     return if reply_text.blank?
 
-    commit_reply(conversation, assistant, message_id, reply_text)
+    commit_reply(conversation, assistant, message, reply_text)
   end
 
-  def commit_reply(conversation, assistant, message_id, reply_text)
+  def commit_reply(conversation, assistant, message, reply_text)
     Conversation.transaction do
       # lock! reloads under SELECT ... FOR UPDATE, so the re-checks below see a
       # concurrent job's write and we never post twice for the same trigger.
       conversation.lock!
-      next if already_replied_to?(conversation, message_id)
+      next if already_replied_to?(conversation, message.id)
+      next if superseded?(conversation, message.id)
       next if rate_limited?(conversation, assistant)
 
       send_outgoing(conversation, assistant, reply_text)
-      mark_replied!(conversation, message_id)
+      mark_replied!(conversation, message.id)
       record_reply_rate!(conversation)
+      log_turn_complete(conversation, message)
     end
+  end
+
+  # A LATER message in this conversation was already answered, so this turn is
+  # stale — typical after a retry, or when the customer fired a burst. Replying
+  # now would push an answer to a question the bot already moved past.
+  def superseded?(conversation, message_id)
+    last_replied = conversation.additional_attributes.to_h['autopilot_last_replied_message_id']
+    last_replied.present? && last_replied.to_i > message_id.to_i
+  end
+
+  # End-to-end turn latency: what the CUSTOMER actually waited, queue time and
+  # retries included. Per-call model latency/tokens/cost already land on
+  # Ai::Invocation; this is the number that per-call timing can't show.
+  def log_turn_complete(conversation, message)
+    latency_ms = ((Time.current - message.created_at) * 1000).to_i
+    Rails.logger.info(
+      "[Athenas autopilot] turn complete conv=#{conversation.display_id} " \
+      "message=#{message.id} attempt=#{executions} latency_ms=#{latency_ms}"
+    )
   end
 
   def generate_reply_text(conversation, assistant)

@@ -57,6 +57,15 @@ class Ai::Belezaki::SchedulingTools
     # Contact record (name/phone) is the source of truth for who is booking;
     # the LLM-extracted fields are only a fallback.
     @contact = contact || {}
+    @performed_write = false
+  end
+
+  # True once a write tool (booking) has been ATTEMPTED in this turn. Set before
+  # the HTTP call on purpose: a timeout may still have created the appointment
+  # on the salon side, so the caller must treat the turn as non-replayable
+  # either way rather than risk a second booking.
+  def performed_write?
+    @performed_write
   end
 
   # Returns a JSON string for the tool_result. Never raises — belezaki errors
@@ -90,6 +99,7 @@ class Ai::Belezaki::SchedulingTools
   end
 
   def book(input)
+    @performed_write = true
     @client.create_appointment(
       service_id: input['service_id'],
       start: input['start'],

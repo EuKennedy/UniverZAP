@@ -3,6 +3,11 @@
 # Ai::Invocation model for cost tracking.
 class Ai::ClaudeService
   class Error < StandardError; end
+  # Upstream blip that survived the in-request backoff (Anthropic 5xx/429 or a
+  # network timeout). Subclass of Error on purpose: every existing rescuer keeps
+  # behaving exactly as before, while background callers can opt into retrying
+  # the whole turn later instead of dropping the customer's message.
+  class TransientError < Error; end
 
   API_BASE = 'https://api.anthropic.com'.freeze
   API_VERSION = '2023-06-01'.freeze
@@ -17,27 +22,32 @@ class Ai::ClaudeService
     raise Error, 'Anthropic API key not configured' if api_key.blank?
 
     payload = build_payload(messages, system, overrides)
-    if @account.present?
-      # Cap the worst-case cost pre-flight using `max_tokens` from the
-      # payload. The actual invocation is debited post-flight against
-      # real usage so customers never pay for tokens Claude didn't emit.
-      Ai::QuotaService.check!(
-        account: @account,
-        model: payload[:model],
-        max_output_tokens: payload[:max_tokens]
-      )
-    end
+    check_quota!(payload)
     started_at = Time.zone.now
     response = perform_request(api_key, payload)
     track(response: response, payload: payload, started_at: started_at, conversation: conversation, phase: phase)
   rescue Error
     raise
+  rescue *RETRYABLE_NET_ERRORS => e
+    # Retries inside the request are exhausted, but the failure is still a blip:
+    # let a background caller re-run the turn later.
+    Rails.logger.error("[Athenas] Claude chat failed (transient): #{e.message}")
+    raise TransientError, e.message
   rescue StandardError => e
     Rails.logger.error("[Athenas] Claude chat failed: #{e.message}")
     raise Error, e.message
   end
 
   private
+
+  # Cap the worst-case cost pre-flight using `max_tokens` from the payload. The
+  # actual invocation is debited post-flight against real usage so customers
+  # never pay for tokens Claude didn't emit.
+  def check_quota!(payload)
+    return if @account.blank?
+
+    Ai::QuotaService.check!(account: @account, model: payload[:model], max_output_tokens: payload[:max_tokens])
+  end
 
   def build_payload(messages, system, overrides)
     {
@@ -60,7 +70,13 @@ class Ai::ClaudeService
   # Exponential backoff on transient failures (timeouts, 5xx, rate limit).
   # Three quick attempts — 0s, ~0.5s, ~1.5s — keeps the user-perceived
   # latency tolerable while soaking up Anthropic blips.
-  RETRYABLE_NET_ERRORS = [Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNRESET, HTTParty::Error].freeze
+  # DNS (SocketError), TLS handshake and connection-refused blips are just as
+  # transient as a timeout — classifying them as permanent used to drop the
+  # customer's turn for good. Mirrors the belezaki client's list.
+  RETRYABLE_NET_ERRORS = [
+    Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNRESET, Errno::ECONNREFUSED,
+    SocketError, OpenSSL::SSL::SSLError, HTTParty::Error
+  ].freeze
   MAX_RETRY_ATTEMPTS = 3
 
   def perform_request(api_key, payload)
@@ -101,12 +117,7 @@ class Ai::ClaudeService
     duration_ms = ((Time.zone.now - started_at) * 1000).to_i
     unless response.success?
       log_failed(payload: payload, response: response, duration_ms: duration_ms, conversation: conversation, phase: phase)
-      # Surface only the upstream message field — the full body can echo
-      # user prompts or stray request headers and would otherwise leak
-      # straight into the dashboard alert.
-      parsed_err = (response.parsed_response.is_a?(Hash) ? response.parsed_response : {})['error'] || {}
-      message = parsed_err['message'].presence || "HTTP #{response.code}"
-      raise Error, "Claude API #{response.code}: #{message.to_s.truncate(200)}"
+      raise_upstream_error(response)
     end
     parsed = response.parsed_response
     log_success(payload: payload, parsed: parsed, duration_ms: duration_ms, conversation: conversation, phase: phase)
@@ -117,6 +128,18 @@ class Ai::ClaudeService
       stop_reason: parsed['stop_reason'],
       raw: parsed
     }
+  end
+
+  # Surface only the upstream message field — the full body can echo user
+  # prompts or stray request headers and would otherwise leak straight into the
+  # dashboard alert. 5xx/429 that survived the in-request backoff are classified
+  # transient so a background caller can retry the turn; 4xx stays permanent
+  # (retrying a malformed request or a bad key never helps).
+  def raise_upstream_error(response)
+    parsed_err = (response.parsed_response.is_a?(Hash) ? response.parsed_response : {})['error'] || {}
+    message = parsed_err['message'].presence || "HTTP #{response.code}"
+    error_class = retryable_response?(response) ? TransientError : Error
+    raise error_class, "Claude API #{response.code}: #{message.to_s.truncate(200)}"
   end
 
   def extract_text(parsed)

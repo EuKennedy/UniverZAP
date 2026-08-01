@@ -46,4 +46,25 @@ RSpec.describe Ai::ClaudeService do
       expect(service).to have_received(:post_to_claude).exactly(described_class::MAX_RETRY_ATTEMPTS).times
     end
   end
+
+  describe 'error classification (Sprint 8)' do
+    def failed_response(code)
+      instance_double(HTTParty::Response, code: code, parsed_response: { 'error' => { 'message' => 'boom' } })
+    end
+
+    it 'classifies a persistent 5xx as transient so the caller can retry the turn later' do
+      expect { service.send(:raise_upstream_error, failed_response(503)) }
+        .to raise_error(described_class::TransientError)
+    end
+
+    it 'classifies a 429 rate limit as transient' do
+      expect { service.send(:raise_upstream_error, failed_response(429)) }
+        .to raise_error(described_class::TransientError)
+    end
+
+    it 'keeps a 4xx permanent so a bad request or key is never retried forever' do
+      expect { service.send(:raise_upstream_error, failed_response(400)) }
+        .to raise_error(an_instance_of(described_class::Error))
+    end
+  end
 end

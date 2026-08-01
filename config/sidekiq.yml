@@ -24,6 +24,15 @@
 :queues:
   - critical
   - high
+  # Athenas autopilot turns. Below :high so a message a human agent typed is
+  # always delivered first, above :medium so a customer-facing AI reply never
+  # waits behind bulk imports/exports.
+  # NOTE: a single sidekiq process drains this whole list in strict priority
+  # order, so its own lane buys visibility (queue depth/latency per feature) and
+  # the option to split it into a dedicated process later — it does NOT isolate
+  # the thread pool today. A burst of AI turns still occupies the shared
+  # concurrency and delays the lanes below it.
+  - ai_replies
   - medium
   - default
   - mailers
