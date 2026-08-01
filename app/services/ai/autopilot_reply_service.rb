@@ -201,8 +201,9 @@ class Ai::AutopilotReplyService
   ensure
     # `ensure`, so the flag is recorded whether the loop returned or blew up.
     # Turn-scoped state (not the executor local) because the guard in #perform
-    # must also cover everything that runs AFTER the tool loop.
-    @performed_external_write ||= executor.performed_write?
+    # must also cover everything that runs AFTER the tool loop. Latches on:
+    # once a write landed it must never be cleared for the rest of the turn.
+    @performed_external_write = true if executor.performed_write?
   end
 
   # Never let belezaki resolution (DB lookup / ENV) break the reply for
