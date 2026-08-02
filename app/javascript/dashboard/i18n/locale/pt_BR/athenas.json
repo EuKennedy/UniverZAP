@@ -1,13 +1,13 @@
 {
   "ATHENAS": {
     "LIST": {
-      "TITLE": "Athenas AI",
-      "SUBTITLE": "Construa, treine e supervisione os assistentes de IA que falam com seus clientes.",
-      "CREATE": "Novo assistente",
-      "CREATE_FIRST": "Criar meu primeiro assistente",
+      "TITLE": "Agente de IA",
+      "SUBTITLE": "Construa, treine e supervisione os agentes de IA que falam com seus clientes.",
+      "CREATE": "Novo agente",
+      "CREATE_FIRST": "Criar meu primeiro agente",
       "AUTOPILOT_BADGE": "Auto",
-      "EMPTY_TITLE": "Nenhum assistente ainda",
-      "EMPTY_DESCRIPTION": "A Athenas AI permite colocar um assistente de WhatsApp no ar em minutos. Escolha um papel, ensine sobre o seu negócio e deixe ele qualificar leads, atender e até fechar vendas sozinho."
+      "EMPTY_TITLE": "Nenhum agente ainda",
+      "EMPTY_DESCRIPTION": "O Agente de IA entra no ar no seu WhatsApp em minutos. Escolha um papel, ensine sobre o seu negócio e deixe ele qualificar leads, atender e até fechar vendas sozinho."
     },
     "TONES": {
       "SALES": "Vendas",
@@ -17,18 +17,18 @@
       "CONCIERGE": "Concierge"
     },
     "WIZARD": {
-      "HEADER_TITLE": "Novo assistente Athenas",
+      "HEADER_TITLE": "Novo agente de IA",
       "BACK": "Voltar",
       "PREVIOUS": "Anterior",
       "NEXT": "Avançar",
       "SKIP": "Configurar depois",
-      "FINISH": "Criar assistente",
-      "SUCCESS": "Assistente criado.",
+      "FINISH": "Criar agente",
+      "SUCCESS": "Agente criado.",
       "STEPS": {
         "IDENTITY": {
           "LABEL": "Identidade",
           "TITLE": "Etapa 1 de 5 · Identidade",
-          "HEADING": "Quem é o seu assistente?",
+          "HEADING": "Quem é o seu agente?",
           "HELPER": "Dê um nome, um papel e uma descrição curta para que sua equipe reconheça."
         },
         "PERSONALITY": {
@@ -53,17 +53,17 @@
           "LABEL": "Revisão",
           "TITLE": "Etapa 5 de 5 · Revisão",
           "HEADING": "Pronto pra subir?",
-          "HELPER": "Confira tudo antes de criar o assistente."
+          "HELPER": "Confira tudo antes de criar o agente."
         }
       },
       "IDENTITY": {
-        "NAME_LABEL": "Nome do assistente",
-        "NAME_PLACEHOLDER": "Ex: Athena · Helena · Atlas",
-        "NAME_REQUIRED": "Diga o nome do assistente para continuar.",
+        "NAME_LABEL": "Nome do agente",
+        "NAME_PLACEHOLDER": "Ex: Sofia · Helena · Atlas",
+        "NAME_REQUIRED": "Diga o nome do agente para continuar.",
         "ROLE_LABEL": "Papel / função",
         "ROLE_PLACEHOLDER": "Ex: SDR, Closer, Suporte",
         "DESCRIPTION_LABEL": "Descrição",
-        "DESCRIPTION_PLACEHOLDER": "O que esse assistente faz? Para quem ele atende?",
+        "DESCRIPTION_PLACEHOLDER": "O que esse agente faz? Para quem ele atende?",
         "AVATAR_LABEL": "URL do avatar",
         "AVATAR_PLACEHOLDER": "https://…"
       },
@@ -71,7 +71,7 @@
         "TONE_LABEL": "Tom de voz",
         "MODEL_LABEL": "Modelo",
         "PROMPT_LABEL": "System prompt",
-        "PROMPT_PLACEHOLDER": "Descreva como o assistente deve agir, o que pode prometer e o que precisa evitar.",
+        "PROMPT_PLACEHOLDER": "Descreva como o agente deve agir, o que pode prometer e o que precisa evitar.",
         "PROMPT_HINT": "Selecione um tom acima para carregar um template, depois ajuste.",
         "TEMPERATURE_LABEL": "Criatividade",
         "MAX_TOKENS_LABEL": "Tokens máximos por resposta",
@@ -97,10 +97,10 @@
       },
       "BEHAVIOR": {
         "AUTOPILOT_LABEL": "Ativar autopiloto",
-        "AUTOPILOT_HINT": "O assistente responde sozinho assim que uma mensagem chega. Você ainda pode ligar/desligar por conversa.",
+        "AUTOPILOT_HINT": "O agente responde sozinho assim que uma mensagem chega. Você ainda pode ligar/desligar por conversa.",
         "STOP_WORDS_LABEL": "Palavras de pausa",
         "STOP_WORDS_PLACEHOLDER": "humano, atendente, falar com gente",
-        "STOP_WORDS_HINT": "Se o cliente disser qualquer uma dessas palavras, o bot entrega a conversa para um humano.",
+        "STOP_WORDS_HINT": "Se o cliente disser qualquer uma dessas palavras, o agente entrega a conversa para um humano.",
         "RATE_LIMIT_LABEL": "Mensagens máximas por minuto"
       },
       "REVIEW": {
@@ -115,18 +115,18 @@
       }
     },
     "EDIT": {
-      "LOADING": "Carregando assistente…",
+      "LOADING": "Carregando agente…",
       "DELETE": "Excluir",
-      "DELETE_TITLE": "Excluir assistente",
-      "DELETE_CONFIRM": "Excluir este assistente? Esta ação não pode ser desfeita.",
-      "DELETE_SUCCESS": "Assistente excluído.",
+      "DELETE_TITLE": "Excluir agente",
+      "DELETE_CONFIRM": "Excluir este agente? Esta ação não pode ser desfeita.",
+      "DELETE_SUCCESS": "Agente excluído.",
       "SAVE": "Salvar alterações",
       "SAVE_SUCCESS": "Alterações salvas.",
       "STATUS_AUTOPILOT": "Autopiloto",
       "STATUS_ACTIVE": "Ativo",
       "STATUS_INACTIVE": "Inativo",
-      "ACTIVE_LABEL": "Assistente ativo",
-      "ACTIVE_HINT": "Desative para impedir que o assistente seja usado em conversas sem precisar excluir.",
+      "ACTIVE_LABEL": "Agente ativo",
+      "ACTIVE_HINT": "Desative para impedir que o agente seja usado em conversas sem precisar excluir.",
       "REPLACE_API_KEY_LABEL": "Substituir chave Anthropic",
       "REPLACE_API_KEY_PLACEHOLDER": "Deixe em branco para manter a atual",
       "REPLACE_API_KEY_HINT": "A chave atual não aparece aqui. Preencha apenas para substituí-la.",
@@ -142,7 +142,7 @@
       },
       "SECTIONS": {
         "IDENTITY": "Identidade",
-        "IDENTITY_HINT": "Como o assistente aparece para sua equipe.",
+        "IDENTITY_HINT": "Como o agente aparece para sua equipe.",
         "PERSONALITY": "Personalidade",
         "PERSONALITY_HINT": "Modelo, tom e instruções que definem como ele responde.",
         "BEHAVIOR": "Comportamento",
@@ -194,7 +194,7 @@
     "FINISH": "Finalizar onboarding",
     "STEPS": {
       "ASSISTANT": {
-        "TITLE": "Personalize seu assistente Athenas",
+        "TITLE": "Personalize seu agente de IA",
         "BODY": "Ajuste persona, tom e conhecimento para a IA falar como sua empresa.",
         "CTA": "Personalizar"
       },
@@ -212,7 +212,7 @@
   },
   "ATHENAS_CREDITS": {
     "BILLING": {
-      "EYEBROW": "Créditos Athenas",
+      "EYEBROW": "Créditos de IA",
       "TITLE": "Saldo e recargas",
       "BALANCE_LABEL": "Saldo disponível",
       "BURN_LABEL": "Consumo médio",
@@ -220,21 +220,21 @@
       "CREDITS_AS": "Equivale a {credits} em créditos",
       "STATUS": {
         "OK": "Saldo saudável",
-        "WARN_80": "Saldo em 80% — considere recarregar",
+        "WARN_80": "Saldo em 80%, considere recarregar",
         "WARN_95": "Saldo quase no fim",
-        "EXHAUSTED": "Sem créditos — a Athenas está pausada"
+        "EXHAUSTED": "Sem créditos, o Agente de IA está pausado"
       }
     },
     "MODAL": {
-      "EYEBROW_EXHAUSTED": "Créditos Athenas",
+      "EYEBROW_EXHAUSTED": "Créditos de IA",
       "EYEBROW_WARN": "Atenção",
-      "EYEBROW_MANUAL": "Créditos Athenas",
-      "TITLE_EXHAUSTED": "Seus créditos Athenas acabaram",
-      "TITLE_WARN": "Seus créditos Athenas estão acabando",
-      "TITLE_MANUAL": "Recarregue seus créditos Athenas",
+      "EYEBROW_MANUAL": "Créditos de IA",
+      "TITLE_EXHAUSTED": "Seus créditos de IA acabaram",
+      "TITLE_WARN": "Seus créditos de IA estão acabando",
+      "TITLE_MANUAL": "Recarregue seus créditos de IA",
       "SUBTITLE_EXHAUSTED": "Escolha um pacote abaixo para continuar atendendo seus clientes 24/7. Créditos não expiram e ativam em poucos minutos.",
-      "SUBTITLE_WARN": "Restam R$ {balance}. Recarregue agora para a Athenas não parar no meio de uma conversa.",
-      "SUBTITLE_MANUAL": "Saldo atual: R$ {balance}. Escolha quanto adicionar — pacotes maiores vêm com bônus.",
+      "SUBTITLE_WARN": "Restam R$ {balance}. Recarregue agora para o Agente de IA não parar no meio de uma conversa.",
+      "SUBTITLE_MANUAL": "Saldo atual: R$ {balance}. Escolha quanto adicionar: pacotes maiores vêm com bônus.",
       "CLOSE": "Fechar",
       "META": {
         "BALANCE": "Saldo atual",
@@ -264,21 +264,21 @@
     "BANNER": {
       "CTA": "Recarregar",
       "WARN_80": {
-        "TITLE": "Créditos Athenas baixos",
+        "TITLE": "Créditos de IA baixos",
         "BODY": "Restam R$ {balance} ({percent}% do seu pacote inicial). Recarregue para manter o autopiloto respondendo."
       },
       "WARN_95": {
-        "TITLE": "Créditos Athenas quase acabando",
-        "BODY": "Restam apenas R$ {balance} ({percent}%). Recarregue antes da Athenas parar no meio de uma conversa."
+        "TITLE": "Créditos de IA quase acabando",
+        "BODY": "Restam apenas R$ {balance} ({percent}%). Recarregue antes do Agente de IA parar no meio de uma conversa."
       },
       "EXHAUSTED": {
-        "TITLE": "Créditos Athenas esgotados",
+        "TITLE": "Créditos de IA esgotados",
         "BODY": "Recarregue para manter sua IA atendendo os clientes 24/7."
       }
     },
     "METER": {
-      "ARIA_LABEL": "Saldo Athenas — R$ {balance}. Clique para recarregar.",
-      "TOOLTIP_BALANCE": "Saldo Athenas · R$ {balance}",
+      "ARIA_LABEL": "Saldo de IA: R$ {balance}. Clique para recarregar.",
+      "TOOLTIP_BALANCE": "Saldo de IA · R$ {balance}",
       "TOOLTIP_DAYS": "~{days} dias no ritmo atual"
     }
   }

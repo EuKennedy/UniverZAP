@@ -203,9 +203,9 @@ class Account < ApplicationRecord
     return if ai_assistants.exists?
 
     ai_assistants.create!(
-      name: 'Athenas',
+      name: 'Sofia',
       role: 'Atendente',
-      description: 'Assistente padrão criado automaticamente para você começar.',
+      description: 'Agente padrão criado automaticamente para você começar.',
       tone: 'friendly',
       provider: 'anthropic',
       model: 'claude-haiku-4-5',

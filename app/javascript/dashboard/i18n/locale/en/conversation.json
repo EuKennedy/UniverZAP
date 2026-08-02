@@ -94,8 +94,8 @@
       "MOVE_TO_KANBAN": "Move to Kanban",
       "VIEW_KANBAN": "View Kanban",
       "AUTOPILOT": "Autopilot",
-      "ATHENAS_BALANCE": "Athenas balance: R$ {balance}",
-      "ATHENAS_COST_TOOLTIP": "Athenas spent R$ {brl} on this conversation",
+      "ATHENAS_BALANCE": "AI credits: R$ {balance}",
+      "ATHENAS_COST_TOOLTIP": "The AI Agent spent R$ {brl} on this conversation",
       "MORE_ACTIONS": "More actions",
       "OPEN": "More",
       "CLOSE": "Close",
@@ -293,9 +293,9 @@
       "TASKS": "tasks"
     },
     "AUTOPILOT": {
-      "MENU_TITLE": "Athenas autopilot",
+      "MENU_TITLE": "Autopilot",
       "TURN_OFF": "Turn off autopilot",
-      "NO_ASSISTANTS": "No assistants configured yet.",
+      "NO_ASSISTANTS": "No AI agents configured yet.",
       "ENABLED": "Autopilot enabled",
       "DISABLED": "Autopilot disabled",
       "ERROR": "Could not update autopilot"

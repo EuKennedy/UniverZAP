@@ -15,10 +15,10 @@ class Api::V1::Accounts::BaseController < Api::BaseController
       "attempted=#{error.attempted_cents} balance=#{error.balance_cents}"
     )
     default_msg, i18n_key = if error.reason == 'daily_cap'
-                              ['Limite diário Athenas atingido. Tente novamente amanhã ou aumente o teto.',
+                              ['Limite diário de IA atingido. Tente novamente amanhã ou aumente o teto.',
                                'errors.athenas.daily_cap_exceeded']
                             else
-                              ['Os créditos Athenas acabaram. Recarregue para continuar atendendo.',
+                              ['Os créditos de IA acabaram. Recarregue para continuar atendendo.',
                                'errors.athenas.quota_exhausted']
                             end
     render json: {

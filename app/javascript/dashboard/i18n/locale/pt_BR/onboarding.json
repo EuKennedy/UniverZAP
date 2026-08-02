@@ -56,7 +56,7 @@
       "GREETING": "Vamos lançar seu workspace",
       "GREETING_NAMED": "Bora, {name}",
       "SUBTITLE": "{done} de {total} etapas concluídas",
-      "INTRO": "Conecte o WhatsApp, convide seu time e conheça a Athenas — sua assistente IA.",
+      "INTRO": "Conecte o WhatsApp, convide seu time e conheça o Agente de IA, que atende por você.",
       "TIME_LEFT": "~{mins} min restantes",
       "DONE_LABEL": "Concluído",
       "START_TOUR": "Iniciar tour guiado",
@@ -83,9 +83,9 @@
           "CTA": "Criar time"
         },
         "ASSISTANT": {
-          "TITLE": "Configure a Athenas IA",
-          "DESCRIPTION": "Treine sua assistente IA para qualificar leads e responder 24/7.",
-          "CTA": "Criar assistente"
+          "TITLE": "Configure o Agente de IA",
+          "DESCRIPTION": "Treine seu agente de IA para qualificar leads e responder 24/7.",
+          "CTA": "Criar agente"
         },
         "FIRST_REPLY": {
           "TITLE": "Envie sua primeira resposta",
@@ -134,7 +134,7 @@
         "WELCOME": "Capítulo 01 · Boas-vindas",
         "INBOX": "Capítulo 02 · Caixa de entrada",
         "TEAM": "Capítulo 03 · Time",
-        "AI": "Capítulo 04 · Athenas IA",
+        "AI": "Capítulo 04 · Agente de IA",
         "PIPELINE": "Capítulo 05 · Funil",
         "CONTACTS": "Capítulo 06 · Contatos",
         "REPORTS": "Capítulo 07 · Relatórios",
@@ -146,11 +146,11 @@
           "BODY": "Toda mensagem do WhatsApp aparece nesta caixa. Filtre por agente, time, etiqueta ou status."
         },
         "ATHENAS_NAV": {
-          "TITLE": "Conheça a Athenas IA",
-          "BODY": "Sua assistente que qualifica, responde e move conversas para o funil enquanto você dorme."
+          "TITLE": "Conheça o Agente de IA",
+          "BODY": "Seu agente que qualifica, responde e move conversas para o funil enquanto você dorme."
         },
         "ATHENAS_BILLING": {
-          "TITLE": "Seu saldo Athenas",
+          "TITLE": "Seu saldo de IA",
           "BODY": "Cada resposta da IA consome um pequeno valor. Recarregue quando quiser, sem assinatura mensal obrigatória."
         },
         "KANBAN_FUNNEL": {
@@ -167,7 +167,7 @@
       "CONVERSATION": {
         "CHAPTER": "Tour da conversa",
         "ATHENAS_BALANCE": {
-          "TITLE": "Saldo Athenas sempre à vista",
+          "TITLE": "Saldo de IA sempre à vista",
           "BODY": "Cada resposta da IA desconta deste saldo. Clique aqui para recarregar a qualquer momento."
         },
         "RESOLVE": {
@@ -180,33 +180,33 @@
         },
         "AUTOPILOT": {
           "TITLE": "Ative o piloto automático",
-          "BODY": "A Athenas assume a conversa, qualifica e te avisa só quando o lead estiver maduro."
+          "BODY": "O Agente de IA assume a conversa, qualifica e te avisa só quando o lead estiver maduro."
         }
       },
       "ATHENAS_HUB": {
-        "CHAPTER": "Tour Athenas IA",
+        "CHAPTER": "Tour do Agente de IA",
         "BILLING": {
           "TITLE": "Seu saldo + pacotes",
           "BODY": "Recarregue com 1 clique. Quanto maior o pacote, mais bônus a gente devolve em créditos."
         },
         "NEW_ASSISTANT": {
-          "TITLE": "Crie sua primeira assistente",
-          "BODY": "Sem código. Em menos de 5 minutos sua Athenas já responde no tom certo, com o conhecimento do seu negócio."
+          "TITLE": "Crie seu primeiro agente",
+          "BODY": "Sem código. Em menos de 5 minutos seu agente já responde no tom certo, com o conhecimento do seu negócio."
         }
       },
       "ATHENAS_ASSISTANT": {
-        "CHAPTER": "Configurando sua Athenas",
+        "CHAPTER": "Configurando seu Agente de IA",
         "NAME": {
           "TITLE": "Dê uma identidade",
-          "BODY": "Nome, função e tom. Clientes confiam em assistentes que parecem pessoas, não em bots genéricos."
+          "BODY": "Nome, função e tom. Clientes confiam em agentes que parecem pessoas, não em bots genéricos."
         },
         "PROMPT": {
           "TITLE": "O prompt é o cérebro",
-          "BODY": "Aqui você ensina como a Athenas deve pensar, falar e o que ela jamais pode prometer. Capricha."
+          "BODY": "Aqui você ensina como o agente deve pensar, falar e o que ele jamais pode prometer. Capricha."
         },
         "RAG": {
           "TITLE": "Base de conhecimento",
-          "BODY": "Suba documentos, FAQs ou catálogo. A Athenas consulta tudo em tempo real para responder com precisão."
+          "BODY": "Suba documentos, FAQs ou catálogo. O agente consulta tudo em tempo real para responder com precisão."
         }
       },
       "KANBAN": {

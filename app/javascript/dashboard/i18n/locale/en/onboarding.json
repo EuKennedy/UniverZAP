@@ -56,7 +56,7 @@
       "GREETING": "Let's launch your workspace",
       "GREETING_NAMED": "Let's go, {name}",
       "SUBTITLE": "{done} of {total} steps complete",
-      "INTRO": "Connect WhatsApp, invite your team and meet Athenas — your AI assistant.",
+      "INTRO": "Connect WhatsApp, invite your team and meet your AI Agent.",
       "TIME_LEFT": "~{mins} min left",
       "DONE_LABEL": "Completed",
       "START_TOUR": "Start guided tour",
@@ -83,9 +83,9 @@
           "CTA": "Create team"
         },
         "ASSISTANT": {
-          "TITLE": "Configure Athenas AI",
-          "DESCRIPTION": "Train your AI assistant to qualify leads and reply 24/7.",
-          "CTA": "Create assistant"
+          "TITLE": "Configure your AI Agent",
+          "DESCRIPTION": "Train your AI agent to qualify leads and reply 24/7.",
+          "CTA": "Create agent"
         },
         "FIRST_REPLY": {
           "TITLE": "Send your first reply",
@@ -134,7 +134,7 @@
         "WELCOME": "Chapter 01 · Welcome",
         "INBOX": "Chapter 02 · Inbox",
         "TEAM": "Chapter 03 · Team",
-        "AI": "Chapter 04 · Athenas AI",
+        "AI": "Chapter 04 · AI Agent",
         "PIPELINE": "Chapter 05 · Pipeline",
         "CONTACTS": "Chapter 06 · Contacts",
         "REPORTS": "Chapter 07 · Reports",
@@ -146,12 +146,12 @@
           "BODY": "Every WhatsApp message lands in this inbox. Filter by agent, team, label or status."
         },
         "ATHENAS_NAV": {
-          "TITLE": "Meet Athenas AI",
-          "BODY": "Your assistant qualifies, replies and routes conversations to the pipeline while you sleep."
+          "TITLE": "Meet your AI Agent",
+          "BODY": "Your AI agent qualifies, replies and routes conversations to the pipeline while you sleep."
         },
         "ATHENAS_BILLING": {
-          "TITLE": "Your Athenas balance",
-          "BODY": "Each AI reply burns a tiny credit. Top up whenever you want — no mandatory monthly subscription."
+          "TITLE": "Your AI credits",
+          "BODY": "Each AI reply burns a tiny credit. Top up whenever you want, no mandatory monthly subscription."
         },
         "KANBAN_FUNNEL": {
           "TITLE": "Pick the funnel you're working",
@@ -167,7 +167,7 @@
       "CONVERSATION": {
         "CHAPTER": "Conversation tour",
         "ATHENAS_BALANCE": {
-          "TITLE": "Athenas balance, always visible",
+          "TITLE": "AI credits, always visible",
           "BODY": "Every AI reply burns from this balance. Click here to top up anytime."
         },
         "RESOLVE": {
@@ -180,33 +180,33 @@
         },
         "AUTOPILOT": {
           "TITLE": "Turn on autopilot",
-          "BODY": "Athenas takes the wheel, qualifies the lead and pings you only when it's ripe."
+          "BODY": "The AI Agent takes the wheel, qualifies the lead and pings you only when it's ripe."
         }
       },
       "ATHENAS_HUB": {
-        "CHAPTER": "Athenas AI tour",
+        "CHAPTER": "AI Agent tour",
         "BILLING": {
           "TITLE": "Your balance + packages",
           "BODY": "Top up in one click. Bigger packages return bigger bonuses straight to your credit balance."
         },
         "NEW_ASSISTANT": {
-          "TITLE": "Spin up your first assistant",
-          "BODY": "No code. In under 5 minutes your Athenas replies in the right tone, with your business knowledge baked in."
+          "TITLE": "Spin up your first agent",
+          "BODY": "No code. In under 5 minutes your AI agent replies in the right tone, with your business knowledge baked in."
         }
       },
       "ATHENAS_ASSISTANT": {
-        "CHAPTER": "Configuring your Athenas",
+        "CHAPTER": "Configuring your AI agent",
         "NAME": {
           "TITLE": "Give it an identity",
           "BODY": "Name, role and tone. Customers trust assistants that feel like people, not generic bots."
         },
         "PROMPT": {
           "TITLE": "The prompt is the brain",
-          "BODY": "Here you teach how Athenas should think, talk and what she can never promise. Nail this."
+          "BODY": "Here you teach how your AI agent should think, talk and what it can never promise. Nail this."
         },
         "RAG": {
           "TITLE": "Knowledge base",
-          "BODY": "Upload docs, FAQs or product catalogues. Athenas consults them in real time for precise answers."
+          "BODY": "Upload docs, FAQs or product catalogues. Your AI agent consults them in real time for precise answers."
         }
       },
       "KANBAN": {

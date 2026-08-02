@@ -91,8 +91,8 @@
       "MOVE_TO_KANBAN": "Mover no Kanban",
       "VIEW_KANBAN": "Visualizar Kanban",
       "AUTOPILOT": "Autopiloto",
-      "ATHENAS_BALANCE": "Saldo Athenas: R$ {balance}",
-      "ATHENAS_COST_TOOLTIP": "Athenas gastou R$ {brl} nesta conversa",
+      "ATHENAS_BALANCE": "Saldo de IA: R$ {balance}",
+      "ATHENAS_COST_TOOLTIP": "O Agente de IA gastou R$ {brl} nesta conversa",
       "MORE_ACTIONS": "Mais ações",
       "OPEN": "Mais",
       "CLOSE": "Fechar",
@@ -289,9 +289,9 @@
       "TASKS": "tarefas"
     },
     "AUTOPILOT": {
-      "MENU_TITLE": "Autopiloto Athenas",
+      "MENU_TITLE": "Autopiloto",
       "TURN_OFF": "Desativar autopiloto",
-      "NO_ASSISTANTS": "Nenhum atendente configurado ainda.",
+      "NO_ASSISTANTS": "Nenhum agente de IA configurado ainda.",
       "ENABLED": "Autopiloto ativado",
       "DISABLED": "Autopiloto desativado",
       "ERROR": "Falha ao atualizar o autopiloto"

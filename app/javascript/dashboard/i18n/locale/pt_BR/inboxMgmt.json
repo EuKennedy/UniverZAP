@@ -662,19 +662,19 @@
       "ACCOUNT_HEALTH": "Saúde da conta",
       "CSAT": "CSAT",
       "VOICE": "Voz",
-      "ATHENAS_AI": "Athenas AI"
+      "ATHENAS_AI": "Agente de IA"
     },
     "ATHENAS_AI": {
-      "TITLE": "Athenas AI",
-      "SUBTITLE": "Escolha qual atendente Athenas atende esta caixa de entrada e como ele opera.",
-      "ASSISTANT_TITLE": "Atendente ativo",
-      "ASSISTANT_HINT": "Escolha um dos seus atendentes Athenas ou deixe desativado.",
-      "NO_ASSISTANT": "Sem atendente",
+      "TITLE": "Agente de IA",
+      "SUBTITLE": "Escolha qual agente de IA atende esta caixa de entrada e como ele opera.",
+      "ASSISTANT_TITLE": "Agente ativo",
+      "ASSISTANT_HINT": "Escolha um dos seus agentes de IA ou deixe desativado.",
+      "NO_ASSISTANT": "Sem agente",
       "NO_ASSISTANT_HINT": "Caixa de entrada totalmente manual.",
       "MODE_TITLE": "Modo de operação",
-      "MODE_HINT": "Como o atendente participa das conversas.",
-      "EMPTY_TITLE": "Nenhum atendente Athenas ainda",
-      "EMPTY_HINT": "Crie um atendente na seção Athenas AI para conectá-lo aqui.",
+      "MODE_HINT": "Como o agente participa das conversas.",
+      "EMPTY_TITLE": "Nenhum agente de IA ainda",
+      "EMPTY_HINT": "Crie um agente na seção Agente de IA para conectá-lo aqui.",
       "SAVE": "Salvar",
       "AUTOPILOT_BADGE": "Auto"
     },

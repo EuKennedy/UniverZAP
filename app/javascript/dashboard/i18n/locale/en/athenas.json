@@ -1,13 +1,13 @@
 {
   "ATHENAS": {
     "LIST": {
-      "TITLE": "Athenas AI",
+      "TITLE": "AI Agent",
       "SUBTITLE": "Build, train and supervise the AI agents that talk with your customers.",
       "CREATE": "New agent",
       "CREATE_FIRST": "Create my first agent",
       "AUTOPILOT_BADGE": "Auto",
       "EMPTY_TITLE": "No agents yet",
-      "EMPTY_DESCRIPTION": "Athenas AI lets you launch an autonomous WhatsApp agent in minutes. Pick a role, teach it about your business and let it qualify leads, answer support and even close deals on its own."
+      "EMPTY_DESCRIPTION": "The AI Agent puts an autonomous assistant on your WhatsApp in minutes. Pick a role, teach it about your business and let it qualify leads, answer support and even close deals on its own."
     },
     "TONES": {
       "SALES": "Sales",
@@ -17,7 +17,7 @@
       "CONCIERGE": "Concierge"
     },
     "WIZARD": {
-      "HEADER_TITLE": "New Athenas agent",
+      "HEADER_TITLE": "New AI agent",
       "BACK": "Back",
       "PREVIOUS": "Previous",
       "NEXT": "Next",
@@ -58,7 +58,7 @@
       },
       "IDENTITY": {
         "NAME_LABEL": "Agent name",
-        "NAME_PLACEHOLDER": "Ex: Athena · Helena · Atlas",
+        "NAME_PLACEHOLDER": "Ex: Sofia · Helena · Atlas",
         "NAME_REQUIRED": "Tell us your agent's name to continue.",
         "ROLE_LABEL": "Role",
         "ROLE_PLACEHOLDER": "Ex: SDR, Closer, Support",
@@ -194,7 +194,7 @@
     "FINISH": "Finish onboarding",
     "STEPS": {
       "ASSISTANT": {
-        "TITLE": "Personalize your Athenas agent",
+        "TITLE": "Personalize your AI Agent",
         "BODY": "Adjust the persona, tone and knowledge so the AI sounds like your business.",
         "CTA": "Customize"
       },
@@ -212,7 +212,7 @@
   },
   "ATHENAS_CREDITS": {
     "BILLING": {
-      "EYEBROW": "Athenas Credits",
+      "EYEBROW": "AI Credits",
       "TITLE": "Balance & top-ups",
       "BALANCE_LABEL": "Available balance",
       "BURN_LABEL": "Average burn",
@@ -220,21 +220,21 @@
       "CREDITS_AS": "Worth {credits} in credits",
       "STATUS": {
         "OK": "Healthy balance",
-        "WARN_80": "Balance at 80% — consider topping up",
+        "WARN_80": "Balance at 80%, consider topping up",
         "WARN_95": "Balance almost gone",
-        "EXHAUSTED": "No credits — Athenas is paused"
+        "EXHAUSTED": "No credits, the AI Agent is paused"
       }
     },
     "MODAL": {
-      "EYEBROW_EXHAUSTED": "Athenas Credits",
+      "EYEBROW_EXHAUSTED": "AI Credits",
       "EYEBROW_WARN": "Heads up",
-      "EYEBROW_MANUAL": "Athenas Credits",
-      "TITLE_EXHAUSTED": "Your Athenas credits are out",
-      "TITLE_WARN": "Your Athenas credits are running low",
-      "TITLE_MANUAL": "Top up your Athenas credits",
-      "SUBTITLE_EXHAUSTED": "Pick a package below to keep Athenas answering customers 24/7. Credits never expire and activate within minutes.",
-      "SUBTITLE_WARN": "You have R$ {balance} left. Top up now so Athenas never stops mid-conversation.",
-      "SUBTITLE_MANUAL": "Current balance: R$ {balance}. Choose how much to add — bigger packages get bonus credit.",
+      "EYEBROW_MANUAL": "AI Credits",
+      "TITLE_EXHAUSTED": "Your AI credits are out",
+      "TITLE_WARN": "Your AI credits are running low",
+      "TITLE_MANUAL": "Top up your AI credits",
+      "SUBTITLE_EXHAUSTED": "Pick a package below to keep your AI Agent answering customers 24/7. Credits never expire and activate within minutes.",
+      "SUBTITLE_WARN": "You have R$ {balance} left. Top up now so your AI Agent never stops mid-conversation.",
+      "SUBTITLE_MANUAL": "Current balance: R$ {balance}. Choose how much to add, bigger packages get bonus credit.",
       "CLOSE": "Close",
       "META": {
         "BALANCE": "Current balance",
@@ -264,21 +264,21 @@
     "BANNER": {
       "CTA": "Top up now",
       "WARN_80": {
-        "TITLE": "Athenas credits running low",
+        "TITLE": "AI credits running low",
         "BODY": "You have R$ {balance} left ({percent}% of your starter pack). Top up to keep autopilot answering."
       },
       "WARN_95": {
-        "TITLE": "Athenas credits almost gone",
-        "BODY": "Only R$ {balance} left ({percent}%). Top up before Athenas stops mid-conversation."
+        "TITLE": "AI credits almost gone",
+        "BODY": "Only R$ {balance} left ({percent}%). Top up before your AI Agent stops mid-conversation."
       },
       "EXHAUSTED": {
-        "TITLE": "Athenas credits exhausted",
-        "BODY": "Top up to keep your AI assistant answering customers 24/7."
+        "TITLE": "AI credits exhausted",
+        "BODY": "Top up to keep your AI Agent answering customers 24/7."
       }
     },
     "METER": {
-      "ARIA_LABEL": "Athenas balance — R$ {balance}. Click to top up.",
-      "TOOLTIP_BALANCE": "Athenas balance · R$ {balance}",
+      "ARIA_LABEL": "AI credits: R$ {balance}. Click to top up.",
+      "TOOLTIP_BALANCE": "AI credits · R$ {balance}",
       "TOOLTIP_DAYS": "~{days} days at current usage"
     }
   }
