@@ -305,7 +305,7 @@ const statusBadge = computed(() => {
   }
   return assistant.value.active
     ? {
-        cls: 'bg-n-blue-3 text-n-blue-11 ring-n-blue-6',
+        cls: 'bg-n-teal-3 text-n-teal-11 ring-n-teal-6',
         label: t('ATHENAS.EDIT.STATUS_ACTIVE'),
         icon: 'i-lucide-circle-dot',
       }
@@ -422,7 +422,10 @@ onMounted(() => {
     </section>
 
     <section v-else-if="assistant" class="flex-1 overflow-y-auto px-8 py-6">
-      <div class="max-w-3xl mx-auto flex flex-col gap-5">
+      <!-- Left-aligned, NOT centred: the header and the tab bar start at the
+           same px-8 gutter, so a centred column here is what made everything
+           look adrift on a wide screen. -->
+      <div class="w-full max-w-5xl flex flex-col gap-5">
         <p
           v-if="error"
           class="text-[12px] text-n-ruby-11 bg-n-ruby-3 px-3 py-2 rounded-md ring-1 ring-inset ring-n-ruby-6"
@@ -572,7 +575,7 @@ onMounted(() => {
                   min="0"
                   max="1"
                   step="0.05"
-                  class="w-full"
+                  class="w-full accent-n-teal-9"
                 />
               </div>
               <div class="flex flex-col gap-1.5">
@@ -847,9 +850,9 @@ onMounted(() => {
             class="flex flex-col gap-3 p-10 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak items-center text-center"
           >
             <span
-              class="size-16 rounded-2xl bg-gradient-to-br from-n-blue-3 to-transparent ring-1 ring-n-weak grid place-content-center"
+              class="size-16 rounded-2xl bg-gradient-to-br from-n-teal-3 to-transparent ring-1 ring-n-weak grid place-content-center"
             >
-              <span class="i-lucide-activity size-7 text-n-blue-11" />
+              <span class="i-lucide-activity size-7 text-n-teal-11" />
             </span>
             <h2 class="text-lg font-semibold text-n-slate-12 tracking-tight">
               {{ t('ATHENAS.EDIT.ACTIVITY_SOON_TITLE') }}

@@ -109,9 +109,9 @@ onMounted(loadTranscript);
         class="flex flex-col items-center justify-center gap-2 h-full text-center"
       >
         <span
-          class="size-12 rounded-2xl bg-gradient-to-br from-n-blue-3 to-transparent ring-1 ring-n-weak grid place-content-center"
+          class="size-12 rounded-2xl bg-gradient-to-br from-n-teal-3 to-transparent ring-1 ring-n-weak grid place-content-center"
         >
-          <span class="i-lucide-message-circle size-6 text-n-blue-11" />
+          <span class="i-lucide-message-circle size-6 text-n-teal-11" />
         </span>
         <p class="text-[13px] text-n-slate-11 max-w-xs">
           {{ t('ATHENAS.PLAYGROUND.EMPTY') }}
@@ -129,7 +129,7 @@ onMounted(loadTranscript);
             class="px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed whitespace-pre-wrap"
             :class="
               message.role === 'user'
-                ? 'bg-n-blue-9 text-white rounded-br-md'
+                ? 'bg-n-teal-9 text-white rounded-br-md'
                 : 'bg-n-alpha-2 text-n-slate-12 ring-1 ring-n-weak rounded-bl-md'
             "
           >
@@ -188,7 +188,7 @@ onMounted(loadTranscript);
         v-model="draft"
         rows="2"
         :placeholder="t('ATHENAS.PLAYGROUND.PLACEHOLDER')"
-        class="flex-1 resize-none px-3.5 py-2.5 rounded-xl bg-n-alpha-2 ring-1 ring-n-weak text-[13px] text-n-slate-12 placeholder:text-n-slate-10 focus:outline-none focus:ring-n-blue-8"
+        class="flex-1 resize-none px-3.5 py-2.5 rounded-xl bg-n-alpha-2 ring-1 ring-n-weak text-[13px] text-n-slate-12 placeholder:text-n-slate-10 focus:outline-none focus:ring-n-teal-8"
         @keydown.enter.exact.prevent="send"
       />
       <Button
