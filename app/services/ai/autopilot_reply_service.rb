@@ -184,17 +184,26 @@ class Ai::AutopilotReplyService
   # become its own justification on turn N+1, which is exactly when this guard
   # needs to bite.
   #
-  # Reuses the model's own `human_response?` instead of reinventing the rule in
-  # SQL: it already covers the WhatsApp echo (an operator answering from their
-  # own phone lands as outgoing with NO sender, byte-identical to a bot post) and
-  # also rules out automation-rule and campaign sends. Filtered in Ruby because
-  # `content_attributes` is a json column that ALSO goes through
-  # `store ..., coder: JSON`, so it is double-encoded and `->>` never matches.
+  # Filtered in Ruby, not SQL: `content_attributes` is a json column that ALSO
+  # goes through `store ..., coder: JSON`, so it is double-encoded and `->>`
+  # never matches.
   def human_authored_history
     @conversation.messages.where(private: false)
                  .reorder(created_at: :desc, id: :desc).limit(RECENT_WINDOW)
-                 .select { |message| message.incoming? || message.human_response? }
+                 .select { |message| human_authored?(message) }
                  .filter_map(&:content).join(' ')
+  end
+
+  # Anything the AI itself did not write. The bot posts with no sender, no echo
+  # flag and no automation rule, so everything else counts: the customer, an
+  # agent typing in the dashboard, the operator answering from their own phone
+  # (a WhatsApp echo, stored as outgoing with NO sender, byte-identical to a bot
+  # post) and an operator-authored automation template.
+  def human_authored?(message)
+    return true if message.incoming?
+
+    attrs = message.content_attributes || {}
+    message.sender_id.present? || attrs['external_echo'].present? || attrs['automation_rule_id'].present?
   end
 
   # Regenerate ONCE naming the offending numbers, then suppress. Mirrors the
