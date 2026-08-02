@@ -106,6 +106,23 @@ class AthenasAssistantsAPI extends ApiClient {
   deleteTraining(assistantId, trainingId) {
     return axios.delete(`${this.url}/${assistantId}/trainings/${trainingId}`);
   }
+
+  // Test sandbox: talk to the assistant as if you were a customer.
+  getPlayground(assistantId) {
+    return axios.get(`${this.url}/${assistantId}/playground`);
+  }
+
+  sendPlaygroundMessage(assistantId, message, { signal } = {}) {
+    return axios.post(
+      `${this.url}/${assistantId}/playground`,
+      { message },
+      { signal }
+    );
+  }
+
+  resetPlayground(assistantId) {
+    return axios.delete(`${this.url}/${assistantId}/playground`);
+  }
 }
 
 export default new AthenasAssistantsAPI();

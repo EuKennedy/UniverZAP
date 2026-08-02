@@ -137,7 +137,8 @@
       "TABS": {
         "GENERAL": "General",
         "KNOWLEDGE": "Knowledge",
-        "ACTIVITY": "Activity"
+        "ACTIVITY": "Activity",
+        "TEST": "Test"
       },
       "SECTIONS": {
         "IDENTITY": "Identity",
@@ -167,6 +168,20 @@
         "DELETE_TITLE": "Remove knowledge",
         "DELETE_CONFIRM": "Remove this knowledge? This cannot be undone.",
         "DELETE_SUCCESS": "Knowledge removed."
+      }
+    },
+    "PLAYGROUND": {
+      "TITLE": "Test the agent",
+      "HINT": "Chat as if you were the customer. This is the same agent that answers on WhatsApp, with the same knowledge base, so what you see here is what a customer would see. This conversation never shows up in your inbox and nothing is sent to anyone.",
+      "EMPTY": "Send the first message, the way a customer would.",
+      "PLACEHOLDER": "Write as a customer. e.g. how much does it cost?",
+      "SEND": "Send",
+      "RESET": "Clear chat",
+      "CORRECTED": "Corrected by guardrail",
+      "ERROR": "Could not generate a reply right now. Try again.",
+      "STATUS": {
+        "ungrounded_claim": "The agent stayed silent: it tried to state a value that is not in the knowledge base. Add that fact under Knowledge so it can answer.",
+        "loop_suppressed": "The agent stayed silent: the reply would repeat something it already said in this conversation."
       }
     }
   },

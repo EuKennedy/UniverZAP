@@ -137,6 +137,7 @@
       "TABS": {
         "GENERAL": "Geral",
         "KNOWLEDGE": "Conhecimento",
+        "TEST": "Testar",
         "ACTIVITY": "Histórico"
       },
       "SECTIONS": {
@@ -167,6 +168,20 @@
         "DELETE_TITLE": "Remover conhecimento",
         "DELETE_CONFIRM": "Remover este conhecimento? Esta ação não pode ser desfeita.",
         "DELETE_SUCCESS": "Conhecimento removido."
+      }
+    },
+    "PLAYGROUND": {
+      "TITLE": "Testar o agente",
+      "HINT": "Converse como se você fosse o cliente. É o mesmo agente que responde no WhatsApp, com a mesma base de conhecimento, então o que você vê aqui é o que o cliente veria. Esta conversa não aparece na sua caixa de entrada e nada é enviado para ninguém.",
+      "EMPTY": "Mande a primeira mensagem, como um cliente mandaria.",
+      "PLACEHOLDER": "Escreva como cliente. Ex.: quanto custa a progressiva?",
+      "SEND": "Enviar",
+      "RESET": "Limpar conversa",
+      "CORRECTED": "Corrigido pelo guardrail",
+      "ERROR": "Não consegui gerar a resposta agora. Tente de novo.",
+      "STATUS": {
+        "ungrounded_claim": "O agente ficou em silêncio: ele tentou afirmar um valor que não está na base de conhecimento. Cadastre esse dado no Conhecimento para ele poder responder.",
+        "loop_suppressed": "O agente ficou em silêncio: a resposta repetiria algo que ele já disse nesta conversa."
       }
     }
   },

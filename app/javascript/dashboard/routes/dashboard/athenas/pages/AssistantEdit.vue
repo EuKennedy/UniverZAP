@@ -13,6 +13,7 @@ import {
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import AthenasPlayground from 'dashboard/components-next/athenas/AthenasPlayground.vue';
 
 const props = defineProps({ id: { type: Number, required: true } });
 
@@ -45,6 +46,8 @@ const form = reactive({
 const TABS = [
   { key: 'general', icon: 'i-lucide-user-circle-2' },
   { key: 'knowledge', icon: 'i-lucide-book-open' },
+  // Right after knowledge on purpose: you feed the agent, then you test it.
+  { key: 'test', icon: 'i-lucide-message-circle' },
   { key: 'activity', icon: 'i-lucide-activity' },
 ];
 
@@ -895,6 +898,10 @@ onMounted(() => {
               </div>
             </div>
           </article>
+        </template>
+
+        <template v-if="currentTab === 'test'">
+          <AthenasPlayground :assistant-id="id" />
         </template>
       </div>
     </section>
