@@ -119,7 +119,9 @@ class Conversation < ApplicationRecord
   # Athenas test-playground conversations. They are real conversations (so the
   # agent runs against the exact production code path) but must never appear
   # next to real customers in the inbox.
-  scope :not_sandbox, -> { where("additional_attributes->>'athenas_sandbox' IS NULL") }
+  # Column MUST be table-qualified: `contacts` also has an additional_attributes
+  # column, so a bare reference is ambiguous the moment the query joins them.
+  scope :not_sandbox, -> { where("conversations.additional_attributes->>'athenas_sandbox' IS NULL") }
 
   # A test-playground conversation is not real traffic: it must never reach a
   # customer's webhook, trigger an automation rule or start a chatflow.

@@ -110,7 +110,7 @@ class Ai::PlaygroundService
 
   def sandbox_conversation
     @sandbox_conversation ||= @account.conversations
-                                      .where("additional_attributes->>'athenas_sandbox_key' = ?", sandbox_key)
+                                      .where("conversations.additional_attributes->>'athenas_sandbox_key' = ?", sandbox_key)
                                       .first || create_sandbox_conversation
   end
 

@@ -102,7 +102,7 @@ class Ai::AutopilotReplyService
   # did the guardrails have to step in?". Only meaningful after #perform.
   def playground_diagnostics
     {
-      knowledge_titles: relevant_passages.map { |passage| passage[:title] }.uniq,
+      knowledge_titles: relevant_passages.pluck(:title).uniq,
       knowledge_chars: relevant_passages.sum { |passage| passage[:body].length },
       regenerated_for_grounding: @regenerated_for_grounding.present?,
       regenerated_for_loop: @regenerated_for_loop.present?
