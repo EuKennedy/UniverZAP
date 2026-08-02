@@ -8,6 +8,8 @@ class Ai::AutopilotReplyJob < ApplicationJob
 
   RATE_LIMIT_WINDOW = 1.minute
   MAX_ATTEMPTS = 5
+  # Window for tying invocations to the reply they produced.
+  LINK_WINDOW = 5.minutes
 
   # An Anthropic blip used to be swallowed here and the customer simply never
   # got an answer. Now the turn is retried with a growing delay, and when the
@@ -112,7 +114,8 @@ class Ai::AutopilotReplyJob < ApplicationJob
       next if superseded?(conversation, message.id)
       next if rate_limited?(conversation, assistant)
 
-      send_outgoing(conversation, assistant, reply_text)
+      sent = send_outgoing(conversation, assistant, reply_text)
+      link_invocation(conversation, assistant, sent)
       mark_replied!(conversation, message.id)
       record_reply_rate!(conversation)
       log_turn_complete(conversation, message)
@@ -150,6 +153,29 @@ class Ai::AutopilotReplyJob < ApplicationJob
       content: reply_text,
       message_type: :outgoing
     ).perform
+  end
+
+  # Ties the reply the customer actually received back to the invocations that
+  # produced it. The column existed but was never filled, so the history screen
+  # had cost and latency with no way to show WHAT was said.
+  #
+  # ALL unlinked calls of this turn are linked, not just the last one: a turn
+  # that used the scheduling tools bills several Claude calls, and linking only
+  # the final one would report a fraction of what the answer really cost.
+  # Narrowly scoped (this assistant, autopilot phase, last few minutes) so a
+  # stale suggestion invocation can never be stamped onto a customer reply.
+  # Best-effort: a missing link costs a row in a report, never the reply.
+  def link_invocation(conversation, assistant, sent)
+    return if sent.blank?
+
+    # rubocop:disable Rails/SkipsModelValidations
+    Ai::Invocation.where(conversation_id: conversation.id, message_id: nil,
+                         ai_assistant_id: assistant.id, phase: 'autopilot')
+                  .where(created_at: LINK_WINDOW.ago..)
+                  .update_all(message_id: sent.id)
+    # rubocop:enable Rails/SkipsModelValidations
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas autopilot] could not link invocation to message: #{e.message}")
   end
 
   # Redis sliding-window over the bot's own replies (recorded on send), so the

@@ -14,6 +14,7 @@ import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import AthenasPlayground from 'dashboard/components-next/athenas/AthenasPlayground.vue';
+import AthenasAnalytics from 'dashboard/components-next/athenas/AthenasAnalytics.vue';
 
 const props = defineProps({ id: { type: Number, required: true } });
 
@@ -846,61 +847,7 @@ onMounted(() => {
 
         <!-- TAB: ACTIVITY -->
         <template v-if="currentTab === 'activity'">
-          <article
-            class="flex flex-col gap-3 p-10 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak items-center text-center"
-          >
-            <span
-              class="size-16 rounded-2xl bg-gradient-to-br from-n-teal-3 to-transparent ring-1 ring-n-weak grid place-content-center"
-            >
-              <span class="i-lucide-activity size-7 text-n-teal-11" />
-            </span>
-            <h2 class="text-lg font-semibold text-n-slate-12 tracking-tight">
-              {{ t('ATHENAS.EDIT.ACTIVITY_SOON_TITLE') }}
-            </h2>
-            <p class="text-[13px] text-n-slate-11 leading-relaxed max-w-md">
-              {{ t('ATHENAS.EDIT.ACTIVITY_SOON_HINT') }}
-            </p>
-            <div
-              class="grid grid-cols-3 gap-3 w-full max-w-md mt-4 pt-4 border-t border-n-weak"
-            >
-              <div class="flex flex-col items-center gap-0.5">
-                <span
-                  class="text-2xl font-semibold text-n-slate-12 tabular-nums"
-                >
-                  {{ assistant.stats?.invocations_count ?? 0 }}
-                </span>
-                <span
-                  class="text-[10px] uppercase tracking-wider text-n-slate-11"
-                >
-                  {{ t('ATHENAS.EDIT.STATS.INVOCATIONS') }}
-                </span>
-              </div>
-              <div class="flex flex-col items-center gap-0.5">
-                <span
-                  class="text-2xl font-semibold text-n-slate-12 tabular-nums"
-                >
-                  {{ assistant.stats?.trainings_count ?? 0 }}
-                </span>
-                <span
-                  class="text-[10px] uppercase tracking-wider text-n-slate-11"
-                >
-                  {{ t('ATHENAS.EDIT.STATS.TRAININGS') }}
-                </span>
-              </div>
-              <div class="flex flex-col items-center gap-0.5">
-                <span
-                  class="text-2xl font-semibold text-n-slate-12 tabular-nums"
-                >
-                  {{ assistant.stats?.intents_count ?? 0 }}
-                </span>
-                <span
-                  class="text-[10px] uppercase tracking-wider text-n-slate-11"
-                >
-                  {{ t('ATHENAS.EDIT.STATS.INTENTS') }}
-                </span>
-              </div>
-            </div>
-          </article>
+          <AthenasAnalytics :assistant-id="id" />
         </template>
 
         <template v-if="currentTab === 'test'">

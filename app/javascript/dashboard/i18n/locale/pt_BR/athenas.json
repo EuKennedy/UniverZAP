@@ -183,6 +183,24 @@
         "ungrounded_claim": "O agente ficou em silêncio: ele tentou afirmar um valor que não está na base de conhecimento. Cadastre esse dado no Conhecimento para ele poder responder.",
         "loop_suppressed": "O agente ficou em silêncio: a resposta repetiria algo que ele já disse nesta conversa."
       }
+    },
+    "ANALYTICS": {
+      "TITLE": "Desempenho do agente",
+      "SUBTITLE": "Números medidos das chamadas reais deste agente, não estimativas.",
+      "DAYS": "{n}d",
+      "EMPTY": "Este agente ainda não respondeu nada. Assim que ele atender, os números aparecem aqui.",
+      "REPLIES": "Respostas",
+      "COST": "Custo",
+      "LATENCY": "Latência média",
+      "P95": "p95 {v}",
+      "RELIABILITY": "Sucesso",
+      "ERRORS": "{n} com erro",
+      "VOLUME": "Volume por dia",
+      "RECENT": "Últimas respostas",
+      "RECENT_EMPTY": "As respostas enviadas a partir de agora aparecem aqui com o texto, o custo e o tempo.",
+      "AGO_MIN": "há {n} min",
+      "AGO_HOUR": "há {n}h",
+      "AGO_DAY": "há {n}d"
     }
   },
   "ATHENAS_ONBOARDING": {

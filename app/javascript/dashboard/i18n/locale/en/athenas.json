@@ -183,6 +183,24 @@
         "ungrounded_claim": "The agent stayed silent: it tried to state a value that is not in the knowledge base. Add that fact under Knowledge so it can answer.",
         "loop_suppressed": "The agent stayed silent: the reply would repeat something it already said in this conversation."
       }
+    },
+    "ANALYTICS": {
+      "TITLE": "Agent performance",
+      "SUBTITLE": "Measured numbers from this agent real calls, not estimates.",
+      "DAYS": "{n}d",
+      "EMPTY": "This agent has not replied yet. Numbers show up here as soon as it answers.",
+      "REPLIES": "Replies",
+      "COST": "Cost",
+      "LATENCY": "Avg latency",
+      "P95": "p95 {v}",
+      "RELIABILITY": "Success",
+      "ERRORS": "{n} failed",
+      "VOLUME": "Volume per day",
+      "RECENT": "Latest replies",
+      "RECENT_EMPTY": "Replies sent from now on show up here with their text, cost and time.",
+      "AGO_MIN": "{n} min ago",
+      "AGO_HOUR": "{n}h ago",
+      "AGO_DAY": "{n}d ago"
     }
   },
   "ATHENAS_ONBOARDING": {

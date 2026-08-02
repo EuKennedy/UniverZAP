@@ -1,5 +1,6 @@
 class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseController
-  before_action :ensure_admin, only: %i[create update destroy duplicate]
+  # analytics exposes spend, so it is admin-only like the write actions.
+  before_action :ensure_admin, only: %i[create update destroy duplicate analytics]
   before_action :fetch_assistant, except: [:index, :create]
 
   def index
@@ -19,6 +20,11 @@ class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseContr
   end
 
   def show; end
+
+  # Real performance numbers for this agent, measured from the invocation log.
+  def analytics
+    render json: Ai::AnalyticsService.new(assistant: @assistant, days: params[:days] || 30).perform
+  end
 
   def create
     @assistant = Current.account.ai_assistants.new(permitted_params)

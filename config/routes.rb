@@ -495,6 +495,9 @@ Rails.application.routes.draw do
             resources :assistants do
               member do
                 post :duplicate
+                # Measured performance for this agent (volume, cost, latency,
+                # reliability) plus the last replies it actually sent.
+                get :analytics
               end
               resources :trainings, only: [:index, :create, :update, :destroy]
               resources :intents, only: [:index, :create, :update, :destroy]

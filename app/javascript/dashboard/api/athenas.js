@@ -107,6 +107,13 @@ class AthenasAssistantsAPI extends ApiClient {
     return axios.delete(`${this.url}/${assistantId}/trainings/${trainingId}`);
   }
 
+  // Measured performance for one agent, plus the last replies it sent.
+  analytics(assistantId, { days = 30 } = {}) {
+    return axios.get(`${this.url}/${assistantId}/analytics`, {
+      params: { days },
+    });
+  }
+
   // Test sandbox: talk to the assistant as if you were a customer.
   getPlayground(assistantId) {
     return axios.get(`${this.url}/${assistantId}/playground`);
