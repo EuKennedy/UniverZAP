@@ -97,6 +97,18 @@ class Ai::AutopilotReplyService
     raise Ai::ClaudeService::Error, e.message
   end
 
+  # Read-only introspection for the test playground. Answers the question an
+  # operator actually has after reading a reply: "where did that come from, and
+  # did the guardrails have to step in?". Only meaningful after #perform.
+  def playground_diagnostics
+    {
+      knowledge_titles: relevant_passages.map { |passage| passage[:title] }.uniq,
+      knowledge_chars: relevant_passages.sum { |passage| passage[:body].length },
+      regenerated_for_grounding: @regenerated_for_grounding.present?,
+      regenerated_for_loop: @regenerated_for_loop.present?
+    }
+  end
+
   private
 
   # Returns the response untouched when it isn't a near-duplicate of a
@@ -117,6 +129,7 @@ class Ai::AutopilotReplyService
       "assistant=#{@assistant.id} — regenerating with override"
     )
 
+    @regenerated_for_loop = true
     retry_response = call_claude(messages, override: loop_override_directive(duplicated))
     retry_response[:content] = strip_leading_greeting(retry_response[:content].to_s) if conversation_in_progress?
 
@@ -222,6 +235,7 @@ class Ai::AutopilotReplyService
     Rails.logger.warn(
       "[Athenas] ungrounded values #{claims.inspect} conv=#{@conversation.display_id}; regenerating"
     )
+    @regenerated_for_grounding = true
     rewritten = call_claude(messages, override: grounding_override(claims))
     # The rewrite is a fresh generation, so it needs the same greeting scrub the
     # loop-breaker applies to its own retry.

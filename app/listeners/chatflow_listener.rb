@@ -4,6 +4,8 @@
 # (and DB work) happens off the request path inside Chatflow::EngineJob.
 class ChatflowListener < BaseListener
   def message_created(event)
+    return if sandbox_event?(event)
+
     message, = extract_message_and_account(event)
     return unless eligible?(message)
 

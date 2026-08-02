@@ -498,6 +498,8 @@ Rails.application.routes.draw do
               end
               resources :trainings, only: [:index, :create, :update, :destroy]
               resources :intents, only: [:index, :create, :update, :destroy]
+              # Test sandbox: talk to this assistant as if you were a customer.
+              resource :playground, only: [:show, :create, :destroy], controller: 'playground'
             end
             post 'conversations/:conversation_id/suggestion', to: 'suggestions#create'
             post 'conversations/:conversation_id/summary', to: 'summaries#create'

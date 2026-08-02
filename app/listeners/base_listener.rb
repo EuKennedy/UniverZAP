@@ -1,6 +1,20 @@
 class BaseListener
   include Singleton
 
+  # True for an Athenas test-playground event. The sandbox runs the production
+  # agent over a real Conversation on purpose (fidelity), which means it also
+  # emits real events — so every listener with an OUTWARD side effect (customer
+  # webhooks, automation actions, chatflow) must opt out of them explicitly.
+  def sandbox_event?(event)
+    conversation = event.data[:conversation] || event.data[:message]&.conversation
+    return true if conversation.respond_to?(:sandbox?) && conversation.sandbox?
+
+    # Contact events carry no conversation, so the sandbox contact is stamped
+    # directly (it would otherwise be published as a real new contact).
+    contact = event.data[:contact]
+    contact.respond_to?(:custom_attributes) && contact.custom_attributes.to_h['athenas_sandbox'].present?
+  end
+
   def extract_conversation_and_account(event)
     conversation = event.data[:conversation]
     [conversation, conversation.account]

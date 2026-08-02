@@ -100,7 +100,10 @@ class ConversationFinder
   end
 
   def find_conversation_by_inbox
-    @conversations = current_account.conversations
+    # `not_sandbox` keeps the Athenas test-playground transcript out of every
+    # conversation list: it is a real conversation on purpose (so the agent runs
+    # the production path) but it is not a customer.
+    @conversations = current_account.conversations.not_sandbox
 
     return unless params[:inbox_id]
 

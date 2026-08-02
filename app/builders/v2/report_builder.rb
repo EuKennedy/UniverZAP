@@ -127,7 +127,9 @@ class V2::ReportBuilder
   end
 
   def live_conversations
-    @open_conversations = scope.conversations.where(account_id: @account.id).open
+    # not_sandbox: the Athenas test playground is a real conversation by design,
+    # but counting it here would inflate the operator's live metrics.
+    @open_conversations = scope.conversations.where(account_id: @account.id).open.not_sandbox
     metric = {
       open: @open_conversations.count,
       unattended: @open_conversations.unattended.count

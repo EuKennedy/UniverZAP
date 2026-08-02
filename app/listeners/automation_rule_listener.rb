@@ -1,21 +1,31 @@
 class AutomationRuleListener < BaseListener
   def conversation_updated(event)
+    return if sandbox_event?(event)
+
     process_conversation_event(event, 'conversation_updated')
   end
 
   def conversation_created(event)
+    return if sandbox_event?(event)
+
     process_conversation_event(event, 'conversation_created')
   end
 
   def conversation_opened(event)
+    return if sandbox_event?(event)
+
     process_conversation_event(event, 'conversation_opened')
   end
 
   def conversation_resolved(event)
+    return if sandbox_event?(event)
+
     process_conversation_event(event, 'conversation_resolved')
   end
 
   def message_created(event)
+    return if sandbox_event?(event)
+
     message = event.data[:message]
 
     return if ignore_message_created_event?(event)
