@@ -53,11 +53,21 @@ class Ai::AnalyticsService
     {
       replies: replies_scope.distinct.count(:message_id),
       calls: calls.to_i, successes: ok.to_i, errors: calls.to_i - ok.to_i,
-      success_rate: calls.to_i.zero? ? nil : (ok.to_f / calls.to_i * 100).round(1),
-      input_tokens: input.to_i, output_tokens: output.to_i, cache_read_tokens: cached.to_i,
-      cost_usd: usd.to_f.round(4), cost_cents_brl: spent_cents_brl,
+      success_rate: success_rate(calls.to_i, ok.to_i),
       avg_latency_ms: avg_ms.to_f.round, p95_latency_ms: p95_ms.to_f.round
-    }
+    }.merge(usage_totals(input, output, cached, usd))
+  end
+
+  def success_rate(calls, successes)
+    return nil if calls.zero?
+
+    (successes.to_f / calls * 100).round(1)
+  end
+
+  def usage_totals(input, output, cached, usd)
+    { input_tokens: input.to_i, output_tokens: output.to_i,
+      cache_read_tokens: cached.to_i, cost_usd: usd.to_f.round(4),
+      cost_cents_brl: spent_cents_brl }
   end
 
   # The BRL actually debited from the operator's balance, not a conversion of
