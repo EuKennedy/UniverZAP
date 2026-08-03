@@ -3,6 +3,8 @@ class Ai::Invocation < ApplicationRecord
 
   belongs_to :ai_assistant, class_name: 'Ai::Assistant'
   belongs_to :account
+  has_many :response_feedbacks, class_name: 'Ai::ResponseFeedback', foreign_key: :ai_invocation_id,
+                                inverse_of: :ai_invocation, dependent: :destroy
 
   PHASES = %w[main classifier router summary summarize suggest autopilot rewrite chat copilot_chat].freeze
   STATUSES = %w[success error].freeze

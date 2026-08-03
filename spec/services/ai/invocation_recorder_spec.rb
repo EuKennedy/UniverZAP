@@ -6,7 +6,7 @@ require 'rails_helper'
 # without a log row that can explain it. These specs drive the REAL
 # Ai::ClaudeService (only the HTTP call is stubbed) because a log written by a
 # test double would prove nothing about production.
-RSpec.describe Ai::Invocation, 'as the agent response log' do
+RSpec.describe Ai::InvocationRecorder do
   let(:account) { create(:account) }
   let(:assistant) do
     create(:ai_assistant, account: account, encrypted_anthropic_key: 'sk-test', tone: 'sales')

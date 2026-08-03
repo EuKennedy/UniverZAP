@@ -15,6 +15,8 @@ class Ai::Assistant < ApplicationRecord
   has_many :conversations, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
   has_many :chat_threads, class_name: 'Ai::ChatThread', foreign_key: :ai_assistant_id,
                           inverse_of: :ai_assistant, dependent: :destroy
+  has_many :response_feedbacks, class_name: 'Ai::ResponseFeedback', foreign_key: :ai_assistant_id,
+                                inverse_of: :ai_assistant, dependent: :destroy
 
   PROVIDERS = %w[anthropic openai].freeze
   TONES = %w[friendly formal sales support concierge].freeze
