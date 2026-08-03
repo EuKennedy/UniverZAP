@@ -185,6 +185,15 @@ const openEditor = () => {
       </div>
     </header>
 
+    <ol
+      class="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-1 list-decimal list-inside text-[12px] text-n-slate-11 marker:font-semibold marker:text-n-slate-10"
+    >
+      <li>{{ t('ATHENAS.LAB.STEPS.CREATE') }}</li>
+      <li>{{ t('ATHENAS.LAB.STEPS.RUN') }}</li>
+      <li>{{ t('ATHENAS.LAB.STEPS.VOTE') }}</li>
+      <li>{{ t('ATHENAS.LAB.STEPS.ACTIVATE') }}</li>
+    </ol>
+
     <div v-if="loading" class="flex items-center justify-center py-16">
       <span
         class="i-lucide-loader-circle size-6 animate-spin text-n-slate-10"
