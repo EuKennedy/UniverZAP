@@ -50,9 +50,13 @@ class Ai::AutopilotReplyService
   LOOP_SIMILARITY_THRESHOLD = 0.6
   LOOP_LOOKBACK = 4
 
-  def initialize(conversation:, assistant: nil)
+  # `trigger_message` is the customer message this turn is answering. It is
+  # stamped on every log row the turn produces, which is what lets the job link
+  # exactly this turn's calls to the reply instead of guessing by time window.
+  def initialize(conversation:, assistant: nil, trigger_message: nil)
     @conversation = conversation
     @assistant = assistant || conversation.ai_assistant || conversation.inbox.ai_assistant
+    @trigger_message = trigger_message
   end
 
   def perform
@@ -67,7 +71,9 @@ class Ai::AutopilotReplyService
     # on most ticks.
     ensure_fresh_summary
 
-    response = generate_response(messages)
+    # `absorb_meta` also runs inside call_claude; repeating it here covers the
+    # tool-loop path, which reaches Claude without going through it.
+    response = absorb_meta(generate_response(messages))
     raise_on_empty(response)
     # Last-line defence: even with the three-band prompt + few-shot
     # examples Claude occasionally still leads with a greeting on
@@ -85,7 +91,7 @@ class Ai::AutopilotReplyService
     # Deterministic grounding check. GROUNDING_RULES tells the model not to
     # invent values; this VERIFIES it, because a soft prompt rule is exactly
     # what the loop-breaker above already proved is routinely ignored.
-    enforce_grounding(messages, reply)
+    finalize(enforce_grounding(messages, reply))
   rescue Ai::ClaudeService::TransientError => e
     # Guards the WHOLE turn, not just the tool loop: once an appointment has
     # been written to the salon agenda, replaying this turn could book a second
@@ -111,7 +117,9 @@ class Ai::AutopilotReplyService
       knowledge_titles: relevant_passages.pluck(:title).uniq,
       knowledge_chars: relevant_passages.sum { |passage| passage[:body].length },
       regenerated_for_grounding: @regenerated_for_grounding.present?,
-      regenerated_for_loop: @regenerated_for_loop.present?
+      regenerated_for_loop: @regenerated_for_loop.present?,
+      confidence: @confidence,
+      auto_flags: @auto_flags.to_a
     }
   end
 
@@ -144,6 +152,9 @@ class Ai::AutopilotReplyService
         "[Athenas autopilot] loop persists after override conv=#{@conversation.display_id} " \
         "assistant=#{@assistant.id} — suppressing reply (handing off to human)"
       )
+      # Log the text we refused to send BEFORE suppressing. A reply nobody
+      # received is precisely the one a supervisor needs to see.
+      finalize(retry_response)
       raise LoopSuppressed, "autopilot loop suppressed conv=#{@conversation.display_id}"
     end
 
@@ -174,6 +185,9 @@ class Ai::AutopilotReplyService
     remaining = ungrounded_claims(rewritten[:content])
     return rewritten if remaining.empty?
 
+    # Same reason as the loop-breaker: record the fabricated text before
+    # suppressing it, so "the agent tried to invent a price here" survives.
+    finalize(rewritten)
     raise UngroundedClaim, "ungrounded values #{remaining.inspect} conv=#{@conversation.display_id}"
   end
 
@@ -259,7 +273,8 @@ class Ai::AutopilotReplyService
       messages: messages,
       system: build_system_prompt,
       tools: Ai::Belezaki::SchedulingTools.definitions(include_booking: true),
-      tool_executor: executor
+      tool_executor: executor,
+      log_context: reply_log_context
     ).perform
   ensure
     # `ensure`, so the flag is recorded whether the loop returned or blew up.
@@ -294,11 +309,24 @@ class Ai::AutopilotReplyService
       "summary_chars=#{cached_summary_text.length} " \
       "window=#{RECENT_WINDOW}"
     )
-    Ai::ClaudeService.new(assistant: @assistant).chat(
-      messages: messages,
-      system: build_system_prompt(override: override),
-      conversation: @conversation,
-      phase: 'autopilot'
+    absorb_meta(
+      Ai::ClaudeService.new(assistant: @assistant).chat(
+        messages: messages,
+        system: build_system_prompt(override: override),
+        conversation: @conversation,
+        phase: 'autopilot',
+        log_context: reply_log_context
+      )
+    )
+  end
+
+  # `pending` from the moment the row is written: the log exists before the
+  # reply can be sent, and Ai::AutopilotReplyJob flips it to sent or failed.
+  # A row left pending is a reply that was generated and never delivered, which
+  # is exactly what the audit needs to be able to show.
+  def reply_log_context
+    @reply_log_context ||= grounding_log_context(
+      delivery_status: 'pending', trigger_message_id: @trigger_message&.id
     )
   end
 
@@ -469,6 +497,9 @@ class Ai::AutopilotReplyService
       GROUNDING_RULES,
       continuity_rules_reinforcement,
       continuity_examples,
+      # Output-format rule, so it sits after the content rules it reports on.
+      # Stripped from the text before anyone sees it (Ai::MetaBlock).
+      Ai::MetaBlock::INSTRUCTION,
       override
     ].compact.join("\n\n")
   end

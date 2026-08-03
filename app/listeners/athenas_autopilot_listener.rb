@@ -4,6 +4,9 @@
 class AthenasAutopilotListener < BaseListener
   def message_created(event)
     message, = extract_message_and_account(event)
+    # Runs before the eligibility gate: a customer complaining about a past
+    # reply is worth logging even on a conversation where autopilot is now off.
+    audit_customer_signal(message)
     return log_skip(:not_eligible, message) unless eligible?(message)
 
     conversation = message.conversation
@@ -19,6 +22,19 @@ class AthenasAutopilotListener < BaseListener
   end
 
   private
+
+  # The strongest quality signal the module gets, and the only one that arrives
+  # a turn late. The pattern match is pure Ruby and runs on every inbound
+  # message; a worker is only involved when it actually matches, so the common
+  # case costs nothing.
+  def audit_customer_signal(message)
+    return if message.blank? || !message.incoming? || message.private?
+    return unless Ai::Guardrails::CustomerSignal.dissatisfied?(message.content)
+
+    Ai::CustomerSignalAuditJob.perform_later(message.id)
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas] customer signal audit not enqueued: #{e.message}")
+  end
 
   def eligible?(message)
     return false if message.blank?

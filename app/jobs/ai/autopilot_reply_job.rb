@@ -8,8 +8,6 @@ class Ai::AutopilotReplyJob < ApplicationJob
 
   RATE_LIMIT_WINDOW = 1.minute
   MAX_ATTEMPTS = 5
-  # Window for tying invocations to the reply they produced.
-  LINK_WINDOW = 5.minutes
 
   # An Anthropic blip used to be swallowed here and the customer simply never
   # got an answer. Now the turn is retried with a growing delay, and when the
@@ -22,11 +20,38 @@ class Ai::AutopilotReplyJob < ApplicationJob
       "[Athenas autopilot] dead-letter after #{MAX_ATTEMPTS} attempts " \
       "message=#{message_id} assistant=#{assistant_id}: #{error.message}"
     )
+    message = Message.find_by(id: message_id)
+    # No retry is coming, so the turn's log rows must stop being `pending`.
+    # Every earlier attempt left rows open on purpose; this is where they close.
+    close_out_turn!(message&.conversation, assistant_id, message_id, handoff: false)
     # Handling the error here keeps the job out of Sidekiq's Dead set, so
     # without this the customer's dropped turn would be invisible to on-call.
     # Report it explicitly instead of re-raising (re-raising would hand the job
     # back to Sidekiq's own retry cycle on top of the attempts above).
-    ChatwootExceptionTracker.new(error, account: Message.find_by(id: message_id)&.account).capture_exception
+    ChatwootExceptionTracker.new(error, account: message&.account).capture_exception
+  end
+
+  # Closes out log rows for a turn that generated text nobody received.
+  # `handoff` separates the two reasons that happens: the guardrails
+  # deliberately handed the customer to a human, or the send itself fell over.
+  # Class-level because the dead-letter block above runs without an instance in
+  # scope, and that is precisely the path that must not leave rows open.
+  def self.close_out_turn!(conversation, assistant_id, message_id, handoff:)
+    return if conversation.blank? || message_id.blank?
+
+    # rubocop:disable Rails/SkipsModelValidations
+    turn_invocations(conversation, assistant_id, message_id)
+      .awaiting_delivery.update_all(delivery_status: 'failed', handoff: handoff)
+    # rubocop:enable Rails/SkipsModelValidations
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas autopilot] could not close out invocation: #{e.message}")
+  end
+
+  # Exactly the calls this turn made. `trigger_message_id` is stamped by
+  # Ai::AutopilotReplyService, so no time window and no cross-turn bleed.
+  def self.turn_invocations(conversation, assistant_id, message_id)
+    Ai::Invocation.where(conversation_id: conversation.id, ai_assistant_id: assistant_id,
+                         phase: 'autopilot', trigger_message_id: message_id)
   end
 
   def perform(message_id, assistant_id)
@@ -44,18 +69,22 @@ class Ai::AutopilotReplyJob < ApplicationJob
     # Intentional silence: the reply would have repeated a recent turn.
     # Logged at info — this is the loop-breaker working as designed.
     Rails.logger.info("[Athenas autopilot] #{e.message}")
+    mark_delivery_failed!(message&.conversation, assistant_id, message_id, handoff: true)
   rescue Ai::AutopilotReplyService::UngroundedClaim => e
     # The bot kept quoting a value that exists nowhere in the operator's data.
     # Staying silent hands the turn to a human instead of making up a price, but
     # it IS a lost reply, so this pages instead of just logging.
     Rails.logger.error("[Athenas autopilot] #{e.message}")
+    mark_delivery_failed!(message&.conversation, assistant_id, message_id, handoff: true)
     ChatwootExceptionTracker.new(e, account: message&.account).capture_exception
   rescue Ai::ClaudeService::TransientError
     # Must precede the Error clause (TransientError is a subclass): re-raised so
-    # `retry_on` above gets it instead of the failure being swallowed.
+    # `retry_on` above gets it instead of the failure being swallowed. The log
+    # rows stay `pending` on purpose — the turn is going to be retried.
     raise
   rescue Ai::ClaudeService::Error => e
     Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
+    mark_delivery_failed!(message&.conversation, assistant_id, message_id, handoff: false)
   end
 
   private
@@ -99,13 +128,16 @@ class Ai::AutopilotReplyJob < ApplicationJob
     return if superseded?(conversation, message.id)
     return if rate_limited?(conversation, assistant)
 
-    reply_text = generate_reply_text(conversation, assistant)
-    return if reply_text.blank?
+    reply_text = generate_reply_text(conversation, assistant, message)
+    if reply_text.blank?
+      return mark_delivery_failed!(conversation, assistant.id, message.id, handoff: false)
+    end
 
     commit_reply(conversation, assistant, message, reply_text)
   end
 
   def commit_reply(conversation, assistant, message, reply_text)
+    committed = false
     Conversation.transaction do
       # lock! reloads under SELECT ... FOR UPDATE, so the re-checks below see a
       # concurrent job's write and we never post twice for the same trigger.
@@ -115,11 +147,16 @@ class Ai::AutopilotReplyJob < ApplicationJob
       next if rate_limited?(conversation, assistant)
 
       sent = send_outgoing(conversation, assistant, reply_text)
-      link_invocation(conversation, assistant, sent)
+      link_invocation(conversation, assistant, message, sent)
       mark_replied!(conversation, message.id)
       record_reply_rate!(conversation)
       log_turn_complete(conversation, message)
+      committed = true
     end
+    # A reply that was generated and then dropped by the in-lock re-check still
+    # exists in the log. Closing it out is what makes "pending" mean "generated
+    # but never accounted for" instead of ordinary noise.
+    mark_delivery_failed!(conversation, assistant.id, message.id, handoff: false) unless committed
   end
 
   # A LATER message in this conversation was already answered, so this turn is
@@ -141,8 +178,10 @@ class Ai::AutopilotReplyJob < ApplicationJob
     )
   end
 
-  def generate_reply_text(conversation, assistant)
-    result = Ai::AutopilotReplyService.new(conversation: conversation, assistant: assistant).perform
+  def generate_reply_text(conversation, assistant, message)
+    result = Ai::AutopilotReplyService.new(
+      conversation: conversation, assistant: assistant, trigger_message: message
+    ).perform
     result[:content].to_s.strip
   end
 
@@ -159,23 +198,30 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # produced it. The column existed but was never filled, so the history screen
   # had cost and latency with no way to show WHAT was said.
   #
-  # ALL unlinked calls of this turn are linked, not just the last one: a turn
-  # that used the scheduling tools bills several Claude calls, and linking only
-  # the final one would report a fraction of what the answer really cost.
-  # Narrowly scoped (this assistant, autopilot phase, last few minutes) so a
-  # stale suggestion invocation can never be stamped onto a customer reply.
+  # ALL calls of this turn are linked, not just the last one: a turn that used
+  # the scheduling tools bills several Claude calls, and linking only the final
+  # one would report a fraction of what the answer really cost. Scoped by
+  # trigger message, so a neighbouring turn's rows can never be swept in — and
+  # restricted to rows still awaiting delivery, so a row already closed as a
+  # handoff is never relabelled as delivered.
   # Best-effort: a missing link costs a row in a report, never the reply.
-  def link_invocation(conversation, assistant, sent)
+  def link_invocation(conversation, assistant, message, sent)
     return if sent.blank?
 
     # rubocop:disable Rails/SkipsModelValidations
-    Ai::Invocation.where(conversation_id: conversation.id, message_id: nil,
-                         ai_assistant_id: assistant.id, phase: 'autopilot')
-                  .where(created_at: LINK_WINDOW.ago..)
-                  .update_all(message_id: sent.id)
+    turn_invocations(conversation, assistant.id, message.id)
+      .awaiting_delivery.update_all(message_id: sent.id, delivery_status: 'sent')
     # rubocop:enable Rails/SkipsModelValidations
   rescue StandardError => e
     Rails.logger.warn("[Athenas autopilot] could not link invocation to message: #{e.message}")
+  end
+
+  def mark_delivery_failed!(conversation, assistant_id, message_id, handoff:)
+    self.class.close_out_turn!(conversation, assistant_id, message_id, handoff: handoff)
+  end
+
+  def turn_invocations(conversation, assistant_id, message_id)
+    self.class.turn_invocations(conversation, assistant_id, message_id)
   end
 
   # Redis sliding-window over the bot's own replies (recorded on send), so the

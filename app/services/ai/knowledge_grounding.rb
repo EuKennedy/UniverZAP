@@ -30,6 +30,12 @@ module Ai::KnowledgeGrounding
   # different slice than the one the model saw.
   GROUNDING_HISTORY_LIMIT = 60
 
+  # Every reply is logged against the prompt build that produced it. Until the
+  # A/B lab lets an operator create versions, there is exactly one: the code
+  # itself. Bump it whenever the assembled prompt changes shape, so a quality
+  # shift in the log can be traced to the change that caused it.
+  PROMPT_VERSION = 'v1'.freeze
+
   # Portuguese price questions rarely share a token with the document holding
   # the answer ("quanto custa?" against a catalog titled "valores"), so lexical
   # overlap alone scores every passage 0 and selection degrades to raw document
@@ -93,8 +99,109 @@ module Ai::KnowledgeGrounding
   def compute_relevant_passages
     query_tokens = token_set(knowledge_query)
     chunks = relevant_trainings.flat_map { |title, content| chunk_document(title, content) }
-    ranked = chunks.each_with_index.sort_by { |chunk, i| [-passage_score(chunk, query_tokens), i] }
+    # The score is kept on the passage (not just used for sorting) because the
+    # response log stores it: "which document answered this, and how well" is
+    # the first question a supervisor asks about a wrong reply.
+    scored = chunks.map { |chunk| chunk.merge(score: passage_score(chunk, query_tokens).round(4)) }
+    ranked = scored.each_with_index.sort_by { |chunk, i| [-chunk[:score], i] }
     take_within_budget(ranked).sort_by(&:last).map(&:first)
+  end
+
+  # What went into the prompt, in the shape the response log stores. Bodies are
+  # left out on purpose: they are re-retrieved on replay, and duplicating up to
+  # KNOWLEDGE_BUDGET_CHARS of catalogue on every reply would bloat the log
+  # without telling a supervisor anything the title and score do not.
+  def knowledge_chunks_payload
+    relevant_passages.map do |passage|
+      { 'title' => passage[:title], 'score' => passage[:score], 'chars' => passage[:body].length }
+    end
+  end
+
+  # The single message being answered. `knowledge_query` widens to the last two
+  # so retrieval has more signal; the log wants exactly what was asked.
+  def latest_user_message
+    @latest_user_message ||= @conversation.messages
+                                          .where(message_type: :incoming, private: false)
+                                          .reorder(created_at: :desc, id: :desc)
+                                          .limit(1).pick(:content).to_s
+  end
+
+  # Everything Ai::ClaudeService needs to write a response-log row instead of a
+  # bare cost entry. Shared so the autopilot and the operator suggestion can
+  # never log different things about the same guarantee.
+  def grounding_log_context(delivery_status: nil, trigger_message_id: nil)
+    {
+      user_message: latest_user_message,
+      chunks: knowledge_chunks_payload,
+      prompt_version: PROMPT_VERSION,
+      trigger_message_id: trigger_message_id,
+      delivery_status: delivery_status
+    }
+  end
+
+  # ---- response log -------------------------------------------------------
+  # Lives here, next to retrieval, for the same reason retrieval does: the log
+  # records WHICH passages justified WHICH assertion. Split across two services
+  # it would drift, and a supervision queue that disagrees with the guardrail
+  # that filled it is worse than no queue.
+
+  # Pulls the internal <meta> self-assessment out of a generation before the
+  # text can go anywhere, and remembers which log row produced the text we are
+  # currently holding. Applied to EVERY generation (first shot and each
+  # regeneration), so the row enriched at the end is always the one whose output
+  # actually reaches a person.
+  def absorb_meta(response)
+    content, confidence = Ai::MetaBlock.extract(response[:content])
+    response[:content] = content
+    @confidence = confidence unless confidence.nil?
+    @last_invocation = response[:invocation] if response[:invocation].present?
+    response
+  end
+
+  # Writes back everything only the generating service knows: the final text,
+  # the self-assessment and the guardrail flags a supervisor sorts on.
+  def finalize(reply)
+    @auto_flags = audit_flags(reply[:content])
+    persist_response_log(reply[:content])
+    reply.merge(invocation: @last_invocation, confidence: @confidence, auto_flags: @auto_flags)
+  end
+
+  def audit_flags(content)
+    Ai::Guardrails::ResponseAudit.new(
+      conversation: @conversation,
+      reply: content,
+      user_message: latest_user_message,
+      chunks: knowledge_chunks_payload,
+      confidence: @confidence,
+      # The grounding check regenerates on a fabricated value. Even when the
+      # rewrite comes back clean, the ATTEMPT is the signal a supervisor wants:
+      # it means the knowledge base is missing something the agent was asked for.
+      ungrounded: @regenerated_for_grounding.present?,
+      performed_write: @performed_external_write.present?,
+      knowledge_available: knowledge_available?
+    ).perform
+  end
+
+  def knowledge_available?
+    return @knowledge_available unless @knowledge_available.nil?
+
+    @knowledge_available = @assistant.trainings.ready.exists?
+  end
+
+  # Best-effort by design: an audit write must never cost a customer their reply.
+  def persist_response_log(content)
+    return if @last_invocation.blank?
+
+    @last_invocation.update!(
+      ai_response: content.to_s.truncate(Ai::Invocation::SNAPSHOT_MAX_CHARS),
+      confidence: @confidence,
+      auto_flag: Ai::Invocation.primary_flag(@auto_flags),
+      auto_flags: @auto_flags
+    )
+  rescue StandardError => e
+    Rails.logger.warn(
+      "[Athenas] response log enrichment failed conv=#{@conversation&.display_id}: #{e.message}"
+    )
   end
 
   # Tokens KEEP their trailing whitespace so line breaks survive into the

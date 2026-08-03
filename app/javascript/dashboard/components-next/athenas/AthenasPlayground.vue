@@ -22,6 +22,11 @@ const canSend = computed(
 
 const latencyLabel = ms => `${Math.round(ms / 100) / 10}s`;
 
+// Claude's own 0..1 self-assessment, stripped from the reply before it is
+// shown. Surfaced here because the sandbox exists to expose exactly this.
+const confidencePercent = value =>
+  value === null || value === undefined ? null : Math.round(value * 100);
+
 const scrollToEnd = async () => {
   await nextTick();
   if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
@@ -159,6 +164,24 @@ onMounted(loadTranscript);
             >
               <span class="i-lucide-shield-alert size-3" />
               {{ t('ATHENAS.PLAYGROUND.CORRECTED') }}
+            </span>
+            <span
+              v-for="flag in message.diagnostics.auto_flags || []"
+              :key="flag"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-n-amber-3 ring-1 ring-n-amber-6 text-[11px] text-n-amber-11"
+            >
+              <span class="i-lucide-flag size-3" />
+              {{ t(`ATHENAS.ANALYTICS.FLAGS.${flag.toUpperCase()}`) }}
+            </span>
+            <span
+              v-if="confidencePercent(message.diagnostics.confidence) !== null"
+              class="text-[11px] text-n-slate-10 tabular-nums"
+            >
+              {{
+                t('ATHENAS.ANALYTICS.CONFIDENCE', {
+                  n: confidencePercent(message.diagnostics.confidence),
+                })
+              }}
             </span>
             <span
               v-if="message.diagnostics.latency_ms"

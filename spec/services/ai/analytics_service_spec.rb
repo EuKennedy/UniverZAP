@@ -107,4 +107,49 @@ RSpec.describe Ai::AnalyticsService do
     expect(result[:totals][:success_rate]).to be_nil
     expect(result[:recent_replies]).to be_empty
   end
+
+  describe 'supervision' do
+    def delivered(attrs = {})
+      message = create(:message, conversation: conversation, account: account, message_type: 'outgoing')
+      invocation({ message_id: message.id }.merge(attrs))
+    end
+
+    it 'breaks the flags down so the recurring problem is visible' do
+      delivered(auto_flag: 'preco_inventado', auto_flags: ['preco_inventado'])
+      delivered(auto_flag: 'preco_inventado', auto_flags: ['preco_inventado'])
+      delivered(auto_flag: 'sem_fonte', auto_flags: ['sem_fonte'])
+
+      expect(described_class.new(assistant: assistant).perform[:flags])
+        .to eq('preco_inventado' => 2, 'sem_fonte' => 1)
+    end
+
+    # Playground turns cost real money, so they belong in the spend figures, but
+    # nobody needs to review an answer given to a fake customer.
+    it 'keeps sandbox turns out of the review queue while keeping their cost' do
+      delivered(auto_flag: 'sem_fonte', auto_flags: ['sem_fonte'], sandbox: true)
+
+      result = described_class.new(assistant: assistant).perform
+
+      expect(result[:flags]).to be_empty
+      expect(result[:totals][:flagged]).to eq(0)
+      expect(result[:totals][:calls]).to eq(1)
+    end
+
+    it 'counts replies that were generated and never delivered' do
+      invocation(delivery_status: 'pending')
+
+      expect(described_class.new(assistant: assistant).perform[:totals][:undelivered]).to eq(1)
+    end
+
+    it 'carries the flag, the confidence and the question into the recent list' do
+      delivered(auto_flag: 'baixa_confianca', auto_flags: ['baixa_confianca'],
+                confidence: 0.42, user_message: 'quanto custa?')
+
+      reply = described_class.new(assistant: assistant).perform[:recent_replies].first
+
+      expect(reply[:auto_flag]).to eq('baixa_confianca')
+      expect(reply[:confidence]).to eq(0.42)
+      expect(reply[:user_message]).to eq('quanto custa?')
+    end
+  end
 end

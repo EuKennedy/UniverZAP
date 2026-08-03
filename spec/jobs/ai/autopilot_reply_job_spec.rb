@@ -92,4 +92,86 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       expect { described_class.perform_now(message.id, assistant.id) }.not_to(change { outgoing_count })
     end
   end
+
+  # "Nenhuma resposta enviada sem log gravado": the row is written before the
+  # send, so every one of them has to reach a terminal state. A row left pending
+  # means a generated reply nobody can account for.
+  describe 'delivery accounting' do
+    def pending_invocation(trigger: message.id)
+      create(:ai_invocation, account: account, ai_assistant: assistant, phase: 'autopilot',
+                             conversation_id: conversation.id, delivery_status: 'pending',
+                             trigger_message_id: trigger)
+    end
+
+    it 'marks the log delivered and links it to the message the customer received' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      invocation = pending_invocation
+
+      described_class.perform_now(message.id, assistant.id)
+
+      invocation.reload
+      expect(invocation.delivery_status).to eq('sent')
+      expect(invocation.message_id).to eq(conversation.messages.where(message_type: :outgoing).last.id)
+    end
+
+    it 'closes the log as a handoff when the guardrails suppressed the reply' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      allow(service).to receive(:perform).and_raise(Ai::AutopilotReplyService::UngroundedClaim)
+      invocation = pending_invocation
+
+      described_class.perform_now(message.id, assistant.id)
+
+      invocation.reload
+      expect(invocation.delivery_status).to eq('failed')
+      expect(invocation.handoff).to be(true)
+    end
+
+    it 'closes the log as failed, not handed off, when the call itself broke' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      allow(service).to receive(:perform).and_raise(Ai::ClaudeService::Error, 'bad key')
+      invocation = pending_invocation
+
+      described_class.perform_now(message.id, assistant.id)
+
+      invocation.reload
+      expect(invocation.delivery_status).to eq('failed')
+      expect(invocation.handoff).to be(false)
+    end
+
+    # A retry is coming, so the row must stay open: closing it here would make
+    # the successful attempt look like a second, unexplained reply.
+    it 'leaves the log open on a transient failure that will be retried' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      allow(service).to receive(:perform).and_raise(Ai::ClaudeService::TransientError, '503')
+      invocation = pending_invocation
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(invocation.reload.delivery_status).to eq('pending')
+    end
+
+    # Scoping used to be "same conversation, last 5 minutes", which swept up the
+    # neighbouring turn: a reply the guardrails had just suppressed would be
+    # relabelled as delivered by the NEXT turn, erasing the audit trail.
+    it 'never relabels an already closed row from a neighbouring turn' do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      earlier = create(:message, conversation: conversation, account: account, inbox: conversation.inbox)
+      closed = pending_invocation(trigger: earlier.id)
+      closed.update!(delivery_status: 'failed', handoff: true)
+
+      described_class.perform_now(message.id, assistant.id)
+
+      closed.reload
+      expect(closed.delivery_status).to eq('failed')
+      expect(closed.message_id).to be_nil
+    end
+
+    it 'closes the turn when the retries run out instead of leaving it open forever' do
+      invocation = pending_invocation
+
+      described_class.close_out_turn!(conversation, assistant.id, message.id, handoff: false)
+
+      expect(invocation.reload.delivery_status).to eq('failed')
+    end
+  end
 end

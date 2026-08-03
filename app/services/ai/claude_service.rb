@@ -17,15 +17,19 @@ class Ai::ClaudeService
     @account = account || assistant&.account
   end
 
-  def chat(messages:, system: nil, conversation: nil, phase: 'main', **overrides)
+  # `log_context` turns this call into a response-log row instead of a bare cost
+  # entry: { user_message:, chunks:, prompt_version:, delivery_status: }. Callers
+  # that face a customer pass it; summaries and classifiers do not.
+  def chat(messages:, system: nil, conversation: nil, phase: 'main', log_context: nil, **overrides) # rubocop:disable Metrics/ParameterLists
     api_key = @assistant&.resolved_anthropic_key
     raise Error, 'Anthropic API key not configured' if api_key.blank?
 
     payload = build_payload(messages, system, overrides)
     check_quota!(payload)
+    context = { conversation: conversation, phase: phase, log: log_context }
     started_at = Time.zone.now
     response = perform_request(api_key, payload)
-    track(response: response, payload: payload, started_at: started_at, conversation: conversation, phase: phase)
+    track(response: response, payload: payload, started_at: started_at, context: context)
   rescue Error
     raise
   rescue *RETRYABLE_NET_ERRORS => e
@@ -113,19 +117,23 @@ class Ai::ClaudeService
     }
   end
 
-  def track(response:, payload:, started_at:, conversation:, phase:)
+  def track(response:, payload:, started_at:, context:)
     duration_ms = ((Time.zone.now - started_at) * 1000).to_i
     unless response.success?
-      log_failed(payload: payload, response: response, duration_ms: duration_ms, conversation: conversation, phase: phase)
+      log_failed(payload: payload, response: response, duration_ms: duration_ms, context: context)
       raise_upstream_error(response)
     end
     parsed = response.parsed_response
-    log_success(payload: payload, parsed: parsed, duration_ms: duration_ms, conversation: conversation, phase: phase)
+    invocation = log_success(payload: payload, parsed: parsed, duration_ms: duration_ms, context: context)
     {
       content: extract_text(parsed),
       tool_uses: extract_tool_uses(parsed),
       model: parsed['model'],
       stop_reason: parsed['stop_reason'],
+      # The log row this call produced, so the caller can enrich it with what
+      # only it knows (final text, confidence, guardrail flags) and the job can
+      # flip it to delivered.
+      invocation: invocation,
       raw: parsed
     }
   end
@@ -154,81 +162,51 @@ class Ai::ClaudeService
     blocks.select { |b| b['type'] == 'tool_use' }
   end
 
-  def log_success(payload:, parsed:, duration_ms:, conversation:, phase:)
+  # Returns the created row so the caller can enrich it. Logging failures are
+  # still swallowed (a billing or audit hiccup must never eat the reply), but
+  # they now return nil explicitly instead of leaking the rescue value.
+  def log_success(payload:, parsed:, duration_ms:, context:)
     usage = parsed['usage'] || {}
-    input_tokens = usage['input_tokens'].to_i
-    output_tokens = usage['output_tokens'].to_i
-    invocation = record_invocation(
-      payload: payload, usage: usage, duration_ms: duration_ms,
-      conversation: conversation, phase: phase,
-      input_tokens: input_tokens, output_tokens: output_tokens
+    tokens = [usage['input_tokens'].to_i, usage['output_tokens'].to_i]
+    cents_brl = cost_cents_brl(payload[:model], tokens)
+    invocation = recorder(context).success(
+      payload: payload, usage: usage, duration_ms: duration_ms, tokens: tokens, cents_brl: cents_brl
     )
     # Debit the operator's BRL balance against the actual tokens Claude
     # reported. We swallow ledger errors so a billing hiccup never eats
     # the chat reply — the alert still goes to logs.
-    debit_credits(invocation, payload[:model], input_tokens, output_tokens)
+    debit_credits(invocation, payload[:model], tokens, cents_brl)
+    invocation
   rescue StandardError => e
     Rails.logger.error("[Athenas] invocation logging failed: #{e.message}")
+    nil
   end
 
-  # Keyword args read fine here so we keep the surface; the parameter
-  # list cop fires at 7/5 but every name carries real meaning for the
-  # invocation log row — a single options hash would be worse.
-  def record_invocation(payload:, usage:, duration_ms:, conversation:, phase:, input_tokens:, output_tokens:) # rubocop:disable Metrics/ParameterLists
-    Ai::Invocation.create!(
-      ai_assistant: @assistant,
-      account: @account,
-      conversation_id: conversation&.id,
-      phase: phase,
-      model: payload[:model],
-      input_tokens: input_tokens,
-      output_tokens: output_tokens,
-      cache_read_tokens: usage['cache_read_input_tokens'].to_i,
-      cache_write_tokens: usage['cache_creation_input_tokens'].to_i,
-      cost_usd: compute_cost(payload[:model], input_tokens, output_tokens),
-      duration_ms: duration_ms,
-      status: 'success'
+  def recorder(context)
+    Ai::InvocationRecorder.new(assistant: @assistant, account: @account, context: context)
+  end
+
+  def cost_cents_brl(model, tokens)
+    Ai::PricingCalculator.cost_cents_brl(
+      model: model, input_tokens: tokens.first, output_tokens: tokens.last
     )
   end
 
-  def debit_credits(invocation, model, input_tokens, output_tokens)
-    return if @account.blank?
-
-    cents = Ai::PricingCalculator.cost_cents_brl(
-      model: model,
-      input_tokens: input_tokens,
-      output_tokens: output_tokens
-    )
-    return if cents.zero?
+  def debit_credits(invocation, model, tokens, cents_brl)
+    return if @account.blank? || cents_brl.zero?
 
     Ai::CreditLedger.new(@account).debit!(
       invocation: invocation,
-      cents_brl: cents,
-      description: "Claude #{model} #{input_tokens}+#{output_tokens} tokens"
+      cents_brl: cents_brl,
+      description: "Claude #{model} #{tokens.first}+#{tokens.last} tokens"
     )
   rescue StandardError => e
     Rails.logger.error("[Athenas] credit debit failed account=#{@account&.id}: #{e.message}")
   end
 
-  def log_failed(payload:, response:, duration_ms:, conversation:, phase:)
-    Ai::Invocation.create!(
-      ai_assistant: @assistant,
-      account: @account,
-      conversation_id: conversation&.id,
-      phase: phase,
-      model: payload[:model],
-      duration_ms: duration_ms,
-      status: 'error',
-      error_message: "#{response.code}: #{response.body.to_s.truncate(300)}"
-    )
+  def log_failed(payload:, response:, duration_ms:, context:)
+    recorder(context).failure(payload: payload, response: response, duration_ms: duration_ms)
   rescue StandardError => e
     Rails.logger.error("[Athenas] failure logging crashed: #{e.message}")
-  end
-
-  # Pricing lives in Ai::PricingCalculator (single source of truth) so the
-  # telemetry recorded here can never drift from what the ledger debits.
-  def compute_cost(model, input_tokens, output_tokens)
-    rates = Ai::PricingCalculator::COST_PER_MILLION_USD.fetch(model, Ai::PricingCalculator::COST_PER_MILLION_USD['claude-sonnet-4-5'])
-    ((input_tokens * rates[:input]) + (output_tokens * rates[:output])) / 1_000_000.0
   end
 end

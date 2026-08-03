@@ -36,6 +36,8 @@ class Ai::PlaygroundService
     suppressed(:ungrounded_claim, service, started_at)
   rescue Ai::AutopilotReplyService::LoopSuppressed
     suppressed(:loop_suppressed, service, started_at)
+  ensure
+    close_sandbox_log(conversation)
   end
 
   # Wipes the transcript so the operator can start a clean scenario.
@@ -52,6 +54,23 @@ class Ai::PlaygroundService
   end
 
   private
+
+  # The autopilot opens every log row as `pending` so a generated reply can
+  # never go unaccounted for, and the production job is what closes it. Nothing
+  # closes a sandbox turn, so without this every playground message would leave
+  # a row open forever and "generated but never delivered" would stop meaning
+  # anything. No `message_id` is set: a sandbox turn is delivered to the
+  # transcript, not to a customer, and must never be counted as a reply.
+  def close_sandbox_log(conversation)
+    return if conversation.blank?
+
+    # rubocop:disable Rails/SkipsModelValidations
+    Ai::Invocation.where(conversation_id: conversation.id)
+                  .awaiting_delivery.update_all(delivery_status: 'sent')
+    # rubocop:enable Rails/SkipsModelValidations
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas playground] could not close sandbox log: #{e.message}")
+  end
 
   def success(reply, service, started_at)
     {

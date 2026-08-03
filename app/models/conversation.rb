@@ -185,6 +185,7 @@ class Conversation < ApplicationRecord
   before_create :determine_conversation_status
   before_create :ensure_waiting_since
   before_create :set_group_flag
+  before_destroy :scrub_ai_response_log
 
   after_update_commit :execute_after_update_commit_callbacks
   after_create_commit :notify_conversation_creation
@@ -309,6 +310,21 @@ class Conversation < ApplicationRecord
   end
 
   private
+
+  # LGPD art. 18: the AI response log snapshots what the customer wrote and what
+  # the agent answered, so deleting a conversation has to take that text with
+  # it. Only the text is cleared — tokens, cost and latency stay, because the
+  # operator's billing history must survive a data-subject deletion. The rows
+  # are not associated (conversation_id is a plain column, no FK), so an
+  # association with `dependent:` would not fire here.
+  def scrub_ai_response_log
+    # rubocop:disable Rails/SkipsModelValidations
+    Ai::Invocation.where(conversation_id: id)
+                  .update_all(user_message: nil, ai_response: nil, system_prompt: nil)
+    # rubocop:enable Rails/SkipsModelValidations
+  rescue StandardError => e
+    Rails.logger.error("[Athenas] could not scrub AI log for conversation=#{id}: #{e.message}")
+  end
 
   def execute_after_update_commit_callbacks
     handle_resolved_status_change

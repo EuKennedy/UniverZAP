@@ -62,7 +62,7 @@ class Ai::SuggestReplyService
     end
 
     response[:content] = strip_leading_greeting(response[:content].to_s) if conversation_in_progress?
-    enforce_grounding(messages, response)
+    finalize(enforce_grounding(messages, response))
   end
 
   private
@@ -83,7 +83,9 @@ class Ai::SuggestReplyService
       # asserted FROM that block, so recency keeps the two glued together.
       GROUNDING_RULES,
       continuity_rules_reinforcement,
-      continuity_examples
+      continuity_examples,
+      # Output-format rule, stripped before the operator ever sees it.
+      Ai::MetaBlock::INSTRUCTION
     ].compact.join("\n\n")
   end
 
@@ -191,10 +193,13 @@ class Ai::SuggestReplyService
     Rails.logger.warn(
       "[Athenas suggest] ungrounded values #{claims.inspect} conv=#{@conversation.display_id}; regenerating"
     )
+    @regenerated_for_grounding = true
     rewritten = call_claude(messages, grounding_override(claims))
     rewritten[:content] = strip_leading_greeting(rewritten[:content].to_s) if conversation_in_progress?
     return rewritten if ungrounded_claims(rewritten[:content]).empty?
 
+    # Record the suggestion we refused to show before suppressing it.
+    finalize(rewritten)
     raise UngroundedClaim, "ungrounded suggestion conv=#{@conversation.display_id}"
   end
 
@@ -208,12 +213,18 @@ class Ai::SuggestReplyService
     OVERRIDE
   end
 
+  # `delivery_status` stays nil: a suggestion is a draft for a human, so there
+  # is no delivery of its own to track. Everything else is logged exactly like
+  # an autonomous reply, because the operator sends this text verbatim.
   def call_claude(messages, override)
-    Ai::ClaudeService.new(assistant: @assistant).chat(
-      messages: messages,
-      system: [build_system_prompt, override].compact.join("\n\n"),
-      conversation: @conversation,
-      phase: 'suggest'
+    absorb_meta(
+      Ai::ClaudeService.new(assistant: @assistant).chat(
+        messages: messages,
+        system: [build_system_prompt, override].compact.join("\n\n"),
+        conversation: @conversation,
+        phase: 'suggest',
+        log_context: grounding_log_context
+      )
     )
   end
 

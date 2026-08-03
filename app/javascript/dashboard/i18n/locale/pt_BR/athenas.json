@@ -201,7 +201,18 @@
       "RECENT_EMPTY": "As respostas enviadas a partir de agora aparecem aqui com o texto, o custo e o tempo.",
       "AGO_MIN": "há {n} min",
       "AGO_HOUR": "há {n}h",
-      "AGO_DAY": "há {n}d"
+      "AGO_DAY": "há {n}d",
+      "REVIEW": "Para revisar",
+      "UNDELIVERED": "{n} não entregue(s)",
+      "CONFIDENCE": "confiança {n}%",
+      "FLAGS": {
+        "PRECO_INVENTADO": "Preço não fundamentado",
+        "HORARIO_DIVERGENTE": "Horário divergente",
+        "CLIENTE_INSATISFEITO": "Cliente reclamou",
+        "PROMESSA_SOLTA": "Promessa sem ação",
+        "SEM_FONTE": "Sem fonte na base",
+        "BAIXA_CONFIANCA": "Confiança baixa"
+      }
     },
     "CREDITS_STRIP": {
       "BALANCE": "Saldo",

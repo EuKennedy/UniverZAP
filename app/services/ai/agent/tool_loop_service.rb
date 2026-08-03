@@ -8,7 +8,7 @@
 class Ai::Agent::ToolLoopService
   MAX_ITERATIONS = 6
 
-  def initialize(assistant:, conversation:, messages:, system:, tools:, tool_executor:, phase: 'autopilot') # rubocop:disable Metrics/ParameterLists
+  def initialize(assistant:, conversation:, messages:, system:, tools:, tool_executor:, phase: 'autopilot', log_context: nil) # rubocop:disable Metrics/ParameterLists
     @assistant = assistant
     @conversation = conversation
     @messages = messages.map { |m| { role: m[:role], content: m[:content] } }
@@ -16,6 +16,9 @@ class Ai::Agent::ToolLoopService
     @tools = tools
     @executor = tool_executor
     @phase = phase
+    # Carried on every iteration, not just the last: a tool-using turn bills
+    # several calls and each one must be auditable on its own.
+    @log_context = log_context
   end
 
   def perform
@@ -33,10 +36,23 @@ class Ai::Agent::ToolLoopService
   private
 
   def run_turn
-    claude.chat(
+    response = claude.chat(
       messages: @messages, system: @system, conversation: @conversation,
-      phase: @phase, tools: @tools
+      phase: @phase, tools: @tools, log_context: @log_context
     )
+    @log_context = follow_up_context
+    response
+  end
+
+  # Later iterations of the same turn reuse the identical system prompt. Storing
+  # that snapshot again on every iteration would multiply the heaviest column in
+  # the log by the loop length and tell a reviewer nothing new. The rows still
+  # carry the trigger message and open as `pending`, so nothing escapes the
+  # audit — only the duplicate text is dropped.
+  def follow_up_context
+    return nil if @log_context.blank?
+
+    @log_context.merge(skip_snapshot: true)
   end
 
   def claude
