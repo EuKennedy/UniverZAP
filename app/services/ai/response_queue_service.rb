@@ -77,7 +77,7 @@ class Ai::ResponseQueueService
       auto_flags: Array(row.auto_flags), confidence: row.confidence,
       delivery_status: row.delivery_status, handoff: row.handoff,
       model: row.model, duration_ms: row.duration_ms,
-      sources: Array(row.chunks_used).map { |chunk| chunk['title'] }.compact.uniq,
+      sources: Array(row.chunks_used).pluck('title').compact.uniq,
       feedback: feedback&.push_event_data
     }
   end
