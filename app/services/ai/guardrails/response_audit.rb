@@ -84,22 +84,30 @@ class Ai::Guardrails::ResponseAudit
     @knowledge_available = knowledge_available
   end
 
-  # Every flag that applies, in Ai::Invocation::AUTO_FLAGS severity order.
+  # Declared in Ai::Invocation::AUTO_FLAGS severity order, which `select` keeps,
+  # so the first flag on a reply is always the one a human should look at first.
+  CHECKS = {
+    'preco_inventado' => :fabricated_value?,
+    'horario_divergente' => :schedule_conflict?,
+    'promessa_solta' => :loose_promise?,
+    'sem_fonte' => :unsourced_factual_answer?,
+    'baixa_confianca' => :low_confidence?
+  }.freeze
+
   def perform
-    flags = []
-    flags << 'preco_inventado' if @ungrounded
-    flags << 'horario_divergente' if schedule_conflict?
-    flags << 'promessa_solta' if loose_promise?
-    flags << 'sem_fonte' if unsourced_factual_answer?
-    flags << 'baixa_confianca' if low_confidence?
-    flags
+    CHECKS.select { |_flag, check| send(check) }.keys
   rescue StandardError => e
-    # An audit is never worth losing a reply over.
-    Rails.logger.warn("[Athenas guardrails] audit failed conv=#{@conversation&.id}: #{e.message}")
-    flags || []
+    # An audit is never worth losing a reply over. Returning no flags is the
+    # safe default: the reply still goes out, it just does not enter the queue.
+    Rails.logger.warn("[Athenas guardrails] audit failed: #{e.message}")
+    []
   end
 
   private
+
+  def fabricated_value?
+    @ungrounded
+  end
 
   def low_confidence?
     @confidence.present? && @confidence < CONFIDENCE_FLOOR

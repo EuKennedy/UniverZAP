@@ -71,26 +71,11 @@ class Ai::AutopilotReplyService
     # on most ticks.
     ensure_fresh_summary
 
-    # `absorb_meta` also runs inside call_claude; repeating it here covers the
-    # tool-loop path, which reaches Claude without going through it.
-    response = absorb_meta(generate_response(messages))
-    raise_on_empty(response)
-    # Last-line defence: even with the three-band prompt + few-shot
-    # examples Claude occasionally still leads with a greeting on
-    # in-progress conversations. The post-process strips the bad
-    # prefix so the customer never sees it. Cheap to run (regex on
-    # the first 80 chars) and only kicks in when the conversation
-    # already has assistant replies.
-    response[:content] = strip_leading_greeting(response[:content].to_s) if conversation_in_progress?
-
-    # Deterministic loop-breaker (see LOOP_SIMILARITY_THRESHOLD). When the
-    # candidate echoes a recent assistant turn we retry once with a hard
-    # override, then suppress if it still loops.
-    reply = break_loop_if_needed(messages, response)
-
-    # Deterministic grounding check. GROUNDING_RULES tells the model not to
-    # invent values; this VERIFIES it, because a soft prompt rule is exactly
-    # what the loop-breaker above already proved is routinely ignored.
+    # Deterministic loop-breaker (see LOOP_SIMILARITY_THRESHOLD), then the
+    # deterministic grounding check. GROUNDING_RULES tells the model not to
+    # invent values; enforce_grounding VERIFIES it, because a soft prompt rule
+    # is exactly what the loop-breaker already proved is routinely ignored.
+    reply = break_loop_if_needed(messages, first_draft(messages))
     finalize(enforce_grounding(messages, reply))
   rescue Ai::ClaudeService::TransientError => e
     # Guards the WHOLE turn, not just the tool loop: once an appointment has
@@ -99,14 +84,7 @@ class Ai::AutopilotReplyService
     # at-most-once beats at-least-once when the side effect is a real booking.
     raise unless @performed_external_write
 
-    Rails.logger.error(
-      "[Athenas agent] transient failure AFTER a booking conv=#{@conversation.display_id}; " \
-      "not retrying to avoid a duplicate appointment: #{e.message}"
-    )
-    # The customer is left without a reply on a turn that DID book — page
-    # on-call, this is the one failure mode the guard trades away.
-    ChatwootExceptionTracker.new(e, account: @conversation.account).capture_exception
-    raise Ai::ClaudeService::Error, e.message
+    swallow_transient_after_booking(e)
   end
 
   # Read-only introspection for the test playground. Answers the question an
@@ -124,6 +102,31 @@ class Ai::AutopilotReplyService
   end
 
   private
+
+  # First generation of the turn, cleaned up but not yet checked.
+  # `absorb_meta` also runs inside call_claude; repeating it here covers the
+  # tool-loop path, which reaches Claude without going through it.
+  def first_draft(messages)
+    response = absorb_meta(generate_response(messages))
+    raise_on_empty(response)
+    # Last-line defence: even with the three-band prompt + few-shot examples
+    # Claude occasionally still leads with a greeting on in-progress
+    # conversations. The post-process strips the bad prefix so the customer
+    # never sees it. Only kicks in when the conversation already has replies.
+    response[:content] = strip_leading_greeting(response[:content].to_s) if conversation_in_progress?
+    response
+  end
+
+  def swallow_transient_after_booking(error)
+    Rails.logger.error(
+      "[Athenas agent] transient failure AFTER a booking conv=#{@conversation.display_id}; " \
+      "not retrying to avoid a duplicate appointment: #{error.message}"
+    )
+    # The customer is left without a reply on a turn that DID book — page
+    # on-call, this is the one failure mode the guard trades away.
+    ChatwootExceptionTracker.new(error, account: @conversation.account).capture_exception
+    raise Ai::ClaudeService::Error, error.message
+  end
 
   # Returns the response untouched when it isn't a near-duplicate of a
   # recent assistant turn. Otherwise regenerates ONCE with an escalated

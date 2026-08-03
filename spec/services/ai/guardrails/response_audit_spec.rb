@@ -9,8 +9,8 @@ RSpec.describe Ai::Guardrails::ResponseAudit do
 
   def audit(**overrides)
     described_class.new(
-      **{ conversation: conversation, reply: 'ok', user_message: 'oi', chunks: [{ 'title' => 'x' }] }
-      .merge(overrides)
+      conversation: conversation, reply: 'ok', user_message: 'oi',
+      chunks: [{ 'title' => 'x' }], **overrides
     ).perform
   end
 

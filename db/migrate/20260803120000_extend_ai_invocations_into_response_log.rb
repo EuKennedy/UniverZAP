@@ -17,6 +17,11 @@ class ExtendAiInvocationsIntoResponseLog < ActiveRecord::Migration[7.1]
   disable_ddl_transaction!
 
   def change
+    add_response_log_columns
+    add_supervision_indexes
+  end
+
+  def add_response_log_columns
     change_table :ai_invocations, bulk: true do |t|
       # Immutable snapshot of the exact system prompt used. Without it the A/B
       # replay cannot reproduce the original condition.
@@ -52,7 +57,9 @@ class ExtendAiInvocationsIntoResponseLog < ActiveRecord::Migration[7.1]
       # queue: nobody needs to review an answer given to a fake customer.
       t.boolean :sandbox, default: false, null: false
     end
+  end
 
+  def add_supervision_indexes
     # Supervision queue: flagged real replies of one agent, newest first.
     add_index :ai_invocations, %i[ai_assistant_id auto_flag created_at],
               where: 'auto_flag IS NOT NULL AND sandbox = false',

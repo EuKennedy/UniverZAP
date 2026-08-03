@@ -62,32 +62,46 @@ class Ai::AutopilotReplyJob < ApplicationJob
     conversation = message.conversation
     return unless same_account?(assistant, conversation)
 
-    with_tenant_context(conversation) do
-      deliver_reply(conversation, assistant, message)
-    end
-  rescue Ai::AutopilotReplyService::LoopSuppressed => e
-    # Intentional silence: the reply would have repeated a recent turn.
-    # Logged at info — this is the loop-breaker working as designed.
-    Rails.logger.info("[Athenas autopilot] #{e.message}")
-    mark_delivery_failed!(message&.conversation, assistant_id, message_id, handoff: true)
-  rescue Ai::AutopilotReplyService::UngroundedClaim => e
-    # The bot kept quoting a value that exists nowhere in the operator's data.
-    # Staying silent hands the turn to a human instead of making up a price, but
-    # it IS a lost reply, so this pages instead of just logging.
-    Rails.logger.error("[Athenas autopilot] #{e.message}")
-    mark_delivery_failed!(message&.conversation, assistant_id, message_id, handoff: true)
-    ChatwootExceptionTracker.new(e, account: message&.account).capture_exception
+    with_tenant_context(conversation) { deliver_reply(conversation, assistant, message) }
   rescue Ai::ClaudeService::TransientError
-    # Must precede the Error clause (TransientError is a subclass): re-raised so
-    # `retry_on` above gets it instead of the failure being swallowed. The log
-    # rows stay `pending` on purpose — the turn is going to be retried.
+    # Must precede the generic clause: re-raised so `retry_on` above gets it
+    # instead of the failure being swallowed. The log rows stay `pending` on
+    # purpose — the turn is going to be retried.
     raise
-  rescue Ai::ClaudeService::Error => e
-    Rails.logger.error("[Athenas autopilot] failed for message=#{message_id}: #{e.message}")
-    mark_delivery_failed!(message&.conversation, assistant_id, message_id, handoff: false)
+  rescue StandardError => e
+    handle_turn_failure(e, message, assistant_id)
   end
 
   private
+
+  # Every terminal failure of a turn has to close out its log rows. They differ
+  # only in whether the customer was deliberately handed to a human and whether
+  # on-call gets paged.
+  def handle_turn_failure(error, message, assistant_id)
+    case error
+    when Ai::AutopilotReplyService::LoopSuppressed
+      # Intentional silence: the reply would have repeated a recent turn.
+      # Logged at info — this is the loop-breaker working as designed.
+      Rails.logger.info("[Athenas autopilot] #{error.message}")
+      hand_off!(message, assistant_id)
+    when Ai::AutopilotReplyService::UngroundedClaim
+      # The bot kept quoting a value that exists nowhere in the operator's data.
+      # Staying silent beats inventing a price, but it IS a lost reply, so this
+      # pages instead of just logging.
+      Rails.logger.error("[Athenas autopilot] #{error.message}")
+      hand_off!(message, assistant_id)
+      ChatwootExceptionTracker.new(error, account: message&.account).capture_exception
+    when Ai::ClaudeService::Error
+      Rails.logger.error("[Athenas autopilot] failed for message=#{message&.id}: #{error.message}")
+      mark_delivery_failed!(message&.conversation, assistant_id, message&.id, handoff: false)
+    else
+      raise error
+    end
+  end
+
+  def hand_off!(message, assistant_id)
+    mark_delivery_failed!(message&.conversation, assistant_id, message&.id, handoff: true)
+  end
 
   # Give the agent turn a clean, correctly-scoped Current so the outgoing
   # message event is never attributed to a stale actor/tenant left on this
@@ -129,9 +143,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
     return if rate_limited?(conversation, assistant)
 
     reply_text = generate_reply_text(conversation, assistant, message)
-    if reply_text.blank?
-      return mark_delivery_failed!(conversation, assistant.id, message.id, handoff: false)
-    end
+    return mark_delivery_failed!(conversation, assistant.id, message.id, handoff: false) if reply_text.blank?
 
     commit_reply(conversation, assistant, message, reply_text)
   end

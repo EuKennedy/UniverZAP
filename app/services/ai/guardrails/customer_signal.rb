@@ -15,7 +15,7 @@ module Ai::Guardrails::CustomerSignal
   HUMAN_REQUEST_SOURCE = '
     (?:falar|atendimento|conversar)\s+com\s+(?:(?:um|uma|o|a)\s+)?(?:humano|atendente|pessoa|gente)|
     quero\s+(?:(?:um|uma|o|a)\s+)?(?:humano|atendente)|
-    (?:me\s+)?(?:passa|transfere|chama)\s+(?:pra|para\s+)?(?:um[ao]?\s+)?(?:humano|atendente|pessoa)
+    (?:me\s+)?(?:passa|transfere|chama)\s+(?:(?:pra|para)\s+)?(?:(?:um|uma|o|a)\s+)?(?:humano|atendente|pessoa)
   '.freeze
 
   # Deliberately conservative. A false positive puts a good reply in the review
