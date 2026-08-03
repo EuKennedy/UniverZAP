@@ -64,7 +64,7 @@ class CreateAiPromptVersionsAndComparisons < ActiveRecord::Migration[7.1]
     add_index :ai_ab_comparisons, %i[ai_prompt_version_id winner]
     # One duel per (reply, candidate): replaying the same question twice would
     # let the same comparison be voted on twice.
-    add_index :ai_ab_comparisons, %i[ai_invocation_id ai_prompt_version_id], unique: true,
-                                                                            name: 'index_ai_ab_unique_duel'
+    add_index :ai_ab_comparisons, %i[ai_invocation_id ai_prompt_version_id],
+              unique: true, name: 'index_ai_ab_unique_duel'
   end
 end

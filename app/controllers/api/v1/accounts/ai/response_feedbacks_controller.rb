@@ -69,8 +69,9 @@ class Api::V1::Accounts::Ai::ResponseFeedbacksController < Api::V1::Accounts::Ba
   end
 
   # Through the assistant, never by raw id: a log row carries customer text.
+  # These are member routes on `responses`, so the response id arrives as :id.
   def fetch_invocation
-    @invocation = @assistant.invocations.find(params[:response_id])
+    @invocation = @assistant.invocations.find(params[:id])
   end
 
   def permitted_params

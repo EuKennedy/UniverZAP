@@ -8,9 +8,9 @@ RSpec.describe Ai::ResponseQueueService do
   let(:assistant) { create(:ai_assistant, account: account) }
   let(:conversation) { create(:conversation, account: account) }
 
-  def reply(attrs = {})
-    create(:ai_invocation, **{ account: account, ai_assistant: assistant, phase: 'autopilot',
-                               conversation_id: conversation.id, ai_response: 'texto' }.merge(attrs))
+  def reply(**attrs)
+    create(:ai_invocation, account: account, ai_assistant: assistant, phase: 'autopilot',
+                           conversation_id: conversation.id, ai_response: 'texto', **attrs)
   end
 
   def flags_of(result)
