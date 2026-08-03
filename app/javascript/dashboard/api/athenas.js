@@ -87,6 +87,20 @@ class AthenasAssistantsAPI extends ApiClient {
     );
   }
 
+  // Ready-made agents per vertical.
+  listTemplates() {
+    return axios.get(`${this.baseUrl()}/ai/assistant_templates`);
+  }
+
+  getTemplate(key) {
+    return axios.get(`${this.baseUrl()}/ai/assistant_templates/${key}`);
+  }
+
+  // What customers keep asking this agent.
+  themes(assistantId, { days = 30 } = {}) {
+    return axios.get(`${this.url}/${assistantId}/themes`, { params: { days } });
+  }
+
   listTrainings(assistantId) {
     return axios.get(`${this.url}/${assistantId}/trainings`);
   }

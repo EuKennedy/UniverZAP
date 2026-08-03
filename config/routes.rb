@@ -492,12 +492,17 @@ Rails.application.routes.draw do
           end
 
           namespace :ai do
+            # Ready-made agents per vertical: the answer to the blank system
+            # prompt that stops a new operator from ever finishing setup.
+            resources :assistant_templates, only: [:index, :show]
             resources :assistants do
               member do
                 post :duplicate
                 # Measured performance for this agent (volume, cost, latency,
                 # reliability) plus the last replies it actually sent.
                 get :analytics
+                # What customers keep asking, straight from the response log.
+                get :themes
               end
               resources :trainings, only: [:index, :create, :update, :destroy]
               resources :intents, only: [:index, :create, :update, :destroy]

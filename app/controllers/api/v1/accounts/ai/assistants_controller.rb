@@ -26,9 +26,18 @@ class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseContr
     render json: Ai::AnalyticsService.new(assistant: @assistant, days: params[:days] || 30).perform
   end
 
+  # What customers keep asking. Free to compute: the questions are already in
+  # the response log, and the operator needs the word their customers use, not
+  # a label a model invented for them.
+  def themes
+    render json: Ai::ThemeService.new(assistant: @assistant, days: params[:days] || 30).perform
+  end
+
   def create
     @assistant = Current.account.ai_assistants.new(permitted_params)
+    apply_template if params[:template].present?
     @assistant.save!
+    seed_template_knowledge
     render :show
   end
 
@@ -58,6 +67,33 @@ class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseContr
   end
 
   private
+
+  # A template fills only what the operator left blank, so someone who typed a
+  # name and then picked a vertical does not lose what they typed.
+  def apply_template
+    template = Ai::AgentTemplates.find(params[:template])
+    return if template.blank?
+
+    @template = template
+    @assistant.role = template[:role] if @assistant.role.blank?
+    @assistant.description = template[:description] if @assistant.description.blank?
+    @assistant.tone = template[:tone] if @assistant.tone.blank?
+    @assistant.system_prompt = template[:system_prompt] if @assistant.system_prompt.blank?
+  end
+
+  # The starter documents are the point: an agent with instructions and an empty
+  # knowledge base has nothing it is allowed to assert, so it deflects every
+  # question and the operator concludes the AI does not work.
+  def seed_template_knowledge
+    return if @template.blank?
+
+    @template[:trainings].each do |doc|
+      @assistant.trainings.create!(
+        account: Current.account, title: doc[:title], category: doc[:category],
+        source_type: 'text', content: doc[:content], status: 'ready'
+      )
+    end
+  end
 
   def ensure_admin
     render_unauthorized('Administrator privileges required') unless Current.account_user&.administrator?

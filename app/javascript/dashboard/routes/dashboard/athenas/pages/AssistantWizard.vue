@@ -49,6 +49,36 @@ const form = reactive({
 const trainings = ref([]);
 const trainingDraft = reactive({ title: '', content: '', category: 'base' });
 
+// Ready-made agents per vertical. Picking one fills the instructions here and
+// tells the server to seed the starter documents on create.
+const templates = ref([]);
+const selectedTemplate = ref(null);
+
+const loadTemplates = async () => {
+  try {
+    const { data } = await AthenasAssistantsAPI.listTemplates();
+    templates.value = data.templates || [];
+  } catch {
+    templates.value = [];
+  }
+};
+
+// Only fills what the operator left blank, so someone who typed a name and then
+// picked a vertical does not lose what they typed.
+const applyTemplate = async template => {
+  selectedTemplate.value =
+    selectedTemplate.value === template.key ? null : template.key;
+  if (!selectedTemplate.value) return;
+
+  const { data } = await AthenasAssistantsAPI.getTemplate(template.key);
+  if (!form.role || form.role === 'Vendedor SDR') form.role = data.role;
+  if (!form.description) form.description = data.description;
+  form.tone = data.tone;
+  if (!form.system_prompt) form.system_prompt = data.system_prompt;
+};
+
+loadTemplates();
+
 const stepDef = computed(() => STEPS[currentStep.value]);
 const isLastStep = computed(() => currentStep.value === STEPS.length - 1);
 const stopWordsCSV = computed({
@@ -125,6 +155,9 @@ const finish = async () => {
   try {
     const { data: assistant } = await AthenasAssistantsAPI.create({
       ai_assistant: { ...form },
+      // The server seeds the starter documents for this vertical, so the agent
+      // has something it is allowed to assert from its very first reply.
+      template: selectedTemplate.value || undefined,
     });
     assistantId.value = assistant.id;
     await Promise.all(
@@ -263,6 +296,39 @@ const removeTraining = idx => {
 
         <!-- Step: identity -->
         <div v-if="stepDef.key === 'identity'" class="flex flex-col gap-5">
+          <!-- The blank system prompt is what stops most operators from ever
+               finishing setup. Picking a vertical fills the instructions AND
+               seeds the starter documents, because an agent with instructions
+               and an empty knowledge base deflects every question. -->
+          <div v-if="templates.length" class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-n-slate-12">
+              {{ t('ATHENAS.WIZARD.TEMPLATE.LABEL') }}
+            </label>
+            <p class="text-[12px] text-n-slate-11">
+              {{ t('ATHENAS.WIZARD.TEMPLATE.HELP') }}
+            </p>
+            <div class="grid sm:grid-cols-2 gap-2">
+              <button
+                v-for="template in templates"
+                :key="template.key"
+                type="button"
+                class="flex flex-col items-start gap-1 p-3 rounded-xl text-left ring-1 transition-colors"
+                :class="
+                  selectedTemplate === template.key
+                    ? 'bg-n-teal-2 ring-n-teal-7'
+                    : 'bg-n-solid-1 ring-n-weak hover:ring-n-slate-7'
+                "
+                @click="applyTemplate(template)"
+              >
+                <span class="text-[13px] font-medium text-n-slate-12">
+                  {{ template.label }}
+                </span>
+                <span class="text-[12px] text-n-slate-11">
+                  {{ template.description }}
+                </span>
+              </button>
+            </div>
+          </div>
           <Input
             v-model="form.name"
             :label="t('ATHENAS.WIZARD.IDENTITY.NAME_LABEL')"

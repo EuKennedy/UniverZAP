@@ -112,6 +112,10 @@
         "AUTOPILOT_OFF": "Desativado",
         "KNOWLEDGE": "Conhecimentos",
         "KNOWLEDGE_COUNT": "{n} item(s)"
+      },
+      "TEMPLATE": {
+        "LABEL": "Comece por um modelo",
+        "HELP": "Escolha o seu tipo de negócio. As instruções e os documentos iniciais já vêm prontos, e você ajusta o que quiser."
       }
     },
     "EDIT": {
@@ -332,7 +336,9 @@
       "NO_NAME": "Sem nome",
       "WON": "Fechou",
       "LOST": "Perdeu",
-      "NO_DATA": "--"
+      "NO_DATA": "--",
+      "THEMES": "Temas mais perguntados",
+      "THEMES_HELP": "O que os clientes repetem. Cada termo aqui é uma página que falta ou um produto que falta."
     }
   },
   "ATHENAS_ONBOARDING": {

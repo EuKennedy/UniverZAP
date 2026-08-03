@@ -57,7 +57,23 @@ const fetchRadar = async () => {
   }
 };
 
-onMounted(fetchRadar);
+// What customers keep asking. A term that shows up forty times is either a page
+// the operator should write or a product they should stock.
+const themes = ref([]);
+
+const fetchThemes = async () => {
+  try {
+    const { data: payload } = await AthenasAPI.themes(props.assistantId);
+    themes.value = payload.themes || [];
+  } catch {
+    themes.value = [];
+  }
+};
+
+onMounted(() => {
+  fetchRadar();
+  fetchThemes();
+});
 
 const setBand = value => {
   band.value = band.value === value ? null : value;
@@ -324,5 +340,27 @@ const mark = async (opportunity, status) => {
         />
       </div>
     </article>
+    <div
+      v-if="themes.length"
+      class="flex flex-col gap-3 p-4 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak"
+    >
+      <span class="text-[13px] font-medium text-n-slate-12">
+        {{ t('ATHENAS.RADAR.THEMES') }}
+      </span>
+      <p class="text-[12px] text-n-slate-11">
+        {{ t('ATHENAS.RADAR.THEMES_HELP') }}
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <span
+          v-for="theme in themes"
+          :key="theme.term"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] bg-n-alpha-1 ring-1 ring-n-weak text-n-slate-11"
+          :title="theme.sample"
+        >
+          {{ theme.term }}
+          <span class="text-n-slate-10 tabular-nums">{{ theme.count }}</span>
+        </span>
+      </div>
+    </div>
   </section>
 </template>

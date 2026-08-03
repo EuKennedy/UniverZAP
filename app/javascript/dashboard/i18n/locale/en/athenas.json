@@ -112,6 +112,10 @@
         "AUTOPILOT_OFF": "Off",
         "KNOWLEDGE": "Knowledge",
         "KNOWLEDGE_COUNT": "{n} item(s)"
+      },
+      "TEMPLATE": {
+        "LABEL": "Start from a template",
+        "HELP": "Pick your kind of business. The instructions and starter documents come ready, and you adjust whatever you want."
       }
     },
     "EDIT": {
@@ -332,7 +336,9 @@
       "NO_NAME": "No name",
       "WON": "Won",
       "LOST": "Lost",
-      "NO_DATA": "--"
+      "NO_DATA": "--",
+      "THEMES": "Most asked topics",
+      "THEMES_HELP": "What customers repeat. Every term here is a page you have not written or a product you do not stock."
     }
   },
   "ATHENAS_ONBOARDING": {
