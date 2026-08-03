@@ -168,7 +168,8 @@
         "DELETE_TITLE": "Remove knowledge",
         "DELETE_CONFIRM": "Remove this knowledge? This cannot be undone.",
         "DELETE_SUCCESS": "Knowledge removed."
-      }
+      },
+      "ADVANCED": "Advanced settings"
     },
     "PLAYGROUND": {
       "TITLE": "Test the agent",
@@ -201,6 +202,11 @@
       "AGO_MIN": "{n} min ago",
       "AGO_HOUR": "{n}h ago",
       "AGO_DAY": "{n}d ago"
+    },
+    "CREDITS_STRIP": {
+      "BALANCE": "Balance",
+      "DAYS": "~{n} days",
+      "TOP_UP": "Add credits"
     }
   },
   "ATHENAS_ONBOARDING": {

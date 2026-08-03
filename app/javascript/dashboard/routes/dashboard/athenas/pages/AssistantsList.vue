@@ -7,7 +7,7 @@ import { useAlert } from 'dashboard/composables';
 import AthenasAssistantsAPI from 'dashboard/api/athenas';
 
 import Button from 'dashboard/components-next/button/Button.vue';
-import AthenasBillingPanel from 'dashboard/components-next/athenas/AthenasBillingPanel.vue';
+import AthenasCreditsStrip from 'dashboard/components-next/athenas/AthenasCreditsStrip.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -63,7 +63,12 @@ onMounted(fetchAssistants);
       />
     </header>
 
-    <AthenasBillingPanel data-onboarding="athenas-billing-panel" />
+    <!-- Balance stays visible (a low balance must never be hidden) but no
+         longer occupies the fold. Buying moves to the existing modal.
+         Always rendered: it carries the onboarding tour anchor. -->
+    <div class="px-10 pt-6">
+      <AthenasCreditsStrip data-onboarding="athenas-billing-panel" />
+    </div>
 
     <section v-if="loading" class="flex-1 flex items-center justify-center">
       <span

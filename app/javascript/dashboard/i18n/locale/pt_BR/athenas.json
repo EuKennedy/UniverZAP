@@ -168,7 +168,8 @@
         "DELETE_TITLE": "Remover conhecimento",
         "DELETE_CONFIRM": "Remover este conhecimento? Esta ação não pode ser desfeita.",
         "DELETE_SUCCESS": "Conhecimento removido."
-      }
+      },
+      "ADVANCED": "Ajustes avançados"
     },
     "PLAYGROUND": {
       "TITLE": "Testar o agente",
@@ -201,6 +202,11 @@
       "AGO_MIN": "há {n} min",
       "AGO_HOUR": "há {n}h",
       "AGO_DAY": "há {n}d"
+    },
+    "CREDITS_STRIP": {
+      "BALANCE": "Saldo",
+      "DAYS": "~{n} dias",
+      "TOP_UP": "Adicionar créditos"
     }
   },
   "ATHENAS_ONBOARDING": {

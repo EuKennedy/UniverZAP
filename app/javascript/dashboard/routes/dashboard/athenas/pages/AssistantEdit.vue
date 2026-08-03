@@ -53,6 +53,8 @@ const TABS = [
 ];
 
 const currentTab = ref('general');
+// Advanced tuning is collapsed: it is set once, unlike name/tone/prompt.
+const advancedOpen = ref(false);
 
 const MODELS = [
   {
@@ -562,49 +564,71 @@ onMounted(() => {
               />
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-n-slate-12">
-                  {{ t('ATHENAS.WIZARD.PERSONALITY.TEMPERATURE_LABEL') }}
-                  <span class="text-n-slate-11 tabular-nums">
-                    ({{ form.temperature.toFixed(2) }})
-                  </span>
-                </label>
-                <input
-                  v-model.number="form.temperature"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  class="w-full accent-n-teal-9"
-                />
+            <!-- Collapsed by default: name, tone, model and prompt are what an
+                 operator actually revisits. Creativity, token cap and the API
+                 key are set once, and giving them the same visual weight as
+                 the prompt is what made this screen read as a settings dump. -->
+            <button
+              type="button"
+              class="flex items-center gap-1.5 self-start text-[13px] font-medium text-n-slate-11 hover:text-n-slate-12 transition-colors"
+              @click="advancedOpen = !advancedOpen"
+            >
+              <span
+                class="size-3.5"
+                :class="
+                  advancedOpen
+                    ? 'i-lucide-chevron-down'
+                    : 'i-lucide-chevron-right'
+                "
+              />
+              {{ t('ATHENAS.EDIT.ADVANCED') }}
+            </button>
+
+            <template v-if="advancedOpen">
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-n-slate-12">
+                    {{ t('ATHENAS.WIZARD.PERSONALITY.TEMPERATURE_LABEL') }}
+                    <span class="text-n-slate-11 tabular-nums">
+                      ({{ form.temperature.toFixed(2) }})
+                    </span>
+                  </label>
+                  <input
+                    v-model.number="form.temperature"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    class="w-full accent-n-teal-9"
+                  />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-n-slate-12">
+                    {{ t('ATHENAS.WIZARD.PERSONALITY.MAX_TOKENS_LABEL') }}
+                  </label>
+                  <Input
+                    v-model.number="form.max_tokens"
+                    type="number"
+                    min="128"
+                    max="8192"
+                  />
+                </div>
               </div>
+
               <div class="flex flex-col gap-1.5">
                 <label class="text-sm font-medium text-n-slate-12">
-                  {{ t('ATHENAS.WIZARD.PERSONALITY.MAX_TOKENS_LABEL') }}
+                  {{ t('ATHENAS.EDIT.REPLACE_API_KEY_LABEL') }}
                 </label>
                 <Input
-                  v-model.number="form.max_tokens"
-                  type="number"
-                  min="128"
-                  max="8192"
+                  v-model="form.encrypted_anthropic_key"
+                  type="password"
+                  :placeholder="t('ATHENAS.EDIT.REPLACE_API_KEY_PLACEHOLDER')"
                 />
+                <p class="text-[11px] text-n-slate-11">
+                  {{ t('ATHENAS.EDIT.REPLACE_API_KEY_HINT') }}
+                </p>
               </div>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-medium text-n-slate-12">
-                {{ t('ATHENAS.EDIT.REPLACE_API_KEY_LABEL') }}
-              </label>
-              <Input
-                v-model="form.encrypted_anthropic_key"
-                type="password"
-                :placeholder="t('ATHENAS.EDIT.REPLACE_API_KEY_PLACEHOLDER')"
-              />
-              <p class="text-[11px] text-n-slate-11">
-                {{ t('ATHENAS.EDIT.REPLACE_API_KEY_HINT') }}
-              </p>
-            </div>
+            </template>
           </article>
 
           <article
