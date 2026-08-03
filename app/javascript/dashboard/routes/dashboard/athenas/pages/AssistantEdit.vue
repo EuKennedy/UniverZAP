@@ -17,6 +17,7 @@ import AthenasPlayground from 'dashboard/components-next/athenas/AthenasPlaygrou
 import AthenasAnalytics from 'dashboard/components-next/athenas/AthenasAnalytics.vue';
 import AthenasReviewQueue from 'dashboard/components-next/athenas/AthenasReviewQueue.vue';
 import AthenasPromptLab from 'dashboard/components-next/athenas/AthenasPromptLab.vue';
+import AthenasRadar from 'dashboard/components-next/athenas/AthenasRadar.vue';
 
 const props = defineProps({ id: { type: Number, required: true } });
 
@@ -60,6 +61,9 @@ const TABS = [
   // everyone, and it is the one you reach after the other five taught you what
   // to change.
   { key: 'lab', icon: 'i-lucide-flask-conical' },
+  // The commercial answer: everything else says whether the agent is good,
+  // this says whether it is worth paying for.
+  { key: 'radar', icon: 'i-lucide-radar' },
 ];
 
 const currentTab = ref('general');
@@ -896,6 +900,11 @@ onMounted(() => {
         <!-- TAB: LAB -->
         <template v-if="currentTab === 'lab'">
           <AthenasPromptLab :assistant-id="id" />
+        </template>
+
+        <!-- TAB: RADAR -->
+        <template v-if="currentTab === 'radar'">
+          <AthenasRadar :assistant-id="id" />
         </template>
       </div>
     </section>

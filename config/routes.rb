@@ -524,6 +524,13 @@ Rails.application.routes.draw do
                 end
               end
               resources :ab_comparisons, only: [:index, :update]
+              # Commercial radar: conversations that ended without a sale, plus
+              # the ROI panel that turns the cost report into a business case.
+              resources :opportunities, only: [:index, :update] do
+                collection do
+                  post :bulk_followup
+                end
+              end
             end
             post 'conversations/:conversation_id/suggestion', to: 'suggestions#create'
             post 'conversations/:conversation_id/summary', to: 'summaries#create'

@@ -140,7 +140,8 @@
         "TEST": "Testar",
         "ACTIVITY": "Histórico",
         "REVIEW": "Supervisão",
-        "LAB": "Laboratório"
+        "LAB": "Laboratório",
+        "RADAR": "Radar"
       },
       "SECTIONS": {
         "IDENTITY": "Identidade",
@@ -297,6 +298,41 @@
       "VOTED_A": "Você votou na A.",
       "VOTED_B": "Você votou na B.",
       "VOTED_TIE": "Você votou empate."
+    },
+    "RADAR": {
+      "TITLE": "Radar comercial",
+      "SUBTITLE": "Conversas que terminaram sem venda, com nota de quanto vale correr atrás. E, ao lado do custo, o que o agente trouxe de volta.",
+      "REVENUE": "Receita atribuída",
+      "COST": "custo {value}",
+      "ROI": "Retorno",
+      "PER_CONVERSATION": "{value} por conversa",
+      "HOURS_SAVED": "Horas poupadas",
+      "HOURS_ASSUMPTION": "estimativa de 90s por mensagem humana",
+      "AFTER_HOURS": "Fora do horário",
+      "AFTER_HOURS_HINT": "vendas que não existiriam",
+      "BANDS": {
+        "HOT": "Quente",
+        "WARM": "Morno",
+        "COLD": "Frio"
+      },
+      "REASONS": {
+        "PEDIU_PRECO": "pediu preço",
+        "SEM_VAGA": "sem vaga",
+        "COMPARANDO": "comparando",
+        "CHECKOUT_ABANDONADO": "checkout abandonado",
+        "SEM_RESPOSTA": "sem resposta",
+        "OUTRO": "outro"
+      },
+      "FOLLOW_UP": "Follow-up ({n})",
+      "FOLLOW_UP_HELP": "A mensagem sai pela mesma esteira das campanhas, com intervalo aleatório e teto diário, para não queimar o número.",
+      "FOLLOW_UP_PLACEHOLDER": "Oi! Passando para saber se você ainda tem interesse...",
+      "CANCEL": "Cancelar",
+      "SEND": "Enviar",
+      "EMPTY": "Nenhuma oportunidade aberta. Quando uma conversa terminar sem venda, ela aparece aqui.",
+      "NO_NAME": "Sem nome",
+      "WON": "Fechou",
+      "LOST": "Perdeu",
+      "NO_DATA": "--"
     }
   },
   "ATHENAS_ONBOARDING": {

@@ -140,7 +140,8 @@
         "ACTIVITY": "Activity",
         "TEST": "Test",
         "REVIEW": "Review",
-        "LAB": "Lab"
+        "LAB": "Lab",
+        "RADAR": "Radar"
       },
       "SECTIONS": {
         "IDENTITY": "Identity",
@@ -297,6 +298,41 @@
       "VOTED_A": "You voted A.",
       "VOTED_B": "You voted B.",
       "VOTED_TIE": "You voted tie."
+    },
+    "RADAR": {
+      "TITLE": "Commercial radar",
+      "SUBTITLE": "Conversations that ended without a sale, scored by how worth chasing they are. And, next to the cost, what the agent brought back.",
+      "REVENUE": "Attributed revenue",
+      "COST": "cost {value}",
+      "ROI": "Return",
+      "PER_CONVERSATION": "{value} per conversation",
+      "HOURS_SAVED": "Hours saved",
+      "HOURS_ASSUMPTION": "assumes 90s per human reply",
+      "AFTER_HOURS": "After hours",
+      "AFTER_HOURS_HINT": "sales that would not exist",
+      "BANDS": {
+        "HOT": "Hot",
+        "WARM": "Warm",
+        "COLD": "Cold"
+      },
+      "REASONS": {
+        "PEDIU_PRECO": "asked price",
+        "SEM_VAGA": "no slot",
+        "COMPARANDO": "comparing",
+        "CHECKOUT_ABANDONADO": "abandoned checkout",
+        "SEM_RESPOSTA": "no reply",
+        "OUTRO": "other"
+      },
+      "FOLLOW_UP": "Follow up ({n})",
+      "FOLLOW_UP_HELP": "The message goes out through the same campaign pipeline, with randomised intervals and a daily cap, so the number does not get burned.",
+      "FOLLOW_UP_PLACEHOLDER": "Hi! Just checking whether you are still interested...",
+      "CANCEL": "Cancel",
+      "SEND": "Send",
+      "EMPTY": "No open opportunities. When a conversation ends without a sale, it shows up here.",
+      "NO_NAME": "No name",
+      "WON": "Won",
+      "LOST": "Lost",
+      "NO_DATA": "--"
     }
   },
   "ATHENAS_ONBOARDING": {

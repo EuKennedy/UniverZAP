@@ -21,7 +21,27 @@ class AthenasAutopilotListener < BaseListener
     Ai::AutopilotReplyJob.perform_later(message.id, assistant.id)
   end
 
+  # A conversation that closes without a sale is the moment the commercial
+  # radar has something to say. Scoring it here rather than on a nightly sweep
+  # means the follow-up window is still open when the lead surfaces: an
+  # interested customer answered twenty minutes ago, not yesterday.
+  def conversation_resolved(event)
+    conversation = event.data[:conversation]
+    return if conversation.blank? || conversation.sandbox?
+    return unless scored_by_an_agent?(conversation)
+
+    Ai::LeadScoringJob.perform_later(conversation.id)
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas radar] scoring not enqueued conv=#{conversation&.id}: #{e.message}")
+  end
+
   private
+
+  # Only conversations the agent actually worked. Scoring a thread it never
+  # touched would credit the radar with leads it had nothing to do with.
+  def scored_by_an_agent?(conversation)
+    Ai::Invocation.where(conversation_id: conversation.id, phase: 'autopilot').exists?
+  end
 
   # The strongest quality signal the module gets, and the only one that arrives
   # a turn late. The pattern match is pure Ruby and runs on every inbound

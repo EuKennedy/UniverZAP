@@ -21,6 +21,10 @@ class Ai::Assistant < ApplicationRecord
                              inverse_of: :ai_assistant, dependent: :destroy
   has_many :ab_comparisons, class_name: 'Ai::AbComparison', foreign_key: :ai_assistant_id,
                             inverse_of: :ai_assistant, dependent: :destroy
+  has_many :lead_opportunities, class_name: 'Ai::LeadOpportunity', foreign_key: :ai_assistant_id,
+                                inverse_of: :ai_assistant, dependent: :destroy
+  has_many :revenue_events, class_name: 'Ai::RevenueEvent', foreign_key: :ai_assistant_id,
+                            inverse_of: :ai_assistant, dependent: :destroy
 
   # The instructions the agent actually runs on. Falls back to the mutable
   # column so an agent that was never versioned keeps behaving identically.

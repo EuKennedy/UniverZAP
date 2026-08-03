@@ -180,6 +180,32 @@ class AthenasAssistantsAPI extends ApiClient {
     );
   }
 
+  // Commercial radar: conversations that ended without a sale, plus the ROI
+  // panel that turns the cost report into a business case.
+  listOpportunities(assistantId, { band, status, days } = {}) {
+    return axios.get(`${this.url}/${assistantId}/opportunities`, {
+      params: { band, status, days },
+    });
+  }
+
+  updateOpportunity(assistantId, opportunityId, payload) {
+    return axios.patch(
+      `${this.url}/${assistantId}/opportunities/${opportunityId}`,
+      { opportunity: payload }
+    );
+  }
+
+  bulkFollowUp(assistantId, { opportunityIds, message, inboxId } = {}) {
+    return axios.post(
+      `${this.url}/${assistantId}/opportunities/bulk_followup`,
+      {
+        opportunity_ids: opportunityIds,
+        message,
+        inbox_id: inboxId,
+      }
+    );
+  }
+
   // Test sandbox: talk to the assistant as if you were a customer.
   getPlayground(assistantId) {
     return axios.get(`${this.url}/${assistantId}/playground`);
