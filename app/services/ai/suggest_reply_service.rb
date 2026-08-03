@@ -135,7 +135,7 @@ class Ai::SuggestReplyService
   end
 
   def sanitised_tenant_prompt
-    raw = @assistant.system_prompt.presence
+    raw = @assistant.effective_system_prompt.presence
     return nil if raw.blank?
 
     cleaned = raw.lines.grep_v(GREETING_INSTRUCTION_PATTERN).join

@@ -139,7 +139,8 @@
         "KNOWLEDGE": "Knowledge",
         "ACTIVITY": "Activity",
         "TEST": "Test",
-        "REVIEW": "Review"
+        "REVIEW": "Review",
+        "LAB": "Lab"
       },
       "SECTIONS": {
         "IDENTITY": "Identity",
@@ -256,6 +257,46 @@
       "PAGE": "{page} of {total}",
       "APPROVAL": "Approval",
       "REVIEWED_COUNT": "{n} reviewed"
+    },
+    "LAB": {
+      "TITLE": "Lab",
+      "SUBTITLE": "A candidate version answers the same real questions the agent already answered, side by side, and you vote. Nothing here reaches a customer.",
+      "NEW_VERSION": "New version",
+      "ROLLBACK": "Roll back",
+      "CANCEL": "Cancel",
+      "CREATE_DRAFT": "Create draft",
+      "DRAFT_HELP": "The draft starts from the instructions that are live plus the replies marked as ideal. Edit whatever you want to change.",
+      "DRAFT_PLACEHOLDER": "Leave blank to copy the current instructions.",
+      "LIVE_NOW": "{version} live",
+      "EMPTY": "Create a candidate version to start testing.",
+      "CRITERIA": "Promotion criteria",
+      "CHECKS": {
+        "SAMPLE": "Duels",
+        "WIN_RATE": "Win rate",
+        "CRITICAL_LOSSES": "Critical losses",
+        "COST": "Cost",
+        "LATENCY": "p95 latency"
+      },
+      "RUN": "Run lab",
+      "PROMOTE": "Promote",
+      "DUELS": "{n} duels awaiting a vote",
+      "NO_DUELS": "No duels yet. Run the lab to re-ask real questions with the candidate version.",
+      "BLIND_ON": "Blind mode on",
+      "BLIND_OFF": "Blind mode off",
+      "COLUMN_A": "A · what the customer got",
+      "COLUMN_B": "B · candidate version",
+      "COLUMN_1": "Answer 1",
+      "COLUMN_2": "Answer 2",
+      "TELEMETRY": "R$ {cost} · {latency}s",
+      "CRITICAL_LOSS": "Quoted an unsourced value",
+      "VOTE_A": "A is better",
+      "VOTE_B": "B is better",
+      "VOTE_1": "1 is better",
+      "VOTE_2": "2 is better",
+      "VOTE_TIE": "Tie",
+      "VOTED_A": "You voted A.",
+      "VOTED_B": "You voted B.",
+      "VOTED_TIE": "You voted tie."
     }
   },
   "ATHENAS_ONBOARDING": {

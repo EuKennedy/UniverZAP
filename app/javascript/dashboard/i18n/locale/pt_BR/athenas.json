@@ -139,7 +139,8 @@
         "KNOWLEDGE": "Conhecimento",
         "TEST": "Testar",
         "ACTIVITY": "Histórico",
-        "REVIEW": "Supervisão"
+        "REVIEW": "Supervisão",
+        "LAB": "Laboratório"
       },
       "SECTIONS": {
         "IDENTITY": "Identidade",
@@ -256,6 +257,46 @@
       "PAGE": "{page} de {total}",
       "APPROVAL": "Aprovação",
       "REVIEWED_COUNT": "{n} avaliadas"
+    },
+    "LAB": {
+      "TITLE": "Laboratório",
+      "SUBTITLE": "Uma versão candidata responde as mesmas perguntas reais que o agente já respondeu, lado a lado, e você vota. Nada aqui chega a cliente nenhum.",
+      "NEW_VERSION": "Nova versão",
+      "ROLLBACK": "Reverter",
+      "CANCEL": "Cancelar",
+      "CREATE_DRAFT": "Criar rascunho",
+      "DRAFT_HELP": "O rascunho já vem com as instruções que estão no ar e com os exemplos marcados como ideais. Edite o que quiser mudar.",
+      "DRAFT_PLACEHOLDER": "Deixe em branco para copiar as instruções atuais.",
+      "LIVE_NOW": "{version} no ar",
+      "EMPTY": "Crie uma versão candidata para começar a testar.",
+      "CRITERIA": "Critérios de promoção",
+      "CHECKS": {
+        "SAMPLE": "Duelos",
+        "WIN_RATE": "Vitória",
+        "CRITICAL_LOSSES": "Falhas graves",
+        "COST": "Custo",
+        "LATENCY": "Latência p95"
+      },
+      "RUN": "Rodar lab",
+      "PROMOTE": "Promover",
+      "DUELS": "{n} duelos aguardando voto",
+      "NO_DUELS": "Nenhum duelo ainda. Rode o lab para reexecutar perguntas reais com a versão candidata.",
+      "BLIND_ON": "Modo cego ligado",
+      "BLIND_OFF": "Modo cego desligado",
+      "COLUMN_A": "A · o que o cliente recebeu",
+      "COLUMN_B": "B · versão candidata",
+      "COLUMN_1": "Resposta 1",
+      "COLUMN_2": "Resposta 2",
+      "TELEMETRY": "R$ {cost} · {latency}s",
+      "CRITICAL_LOSS": "Citou valor sem fonte",
+      "VOTE_A": "A é melhor",
+      "VOTE_B": "B é melhor",
+      "VOTE_1": "A 1 é melhor",
+      "VOTE_2": "A 2 é melhor",
+      "VOTE_TIE": "Empate",
+      "VOTED_A": "Você votou na A.",
+      "VOTED_B": "Você votou na B.",
+      "VOTED_TIE": "Você votou empate."
     }
   },
   "ATHENAS_ONBOARDING": {

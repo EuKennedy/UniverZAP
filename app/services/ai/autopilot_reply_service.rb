@@ -494,6 +494,9 @@ class Ai::AutopilotReplyService
       # operators keep their price list in this field, not in a training doc.
       labelled_tenant_prompt,
       tone_instruction,
+      # Tone is taught by example, not by rule. These are replies a human marked
+      # ⭐ and that a promoted version carries forward.
+      few_shot_block,
       knowledge_snippets,
       # Immediately after the knowledge block: the rule is about what may be
       # asserted FROM that block, so recency keeps the two glued together.
@@ -589,7 +592,7 @@ class Ai::AutopilotReplyService
   end
 
   def sanitised_tenant_prompt
-    raw = @assistant.system_prompt.presence
+    raw = @assistant.effective_system_prompt.presence
     return nil if raw.blank?
 
     cleaned = raw.lines.grep_v(GREETING_INSTRUCTION_PATTERN).join
@@ -650,6 +653,19 @@ class Ai::AutopilotReplyService
       '• Se faltar UMA informação essencial que NÃO está no histórico nem na memória, ' \
       'pergunte só ela, uma vez, de forma natural.'
     ]
+  end
+
+  # Empty until an operator promotes a version carrying ⭐ examples, so an
+  # unversioned agent builds exactly the prompt it built before.
+  def few_shot_block
+    pairs = @assistant.effective_few_shots
+    return nil if pairs.empty?
+
+    lines = pairs.map { |pair| "Cliente: #{pair['question']}\nVocê: #{pair['answer']}" }
+    <<~SHOTS.strip
+      EXEMPLOS DE RESPOSTA IDEAL (imite o tom e o formato, nunca copie o conteúdo):
+      #{lines.join("\n\n")}
+    SHOTS
   end
 
   def tone_instruction

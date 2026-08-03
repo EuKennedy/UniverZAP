@@ -17,6 +17,28 @@ class Ai::Assistant < ApplicationRecord
                           inverse_of: :ai_assistant, dependent: :destroy
   has_many :response_feedbacks, class_name: 'Ai::ResponseFeedback', foreign_key: :ai_assistant_id,
                                 inverse_of: :ai_assistant, dependent: :destroy
+  has_many :prompt_versions, class_name: 'Ai::PromptVersion', foreign_key: :ai_assistant_id,
+                             inverse_of: :ai_assistant, dependent: :destroy
+  has_many :ab_comparisons, class_name: 'Ai::AbComparison', foreign_key: :ai_assistant_id,
+                            inverse_of: :ai_assistant, dependent: :destroy
+
+  # The instructions the agent actually runs on. Falls back to the mutable
+  # column so an agent that was never versioned keeps behaving identically.
+  def live_prompt_version
+    prompt_versions.live.first
+  end
+
+  def effective_system_prompt
+    live_prompt_version&.system_prompt.presence || system_prompt
+  end
+
+  def effective_few_shots
+    live_prompt_version&.few_shot_pairs || []
+  end
+
+  def effective_prompt_version
+    live_prompt_version&.version || Ai::KnowledgeGrounding::PROMPT_VERSION
+  end
 
   PROVIDERS = %w[anthropic openai].freeze
   TONES = %w[friendly formal sales support concierge].freeze

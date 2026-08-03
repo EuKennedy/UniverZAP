@@ -511,6 +511,19 @@ Rails.application.routes.draw do
                   post :apply_feedback, to: 'response_feedbacks#apply'
                 end
               end
+              # Versioned instructions plus the A/B lab that decides whether a
+              # candidate is allowed to answer real customers.
+              resources :prompt_versions, only: [:index, :show, :create] do
+                collection do
+                  post :rollback
+                end
+                member do
+                  post :promote
+                  post :replay
+                  get :stats
+                end
+              end
+              resources :ab_comparisons, only: [:index, :update]
             end
             post 'conversations/:conversation_id/suggestion', to: 'suggestions#create'
             post 'conversations/:conversation_id/summary', to: 'summaries#create'

@@ -133,7 +133,7 @@ module Ai::KnowledgeGrounding
     {
       user_message: latest_user_message,
       chunks: knowledge_chunks_payload,
-      prompt_version: PROMPT_VERSION,
+      prompt_version: @assistant.effective_prompt_version,
       trigger_message_id: trigger_message_id,
       delivery_status: delivery_status
     }
@@ -320,7 +320,10 @@ module Ai::KnowledgeGrounding
   def grounding_sources
     @grounding_sources ||= [
       relevant_passages.pluck(:body).join(' '),
-      @assistant.system_prompt.to_s,
+      # The prompt the agent is actually RUNNING, which is the live version when
+      # one exists. Grounding against the old column would let a promoted
+      # version quote a price the guard cannot see.
+      @assistant.effective_system_prompt.to_s,
       human_authored_history,
       extra_grounding_sources
     ].join(' ')

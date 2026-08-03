@@ -16,6 +16,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import AthenasPlayground from 'dashboard/components-next/athenas/AthenasPlayground.vue';
 import AthenasAnalytics from 'dashboard/components-next/athenas/AthenasAnalytics.vue';
 import AthenasReviewQueue from 'dashboard/components-next/athenas/AthenasReviewQueue.vue';
+import AthenasPromptLab from 'dashboard/components-next/athenas/AthenasPromptLab.vue';
 
 const props = defineProps({ id: { type: Number, required: true } });
 
@@ -55,6 +56,10 @@ const TABS = [
   // "how is it doing"; review is "what do I have to fix", and mixing a work
   // queue into a dashboard turns both into neither.
   { key: 'review', icon: 'i-lucide-shield-check' },
+  // Last because it is the only tab that changes how the agent behaves for
+  // everyone, and it is the one you reach after the other five taught you what
+  // to change.
+  { key: 'lab', icon: 'i-lucide-flask-conical' },
 ];
 
 const currentTab = ref('general');
@@ -886,6 +891,11 @@ onMounted(() => {
         <!-- TAB: REVIEW -->
         <template v-if="currentTab === 'review'">
           <AthenasReviewQueue :assistant-id="id" />
+        </template>
+
+        <!-- TAB: LAB -->
+        <template v-if="currentTab === 'lab'">
+          <AthenasPromptLab :assistant-id="id" />
         </template>
       </div>
     </section>

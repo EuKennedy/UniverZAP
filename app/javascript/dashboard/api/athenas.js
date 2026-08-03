@@ -135,6 +135,51 @@ class AthenasAssistantsAPI extends ApiClient {
     );
   }
 
+  // Versioned instructions and the A/B lab that gates promotion.
+  listPromptVersions(assistantId) {
+    return axios.get(`${this.url}/${assistantId}/prompt_versions`);
+  }
+
+  createPromptVersion(assistantId, payload) {
+    return axios.post(`${this.url}/${assistantId}/prompt_versions`, payload);
+  }
+
+  promotionStats(assistantId, versionId) {
+    return axios.get(
+      `${this.url}/${assistantId}/prompt_versions/${versionId}/stats`
+    );
+  }
+
+  replayPromptVersion(assistantId, versionId, { count } = {}) {
+    return axios.post(
+      `${this.url}/${assistantId}/prompt_versions/${versionId}/replay`,
+      { count }
+    );
+  }
+
+  promotePromptVersion(assistantId, versionId) {
+    return axios.post(
+      `${this.url}/${assistantId}/prompt_versions/${versionId}/promote`
+    );
+  }
+
+  rollbackPromptVersion(assistantId) {
+    return axios.post(`${this.url}/${assistantId}/prompt_versions/rollback`);
+  }
+
+  listComparisons(assistantId, { versionId, pending } = {}) {
+    return axios.get(`${this.url}/${assistantId}/ab_comparisons`, {
+      params: { version_id: versionId, pending },
+    });
+  }
+
+  judgeComparison(assistantId, comparisonId, winner) {
+    return axios.patch(
+      `${this.url}/${assistantId}/ab_comparisons/${comparisonId}`,
+      { winner }
+    );
+  }
+
   // Test sandbox: talk to the assistant as if you were a customer.
   getPlayground(assistantId) {
     return axios.get(`${this.url}/${assistantId}/playground`);
