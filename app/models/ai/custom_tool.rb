@@ -44,6 +44,15 @@ class Ai::CustomTool < ApplicationRecord
     }
   end
 
+  # Serialization for the API/UI. auth_config is DELIBERATELY omitted: the
+  # credentials go in write-only and must never be handed back to the browser.
+  def push_event_data
+    {
+      id: id, title: title, slug: slug, description: description, endpoint_url: endpoint_url,
+      http_method: http_method, auth_type: auth_type, param_schema: param_schema, enabled: enabled
+    }
+  end
+
   def build_request_url(params)
     return endpoint_url if endpoint_url.exclude?('{{')
 

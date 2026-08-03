@@ -506,6 +506,8 @@ Rails.application.routes.draw do
               end
               resources :trainings, only: [:index, :create, :update, :destroy]
               resources :intents, only: [:index, :create, :update, :destroy]
+              # The workspace's own HTTP integrations this agent can call (univercart etc.).
+              resources :custom_tools, only: [:index, :create, :update, :destroy]
               # Test sandbox: talk to this assistant as if you were a customer.
               resource :playground, only: [:show, :create, :destroy], controller: 'playground'
               # Supervision queue: every reply the agent produced, the automatic
