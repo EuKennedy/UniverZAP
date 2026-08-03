@@ -253,7 +253,9 @@
       "SOURCE": "fonte: {title}",
       "PREV": "Anterior",
       "NEXT": "Próxima",
-      "PAGE": "{page} de {total}"
+      "PAGE": "{page} de {total}",
+      "APPROVAL": "Aprovação",
+      "REVIEWED_COUNT": "{n} avaliadas"
     }
   },
   "ATHENAS_ONBOARDING": {

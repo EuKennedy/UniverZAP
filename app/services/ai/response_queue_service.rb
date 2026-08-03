@@ -60,7 +60,18 @@ class Ai::ResponseQueueService
       flagged: @assistant.invocations.live.flagged.count,
       unreviewed: @assistant.invocations.live.where.not(ai_response: nil)
                             .where.missing(:response_feedbacks).count
-    }
+    }.merge(approval)
+  end
+
+  # The number that says whether the agent is actually good, as judged by the
+  # people who know the business. Nil until anyone has voted: a 100% built on
+  # two clicks would be worse than no number at all.
+  def approval
+    verdicts = @assistant.response_feedbacks
+    total = verdicts.count
+    return { reviewed: 0, approval_rate: nil } if total.zero?
+
+    { reviewed: total, approval_rate: (verdicts.approvals.count.to_f / total * 100).round(1) }
   end
 
   def feedback_by_invocation(ids)

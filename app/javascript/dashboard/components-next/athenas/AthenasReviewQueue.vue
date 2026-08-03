@@ -141,13 +141,31 @@ const willApplyNow = computed(
 
 <template>
   <section class="flex flex-col gap-5">
-    <header class="flex flex-col gap-1">
-      <h2 class="text-base font-semibold text-n-slate-12 tracking-tight">
-        {{ t('ATHENAS.REVIEW.TITLE') }}
-      </h2>
-      <p class="text-[13px] text-n-slate-11 max-w-2xl">
-        {{ t('ATHENAS.REVIEW.SUBTITLE') }}
-      </p>
+    <header class="flex items-start justify-between gap-4 flex-wrap">
+      <div class="flex flex-col gap-1">
+        <h2 class="text-base font-semibold text-n-slate-12 tracking-tight">
+          {{ t('ATHENAS.REVIEW.TITLE') }}
+        </h2>
+        <p class="text-[13px] text-n-slate-11 max-w-2xl">
+          {{ t('ATHENAS.REVIEW.SUBTITLE') }}
+        </p>
+      </div>
+      <div
+        v-if="
+          counts.approval_rate !== null && counts.approval_rate !== undefined
+        "
+        class="flex flex-col items-end gap-0.5 px-4 py-2.5 rounded-xl bg-n-solid-1 ring-1 ring-n-weak"
+      >
+        <span class="text-[11px] uppercase tracking-wider text-n-slate-11">
+          {{ t('ATHENAS.REVIEW.APPROVAL') }}
+        </span>
+        <span class="text-xl font-semibold text-n-slate-12 tabular-nums">
+          {{ `${counts.approval_rate}%` }}
+        </span>
+        <span class="text-[11px] text-n-slate-10 tabular-nums">
+          {{ t('ATHENAS.REVIEW.REVIEWED_COUNT', { n: counts.reviewed }) }}
+        </span>
+      </div>
     </header>
 
     <div class="flex items-center gap-1 p-0.5 rounded-lg bg-n-alpha-2 w-fit">
