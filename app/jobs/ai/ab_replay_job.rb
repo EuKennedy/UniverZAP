@@ -25,14 +25,21 @@ class Ai::AbReplayJob < ApplicationJob
 
   private
 
-  # The lab spends the SAME balance the agent answers customers with. A batch of
-  # replays run on a low balance would buy an experiment with the credits a real
-  # customer's reply needed, and the customer is the one who notices. Experiments
-  # only run when there is room to spare.
-  def credits_to_spare?(account)
-    return true if Ai::CreditLedger.new(account).threshold_status == :ok
+  # The lab never touches the last few reais: that is the real customer's
+  # cushion, and it is what keeps the one-shot grace credit intact for whoever
+  # is waiting on WhatsApp.
+  CUSTOMER_RESERVE_CENTS = 500
 
-    Rails.logger.info("[Athenas lab] replay skipped, balance is not healthy account=#{account.id}")
+  # The lab spends the SAME balance the agent answers customers with, and a
+  # fifty-duel batch drains asynchronously alongside live traffic. Checked here,
+  # per duel, rather than once when the batch is queued: a single check at
+  # enqueue time is already stale by the second duel, and the customer who loses
+  # their reply to an experiment is the one who notices.
+  def credits_to_spare?(account)
+    ledger = Ai::CreditLedger.new(account)
+    return true if ledger.threshold_status == :ok && ledger.balance_cents > CUSTOMER_RESERVE_CENTS
+
+    Rails.logger.info("[Athenas lab] replay skipped, balance reserved for customers account=#{account.id}")
     false
   rescue StandardError => e
     Rails.logger.warn("[Athenas lab] could not read balance account=#{account.id}: #{e.message}")

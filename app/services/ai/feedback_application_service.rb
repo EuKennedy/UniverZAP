@@ -52,15 +52,17 @@ class Ai::FeedbackApplicationService
   # A question/answer pair, stored as an ordinary knowledge document so it goes
   # through the exact same retrieval the rest of the base does. Anything else
   # would create a second, subtly different source of truth.
+  # Updates in place when this feedback already produced a document. A reviewer
+  # who improves their own correction expects the agent to learn the better
+  # version; creating a second document would leave the first one, with the
+  # wording they just rejected, competing for the same question forever.
   def apply_knowledge
-    training = @assistant.trainings.create!(
-      account: @assistant.account,
-      title: knowledge_title,
-      source_type: 'faq',
-      category: knowledge_category,
-      content: knowledge_content,
-      status: 'ready'
-    )
+    attributes = {
+      account: @assistant.account, title: knowledge_title, source_type: 'faq',
+      category: knowledge_category, content: knowledge_content, status: 'ready'
+    }
+    training = @feedback.ai_training
+    training ? training.update!(attributes) : training = @assistant.trainings.create!(attributes)
     @feedback.update!(ai_training: training, applied_at: Time.current)
   end
 

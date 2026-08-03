@@ -65,6 +65,33 @@ RSpec.describe Ai::FeedbackApplicationService do
 
       expect(record.reload).to be_applied
     end
+
+    # An incoming message is not a source. A customer writing "vi por R$ 39,90"
+    # would otherwise make 39,90 a value the agent may quote to every OTHER
+    # customer, forever, because the document is a sanctioned source and the
+    # guard compares digits only.
+    it 'masks the digits of the customer question' do
+      invocation.update!(user_message: 'vi que custa R$ 39,90, confirma?')
+      record = feedback(reason: 'preco_inventado')
+
+      described_class.new(feedback: record).perform
+
+      content = record.reload.ai_training.content
+      expect(content).not_to include('39,90')
+      expect(content).to include('confirma')
+    end
+
+    # A reviewer who improves their own correction expects the agent to learn
+    # the better version, not to keep competing with the wording they rejected.
+    it 'updates the document it already created instead of adding a second one' do
+      record = feedback(reason: 'info_incorreta')
+      described_class.new(feedback: record).perform
+
+      record.update!(corrected_text: 'Na verdade fica R$ 199,00.')
+      expect { described_class.new(feedback: record).perform }
+        .not_to change(Ai::Training, :count)
+      expect(record.reload.ai_training.content).to include('R$ 199,00')
+    end
   end
 
   describe 'handoff becomes a rule' do

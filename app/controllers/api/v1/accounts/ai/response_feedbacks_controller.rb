@@ -10,9 +10,13 @@ class Api::V1::Accounts::Ai::ResponseFeedbacksController < Api::V1::Accounts::Ba
   before_action :fetch_assistant
   before_action :fetch_invocation
 
+  # Applied on every save, not only the first: a reviewer who improves their own
+  # correction expects the agent to learn the better version. The application
+  # service updates the document it already created rather than adding a second
+  # one, so re-applying is safe.
   def create
     feedback = upsert_feedback
-    apply!(feedback) if feedback.immediate? && !feedback.applied?
+    apply!(feedback) if feedback.immediate?
     render json: payload(feedback)
   end
 
