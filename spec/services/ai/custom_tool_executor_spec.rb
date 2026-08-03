@@ -35,4 +35,24 @@ RSpec.describe Ai::CustomToolExecutor do
 
     expect(JSON.parse(described_class.new([tool]).call('buscar', {}))).to include('error' => true)
   end
+
+  it 'flags a write after a POST tool so the turn is not replayed on retry' do
+    allow(Resolv).to receive(:getaddress).and_return('93.184.216.34')
+    stub_request(:post, 'https://loja.example.com/api').to_return(status: 200, body: '{}')
+    executor = described_class.new([tool(http_method: 'POST')])
+
+    executor.call('buscar', {})
+
+    expect(executor.performed_write?).to be(true)
+  end
+
+  it 'does not flag a write for a read-only GET tool' do
+    allow(Resolv).to receive(:getaddress).and_return('93.184.216.34')
+    stub_request(:get, 'https://loja.example.com/api').to_return(status: 200, body: '{}')
+    executor = described_class.new([tool])
+
+    executor.call('buscar', {})
+
+    expect(executor.performed_write?).to be(false)
+  end
 end

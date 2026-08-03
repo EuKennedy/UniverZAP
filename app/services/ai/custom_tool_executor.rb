@@ -23,11 +23,19 @@ class Ai::CustomToolExecutor
 
   def initialize(tools)
     @tools = Array(tools).index_by(&:slug)
+    @performed_write = false
   end
 
   # The Anthropic tool schemas for the tools this executor can run.
   def definitions
     @tools.values.map(&:to_tool_definition)
+  end
+
+  # True once a POST tool has been ATTEMPTED this turn. Set before the HTTP call
+  # on purpose: a timeout may still have hit the endpoint, so the turn must be
+  # treated as non-replayable either way (mirrors the belezaki booking guard).
+  def performed_write?
+    @performed_write
   end
 
   def call(name, input)
@@ -43,6 +51,7 @@ class Ai::CustomToolExecutor
   private
 
   def run(tool, input)
+    @performed_write = true if tool.http_method == 'POST'
     uri = safe_uri!(tool.build_request_url(input))
     tool.format_response(request(tool, uri, input).body.to_s)
   end

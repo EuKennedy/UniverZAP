@@ -340,6 +340,21 @@ RSpec.describe Ai::AutopilotReplyService do
     end
   end
 
+  describe 'workspace integrations (custom tools)' do
+    it 'routes to its own tool loop, separate from belezaki, when the agent has integrations' do
+      service = described_class.new(conversation: conversation, assistant: assistant)
+      Ai::CustomTool.create!(ai_assistant: assistant, account: account, title: 'Buscar', slug: 'buscar',
+                             endpoint_url: 'https://loja.example.com/api', http_method: 'GET',
+                             auth_type: 'none', param_schema: [])
+      allow(Ai::Agent::ToolLoopService).to receive(:new)
+        .and_return(instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' }))
+      allow(Ai::CustomToolExecutor).to receive(:new).and_call_original
+
+      expect(service.send(:generate_response, [])).to eq(content: 'ok')
+      expect(Ai::CustomToolExecutor).to have_received(:new)
+    end
+  end
+
   describe 'summary persistence (Sprint 8)' do
     it 'does not clobber the reply dedup stamp written concurrently by another job' do
       # The service captures its snapshot here, BEFORE the concurrent write.

@@ -251,6 +251,11 @@ class Ai::AutopilotReplyService
   # agent can check the salon agenda and create appointments mid-conversation.
   # Otherwise fall back to the plain single-shot reply.
   def generate_response(messages)
+    # A workspace that connected its own integrations gets its own tool loop,
+    # ahead of and fully separate from the belezaki branch: the working
+    # scheduling path is untouched, and no agent has both today.
+    return run_custom_tool_loop(messages) if custom_tools.any?
+
     client = belezaki_client
     return call_claude(messages) if client.nil?
 
@@ -285,6 +290,26 @@ class Ai::AutopilotReplyService
     # must also cover everything that runs AFTER the tool loop. Latches on:
     # once a write landed it must never be cleared for the rest of the turn.
     @performed_external_write = true if executor.performed_write?
+  end
+
+  # This agent's own integrations (Ai::CustomTool), scoped to THIS agent so one
+  # workspace's tools never reach another's conversation. Memoized: the routing
+  # decision and the loop must see the same set.
+  def custom_tools
+    @custom_tools ||= @assistant.custom_tools.enabled.to_a
+  end
+
+  def run_custom_tool_loop(messages)
+    executor = Ai::CustomToolExecutor.new(custom_tools)
+    Ai::Agent::ToolLoopService.new(
+      assistant: @assistant, conversation: @conversation, messages: messages,
+      system: build_system_prompt, tools: executor.definitions,
+      tool_executor: executor, log_context: reply_log_context
+    ).perform
+  ensure
+    # Same replay guard as belezaki: a tool that wrote (POST) must not be
+    # replayed on a transient retry (see #perform's rescue).
+    @performed_external_write = true if executor&.performed_write?
   end
 
   # Never let belezaki resolution (DB lookup / ENV) break the reply for
