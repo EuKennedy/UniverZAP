@@ -21,8 +21,9 @@ class Ai::FeedbackApplicationService
   # Words too common to identify what the customer was asking about.
   STOPWORDS = %w[
     que para como quando onde voce voces uma dos das com por mais meu minha isso
-    tem esta este muito sobre pode quero preciso fazer qual quais aqui ainda
-    entao porque tambem depois antes agora obrigado obrigada
+    tem esta este muito sobre pode quero preciso fazer aqui ainda entao porque
+    tambem depois antes agora obrigado obrigada
+    qual quais quanto quantos quanta quantas
   ].freeze
   MAX_TRIGGERS = 3
   MIN_TRIGGER_LENGTH = 5

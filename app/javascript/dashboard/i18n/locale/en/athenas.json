@@ -138,7 +138,8 @@
         "GENERAL": "General",
         "KNOWLEDGE": "Knowledge",
         "ACTIVITY": "Activity",
-        "TEST": "Test"
+        "TEST": "Test",
+        "REVIEW": "Review"
       },
       "SECTIONS": {
         "IDENTITY": "Identity",
@@ -218,6 +219,41 @@
       "BALANCE": "Balance",
       "DAYS": "~{n} days",
       "TOP_UP": "Add credits"
+    },
+    "REVIEW": {
+      "TITLE": "Review",
+      "SUBTITLE": "What the agent answered, what the guardrails thought, and what you decide about it. A factual correction takes effect on the next conversation.",
+      "EMPTY": "Nothing to review here.",
+      "FILTERS": {
+        "ALL": "All",
+        "FLAGGED": "Flagged",
+        "UNREVIEWED": "Unreviewed",
+        "REVIEWED": "Reviewed"
+      },
+      "REASONS": {
+        "INFO_INCORRETA": "Wrong information",
+        "PRECO_INVENTADO": "Made-up price",
+        "TOM_INADEQUADO": "Wrong tone",
+        "DEVERIA_TRANSBORDAR": "Should hand off",
+        "NAO_ENTENDEU": "Did not understand"
+      },
+      "GOOD": "Good",
+      "IDEAL": "Ideal example",
+      "CORRECT": "Correct",
+      "SAVE_CORRECTION": "Save correction",
+      "CORRECTION_PLACEHOLDER": "Write the right answer, exactly as the customer should have received it.",
+      "WILL_APPLY_NOW": "This becomes agent knowledge now. The next customer gets the correct version.",
+      "WILL_WAIT_VERSION": "Tone is taught by example. It is recorded and goes into a new agent version, tested before going live.",
+      "RECORDED_UP": "You marked this as good.",
+      "RECORDED_IDEAL": "You marked this as an ideal example.",
+      "RECORDED_CORRECTION": "You corrected it: {reason}.",
+      "APPLIED": "applied",
+      "PENDING_APPLY": "recorded, not applied yet",
+      "NOT_DELIVERED": "Never sent",
+      "SOURCE": "source: {title}",
+      "PREV": "Previous",
+      "NEXT": "Next",
+      "PAGE": "{page} of {total}"
     }
   },
   "ATHENAS_ONBOARDING": {

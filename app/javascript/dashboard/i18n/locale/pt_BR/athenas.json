@@ -138,7 +138,8 @@
         "GENERAL": "Geral",
         "KNOWLEDGE": "Conhecimento",
         "TEST": "Testar",
-        "ACTIVITY": "Histórico"
+        "ACTIVITY": "Histórico",
+        "REVIEW": "Supervisão"
       },
       "SECTIONS": {
         "IDENTITY": "Identidade",
@@ -218,6 +219,41 @@
       "BALANCE": "Saldo",
       "DAYS": "~{n} dias",
       "TOP_UP": "Adicionar créditos"
+    },
+    "REVIEW": {
+      "TITLE": "Supervisão",
+      "SUBTITLE": "O que o agente respondeu, o que os guardrails acharam e o que você decide sobre isso. Correção de fato vale já na próxima conversa.",
+      "EMPTY": "Nada para revisar aqui.",
+      "FILTERS": {
+        "ALL": "Tudo",
+        "FLAGGED": "Com alerta",
+        "UNREVIEWED": "Sem revisão",
+        "REVIEWED": "Revisadas"
+      },
+      "REASONS": {
+        "INFO_INCORRETA": "Informação errada",
+        "PRECO_INVENTADO": "Preço inventado",
+        "TOM_INADEQUADO": "Tom inadequado",
+        "DEVERIA_TRANSBORDAR": "Deveria chamar humano",
+        "NAO_ENTENDEU": "Não entendeu"
+      },
+      "GOOD": "Boa",
+      "IDEAL": "Exemplo ideal",
+      "CORRECT": "Corrigir",
+      "SAVE_CORRECTION": "Salvar correção",
+      "CORRECTION_PLACEHOLDER": "Escreva a resposta certa, do jeito que o cliente deveria ter recebido.",
+      "WILL_APPLY_NOW": "Isso vira conhecimento do agente agora. O próximo cliente já recebe a versão correta.",
+      "WILL_WAIT_VERSION": "Tom se ensina por exemplo. Fica registrado e entra numa versão nova do agente, testada antes de ir ao ar.",
+      "RECORDED_UP": "Você marcou como boa.",
+      "RECORDED_IDEAL": "Você marcou como exemplo ideal.",
+      "RECORDED_CORRECTION": "Você corrigiu: {reason}.",
+      "APPLIED": "aplicado",
+      "PENDING_APPLY": "registrado, ainda não aplicado",
+      "NOT_DELIVERED": "Não foi enviada",
+      "SOURCE": "fonte: {title}",
+      "PREV": "Anterior",
+      "NEXT": "Próxima",
+      "PAGE": "{page} de {total}"
     }
   },
   "ATHENAS_ONBOARDING": {

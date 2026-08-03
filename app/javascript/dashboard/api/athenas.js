@@ -114,6 +114,27 @@ class AthenasAssistantsAPI extends ApiClient {
     });
   }
 
+  // Supervision queue: every reply the agent produced, worst first.
+  listResponses(assistantId, { filter, flag, page } = {}) {
+    return axios.get(`${this.url}/${assistantId}/responses`, {
+      params: { filter, flag, page },
+    });
+  }
+
+  // 👍 👎 ⭐ on one reply. A correction that can be applied is applied here.
+  rateResponse(assistantId, responseId, payload) {
+    return axios.post(
+      `${this.url}/${assistantId}/responses/${responseId}/feedback`,
+      { feedback: payload }
+    );
+  }
+
+  applyResponseFeedback(assistantId, responseId) {
+    return axios.post(
+      `${this.url}/${assistantId}/responses/${responseId}/apply_feedback`
+    );
+  }
+
   // Test sandbox: talk to the assistant as if you were a customer.
   getPlayground(assistantId) {
     return axios.get(`${this.url}/${assistantId}/playground`);

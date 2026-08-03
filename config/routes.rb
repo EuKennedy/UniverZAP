@@ -503,6 +503,14 @@ Rails.application.routes.draw do
               resources :intents, only: [:index, :create, :update, :destroy]
               # Test sandbox: talk to this assistant as if you were a customer.
               resource :playground, only: [:show, :create, :destroy], controller: 'playground'
+              # Supervision queue: every reply the agent produced, the automatic
+              # review flags on it, and the human verdict.
+              resources :responses, only: [:index] do
+                member do
+                  post :feedback, to: 'response_feedbacks#create'
+                  post :apply_feedback, to: 'response_feedbacks#apply'
+                end
+              end
             end
             post 'conversations/:conversation_id/suggestion', to: 'suggestions#create'
             post 'conversations/:conversation_id/summary', to: 'summaries#create'

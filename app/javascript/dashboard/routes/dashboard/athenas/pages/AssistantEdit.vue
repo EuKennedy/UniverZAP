@@ -15,6 +15,7 @@ import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import AthenasPlayground from 'dashboard/components-next/athenas/AthenasPlayground.vue';
 import AthenasAnalytics from 'dashboard/components-next/athenas/AthenasAnalytics.vue';
+import AthenasReviewQueue from 'dashboard/components-next/athenas/AthenasReviewQueue.vue';
 
 const props = defineProps({ id: { type: Number, required: true } });
 
@@ -50,6 +51,10 @@ const TABS = [
   // Right after knowledge on purpose: you feed the agent, then you test it.
   { key: 'test', icon: 'i-lucide-message-circle' },
   { key: 'activity', icon: 'i-lucide-activity' },
+  // Separate from activity because they answer different questions. Activity is
+  // "how is it doing"; review is "what do I have to fix", and mixing a work
+  // queue into a dashboard turns both into neither.
+  { key: 'review', icon: 'i-lucide-shield-check' },
 ];
 
 const currentTab = ref('general');
@@ -876,6 +881,11 @@ onMounted(() => {
 
         <template v-if="currentTab === 'test'">
           <AthenasPlayground :assistant-id="id" />
+        </template>
+
+        <!-- TAB: REVIEW -->
+        <template v-if="currentTab === 'review'">
+          <AthenasReviewQueue :assistant-id="id" />
         </template>
       </div>
     </section>
