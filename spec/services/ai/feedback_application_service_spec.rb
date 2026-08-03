@@ -46,15 +46,16 @@ RSpec.describe Ai::FeedbackApplicationService do
       expect(record.reload.ai_training.content).to include('quanto custa a progressiva sem formol?')
     end
 
-    # Retrieval is lexical, so the rejected wording is often the closest match
-    # to how the customer will ask again. The document that comes back then
-    # carries the correction with it.
-    it 'records what the agent must never say again' do
-      record = feedback(reason: 'info_incorreta')
+    # The rejected answer must NOT be stored. This document becomes a sanctioned
+    # source for the grounding guard, which compares digits only, so keeping the
+    # fabricated price here would turn the correction that was meant to stop the
+    # invention into the thing that made it permanently legitimate.
+    it 'never stores the fabricated value it was correcting' do
+      record = feedback(reason: 'preco_inventado')
 
       described_class.new(feedback: record).perform
 
-      expect(record.reload.ai_training.content).to include('Nunca responda assim').and include('R$ 999,00')
+      expect(record.reload.ai_training.content).not_to include('999')
     end
 
     it 'stamps when it was applied' do

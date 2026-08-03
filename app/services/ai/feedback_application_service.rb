@@ -75,21 +75,22 @@ class Ai::FeedbackApplicationService
     @feedback.reason == 'preco_inventado' ? 'catalog' : 'faq'
   end
 
+  # The rejected answer is deliberately NOT included.
+  #
+  # Including it looked helpful (retrieval is lexical, so the wrong wording is
+  # close to how the customer will ask again) and was actively harmful: this
+  # document becomes a sanctioned source in `grounding_sources`, and
+  # `ungrounded_claims` compares digits only. A price the agent invented would
+  # therefore become a value the guard recognises, so the correction meant to
+  # stop the fabrication would be what made it permanently legitimate.
+  #
+  # The customer's own question already gives retrieval everything it needs, and
+  # it carries no invented numbers.
   def knowledge_content
     [
       customer_question.presence && "Pergunta do cliente: #{customer_question}",
-      "Resposta correta: #{@feedback.corrected_text}",
-      wrong_answer_note
-    ].compact.join("\n\n")
-  end
-
-  # The rejected answer is included on purpose. Retrieval is lexical, so the
-  # wrong wording is often the closest match to how the customer will ask again,
-  # and the document that comes back then carries the correction with it.
-  def wrong_answer_note
-    return nil if @invocation&.ai_response.blank?
-
-    "Nunca responda assim: #{@invocation.ai_response.to_s.truncate(500)}"
+      "Resposta correta: #{@feedback.corrected_text}"
+    ].compact.join("\n\n").truncate(Ai::ResponseFeedback::CORRECTION_MAX_CHARS)
   end
 
   def apply_escalation

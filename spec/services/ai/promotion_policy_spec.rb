@@ -89,11 +89,21 @@ RSpec.describe Ai::PromotionPolicy do
   describe 'the latency gate' do
     # An agent that is fast on average and occasionally takes twelve seconds
     # still loses the customer who waited twelve seconds.
-    it 'blocks on the p95, not on the mean' do
+    it 'blocks when the slow tail is real' do
+      17.times { duel(latency_b: 500) }
+      3.times { duel(latency_b: 12_000) }
+
+      expect(described_class.new(version: version).report[:checks][:latency][:pass]).to be(false)
+    end
+
+    # Nearest-rank, not "the maximum": a single outlier in twenty is noise, and
+    # blocking a promotion on it while calling the number a percentile would be
+    # a gate that lies about what it measured.
+    it 'tolerates a single outlier in twenty' do
       19.times { duel(latency_b: 500) }
       duel(latency_b: 12_000)
 
-      expect(described_class.new(version: version).report[:checks][:latency][:pass]).to be(false)
+      expect(described_class.new(version: version).report[:checks][:latency][:pass]).to be(true)
     end
   end
 

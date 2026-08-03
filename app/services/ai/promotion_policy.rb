@@ -72,11 +72,16 @@ class Ai::PromotionPolicy
 
   # p95 rather than the mean: an agent that is fast on average and occasionally
   # takes twelve seconds still loses the customer who waited twelve seconds.
+  #
+  # Nearest-rank, the textbook definition. The obvious shortcut
+  # (`values[(n - 1) * 0.95]` rounded up) returns the MAXIMUM for any sample
+  # under about forty, which would have called a single slow outlier "the p95"
+  # and blocked promotions on noise while claiming to measure a percentile.
   def p95_latency_b
     values = telemetry_values(:b, 'latency_ms').sort
     return 0 if values.empty?
 
-    values[((values.length - 1) * 0.95).ceil].to_i
+    values[[(values.length * 0.95).ceil - 1, 0].max].to_i
   end
 
   def average(side, key)
