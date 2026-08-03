@@ -1,4 +1,16 @@
+# rubocop:disable Metrics/ClassLength
 class Ai::SuggestReplyService
+  # Same retrieval and anti-fabrication as the autopilot. This text is what a
+  # HUMAN agent sends verbatim, so an invented price reaches the customer here
+  # exactly as it would from the bot. Sharing the module is what stops the two
+  # paths drifting apart again.
+  include Ai::KnowledgeGrounding
+
+  # Raised when the suggestion still asserts a value that exists nowhere in the
+  # operator's data, even after a forced rewrite. Better to show nothing and let
+  # the agent write it than to hand them a wrong price to send.
+  class UngroundedClaim < StandardError; end
+
   # Mirrors the autopilot window so suggestion + autopilot see the
   # same conversation slice. 12 was leaving Claude blind to early
   # context on longer threads (qualification questions get forgotten
@@ -39,12 +51,7 @@ class Ai::SuggestReplyService
     messages = build_messages
     raise Ai::ClaudeService::Error, 'Conversation has no messages yet' if messages.empty?
 
-    response = Ai::ClaudeService.new(assistant: @assistant).chat(
-      messages: messages,
-      system: build_system_prompt,
-      conversation: @conversation,
-      phase: 'suggest'
-    )
+    response = call_claude(messages, nil)
 
     if response[:content].to_s.strip.empty?
       Rails.logger.warn(
@@ -55,7 +62,7 @@ class Ai::SuggestReplyService
     end
 
     response[:content] = strip_leading_greeting(response[:content].to_s) if conversation_in_progress?
-    response
+    enforce_grounding(messages, response)
   end
 
   private
@@ -72,6 +79,9 @@ class Ai::SuggestReplyService
       sanitised_tenant_prompt,
       tone_instruction,
       knowledge_snippets,
+      # Immediately after the knowledge block: the rule is about what may be
+      # asserted FROM that block, so recency keeps the two glued together.
+      GROUNDING_RULES,
       continuity_rules_reinforcement,
       continuity_examples
     ].compact.join("\n\n")
@@ -171,12 +181,40 @@ class Ai::SuggestReplyService
     }[@assistant.tone]
   end
 
-  def knowledge_snippets
-    chunks = @assistant.trainings.ready.limit(8).pluck(:title, :content)
-    return nil if chunks.empty?
+  # Regenerate ONCE naming the offending numbers, then give up. Mirrors the
+  # autopilot: the model complies with a hard, specific override far more
+  # reliably than with a general rule buried in the system prompt.
+  def enforce_grounding(messages, response)
+    claims = ungrounded_claims(response[:content])
+    return response if claims.empty?
 
-    bullets = chunks.map { |title, content| "- #{title}: #{content.to_s.truncate(280)}" }.join("\n")
-    "Base de conhecimento:\n#{bullets}"
+    Rails.logger.warn(
+      "[Athenas suggest] ungrounded values #{claims.inspect} conv=#{@conversation.display_id}; regenerating"
+    )
+    rewritten = call_claude(messages, grounding_override(claims))
+    rewritten[:content] = strip_leading_greeting(rewritten[:content].to_s) if conversation_in_progress?
+    return rewritten if ungrounded_claims(rewritten[:content]).empty?
+
+    raise UngroundedClaim, "ungrounded suggestion conv=#{@conversation.display_id}"
+  end
+
+  def grounding_override(claims)
+    <<~OVERRIDE.strip
+      🚨 STOP — VOCÊ CITOU UM VALOR QUE NÃO EXISTE EM NENHUM BLOCO ACIMA.
+      Valores não confirmados nesta sugestão: #{claims.join(', ')}.
+      É TERMINANTEMENTE PROIBIDO sugerir preço, desconto ou percentual que não
+      esteja escrito acima. REESCREVA a sugestão SEM esses números: diga que vai
+      confirmar o valor e siga conduzindo a conversa normalmente.
+    OVERRIDE
+  end
+
+  def call_claude(messages, override)
+    Ai::ClaudeService.new(assistant: @assistant).chat(
+      messages: messages,
+      system: [build_system_prompt, override].compact.join("\n\n"),
+      conversation: @conversation,
+      phase: 'suggest'
+    )
   end
 
   def strip_leading_greeting(content)
@@ -190,9 +228,13 @@ class Ai::SuggestReplyService
   end
 
   def build_messages
+    # `reorder`, never `order`: Message carries `default_scope { order(created_at:
+    # :asc) }`, so a plain `.order(:desc)` only APPENDS and the ascending key
+    # still wins. This was handing Claude the OLDEST 25 messages, reversed, so
+    # the suggestion was written against the wrong end of the conversation.
     history = @conversation.messages
                            .where(message_type: %i[incoming outgoing])
-                           .order(created_at: :desc)
+                           .reorder(created_at: :desc, id: :desc)
                            .limit(HISTORY_LIMIT)
                            .reverse
     history.map { |m| { role: role_for(m), content: m.content_for_llm.to_s } }.reject { |m| m[:content].blank? }
@@ -202,3 +244,4 @@ class Ai::SuggestReplyService
     message.incoming? ? 'user' : 'assistant'
   end
 end
+# rubocop:enable Metrics/ClassLength

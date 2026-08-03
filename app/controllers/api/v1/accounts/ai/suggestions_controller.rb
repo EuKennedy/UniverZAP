@@ -8,6 +8,13 @@ class Api::V1::Accounts::Ai::SuggestionsController < Api::V1::Accounts::BaseCont
     assistant = resolve_assistant(conversation)
     result = Ai::SuggestReplyService.new(conversation: conversation, assistant: assistant).perform
     render json: { suggestion: result[:content], model: result[:model] }
+  rescue Ai::SuggestReplyService::UngroundedClaim => e
+    # The suggestion kept quoting a value that exists nowhere in the operator's
+    # data. Showing nothing beats handing the agent a wrong price to send.
+    Rails.logger.warn("[Athenas] #{e.message}")
+    render json: {
+      error: 'A sugestão citaria um valor que não está na base de conhecimento. Cadastre esse dado em Conhecimento.'
+    }, status: :unprocessable_entity
   rescue Ai::ClaudeService::Error => e
     Rails.logger.warn("[Athenas] suggest_reply failed: #{e.message} conv=#{params[:conversation_id]}")
     render json: { error: e.message }, status: :unprocessable_entity
