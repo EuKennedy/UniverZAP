@@ -18,8 +18,11 @@ class Ai::LeadTemperatureService
   DECAY_PER_DAY = 2
 
   # The model reads intent, urgency and objection: 40 points, and the cheapest
-  # model that can do it.
-  READER_MODEL = 'claude-haiku-4-5-20251001'.freeze
+  # model that can do it. The id must match a key in
+  # Ai::PricingCalculator::COST_PER_MILLION_USD — an unknown id falls back to
+  # Sonnet pricing, so a dated alias here would bill the operator roughly four
+  # times over for every lead scored.
+  READER_MODEL = 'claude-haiku-4-5'.freeze
   READER_MAX_TOKENS = 300
 
   PRICE_ASK = /pre[çc]o|valor|quanto\s+custa|quanto\s+(?:fica|sai|[ée])|or[çc]amento|tabela/i
