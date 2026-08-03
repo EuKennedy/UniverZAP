@@ -12,6 +12,7 @@ class Ai::AbReplayJob < ApplicationJob
     invocation = Ai::Invocation.find_by(id: invocation_id)
     return if version.blank? || invocation.blank?
     return unless same_account?(invocation, version)
+    return unless credits_to_spare?(version.account)
 
     Ai::AbReplayService.new(invocation: invocation, version: version).perform
   rescue Ai::AbReplayService::AlreadyCompared
@@ -23,6 +24,20 @@ class Ai::AbReplayJob < ApplicationJob
   end
 
   private
+
+  # The lab spends the SAME balance the agent answers customers with. A batch of
+  # replays run on a low balance would buy an experiment with the credits a real
+  # customer's reply needed, and the customer is the one who notices. Experiments
+  # only run when there is room to spare.
+  def credits_to_spare?(account)
+    return true if Ai::CreditLedger.new(account).threshold_status == :ok
+
+    Rails.logger.info("[Athenas lab] replay skipped, balance is not healthy account=#{account.id}")
+    false
+  rescue StandardError => e
+    Rails.logger.warn("[Athenas lab] could not read balance account=#{account.id}: #{e.message}")
+    false
+  end
 
   # Defense in depth: a replay reads a customer question and writes an answer,
   # so a crossed id must never let one tenant's log feed another's experiment.

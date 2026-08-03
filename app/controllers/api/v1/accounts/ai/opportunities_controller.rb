@@ -32,7 +32,9 @@ class Api::V1::Accounts::Ai::OpportunitiesController < Api::V1::Accounts::BaseCo
       message: params[:message], inbox: fetch_inbox
     ).perform
     render json: { broadcast_id: broadcast.id, recipients: broadcast.audience['contact_ids'].length }
-  rescue Ai::FollowUpBroadcastService::NoRecipients => e
+  rescue Ai::FollowUpBroadcastService::NoRecipients,
+         Ai::FollowUpBroadcastService::BlankMessage,
+         Ai::FollowUpBroadcastService::NoSendableInbox => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 

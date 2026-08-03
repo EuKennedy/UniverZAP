@@ -1,6 +1,8 @@
 class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseController
   # analytics exposes spend, so it is admin-only like the write actions.
-  before_action :ensure_admin, only: %i[create update destroy duplicate analytics]
+  # `themes` returns raw customer text from the response log, so it belongs with
+  # the write actions and the spend report, not with the read-only list.
+  before_action :ensure_admin, only: %i[create update destroy duplicate analytics themes]
   before_action :fetch_assistant, except: [:index, :create]
 
   def index

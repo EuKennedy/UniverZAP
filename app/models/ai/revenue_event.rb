@@ -29,12 +29,17 @@ class Ai::RevenueEvent < ApplicationRecord
 
   # Bookings the agent made outside business hours are the single strongest
   # argument for the module: they would not exist, because nobody was there.
-  AFTER_HOURS = (19..23).to_a + (0..8).to_a
+  AFTER_HOURS = ((19..23).to_a + (0..8).to_a).freeze
 
-  scope :after_hours, lambda {
-    where("EXTRACT(HOUR FROM occurred_at) = ANY (ARRAY[#{AFTER_HOURS.join(',')}]) " \
-          'OR EXTRACT(DOW FROM occurred_at) = 0')
-  }
+  # Evaluated in Ruby, in the application timezone, NOT in SQL. `EXTRACT(HOUR
+  # FROM occurred_at)` reads the stored UTC value, so a sale at 21h in São Paulo
+  # is midnight to Postgres and 8h is 5h: the whole point of the number is the
+  # local clock of the business, and getting it wrong shifts every row by three
+  # hours in the one metric the operator quotes to justify the module.
+  def after_hours?
+    local = occurred_at.in_time_zone(Time.zone)
+    local.sunday? || AFTER_HOURS.include?(local.hour)
+  end
 
   def push_event_data
     {

@@ -6,7 +6,11 @@ class Ai::Invocation < ApplicationRecord
   has_many :response_feedbacks, class_name: 'Ai::ResponseFeedback', foreign_key: :ai_invocation_id,
                                 inverse_of: :ai_invocation, dependent: :destroy
 
-  PHASES = %w[main classifier router summary summarize suggest autopilot rewrite chat copilot_chat].freeze
+  # `replay` is the A/B lab. It is billed like any other call, but it is an
+  # experiment, not customer service, so the ROI panel excludes it: counting it
+  # as the cost of serving customers would make a well-tested agent look
+  # expensive precisely because it was well tested.
+  PHASES = %w[main classifier router summary summarize suggest autopilot rewrite chat copilot_chat replay].freeze
   STATUSES = %w[success error].freeze
   # Delivery of the customer-facing reply this call produced. NULL on calls that
   # never had a delivery of their own (tool-loop iterations, summaries).

@@ -12,7 +12,7 @@ RSpec.describe 'Api::V1::Accounts::Ai::AssistantTemplatesController', type: :req
           headers: admin.create_new_auth_token, as: :json
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body['templates'].pluck('key'))
+      expect(response.parsed_body['templates'].pluck('key').uniq)
         .to contain_exactly('salao', 'clinica', 'nails', 'varejo')
     end
 
@@ -50,7 +50,7 @@ RSpec.describe 'Api::V1::Accounts::Ai::AssistantTemplatesController', type: :req
     # concludes the AI does not work.
     it 'seeds the starter documents' do
       expect { create_agent({ ai_assistant: { name: 'Téo' }, template: 'varejo' }) }
-        .to change { Ai::Training.count }.by(2)
+        .to change(Ai::Training, :count).by(2)
 
       expect(Ai::Training.pluck(:status).uniq).to eq(['ready'])
     end
@@ -73,7 +73,7 @@ RSpec.describe 'Api::V1::Accounts::Ai::AssistantTemplatesController', type: :req
 
     it 'creates a plain agent when no template is picked' do
       expect { create_agent({ ai_assistant: { name: 'Téo' } }) }
-        .not_to(change { Ai::Training.count })
+        .not_to(change(Ai::Training, :count))
     end
 
     it 'ignores an unknown template instead of failing the creation' do

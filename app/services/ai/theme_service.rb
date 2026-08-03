@@ -16,12 +16,16 @@ class Ai::ThemeService
   MIN_OCCURRENCES = 2
   SAMPLE_MAX_CHARS = 140
 
+  # Compared without accents (see #stopword?), so one entry covers "voce" and
+  # "você". The list is written unaccented for exactly that reason.
   STOPWORDS = %w[
     para como quando onde voce voces uma dos das com por mais meu minha isso tem
-    esta este muito sobre pode quero preciso fazer qual quais quanto quantos aqui
-    ainda entao porque tambem depois antes agora obrigado obrigada bom dia boa
-    tarde noite tudo bem vcs pra pro nao sim ola oi que ser tem ter fica ficou
-    vai vou sei sabe pois mas dele dela deles seu sua meus suas
+    esta este muito sobre pode podem poderia quero queria quer preciso precisa
+    fazer faz qual quais quanto quantos aqui ainda entao porque tambem depois
+    antes agora obrigado obrigada bom dia boa tarde noite tudo bem vcs pra pro
+    nao sim ola oi que ser ter fica ficou vai vou sei sabe sabem pois mas dele
+    dela deles seu sua meus suas ajudar ajuda gostaria saber falar mandar manda
+    favor consigo consegue tenho estou vcs voceis alguem algum alguma
   ].freeze
 
   def initialize(assistant:, days: DEFAULT_DAYS)
@@ -68,7 +72,14 @@ class Ai::ThemeService
   # preço" is one person asking about price, not three.
   def terms(question)
     question.to_s.downcase.gsub(/[^\p{Alnum}\s]/u, ' ').split
-            .reject { |word| word.length < MIN_TERM_LENGTH || STOPWORDS.include?(word) }
+            .reject { |word| word.length < MIN_TERM_LENGTH || stopword?(word) }
             .uniq
+  end
+
+  # Accent-insensitive, so "vocês" is filtered by the same entry as "voces".
+  # The TERM itself keeps its accents: the operator needs to see the word their
+  # customers actually type, not a normalised version of it.
+  def stopword?(word)
+    STOPWORDS.include?(word.unicode_normalize(:nfd).gsub(/\p{Mn}/, ''))
   end
 end

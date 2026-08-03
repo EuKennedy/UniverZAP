@@ -40,7 +40,7 @@ class AthenasAutopilotListener < BaseListener
   # Only conversations the agent actually worked. Scoring a thread it never
   # touched would credit the radar with leads it had nothing to do with.
   def scored_by_an_agent?(conversation)
-    Ai::Invocation.where(conversation_id: conversation.id, phase: 'autopilot').exists?
+    Ai::Invocation.exists?(conversation_id: conversation.id, phase: 'autopilot')
   end
 
   # The strongest quality signal the module gets, and the only one that arrives

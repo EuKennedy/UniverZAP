@@ -148,7 +148,7 @@ RSpec.describe Ai::LeadTemperatureService do
       described_class.new(conversation: conversation, assistant: assistant).perform
 
       expect { described_class.new(conversation: conversation, assistant: assistant).perform }
-        .not_to(change { Ai::LeadOpportunity.count })
+        .not_to(change(Ai::LeadOpportunity, :count))
     end
 
     it 'ignores a conversation where the customer never spoke' do

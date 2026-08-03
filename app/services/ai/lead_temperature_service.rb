@@ -43,7 +43,7 @@ class Ai::LeadTemperatureService
     return nil if @assistant.blank? || @conversation.contact_id.blank? || customer_text.blank?
 
     reading = model_reading
-    upsert(score(reading), reading)
+    persist(score(reading), reading)
   end
 
   private
@@ -150,7 +150,7 @@ class Ai::LeadTemperatureService
     nil
   end
 
-  def upsert(temperature, reading)
+  def persist(temperature, reading)
     opportunity = Ai::LeadOpportunity.find_or_initialize_by(conversation_id: @conversation.id)
     opportunity.assign_attributes(
       identity.merge(scoring(temperature, reading))

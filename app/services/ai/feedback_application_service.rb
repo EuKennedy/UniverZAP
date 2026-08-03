@@ -88,9 +88,29 @@ class Ai::FeedbackApplicationService
   # it carries no invented numbers.
   def knowledge_content
     [
-      customer_question.presence && "Pergunta do cliente: #{customer_question}",
-      "Resposta correta: #{@feedback.corrected_text}"
-    ].compact.join("\n\n").truncate(Ai::ResponseFeedback::CORRECTION_MAX_CHARS)
+      quoted_question,
+      # Truncated separately, and last: concatenating first and truncating the
+      # whole thing meant a long customer question could cut the correction off
+      # entirely, leaving a document that teaches nothing.
+      "Resposta correta: #{@feedback.corrected_text.to_s.truncate(CORRECTION_MAX)}"
+    ].compact.join("\n\n")
+  end
+
+  QUESTION_MAX = 400
+  CORRECTION_MAX = 8_000
+
+  # The question is stored for retrieval, with its NUMBERS masked.
+  #
+  # This document becomes a sanctioned source for the grounding guard, which
+  # compares digits only. A customer writing "vi por 999, tá certo?" would
+  # otherwise make 999 a value the agent may quote, in every conversation, for
+  # as long as the document exists. The words are what retrieval needs; the
+  # digits are what would break the guard.
+  def quoted_question
+    return nil if customer_question.blank?
+
+    masked = customer_question.gsub(/\d/, '#').truncate(QUESTION_MAX)
+    "Pergunta do cliente: #{masked}"
   end
 
   def apply_escalation

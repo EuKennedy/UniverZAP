@@ -38,8 +38,13 @@ class Ai::RoiService
 
   private
 
+  # Customer-facing spend only. Lab replays are billed to the same balance but
+  # they are an experiment, and charging the ROI of the service with the cost of
+  # testing it would punish exactly the operator who tests before shipping.
   def invocations
-    @invocations ||= @assistant.invocations.live.where(created_at: @days.days.ago..)
+    @invocations ||= @assistant.invocations.live
+                               .where.not(phase: 'replay')
+                               .where(created_at: @days.days.ago..)
   end
 
   def revenue_scope
@@ -82,8 +87,10 @@ class Ai::RoiService
     ((replies * SECONDS_PER_HUMAN_REPLY) / 3600.0).round(1)
   end
 
+  # Summed in Ruby so the hour is read in the business's own timezone. The row
+  # count here is sales, not calls, so loading them is cheap.
   def after_hours_revenue
-    revenue_scope.after_hours.sum(:amount_brl).to_f
+    revenue_scope.select(&:after_hours?).sum { |event| event.amount_brl.to_f }.round(2)
   end
 
   def by_source

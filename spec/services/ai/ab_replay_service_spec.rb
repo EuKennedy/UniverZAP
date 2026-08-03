@@ -47,6 +47,28 @@ RSpec.describe Ai::AbReplayService do
 
       expect(claude).to have_received(:chat).with(hash_excluding(:log_context))
     end
+
+    # Lab spend is real spend, but it is not the cost of serving customers.
+    # Charging the ROI panel for it would punish the operator who tests before
+    # shipping.
+    it 'bills the replay under its own phase so ROI stays about customers' do
+      claude_answers('ok')
+
+      described_class.new(invocation: invocation, version: version).perform
+
+      expect(claude).to have_received(:chat).with(hash_including(phase: 'replay'))
+    end
+
+    # A duel that capped the candidate at a different length would measure an
+    # agent that is not the one that would go live, and length is most of what a
+    # reviewer is judging.
+    it 'does not override the length the agent is configured for' do
+      claude_answers('ok')
+
+      described_class.new(invocation: invocation, version: version).perform
+
+      expect(claude).to have_received(:chat).with(hash_excluding(:max_tokens))
+    end
   end
 
   describe 'the duel' do

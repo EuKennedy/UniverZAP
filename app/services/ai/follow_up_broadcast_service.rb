@@ -6,6 +6,14 @@
 # daily cap. A second sending path would be a second place to get banned from.
 class Ai::FollowUpBroadcastService
   class NoRecipients < StandardError; end
+  class BlankMessage < StandardError; end
+  class NoSendableInbox < StandardError; end
+
+  # Channels WAHA can actually deliver a WhatsApp message through. Falling back
+  # to "the first inbox" without this check would happily build a campaign
+  # against a website widget or an e-mail inbox, mark every lead as followed up,
+  # and deliver nothing.
+  SENDABLE_CHANNELS = ['Channel::Whatsapp', 'Channel::Api'].freeze
 
   # Conservative next to the default broadcast throttle. A follow-up goes to
   # people who did NOT buy, so a burst of them is exactly the pattern WhatsApp
@@ -15,16 +23,22 @@ class Ai::FollowUpBroadcastService
   def initialize(assistant:, opportunity_ids:, message:, inbox: nil)
     @assistant = assistant
     @account = assistant.account
-    @opportunities = assistant.lead_opportunities.where(id: opportunity_ids)
+    # `open_leads` only. A lead already marked won bought something, and one
+    # marked lost was ruled out on purpose: messaging either is the fastest way
+    # to make the radar look like spam.
+    @opportunities = assistant.lead_opportunities.open_leads.where(id: opportunity_ids)
     @message = message.to_s.strip
     @inbox = inbox
   end
 
   def perform
-    contact_ids = reachable_contact_ids
-    raise NoRecipients, 'no lead with a phone number in this selection' if contact_ids.empty?
+    raise BlankMessage, 'a follow-up with no text creates conversations and says nothing' if @message.blank?
 
-    broadcast = build_broadcast(contact_ids)
+    inbox = sendable_inbox
+    contact_ids = reachable_contact_ids
+    raise NoRecipients, 'no open lead with a phone number in this selection' if contact_ids.empty?
+
+    broadcast = build_broadcast(contact_ids, inbox)
     Broadcasts::DispatchJob.perform_later(broadcast.id)
     mark_followed!
     broadcast
@@ -39,10 +53,10 @@ class Ai::FollowUpBroadcastService
             .where.not(phone_number: [nil, '']).pluck(:id)
   end
 
-  def build_broadcast(contact_ids)
+  def build_broadcast(contact_ids, inbox)
     broadcast = @account.broadcasts.create!(
       name: "Follow-up #{@assistant.name} · #{Time.current.strftime('%d/%m %H:%M')}",
-      inbox: @inbox || default_inbox,
+      inbox: inbox,
       message: { 'text' => @message },
       audience: { 'contact_ids' => contact_ids },
       throttle: THROTTLE
@@ -52,9 +66,19 @@ class Ai::FollowUpBroadcastService
   end
 
   # The inbox the agent already answers on, so the follow-up arrives in the same
-  # thread the customer remembers.
-  def default_inbox
-    @assistant.inboxes.first || @account.inboxes.first
+  # thread the customer remembers. Validated rather than assumed: an operator
+  # whose agent sits on a widget inbox would otherwise get a campaign that marks
+  # every lead as contacted and reaches nobody.
+  def sendable_inbox
+    candidate = @inbox || @assistant.inboxes.detect { |i| sendable?(i) } ||
+                @account.inboxes.detect { |i| sendable?(i) }
+    raise NoSendableInbox, 'no WhatsApp inbox to send this follow-up from' unless sendable?(candidate)
+
+    candidate
+  end
+
+  def sendable?(inbox)
+    inbox.present? && SENDABLE_CHANNELS.include?(inbox.channel_type)
   end
 
   # `followed`, not `won`: the message went out, the sale did not happen yet.

@@ -10,10 +10,10 @@
 # does, what it never does, how it closes. Prices are deliberately absent from
 # every one of them: they belong in the knowledge base, where the anti-fabrication
 # guard can see them.
+# rubocop:disable Metrics/ModuleLength
 module Ai::AgentTemplates
   module_function
 
-  # rubocop:disable Metrics/ModuleLength
   TEMPLATES = [
     {
       key: 'salao',
@@ -160,7 +160,6 @@ module Ai::AgentTemplates
       ]
     }
   ].freeze
-  # rubocop:enable Metrics/ModuleLength
 
   def all
     TEMPLATES
@@ -178,3 +177,4 @@ module Ai::AgentTemplates
     end
   end
 end
+# rubocop:enable Metrics/ModuleLength

@@ -56,6 +56,17 @@ RSpec.describe Ai::RoiService do
 
       expect(described_class.new(assistant: assistant).perform[:cost_per_booking_brl]).to be_nil
     end
+
+    # Charging the ROI of the service with the cost of testing it would punish
+    # exactly the operator who tests before shipping.
+    it 'leaves lab replays out of the cost of serving customers' do
+      spend(1000)
+      lab = create(:ai_invocation, account: account, ai_assistant: assistant, phase: 'replay')
+      create(:ai_credit_ledger_entry, account: account, ai_invocation: lab,
+                                      kind: 'consumption', amount_cents_brl: -9000)
+
+      expect(described_class.new(assistant: assistant).perform[:cost_brl]).to eq(10.0)
+    end
   end
 
   describe 'hours saved' do

@@ -17,7 +17,6 @@ class Ai::AbReplayService
 
   class AlreadyCompared < StandardError; end
 
-  MAX_TOKENS = 1024
   RESPONSE_MAX_CHARS = 60_000
 
   def initialize(invocation:, version:)
@@ -44,15 +43,19 @@ class Ai::AbReplayService
     Ai::AbComparison.find_by(ai_invocation_id: @invocation.id, ai_prompt_version_id: @version.id)
   end
 
+  # `max_tokens` is NOT overridden: a duel that capped the candidate at a
+  # different length would measure an agent that is not the one that would go
+  # live, and length is most of what a reviewer is judging.
+  #
+  # `phase: 'replay'` keeps lab spend out of the ROI panel, where it would show
+  # up as the cost of serving customers. No conversation and no log_context: a
+  # replay is a measurement, and writing it into the response log would pollute
+  # the supervision queue with answers nobody received.
   def call_candidate
     Ai::ClaudeService.new(assistant: @assistant).chat(
       messages: [{ role: 'user', content: question }],
       system: candidate_prompt,
-      max_tokens: MAX_TOKENS,
-      # No conversation and no log_context: a replay is a lab measurement, and
-      # writing it into the response log would pollute the supervision queue
-      # with answers nobody received.
-      phase: 'main'
+      phase: 'replay'
     )
   end
 
