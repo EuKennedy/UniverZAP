@@ -52,7 +52,7 @@ RSpec.describe 'Api::V1::Accounts::Ai::AssistantTemplatesController', type: :req
       expect { create_agent({ ai_assistant: { name: 'Téo' }, template: 'varejo' }) }
         .to change(Ai::Training, :count).by(2)
 
-      expect(Ai::Training.pluck(:status).uniq).to eq(['ready'])
+      expect(Ai::Training.distinct.pluck(:status)).to eq(['ready'])
     end
 
     it 'fills the instructions from the vertical' do
