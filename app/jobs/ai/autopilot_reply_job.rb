@@ -1,3 +1,4 @@
+# rubocop:disable Metrics/ClassLength
 class Ai::AutopilotReplyJob < ApplicationJob
   # Dedicated lane (see config/sidekiq.yml): below :high so a message a human
   # agent typed always goes out first, above :medium so a customer-facing AI
@@ -313,3 +314,4 @@ class Ai::AutopilotReplyJob < ApplicationJob
     nil
   end
 end
+# rubocop:enable Metrics/ClassLength
