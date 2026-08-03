@@ -150,6 +150,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
 
   def commit_reply(conversation, assistant, message, reply_text)
     committed = false
+    sent = nil
     Conversation.transaction do
       # lock! reloads under SELECT ... FOR UPDATE, so the re-checks below see a
       # concurrent job's write and we never post twice for the same trigger.
@@ -165,6 +166,10 @@ class Ai::AutopilotReplyJob < ApplicationJob
       log_turn_complete(conversation, message)
       committed = true
     end
+    # Outside the lock on purpose: projecting the capped Histórico row must never
+    # extend the transaction that holds the conversation, and its failure must
+    # never cost the reply that already went out (see Ai::ResponseHistoryRecorder).
+    Ai::ResponseHistoryRecorder.record!(assistant: assistant, conversation: conversation, message: sent) if committed
     # A reply that was generated and then dropped by the in-lock re-check still
     # exists in the log. Closing it out is what makes "pending" mean "generated
     # but never accounted for" instead of ordinary noise.

@@ -117,52 +117,20 @@ class Ai::AnalyticsService
          .map { |model, count, usd| { model: model, calls: count.to_i, cost_usd: usd.to_f.round(4) } }
   end
 
-  # The actual text the customer received, next to what that reply really cost.
-  # Aggregated per message because a tool-using turn bills several calls, and
-  # showing only the last one would under-report the price of that answer.
-  # Two queries on purpose. Aggregating the text columns over the whole period
-  # and only then applying LIMIT 20 makes Postgres build arrays of every reply
-  # body in the window just to throw them away; picking the ids first keeps the
-  # heavy aggregation to the twenty rows that are actually rendered.
+  # The last replies the customer received, read straight from the capped
+  # ai_response_histories projection instead of re-aggregated from the whole log
+  # on every request. That projection is trimmed per agent, so this stays a
+  # bounded "last N rows" read no matter how much the agent has served.
   def recent_replies
-    ids = replies_scope.group(:message_id)
-                       .reorder(Arel.sql('MAX(created_at) DESC'))
-                       .limit(RECENT_REPLIES).pluck(:message_id)
-    return [] if ids.empty?
-
-    rows = replies_scope.where(message_id: ids).group(:message_id)
-                        .reorder(Arel.sql('MAX(created_at) DESC'))
-                        .pluck(Arel.sql(REPLIES_SQL))
-    contents = reply_contents(ids)
-    rows.map { |row| reply_row(row, contents) }
+    Ai::ResponseHistory.where(ai_assistant_id: @assistant.id)
+                       .recent.limit(RECENT_REPLIES).map { |row| reply_row(row) }
   end
 
-  # A turn can bill several calls; the LAST one is the generation whose text was
-  # delivered, so the review fields are read from it rather than aggregated.
-  REPLIES_SQL = <<~SQL.squish.freeze
-    message_id, MAX(created_at), SUM(cost_usd), SUM(duration_ms),
-    MAX(model), MAX(conversation_id), COUNT(*),
-    (array_agg(auto_flag ORDER BY created_at DESC))[1],
-    (array_agg(confidence ORDER BY created_at DESC))[1],
-    (array_agg(user_message ORDER BY created_at DESC))[1],
-    (array_agg(ai_response ORDER BY created_at DESC))[1]
-  SQL
-
-  # Scoped to the agent's own account: analytics must never render a message
-  # body fetched by raw id.
-  def reply_contents(message_ids)
-    Message.where(account_id: @assistant.account_id, id: message_ids).pluck(:id, :content).to_h
-  end
-
-  # The live message is the source of truth for what was delivered. The logged
-  # snapshot is the fallback, so a deleted message leaves a readable audit trail
-  # instead of an empty row.
-  def reply_row(row, contents)
-    message_id, at, usd, ms, model, conversation_id, calls, flag, confidence, asked, answered = row
-    { id: message_id, conversation_id: conversation_id, model: model,
-      content: contents[message_id].presence || answered.to_s,
-      user_message: asked.to_s, created_at: at.to_i,
-      cost_usd: usd.to_f.round(4), duration_ms: ms.to_i, calls: calls.to_i,
-      auto_flag: flag, confidence: confidence&.to_f }
+  def reply_row(row)
+    { id: row.message_id, conversation_id: row.conversation_id, model: row.model,
+      content: row.ai_response.to_s, user_message: row.user_message.to_s,
+      created_at: row.created_at.to_i, cost_usd: row.cost_usd.to_f.round(4),
+      duration_ms: row.duration_ms.to_i, calls: row.calls.to_i,
+      auto_flag: row.auto_flag, confidence: row.confidence&.to_f }
   end
 end

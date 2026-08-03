@@ -40,6 +40,7 @@ RSpec.describe Ai::AnalyticsService do
   it 'sums the whole turn cost onto the reply, not just the last call' do
     message = create(:message, conversation: conversation, account: account, message_type: 'outgoing')
     2.times { invocation(message_id: message.id, cost_usd: 0.02, duration_ms: 500) }
+    Ai::ResponseHistoryRecorder.record!(assistant: assistant, conversation: conversation, message: message)
 
     reply = described_class.new(assistant: assistant).perform[:recent_replies].first
 
@@ -79,6 +80,7 @@ RSpec.describe Ai::AnalyticsService do
     message = create(:message, conversation: conversation, account: account,
                                message_type: 'outgoing', content: 'Fica R$ 189,90.')
     invocation(message_id: message.id)
+    Ai::ResponseHistoryRecorder.record!(assistant: assistant, conversation: conversation, message: message)
 
     replies = described_class.new(assistant: assistant).perform[:recent_replies]
 
@@ -142,8 +144,9 @@ RSpec.describe Ai::AnalyticsService do
     end
 
     it 'carries the flag, the confidence and the question into the recent list' do
-      delivered(auto_flag: 'baixa_confianca', auto_flags: ['baixa_confianca'],
-                confidence: 0.42, user_message: 'quanto custa?')
+      message = create(:message, conversation: conversation, account: account, message_type: 'outgoing')
+      invocation(message_id: message.id, auto_flag: 'baixa_confianca', confidence: 0.42, user_message: 'quanto custa?')
+      Ai::ResponseHistoryRecorder.record!(assistant: assistant, conversation: conversation, message: message)
 
       reply = described_class.new(assistant: assistant).perform[:recent_replies].first
 
