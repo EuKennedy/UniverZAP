@@ -61,7 +61,7 @@ RSpec.describe Ai::FollowUpBroadcastService do
     # purpose. Messaging either is the fastest way to make the radar look like
     # spam to the person receiving it.
     it 'never messages a lead that is already closed' do
-      expect { run([lead(status: 'won'), lead(status: 'lost')]) }
+      expect { run([lead(phone: '+5511999990001', status: 'won'), lead(phone: '+5511999990002', status: 'lost')]) }
         .to raise_error(described_class::NoRecipients)
     end
   end
