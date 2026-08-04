@@ -18,6 +18,7 @@ import AthenasAnalytics from 'dashboard/components-next/athenas/AthenasAnalytics
 import AthenasReviewQueue from 'dashboard/components-next/athenas/AthenasReviewQueue.vue';
 import AthenasPromptLab from 'dashboard/components-next/athenas/AthenasPromptLab.vue';
 import AthenasRadar from 'dashboard/components-next/athenas/AthenasRadar.vue';
+import AthenasIntegrations from 'dashboard/components-next/athenas/AthenasIntegrations.vue';
 
 const props = defineProps({ id: { type: Number, required: true } });
 
@@ -50,6 +51,9 @@ const form = reactive({
 const TABS = [
   { key: 'general', icon: 'i-lucide-user-circle-2' },
   { key: 'knowledge', icon: 'i-lucide-book-open' },
+  // Give the agent tools before you test it: knowledge is what it knows,
+  // integrations are what it can DO (search a catalog, build a cart).
+  { key: 'integrations', icon: 'i-lucide-plug' },
   // Right after knowledge on purpose: you feed the agent, then you test it.
   { key: 'test', icon: 'i-lucide-message-circle' },
   { key: 'activity', icon: 'i-lucide-activity' },
@@ -886,6 +890,11 @@ onMounted(() => {
         <!-- TAB: ACTIVITY -->
         <template v-if="currentTab === 'activity'">
           <AthenasAnalytics :assistant-id="id" />
+        </template>
+
+        <!-- TAB: INTEGRATIONS -->
+        <template v-if="currentTab === 'integrations'">
+          <AthenasIntegrations :assistant-id="id" />
         </template>
 
         <template v-if="currentTab === 'test'">

@@ -141,6 +141,7 @@
       "TABS": {
         "GENERAL": "Geral",
         "KNOWLEDGE": "Conhecimento",
+        "INTEGRATIONS": "Integrações",
         "TEST": "Testar",
         "ACTIVITY": "Histórico",
         "REVIEW": "Supervisão",
@@ -175,6 +176,94 @@
         "DELETE_TITLE": "Remover conhecimento",
         "DELETE_CONFIRM": "Remover este conhecimento? Esta ação não pode ser desfeita.",
         "DELETE_SUCCESS": "Conhecimento removido."
+      },
+      "INTEGRATIONS": {
+        "TITLE": "Integrações",
+        "SUBTITLE": "Conecte o agente às suas próprias APIs. Ele consulta e age durante a conversa — por exemplo, busca produtos reais e monta o carrinho com o link pro cliente.",
+        "ADD": "Adicionar integração",
+        "EMPTY": "Nenhuma integração ainda. Conecte o agente a uma API externa — catálogo de produtos, montador de carrinho, consulta de pedidos.",
+        "ENABLED": "Ativa",
+        "DISABLED": "Inativa",
+        "ENABLE": "Ativar",
+        "DISABLE": "Desativar",
+        "LOAD_ERROR": "Não foi possível carregar as integrações.",
+        "SAVE_ERROR": "Não foi possível salvar a integração.",
+        "DELETE_ERROR": "Não foi possível excluir a integração.",
+        "CREATE_SUCCESS": "Integração criada.",
+        "UPDATE_SUCCESS": "Integração atualizada.",
+        "DELETE_SUCCESS": "Integração excluída.",
+        "DELETE_TITLE": "Excluir integração",
+        "DELETE_CONFIRM": "Excluir \"{title}\"? Esta ação não pode ser desfeita.",
+        "DELETE_CONFIRM_BUTTON": "Sim, excluir",
+        "FORM": {
+          "CREATE_TITLE": "Nova integração",
+          "EDIT_TITLE": "Editar integração",
+          "NAME": {
+            "LABEL": "Nome",
+            "PLACEHOLDER": "Buscar produto",
+            "ERROR": "Informe um nome",
+            "MAX_LENGTH_ERROR": "Máximo de {max} caracteres"
+          },
+          "DESCRIPTION": {
+            "LABEL": "Descrição (o agente usa isto para decidir quando chamar)",
+            "PLACEHOLDER": "Busca produtos reais na loja: nome, preço, estoque."
+          },
+          "METHOD": { "LABEL": "Método" },
+          "ENDPOINT": {
+            "LABEL": "URL do endpoint",
+            "PLACEHOLDER": "https://sualoja.com/wp-json/...",
+            "ERROR": "Informe uma URL HTTPS válida",
+            "HINT": "Insira parâmetros na URL com {'{{'} nome {'}}'}. Para termos de busca, use o filtro url_encode."
+          },
+          "AUTH_TYPE": { "LABEL": "Autenticação" },
+          "AUTH_TYPES": {
+            "NONE": "Nenhuma",
+            "BEARER": "Bearer Token",
+            "BASIC": "Basic Auth",
+            "API_KEY": "API Key"
+          },
+          "AUTH": {
+            "EDIT_HINT": "Por segurança, as credenciais nunca são exibidas. Preencha apenas se quiser alterá-las.",
+            "BEARER_TOKEN": "Token",
+            "BEARER_TOKEN_PLACEHOLDER": "seu-token",
+            "USERNAME": "Usuário",
+            "USERNAME_PLACEHOLDER": "usuário da API",
+            "PASSWORD": "Senha",
+            "PASSWORD_PLACEHOLDER": "senha de aplicação",
+            "API_KEY_NAME": "Nome do header",
+            "API_KEY_NAME_PLACEHOLDER": "X-API-Key",
+            "API_KEY_VALUE": "Valor",
+            "API_KEY_VALUE_PLACEHOLDER": "sua-chave"
+          },
+          "PARAMS": {
+            "LABEL": "Parâmetros",
+            "HELP": "O que o agente preenche ao chamar a ferramenta.",
+            "ADD": "Adicionar parâmetro",
+            "NAME_PLACEHOLDER": "Nome (ex: q)",
+            "DESCRIPTION_PLACEHOLDER": "Descrição do parâmetro",
+            "REQUIRED": "Obrigatório"
+          },
+          "PARAM_TYPES": {
+            "STRING": "Texto",
+            "NUMBER": "Número",
+            "BOOLEAN": "Booleano",
+            "ARRAY": "Lista",
+            "OBJECT": "Objeto"
+          },
+          "ADVANCED": "Avançado",
+          "REQUEST_TEMPLATE": {
+            "LABEL": "Template do corpo (opcional)",
+            "PLACEHOLDER": "Deixe vazio para enviar os parâmetros como JSON."
+          },
+          "RESPONSE_TEMPLATE": {
+            "LABEL": "Template da resposta (opcional)",
+            "PLACEHOLDER": "Deixe vazio para devolver a resposta como veio."
+          },
+          "ENABLED": { "LABEL": "Integração ativa" },
+          "CANCEL": "Cancelar",
+          "SAVE": "Salvar",
+          "CREATE": "Criar integração"
+        }
       },
       "ADVANCED": "Ajustes avançados"
     },

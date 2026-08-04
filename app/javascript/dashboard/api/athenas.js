@@ -121,6 +121,28 @@ class AthenasAssistantsAPI extends ApiClient {
     return axios.delete(`${this.url}/${assistantId}/trainings/${trainingId}`);
   }
 
+  // Integrações: the agent's own pluggable HTTP tools (Ai::CustomTool), scoped
+  // to this assistant. auth_config goes up write-only and never comes back.
+  listCustomTools(assistantId) {
+    return axios.get(`${this.url}/${assistantId}/custom_tools`);
+  }
+
+  createCustomTool(assistantId, payload) {
+    return axios.post(`${this.url}/${assistantId}/custom_tools`, {
+      ai_custom_tool: payload,
+    });
+  }
+
+  updateCustomTool(assistantId, toolId, payload) {
+    return axios.patch(`${this.url}/${assistantId}/custom_tools/${toolId}`, {
+      ai_custom_tool: payload,
+    });
+  }
+
+  deleteCustomTool(assistantId, toolId) {
+    return axios.delete(`${this.url}/${assistantId}/custom_tools/${toolId}`);
+  }
+
   // Measured performance for one agent, plus the last replies it sent.
   analytics(assistantId, { days = 30 } = {}) {
     return axios.get(`${this.url}/${assistantId}/analytics`, {

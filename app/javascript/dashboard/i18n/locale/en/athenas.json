@@ -141,6 +141,7 @@
       "TABS": {
         "GENERAL": "General",
         "KNOWLEDGE": "Knowledge",
+        "INTEGRATIONS": "Integrations",
         "ACTIVITY": "Activity",
         "TEST": "Test",
         "REVIEW": "Review",
@@ -175,6 +176,94 @@
         "DELETE_TITLE": "Remove knowledge",
         "DELETE_CONFIRM": "Remove this knowledge? This cannot be undone.",
         "DELETE_SUCCESS": "Knowledge removed."
+      },
+      "INTEGRATIONS": {
+        "TITLE": "Integrations",
+        "SUBTITLE": "Connect the agent to your own APIs. It searches and acts mid-conversation — for example, look up real products and build a checkout cart for the customer.",
+        "ADD": "Add integration",
+        "EMPTY": "No integrations yet. Connect the agent to an external API — a product catalog, a cart builder, an order lookup.",
+        "ENABLED": "Active",
+        "DISABLED": "Inactive",
+        "ENABLE": "Enable",
+        "DISABLE": "Disable",
+        "LOAD_ERROR": "Could not load the integrations.",
+        "SAVE_ERROR": "Could not save the integration.",
+        "DELETE_ERROR": "Could not delete the integration.",
+        "CREATE_SUCCESS": "Integration created.",
+        "UPDATE_SUCCESS": "Integration updated.",
+        "DELETE_SUCCESS": "Integration deleted.",
+        "DELETE_TITLE": "Delete integration",
+        "DELETE_CONFIRM": "Delete \"{title}\"? This cannot be undone.",
+        "DELETE_CONFIRM_BUTTON": "Yes, delete",
+        "FORM": {
+          "CREATE_TITLE": "New integration",
+          "EDIT_TITLE": "Edit integration",
+          "NAME": {
+            "LABEL": "Name",
+            "PLACEHOLDER": "Search product",
+            "ERROR": "Enter a name",
+            "MAX_LENGTH_ERROR": "Maximum of {max} characters"
+          },
+          "DESCRIPTION": {
+            "LABEL": "Description (the agent uses this to decide when to call it)",
+            "PLACEHOLDER": "Searches real products in the store: name, price, stock."
+          },
+          "METHOD": { "LABEL": "Method" },
+          "ENDPOINT": {
+            "LABEL": "Endpoint URL",
+            "PLACEHOLDER": "https://yourstore.com/wp-json/...",
+            "ERROR": "Enter a valid HTTPS URL",
+            "HINT": "Insert parameters into the URL with {'{{'} name {'}}'}. For search terms, add the url_encode filter."
+          },
+          "AUTH_TYPE": { "LABEL": "Authentication" },
+          "AUTH_TYPES": {
+            "NONE": "None",
+            "BEARER": "Bearer Token",
+            "BASIC": "Basic Auth",
+            "API_KEY": "API Key"
+          },
+          "AUTH": {
+            "EDIT_HINT": "For security, credentials are never shown. Fill them only if you want to change them.",
+            "BEARER_TOKEN": "Token",
+            "BEARER_TOKEN_PLACEHOLDER": "your-token",
+            "USERNAME": "Username",
+            "USERNAME_PLACEHOLDER": "API user",
+            "PASSWORD": "Password",
+            "PASSWORD_PLACEHOLDER": "application password",
+            "API_KEY_NAME": "Header name",
+            "API_KEY_NAME_PLACEHOLDER": "X-API-Key",
+            "API_KEY_VALUE": "Value",
+            "API_KEY_VALUE_PLACEHOLDER": "your-key"
+          },
+          "PARAMS": {
+            "LABEL": "Parameters",
+            "HELP": "What the agent fills in when it calls the tool.",
+            "ADD": "Add parameter",
+            "NAME_PLACEHOLDER": "Name (e.g. q)",
+            "DESCRIPTION_PLACEHOLDER": "Description of the parameter",
+            "REQUIRED": "Required"
+          },
+          "PARAM_TYPES": {
+            "STRING": "Text",
+            "NUMBER": "Number",
+            "BOOLEAN": "Boolean",
+            "ARRAY": "List",
+            "OBJECT": "Object"
+          },
+          "ADVANCED": "Advanced",
+          "REQUEST_TEMPLATE": {
+            "LABEL": "Request body template (optional)",
+            "PLACEHOLDER": "Leave empty to send the parameters as JSON."
+          },
+          "RESPONSE_TEMPLATE": {
+            "LABEL": "Response template (optional)",
+            "PLACEHOLDER": "Leave empty to return the raw response."
+          },
+          "ENABLED": { "LABEL": "Integration active" },
+          "CANCEL": "Cancel",
+          "SAVE": "Save",
+          "CREATE": "Create integration"
+        }
       },
       "ADVANCED": "Advanced settings"
     },
