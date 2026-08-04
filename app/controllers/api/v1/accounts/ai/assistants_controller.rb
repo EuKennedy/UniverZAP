@@ -112,7 +112,8 @@ class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseContr
       :autopilot_enabled, :encrypted_anthropic_key, :encrypted_openai_key,
       :active,
       router_config: {},
-      guardrails: {}
+      guardrails: {},
+      behavior_flags: [:split_messages, :reply_marking, :voice_replies]
     )
   end
 end

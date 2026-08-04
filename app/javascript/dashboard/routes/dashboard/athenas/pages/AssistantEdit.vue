@@ -46,6 +46,11 @@ const form = reactive({
   active: true,
   encrypted_anthropic_key: '',
   guardrails: { stop_words: [], max_messages_per_minute: 4 },
+  behavior_flags: {
+    split_messages: false,
+    reply_marking: false,
+    voice_replies: false,
+  },
 });
 
 const TABS = [
@@ -95,6 +100,29 @@ const MODELS = [
   },
 ];
 
+// The three optional "human-like reply" toggles (Slice 0). Each flips a flag in
+// form.behavior_flags; the behaviour itself ships in later slices.
+const HUMANIZE_TOGGLES = [
+  {
+    key: 'split_messages',
+    icon: 'i-lucide-messages-square',
+    labelKey: 'ATHENAS.WIZARD.BEHAVIOR.SPLIT_LABEL',
+    hintKey: 'ATHENAS.WIZARD.BEHAVIOR.SPLIT_HINT',
+  },
+  {
+    key: 'reply_marking',
+    icon: 'i-lucide-reply',
+    labelKey: 'ATHENAS.WIZARD.BEHAVIOR.REPLY_MARK_LABEL',
+    hintKey: 'ATHENAS.WIZARD.BEHAVIOR.REPLY_MARK_HINT',
+  },
+  {
+    key: 'voice_replies',
+    icon: 'i-lucide-mic',
+    labelKey: 'ATHENAS.WIZARD.BEHAVIOR.VOICE_LABEL',
+    hintKey: 'ATHENAS.WIZARD.BEHAVIOR.VOICE_HINT',
+  },
+];
+
 const tones = computed(() =>
   TONE_OPTIONS.map(o => ({ ...o, label: t(o.labelKey) }))
 );
@@ -130,6 +158,11 @@ const fetchAssistant = async () => {
       guardrails: data.guardrails || {
         stop_words: [],
         max_messages_per_minute: 4,
+      },
+      behavior_flags: data.behavior_flags || {
+        split_messages: false,
+        reply_marking: false,
+        voice_replies: false,
       },
     });
   } catch (e) {
@@ -692,6 +725,47 @@ onMounted(() => {
                 </span>
                 <p class="text-[12px] text-n-slate-11 leading-relaxed">
                   {{ t('ATHENAS.WIZARD.BEHAVIOR.AUTOPILOT_HINT') }}
+                </p>
+              </div>
+            </button>
+
+            <button
+              v-for="toggle in HUMANIZE_TOGGLES"
+              :key="toggle.key"
+              type="button"
+              class="flex items-start gap-3 p-4 rounded-xl ring-1 transition-all text-left"
+              :class="
+                form.behavior_flags[toggle.key]
+                  ? 'ring-n-brand bg-n-brand/[0.06]'
+                  : 'ring-n-weak hover:ring-n-slate-7'
+              "
+              @click="
+                form.behavior_flags[toggle.key] =
+                  !form.behavior_flags[toggle.key]
+              "
+            >
+              <span
+                class="size-5 rounded-md ring-1 mt-0.5 grid place-content-center transition-colors"
+                :class="
+                  form.behavior_flags[toggle.key]
+                    ? 'ring-n-brand bg-n-brand text-white'
+                    : 'ring-n-weak'
+                "
+              >
+                <span
+                  v-if="form.behavior_flags[toggle.key]"
+                  class="i-lucide-check size-3.5"
+                />
+              </span>
+              <div class="flex flex-col gap-0.5">
+                <span
+                  class="flex items-center gap-2 text-sm font-semibold text-n-slate-12"
+                >
+                  <span :class="toggle.icon" class="size-4 text-n-slate-11" />
+                  {{ t(toggle.labelKey) }}
+                </span>
+                <p class="text-[12px] text-n-slate-11 leading-relaxed">
+                  {{ t(toggle.hintKey) }}
                 </p>
               </div>
             </button>

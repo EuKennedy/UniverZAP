@@ -98,6 +98,12 @@
       "BEHAVIOR": {
         "AUTOPILOT_LABEL": "Ativar autopiloto",
         "AUTOPILOT_HINT": "O agente responde sozinho assim que uma mensagem chega. Você ainda pode ligar/desligar por conversa.",
+        "SPLIT_LABEL": "Responder em várias mensagens",
+        "SPLIT_HINT": "Em vez de um bloco com quebras de linha, o agente manda cada parte como uma mensagem separada — do jeito que uma pessoa digita.",
+        "REPLY_MARK_LABEL": "Marcar a pergunta ao responder",
+        "REPLY_MARK_HINT": "Quando o cliente pergunta algo direto, o agente responde citando aquela mensagem — só em perguntas diretas, e de forma natural.",
+        "VOICE_LABEL": "Responder em áudio quando pedirem",
+        "VOICE_HINT": "Quando o cliente pede pra falar por áudio, o agente responde com uma nota de voz. Consome créditos de IA, como toda ação de IA.",
         "STOP_WORDS_LABEL": "Palavras de pausa",
         "STOP_WORDS_PLACEHOLDER": "humano, atendente, falar com gente",
         "STOP_WORDS_HINT": "Se o cliente disser qualquer uma dessas palavras, o agente entrega a conversa para um humano.",

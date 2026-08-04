@@ -82,6 +82,12 @@ class Ai::Assistant < ApplicationRecord
     autopilot_enabled?
   end
 
+  # Per-agent opt-in for the "human-like reply" behaviors (Slices 1-3). Reads the
+  # behavior_flags jsonb; an unset flag is simply off.
+  def behavior_flag?(key)
+    ActiveModel::Type::Boolean.new.cast(behavior_flags_payload[key.to_s])
+  end
+
   def push_event_data
     identity_payload.merge(model_payload).merge(behavior_payload).merge(meta_payload)
   end
@@ -119,9 +125,19 @@ class Ai::Assistant < ApplicationRecord
   def behavior_payload
     {
       autopilot_enabled: autopilot_enabled,
+      behavior_flags: behavior_flags_payload,
       guardrails: guardrails,
       active: active
     }
+  end
+
+  # Tolerates the column not existing yet: the flags migration is applied by
+  # hand on prod, so a code deploy that lands before it must not break assistant
+  # serialization the way the missing ai_custom_tools table once did.
+  def behavior_flags_payload
+    return {} unless has_attribute?(:behavior_flags)
+
+    behavior_flags || {}
   end
 
   def meta_payload
