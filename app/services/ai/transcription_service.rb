@@ -57,12 +57,20 @@ class Ai::TranscriptionService
   end
 
   def transcribable?
-    return false if @account.blank? || @assistant.blank? || @attachment.file_type.to_s != 'audio'
-    # The audio, the credential and the bill all belong to one account. A
-    # crossed id must never make one workspace's voice note run on another
-    # workspace's key.
+    owned_audio? && within_provider_limits?
+  end
+
+  # The audio, the credential and the bill all belong to one account. A crossed
+  # id must never make one workspace's voice note run on another workspace's key.
+  def owned_audio?
+    return false if @account.blank? || @assistant.blank?
     return false if @assistant.account_id != @account.id
 
+    @attachment.file_type.to_s == 'audio'
+  end
+
+  # Past either limit the file stays attached; it just is not transcribed.
+  def within_provider_limits?
     blob = @attachment.file&.blob
     return false if blob.blank?
 
