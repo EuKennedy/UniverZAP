@@ -26,6 +26,12 @@ class Ai::Assistant < ApplicationRecord
                                 inverse_of: :ai_assistant, dependent: :destroy
   has_many :revenue_events, class_name: 'Ai::RevenueEvent', foreign_key: :ai_assistant_id,
                             inverse_of: :ai_assistant, dependent: :destroy
+  # A used agent has history rows behind a NOT NULL FK, so destroy blew up with a
+  # foreign-key violation (the 500 on delete) until they were cleared first. It
+  # is a pure projection with no destroy callbacks, so delete_all clears the
+  # whole window in one statement.
+  has_many :response_histories, class_name: 'Ai::ResponseHistory', foreign_key: :ai_assistant_id,
+                                inverse_of: :ai_assistant, dependent: :delete_all
 
   # The instructions the agent actually runs on. Falls back to the mutable
   # column so an agent that was never versioned keeps behaving identically.
