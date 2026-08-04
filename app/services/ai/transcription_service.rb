@@ -82,30 +82,26 @@ class Ai::TranscriptionService
     (@attachment.file.blob.byte_size / PESSIMISTIC_BYTES_PER_SECOND.to_f).ceil
   end
 
-  # ElevenLabs first when the workspace has a key, because Scribe is markedly
-  # better on noisy Brazilian Portuguese phone audio. Falls back to whatever key
-  # exists so a workspace without one still gets voice notes understood instead
-  # of the agent answering "[Attachment]".
+  # ElevenLabs Scribe, and nothing else.
+  #
+  # A silent fallback to a second-best model was the tempting design and the
+  # wrong one: the agent would keep answering, the transcription would quietly
+  # get worse, and nobody would know which model produced the reply that lost a
+  # sale. With one provider, a missing key means voice notes are not understood,
+  # which is visible on the first one instead of invisible forever.
   def build_adapter
-    if elevenlabs_key.present?
-      Ai::Transcription::ElevenLabsAdapter.new(api_key: elevenlabs_key)
-    elsif openai_key.present?
-      Ai::Transcription::OpenAiAdapter.new(api_key: openai_key)
-    else
-      Rails.logger.info("[Athenas audio] no transcription key for account=#{@account.id}; skipping")
-      nil
-    end
+    return Ai::Transcription::ElevenLabsAdapter.new(api_key: elevenlabs_key) if elevenlabs_key.present?
+
+    Rails.logger.info("[Athenas audio] no ElevenLabs key for account=#{@account.id}; skipping")
+    nil
   end
 
-  # Per-agent key first, platform key as fallback — the same shape the Anthropic
-  # key already uses, so a workspace can bring its own vendor account.
+  # Per-agent key first, platform key as fallback. Same shape the Anthropic key
+  # already uses, so a workspace can bring its own ElevenLabs account and its
+  # own bill.
   def elevenlabs_key
     @elevenlabs_key ||= @assistant&.resolved_elevenlabs_key.presence ||
                         ENV.fetch('ELEVENLABS_API_KEY', nil)
-  end
-
-  def openai_key
-    @openai_key ||= @assistant&.resolved_openai_key.presence || ENV.fetch('OPENAI_API_KEY', nil)
   end
 
   def transcribe_with(adapter)

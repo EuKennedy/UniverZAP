@@ -12,14 +12,11 @@ class Ai::PricingCalculator
   # its own table. Mixing it into the token table would force every caller to
   # know which unit a given model speaks.
   #
-  # Both figures read off the vendors' published pricing on 2026-08-04:
-  #   scribe_v2              elevenlabs.io/pricing/api  $0.22 per HOUR
-  #   gpt-4o-mini-transcribe openai pricing page        $0.003 per minute
-  # Surcharge features (entity detection, redaction, keyterms) are deliberately
-  # not used, so the base rate is the whole rate.
+  # Read off elevenlabs.io/pricing/api on 2026-08-04: Scribe v2 is $0.22 per
+  # HOUR. The surcharge features (entity detection, redaction, keyterms) are
+  # deliberately not used, so the base rate is the whole rate.
   COST_PER_AUDIO_MINUTE_USD = {
-    'scribe_v2' => 0.22 / 60.0,
-    'gpt-4o-mini-transcribe' => 0.003
+    'scribe_v2' => 0.22 / 60.0
   }.freeze
 
   # Markup applied on top of the Anthropic invoice. 2x is generous enough

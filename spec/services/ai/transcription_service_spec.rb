@@ -124,37 +124,25 @@ RSpec.describe Ai::TranscriptionService do
     end
   end
 
-  describe 'provider choice' do
-    # Scribe is markedly better on noisy Brazilian Portuguese phone audio, so
-    # a workspace that configured it must not silently fall back.
-    it 'prefers ElevenLabs when the workspace has a key' do
+  describe 'the provider' do
+    # Per-agent key first, so a workspace can bring its own ElevenLabs account
+    # and its own bill.
+    it 'uses the key the workspace configured' do
       run(audio)
 
       expect(Ai::Transcription::ElevenLabsAdapter).to have_received(:new).with(api_key: 'el-key')
     end
 
-    it 'falls back to OpenAI so a workspace without a key still gets voice notes read' do
-      assistant.update!(encrypted_elevenlabs_key: nil, encrypted_openai_key: 'oa-key')
-      openai = instance_double(Ai::Transcription::OpenAiAdapter, model: 'gpt-4o-mini-transcribe')
-      allow(Ai::Transcription::OpenAiAdapter).to receive(:new).and_return(openai)
-      allow(openai).to receive(:call).and_return(
-        Ai::Transcription::Result.new(text: 'oi', model: 'gpt-4o-mini-transcribe', duration_seconds: 3.0)
-      )
+    # Deliberately no second provider. A silent fallback to a worse model would
+    # keep the agent answering while the transcription quietly degraded, and
+    # nobody would know which model produced the reply that lost a sale.
+    it 'does nothing at all without an ElevenLabs key' do
+      assistant.update!(encrypted_elevenlabs_key: nil)
       allow(ENV).to receive(:fetch).and_call_original
       allow(ENV).to receive(:fetch).with('ELEVENLABS_API_KEY', nil).and_return(nil)
-
-      run(audio)
-
-      expect(Ai::Transcription::OpenAiAdapter).to have_received(:new).with(api_key: 'oa-key')
-    end
-
-    it 'does nothing at all when no provider is configured' do
-      assistant.update!(encrypted_elevenlabs_key: nil, encrypted_openai_key: nil)
-      allow(ENV).to receive(:fetch).and_call_original
-      allow(ENV).to receive(:fetch).with('ELEVENLABS_API_KEY', nil).and_return(nil)
-      allow(ENV).to receive(:fetch).with('OPENAI_API_KEY', nil).and_return(nil)
 
       expect(run(audio)).to be_nil
+      expect(adapter).not_to have_received(:call)
     end
   end
 
