@@ -280,7 +280,7 @@ class Message < ApplicationRecord
     return cleaned_content_for_llm if content.present?
     return "[Voice Message] #{audio_transcription_for_llm}" if audio_transcription_for_llm.present?
 
-    '[Attachment]' if attachments.any?
+    attachments_placeholder_for_llm if attachments.any?
   end
 
   def cleaned_content_for_llm
@@ -294,6 +294,17 @@ class Message < ApplicationRecord
                                      .filter_map { |att| att.meta&.dig('transcribed_text') }
                                      .join(' ')
                                      .presence
+  end
+
+  # A caption-less attachment still has to reach the model as SOMETHING. The old
+  # generic "[Attachment]" let it guess the type — and it read a voice note as a
+  # photo. Naming the real media type keeps an audio from ever being taken for an
+  # image. Audio only reaches here when transcription was unavailable; a
+  # transcribed note takes the [Voice Message] path above.
+  def attachments_placeholder_for_llm
+    labels = { 'audio' => '[Voice Message]', 'image' => '[Image]', 'video' => '[Video]',
+               'file' => '[File]', 'location' => '[Location]' }
+    attachments.map { |att| labels[att.file_type.to_s] || '[Attachment]' }.uniq.join(' ')
   end
 
   private
