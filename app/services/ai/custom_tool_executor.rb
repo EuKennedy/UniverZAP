@@ -80,12 +80,13 @@ class Ai::CustomToolExecutor
   def build_request(tool, uri, input)
     return Net::HTTP::Get.new(uri.request_uri) unless tool.http_method == 'POST'
 
-    req  = Net::HTTP::Post.new(uri.request_uri)
-    body = tool.build_request_body(input)
-    if body.present?
-      req.body = body
-      req['Content-Type'] = 'application/json'
-    end
+    req = Net::HTTP::Post.new(uri.request_uri)
+    # A POST always carries a JSON body: the configured request_template when one
+    # exists, otherwise the model's raw input. Without this fallback a tool like
+    # univercart's create-link — whose body IS the input `{items:[...]}` — would
+    # be posted empty, and the cart would come back with nothing in it.
+    req.body = tool.build_request_body(input).presence || input.to_json
+    req['Content-Type'] = 'application/json'
     req
   end
 

@@ -46,6 +46,17 @@ RSpec.describe Ai::CustomToolExecutor do
     expect(executor.performed_write?).to be(true)
   end
 
+  it 'posts the raw tool input as the JSON body when a POST tool has no request template' do
+    allow(Resolv).to receive(:getaddress).and_return('93.184.216.34')
+    stub = stub_request(:post, 'https://loja.example.com/api')
+           .with(body: '{"items":[{"product_id":7,"quantity":2}]}', headers: { 'Content-Type' => 'application/json' })
+           .to_return(status: 200, body: '{"link":"https://loja.example.com/c/1"}')
+
+    described_class.new([tool(http_method: 'POST')]).call('buscar', { 'items' => [{ 'product_id' => 7, 'quantity' => 2 }] })
+
+    expect(stub).to have_been_requested
+  end
+
   it 'does not flag a write for a read-only GET tool' do
     allow(Resolv).to receive(:getaddress).and_return('93.184.216.34')
     stub_request(:get, 'https://loja.example.com/api').to_return(status: 200, body: '{}')
