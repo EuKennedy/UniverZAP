@@ -62,6 +62,10 @@ class Ai::AutopilotReplyService
   def perform
     raise Ai::ClaudeService::Error, 'No AI assistant assigned to this conversation' if @assistant.nil?
 
+    # Before reading the conversation: a voice note has to become text, or the
+    # agent answers the literal string "[Attachment]".
+    ensure_trigger_audio_transcribed
+
     messages = build_recent_messages
     raise Ai::ClaudeService::Error, 'Conversation has no messages yet' if messages.empty?
 
@@ -102,6 +106,31 @@ class Ai::AutopilotReplyService
   end
 
   private
+
+  # Transcribes ONLY the message being answered, and only here in the reply
+  # path. That is the entire cost filter: audio in a conversation the agent
+  # never answers (autopilot off, already resolved, no assistant) is never paid
+  # for, and the transcription is guaranteed to exist before the prompt is
+  # built rather than racing a background job.
+  #
+  # A permanent failure degrades instead of blocking: the agent sees
+  # "[Attachment]" and asks the customer to repeat, which beats silence. A
+  # transient one is re-raised so the turn is retried with the audio intact.
+  def ensure_trigger_audio_transcribed
+    return if @trigger_message.blank?
+
+    @trigger_message.attachments.where(file_type: :audio).find_each do |attachment|
+      Ai::TranscriptionService.new(attachment: attachment, assistant: @assistant).perform
+    end
+  rescue Ai::Transcription::BaseAdapter::TransientError => e
+    # Translated so it flows through the retry machinery the reply path already
+    # has, including the at-most-once guard that protects a booking already made.
+    raise Ai::ClaudeService::TransientError, "transcription unavailable: #{e.message}"
+  rescue StandardError => e
+    Rails.logger.warn(
+      "[Athenas audio] transcription failed conv=#{@conversation.display_id}: #{e.message}"
+    )
+  end
 
   # First generation of the turn, cleaned up but not yet checked.
   # `absorb_meta` also runs inside call_claude; repeating it here covers the

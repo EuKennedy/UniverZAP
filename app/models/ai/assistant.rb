@@ -50,6 +50,7 @@ class Ai::Assistant < ApplicationRecord
 
   encrypts :encrypted_anthropic_key, deterministic: false if Chatwoot.encryption_configured?
   encrypts :encrypted_openai_key, deterministic: false if Chatwoot.encryption_configured?
+  encrypts :encrypted_elevenlabs_key, deterministic: false if Chatwoot.encryption_configured?
 
   validates :name, presence: true, length: { maximum: 80 }, uniqueness: { scope: :account_id, case_sensitive: false }
   validates :provider, inclusion: { in: PROVIDERS }
@@ -65,6 +66,10 @@ class Ai::Assistant < ApplicationRecord
 
   def resolved_openai_key
     encrypted_openai_key.presence || ENV.fetch('OPENAI_API_KEY', nil)
+  end
+
+  def resolved_elevenlabs_key
+    encrypted_elevenlabs_key.presence || ENV.fetch('ELEVENLABS_API_KEY', nil)
   end
 
   def autopilot?

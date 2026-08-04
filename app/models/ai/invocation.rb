@@ -10,7 +10,12 @@ class Ai::Invocation < ApplicationRecord
   # experiment, not customer service, so the ROI panel excludes it: counting it
   # as the cost of serving customers would make a well-tested agent look
   # expensive precisely because it was well tested.
-  PHASES = %w[main classifier router summary summarize suggest autopilot rewrite chat copilot_chat replay].freeze
+  # `transcription` is a voice note turned into text before the agent can read
+  # it. It is billed per minute of audio rather than per token, which is why it
+  # carries no token counts.
+  PHASES = %w[
+    main classifier router summary summarize suggest autopilot rewrite chat copilot_chat replay transcription
+  ].freeze
   STATUSES = %w[success error].freeze
   # Delivery of the customer-facing reply this call produced. NULL on calls that
   # never had a delivery of their own (tool-loop iterations, summaries).

@@ -59,6 +59,29 @@ class Ai::QuotaService
     )
   end
 
+  # Speech-to-text is billed per minute of audio, so it needs its own gate.
+  # Same daily cap, same grace credit, same exhaustion error: a voice note that
+  # cannot be paid for must fail exactly like a reply that cannot be paid for,
+  # or transcription becomes the hole the credit system leaks through.
+  def self.check_transcription!(account:, model:, duration_seconds:)
+    new(account: account).check_transcription!(model: model, duration_seconds: duration_seconds)
+  end
+
+  def check_transcription!(model:, duration_seconds:)
+    enforce_daily_cap!
+
+    estimated_cents = Ai::PricingCalculator.transcription_cost_cents_brl(
+      model: model, duration_seconds: duration_seconds
+    )
+    return if @ledger.enough?(estimated_cents)
+    return if @ledger.grant_grace! && @ledger.enough?(estimated_cents)
+
+    raise Ai::CreditLedger::QuotaExhaustedError.new(
+      account: @account, attempted_cents: estimated_cents,
+      balance_cents: @ledger.balance_cents, reason: 'balance'
+    )
+  end
+
   def usage_summary
     @ledger.summary.merge(
       daily_usd_cap: account_daily_cap_usd,
