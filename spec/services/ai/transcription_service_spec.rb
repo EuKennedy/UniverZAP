@@ -7,13 +7,13 @@ RSpec.describe Ai::TranscriptionService do
   let(:assistant) { create(:ai_assistant, account: account, encrypted_elevenlabs_key: 'el-key') }
   let(:conversation) { create(:conversation, account: account) }
   let(:message) { create(:message, conversation: conversation, account: account, message_type: 'incoming') }
-  let(:adapter) { instance_double(Ai::Transcription::ElevenLabsAdapter, model: 'scribe_v1') }
+  let(:adapter) { instance_double(Ai::Transcription::ElevenLabsAdapter, model: 'scribe_v2') }
 
   before do
     account.update!(token_credit_balance_cents_brl: 100_000)
     allow(Ai::Transcription::ElevenLabsAdapter).to receive(:new).and_return(adapter)
     allow(adapter).to receive(:call).and_return(
-      Ai::Transcription::Result.new(text: 'quanto custa a progressiva?', model: 'scribe_v1', duration_seconds: 12.0)
+      Ai::Transcription::Result.new(text: 'quanto custa a progressiva?', model: 'scribe_v2', duration_seconds: 12.0)
     )
   end
 
@@ -74,7 +74,7 @@ RSpec.describe Ai::TranscriptionService do
 
       invocation = Ai::Invocation.last
       expect(invocation.phase).to eq('transcription')
-      expect(invocation.model).to eq('scribe_v1')
+      expect(invocation.model).to eq('scribe_v2')
       expect(invocation.cost_brl).to be > 0
     end
 
@@ -130,10 +130,10 @@ RSpec.describe Ai::TranscriptionService do
 
     it 'falls back to OpenAI so a workspace without a key still gets voice notes read' do
       assistant.update!(encrypted_elevenlabs_key: nil, encrypted_openai_key: 'oa-key')
-      openai = instance_double(Ai::Transcription::OpenAiAdapter, model: 'whisper-1')
+      openai = instance_double(Ai::Transcription::OpenAiAdapter, model: 'gpt-4o-mini-transcribe')
       allow(Ai::Transcription::OpenAiAdapter).to receive(:new).and_return(openai)
       allow(openai).to receive(:call).and_return(
-        Ai::Transcription::Result.new(text: 'oi', model: 'whisper-1', duration_seconds: 3.0)
+        Ai::Transcription::Result.new(text: 'oi', model: 'gpt-4o-mini-transcribe', duration_seconds: 3.0)
       )
       allow(ENV).to receive(:fetch).and_call_original
       allow(ENV).to receive(:fetch).with('ELEVENLABS_API_KEY', nil).and_return(nil)

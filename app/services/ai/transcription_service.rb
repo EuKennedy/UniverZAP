@@ -17,8 +17,9 @@
 class Ai::TranscriptionService
   class Error < StandardError; end
 
-  # Both vendors reject uploads past 25 MB *decimal*. Using 25.megabytes (binary)
-  # leaks the 25.0–26.2 MB range upstream as a 413.
+  # Not a provider ceiling (ElevenLabs accepts far larger files). It is a sanity
+  # bound: past this it is not a voice note, and holding a 25 MB upload in a
+  # Sidekiq thread is the kind of thing that only hurts under load.
   MAX_BYTES = 25_000_000
   # Anything longer than this is a recording, not a message to an agent. It is
   # kept as an attachment; it just is not transcribed.

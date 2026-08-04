@@ -10,7 +10,7 @@
 # force-decoded as Portuguese, which is worse than a slightly weaker detection.
 class Ai::Transcription::ElevenLabsAdapter < Ai::Transcription::BaseAdapter
   ENDPOINT = 'https://api.elevenlabs.io/v1/speech-to-text'.freeze
-  MODEL = 'scribe_v1'.freeze
+  MODEL = 'scribe_v2'.freeze
 
   def model
     MODEL
@@ -19,7 +19,14 @@ class Ai::Transcription::ElevenLabsAdapter < Ai::Transcription::BaseAdapter
   def call(file_part)
     response = connection.post(ENDPOINT) do |req|
       req.headers['xi-api-key'] = @api_key
-      req.body = { file: file_part, model_id: MODEL }
+      # tag_audio_events defaults to TRUE upstream, which injects "(laughter)",
+      # "(footsteps)" and friends into the text. The agent would then try to
+      # answer the stage directions, so it is turned off.
+      #
+      # Everything else stays default on purpose: diarize is off (a voice note
+      # has one speaker), and entity detection, redaction and keyterms all carry
+      # a surcharge of 20-30% for features we do not use.
+      req.body = { file: file_part, model_id: MODEL, tag_audio_events: 'false' }
     end
     raise_for_status!(response, 'ElevenLabs')
     build_result(parse_json(response.body))

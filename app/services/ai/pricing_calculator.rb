@@ -12,15 +12,14 @@ class Ai::PricingCalculator
   # its own table. Mixing it into the token table would force every caller to
   # know which unit a given model speaks.
   #
-  # The values below are placeholders deliberately set on the HIGH side: a
-  # placeholder that under-charges silently eats margin on every voice note,
-  # while one that over-charges is caught the first time someone reads the
-  # bill. They must be replaced with the vendor's published price before this
-  # is billed to an operator.
-  # TODO(pricing): confirm against elevenlabs.io/pricing and openai.com/api/pricing.
+  # Both figures read off the vendors' published pricing on 2026-08-04:
+  #   scribe_v2              elevenlabs.io/pricing/api  $0.22 per HOUR
+  #   gpt-4o-mini-transcribe openai pricing page        $0.003 per minute
+  # Surcharge features (entity detection, redaction, keyterms) are deliberately
+  # not used, so the base rate is the whole rate.
   COST_PER_AUDIO_MINUTE_USD = {
-    'scribe_v1' => 0.02,
-    'whisper-1' => 0.006
+    'scribe_v2' => 0.22 / 60.0,
+    'gpt-4o-mini-transcribe' => 0.003
   }.freeze
 
   # Markup applied on top of the Anthropic invoice. 2x is generous enough
@@ -73,7 +72,7 @@ class Ai::PricingCalculator
   end
 
   def transcription_cost_cents_brl(model:, duration_seconds:)
-    per_minute = COST_PER_AUDIO_MINUTE_USD.fetch(model, COST_PER_AUDIO_MINUTE_USD['scribe_v1'])
+    per_minute = COST_PER_AUDIO_MINUTE_USD.fetch(model, COST_PER_AUDIO_MINUTE_USD['scribe_v2'])
     usd = (duration_seconds.to_f.ceil / 60.0) * per_minute
     (usd * @rate * @markup * CENTS_PER_REAL).round
   end
