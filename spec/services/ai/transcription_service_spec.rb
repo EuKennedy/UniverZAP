@@ -6,7 +6,12 @@ RSpec.describe Ai::TranscriptionService do
   let(:account) { create(:account) }
   let(:assistant) { create(:ai_assistant, account: account, encrypted_elevenlabs_key: 'el-key') }
   let(:conversation) { create(:conversation, account: account) }
-  let(:message) { create(:message, conversation: conversation, account: account, message_type: 'incoming') }
+  # A real WhatsApp voice note carries NO text. That is the whole reason the
+  # transcription matters: with content present, content_for_llm returns the
+  # text and never looks at the attachment.
+  let(:message) do
+    create(:message, conversation: conversation, account: account, message_type: 'incoming', content: nil)
+  end
   let(:adapter) { instance_double(Ai::Transcription::ElevenLabsAdapter, model: 'scribe_v2') }
 
   before do
