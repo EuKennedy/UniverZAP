@@ -555,6 +555,10 @@ class Ai::AutopilotReplyService
       # Immediately after the knowledge block: the rule is about what may be
       # asserted FROM that block, so recency keeps the two glued together.
       GROUNDING_RULES,
+      # Right after the veracity rule: when the agent has connected tools, the
+      # TOOL result — not the knowledge block — is the source of truth for
+      # prices, links, availability and actions.
+      custom_tools_instruction,
       continuity_rules_reinforcement,
       continuity_examples,
       # Output-format rule, so it sits after the content rules it reports on.
@@ -562,6 +566,29 @@ class Ai::AutopilotReplyService
       Ai::MetaBlock::INSTRUCTION,
       override
     ].compact.join("\n\n")
+  end
+
+  # The tool result — never the knowledge block — is the source of truth for
+  # anything a connected tool can fetch or do (price, link, stock, cart). Kept a
+  # frozen constant so the method stays tiny; the live tool list is appended.
+  CUSTOM_TOOLS_DISCIPLINE = <<~RULES.strip.freeze
+    FERRAMENTAS CONECTADAS — a fonte da verdade para AÇÕES e dados ao vivo:
+    Sempre que a intenção do cliente corresponder ao que uma ferramenta faz, USE A
+    FERRAMENTA — não responda de memória nem da base de conhecimento. O conhecimento
+    serve para contexto e recomendação; mas preço, link, disponibilidade, IDs e
+    qualquer ação vêm SEMPRE do resultado da ferramenta, o único dado atualizado (o
+    catálogo e os documentos da base podem estar DESATUALIZADOS). Nunca invente nem
+    reutilize um preço ou link vindo do seu conhecimento — chame a ferramenta e use
+    exatamente o que ela devolver.
+    Ferramentas conectadas a este agente:
+  RULES
+
+  # Nil for agents with no custom tools, so it drops out of the prompt array.
+  def custom_tools_instruction
+    return nil if custom_tools.empty?
+
+    listed = custom_tools.map { |tool| "- #{tool.slug}: #{tool.description}" }.join("\n")
+    "#{CUSTOM_TOOLS_DISCIPLINE}\n#{listed}"
   end
 
   # High-emphasis primer placed at the TOP of the prompt. Claude's
