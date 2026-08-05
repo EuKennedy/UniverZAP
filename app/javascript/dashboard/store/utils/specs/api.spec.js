@@ -37,6 +37,11 @@ describe('#parseAPIErrorResponse', () => {
     expect(parseAPIErrorResponse('Error: 422 Failed')).toBe(
       'Error: 422 Failed'
     );
+
+    // An error object with no human-readable reason returns null so the caller's
+    // own pt-BR fallback (`|| t('...')`) fires instead of leaking a raw object.
+    expect(parseAPIErrorResponse({ response: { data: {} } })).toBeNull();
+    expect(parseAPIErrorResponse(new Error('boom'))).toBeNull();
   });
 });
 
@@ -48,6 +53,12 @@ describe('#throwErrorMessage', () => {
       });
     };
     expect(errorFn).toThrow('Error Message [message]');
+  });
+
+  it('falls back to the pt-BR generic when there is no message', () => {
+    expect(() => throwErrorMessage({})).toThrow(
+      'Algo deu errado. Tente novamente.'
+    );
   });
 });
 

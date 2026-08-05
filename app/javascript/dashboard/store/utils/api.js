@@ -97,12 +97,23 @@ export const parseAPIErrorResponse = error => {
   if (error?.response?.data?.errors) {
     return error?.response?.data?.errors[0];
   }
-  return error;
+  // A raw string is already a message. Anything else — an axios error object, a
+  // 500 with an empty body, a dropped connection — carries no human-readable
+  // reason, so return null and let the caller's own `|| t('...')` pt-BR fallback
+  // fire instead of leaking "[object Object]" or "Network Error" to the user.
+  if (typeof error === 'string') return error;
+
+  return null;
 };
 
+// Last-resort message for the throw path (store actions) when the API failed
+// with nothing human-readable. i18n is not reachable from this store-layer util
+// and the dashboard defaults to pt_BR, so the generic lives here as a plain
+// string; it only ever shows when there is no better message at all.
+export const GENERIC_ERROR_MESSAGE = 'Algo deu errado. Tente novamente.';
+
 export const throwErrorMessage = error => {
-  const errorMessage = parseAPIErrorResponse(error);
-  throw new Error(errorMessage);
+  throw new Error(parseAPIErrorResponse(error) || GENERIC_ERROR_MESSAGE);
 };
 
 export const parseLinearAPIErrorResponse = (error, defaultMessage) => {
