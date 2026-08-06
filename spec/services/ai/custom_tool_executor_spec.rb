@@ -57,6 +57,19 @@ RSpec.describe Ai::CustomToolExecutor do
     expect(stub).to have_been_requested
   end
 
+  # A blank tool_result reads to Claude as "no information" instead of "this
+  # failed", so it retries the same call until the loop cap and the turn dies
+  # with no answer. Naming the failure is what lets it correct the call.
+  it 'returns a named error instead of an empty tool result' do
+    allow(Resolv).to receive(:getaddress).and_return('93.184.216.34')
+    stub_request(:get, 'https://loja.example.com/api').to_return(status: 200, body: '')
+
+    result = JSON.parse(described_class.new([tool]).call('buscar', {}))
+
+    expect(result).to include('error' => true)
+    expect(result['message']).to include('vazio')
+  end
+
   it 'does not flag a write for a read-only GET tool' do
     allow(Resolv).to receive(:getaddress).and_return('93.184.216.34')
     stub_request(:get, 'https://loja.example.com/api').to_return(status: 200, body: '{}')

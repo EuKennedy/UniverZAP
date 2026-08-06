@@ -53,7 +53,20 @@ class Ai::CustomToolExecutor
   def run(tool, input)
     @performed_write = true if tool.http_method == 'POST'
     uri = safe_uri!(tool.build_request_url(input))
-    tool.format_response(request(tool, uri, input).body.to_s)
+    response = request(tool, uri, input)
+    body = tool.format_response(response.body.to_s)
+    body.presence || empty_response_error(tool, response)
+  end
+
+  # An endpoint that answers with an empty body tells Claude nothing: the blank
+  # tool_result reads as "no information" rather than "this failed", so it
+  # retries the identical call until the loop cap and the turn dies with no
+  # answer. Naming the failure lets it correct the call — most often a required
+  # parameter the endpoint silently refused.
+  def empty_response_error(tool, response)
+    Rails.logger.warn("[Athenas integration] tool=#{tool.slug} empty body http=#{response.code}")
+    error("A ferramenta #{tool.slug} respondeu vazio (HTTP #{response.code}). " \
+          'Confira se todos os parâmetros obrigatórios foram enviados.')
   end
 
   def safe_uri!(url)
