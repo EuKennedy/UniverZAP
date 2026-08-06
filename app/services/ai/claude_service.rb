@@ -58,7 +58,7 @@ class Ai::ClaudeService
       model: pick(overrides[:model], @assistant&.model, 'claude-sonnet-4-5'),
       max_tokens: pick(overrides[:max_tokens], @assistant&.max_tokens, 1024),
       temperature: pick(overrides[:temperature], @assistant&.temperature, 0.3),
-      system: system,
+      system: build_system(system),
       messages: messages,
       # Optional Anthropic tool-use (function calling). Absent for every
       # existing caller (compact drops nil), so behaviour is unchanged unless
@@ -69,6 +69,28 @@ class Ai::ClaudeService
 
   def pick(*candidates)
     candidates.compact.first
+  end
+
+  # `system` may be a plain String (sent as-is, never cached) or an Array of
+  # segments ordered stable-first. With segments we emit Anthropic system BLOCKS
+  # and put a cache breakpoint at the end of the stable ones: everything before
+  # it — the tool definitions and that prefix — is reused across calls at a tenth
+  # of the input price instead of being re-charged in full every single turn.
+  #
+  # The caller owns the split, because only it knows which parts are identical
+  # between turns. A prefix under the model's minimum (1024 tokens on Sonnet) is
+  # simply not cached by Anthropic — no error, no behaviour change.
+  def build_system(system)
+    return system unless system.is_a?(Array)
+
+    segments = system.map(&:to_s).reject(&:blank?)
+    return nil if segments.empty?
+    return segments.first if segments.one?
+
+    [
+      { type: 'text', text: segments[0..-2].join("\n\n"), cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: segments.last }
+    ]
   end
 
   # Exponential backoff on transient failures (timeouts, 5xx, rate limit).
@@ -168,7 +190,7 @@ class Ai::ClaudeService
   def log_success(payload:, parsed:, duration_ms:, context:)
     usage = parsed['usage'] || {}
     tokens = [usage['input_tokens'].to_i, usage['output_tokens'].to_i]
-    cents_brl = cost_cents_brl(payload[:model], tokens)
+    cents_brl = cost_cents_brl(payload[:model], tokens, usage)
     invocation = recorder(context).success(
       payload: payload, usage: usage, duration_ms: duration_ms, tokens: tokens, cents_brl: cents_brl
     )
@@ -186,9 +208,14 @@ class Ai::ClaudeService
     Ai::InvocationRecorder.new(assistant: @assistant, account: @account, context: context)
   end
 
-  def cost_cents_brl(model, tokens)
+  # Cached tokens are reported outside `input_tokens`, and the operator is
+  # charged the cheap cache rate for them — passing the saving through is the
+  # entire point of turning caching on.
+  def cost_cents_brl(model, tokens, usage = {})
     Ai::PricingCalculator.cost_cents_brl(
-      model: model, input_tokens: tokens.first, output_tokens: tokens.last
+      model: model, input_tokens: tokens.first, output_tokens: tokens.last,
+      cache_write_tokens: usage['cache_creation_input_tokens'].to_i,
+      cache_read_tokens: usage['cache_read_input_tokens'].to_i
     )
   end
 

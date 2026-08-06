@@ -5,6 +5,35 @@ require 'rails_helper'
 RSpec.describe Ai::ClaudeService do
   let(:service) { described_class.new(assistant: nil, account: nil) }
 
+  # Anthropic charges a cached prefix at a tenth of the input price, but only
+  # when it arrives as system BLOCKS carrying a cache breakpoint.
+  describe 'prompt caching' do
+    it 'sends a plain string system prompt unchanged, with no cache breakpoint' do
+      expect(service.send(:build_system, 'regras')).to eq('regras')
+    end
+
+    it 'splits segments into blocks and caches everything before the last one' do
+      blocks = service.send(:build_system, ['regras estaveis', 'contexto do turno'])
+
+      expect(blocks.first).to eq(
+        type: 'text', text: 'regras estaveis', cache_control: { type: 'ephemeral' }
+      )
+      expect(blocks.last).to eq(type: 'text', text: 'contexto do turno')
+    end
+
+    it 'does not mark a breakpoint when there is nothing stable to cache' do
+      expect(service.send(:build_system, ['so isso', ''])).to eq('so isso')
+    end
+
+    it 'prices cached tokens at the cache rate instead of full input' do
+      usage = { 'cache_read_input_tokens' => 10_000, 'cache_creation_input_tokens' => 0 }
+      cached = service.send(:cost_cents_brl, 'claude-sonnet-4-5', [0, 100], usage)
+      uncached = service.send(:cost_cents_brl, 'claude-sonnet-4-5', [10_000, 100], {})
+
+      expect(cached).to be < uncached
+    end
+  end
+
   describe 'retry policy' do
     let(:payload) { { model: 'claude-sonnet-4-5', max_tokens: 16, messages: [] } }
 

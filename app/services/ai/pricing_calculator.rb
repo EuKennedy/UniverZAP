@@ -19,6 +19,14 @@ class Ai::PricingCalculator
     'scribe_v2' => 0.22 / 60.0
   }.freeze
 
+  # Prompt-caching multipliers on the INPUT rate, per Anthropic's pricing:
+  # writing a cache entry costs 25% more than a normal input token, reading one
+  # back costs a tenth. The whole point of caching is that the operator is
+  # charged the cheap rate, so these are applied to the ledger, not just to
+  # telemetry.
+  CACHE_WRITE_MULTIPLIER = 1.25
+  CACHE_READ_MULTIPLIER = 0.1
+
   # Markup applied on top of the Anthropic invoice. 2x is generous enough
   # to absorb the dollar swings while keeping the per-conversation
   # price under R$1 on Sonnet, which is the psychological threshold the
@@ -32,8 +40,12 @@ class Ai::PricingCalculator
 
   CENTS_PER_REAL = 100
 
-  def self.cost_cents_brl(model:, input_tokens:, output_tokens:, markup: DEFAULT_MARKUP)
-    new(markup: markup).cost_cents_brl(model: model, input_tokens: input_tokens, output_tokens: output_tokens)
+  def self.cost_cents_brl(model:, input_tokens:, output_tokens:, cache_write_tokens: 0, cache_read_tokens: 0,
+                          markup: DEFAULT_MARKUP)
+    new(markup: markup).cost_cents_brl(
+      model: model, input_tokens: input_tokens, output_tokens: output_tokens,
+      cache_write_tokens: cache_write_tokens, cache_read_tokens: cache_read_tokens
+    )
   end
 
   # Pessimistic upper-bound for the *pre-call* quota check. We don't yet
@@ -54,10 +66,15 @@ class Ai::PricingCalculator
     @rate = rate
   end
 
-  def cost_cents_brl(model:, input_tokens:, output_tokens:)
+  # Cached tokens are reported by Anthropic OUTSIDE `input_tokens`, so they are
+  # billed as their own terms rather than folded into it.
+  def cost_cents_brl(model:, input_tokens:, output_tokens:, cache_write_tokens: 0, cache_read_tokens: 0)
     rates = COST_PER_MILLION_USD.fetch(model, COST_PER_MILLION_USD['claude-sonnet-4-5'])
-    usd  = ((input_tokens * rates[:input]) + (output_tokens * rates[:output])) / 1_000_000.0
-    brl  = usd * @rate * @markup
+    input_usd = (input_tokens * rates[:input]) +
+                (cache_write_tokens.to_i * rates[:input] * CACHE_WRITE_MULTIPLIER) +
+                (cache_read_tokens.to_i * rates[:input] * CACHE_READ_MULTIPLIER)
+    usd = (input_usd + (output_tokens * rates[:output])) / 1_000_000.0
+    brl = usd * @rate * @markup
     (brl * CENTS_PER_REAL).round
   end
 

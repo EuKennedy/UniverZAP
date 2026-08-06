@@ -308,7 +308,7 @@ class Ai::AutopilotReplyService
       assistant: @assistant,
       conversation: @conversation,
       messages: messages,
-      system: build_system_prompt,
+      system: system_prompt_segments,
       tools: Ai::Belezaki::SchedulingTools.definitions(include_booking: true),
       tool_executor: executor,
       log_context: reply_log_context
@@ -332,7 +332,7 @@ class Ai::AutopilotReplyService
     executor = Ai::CustomToolExecutor.new(custom_tools)
     Ai::Agent::ToolLoopService.new(
       assistant: @assistant, conversation: @conversation, messages: messages,
-      system: build_system_prompt, tools: executor.definitions,
+      system: system_prompt_segments, tools: executor.definitions,
       tool_executor: executor, log_context: reply_log_context
     ).perform
   ensure
@@ -369,7 +369,7 @@ class Ai::AutopilotReplyService
     absorb_meta(
       Ai::ClaudeService.new(assistant: @assistant).chat(
         messages: messages,
-        system: build_system_prompt(override: override),
+        system: system_prompt_segments(override: override),
         conversation: @conversation,
         phase: 'autopilot',
         log_context: reply_log_context
@@ -537,11 +537,27 @@ class Ai::AutopilotReplyService
     # tone / tenant prompt. Without this, the model sees pages of
     # operator instructions and treats the conversation as a cold start,
     # re-asking the same questions the customer already answered.
+    system_prompt_segments(override: override).join("\n\n")
+  end
+
+  # [stable, per-turn]. Anthropic bills a cached prefix at a tenth of the input
+  # price, but only while it is byte-identical between calls — so the split has
+  # to live here, where we know which parts change per message. The stable half
+  # (rules, persona, operator prompt, examples, tool discipline) is the bulk of
+  # the prompt and repeats on every turn AND on every tool-loop iteration; the
+  # per-turn half (summary, contact, retrieved knowledge) is what actually
+  # moves. ClaudeService turns this into system blocks with the cache
+  # breakpoint; a caller passing a plain String is simply never cached.
+  def system_prompt_segments(override: nil)
+    [static_prompt_segment(override), dynamic_prompt_segment(override)].map { |parts| parts.compact.join("\n\n") }
+  end
+
+  # Everything a turn does NOT change. Order is unchanged from the original
+  # single-block prompt: the hard guardrail still primes the top.
+  def static_prompt_segment(override)
     [
       override,
       continuity_rules_priority,
-      summary_block,
-      contact_block,
       'Você é o atendente real falando com o cliente agora. Responda no fluxo natural da conversa.',
       "Persona: #{@assistant.name}, #{@assistant.role}.",
       # Labelled so the veracity rule below has a NAMED block to sanction: small
@@ -551,21 +567,28 @@ class Ai::AutopilotReplyService
       # Tone is taught by example, not by rule. These are replies a human marked
       # ⭐ and that a promoted version carries forward.
       few_shot_block,
-      knowledge_snippets,
-      # Immediately after the knowledge block: the rule is about what may be
-      # asserted FROM that block, so recency keeps the two glued together.
-      GROUNDING_RULES,
-      # Right after the veracity rule: when the agent has connected tools, the
-      # TOOL result — not the knowledge block — is the source of truth for
-      # prices, links, availability and actions.
+      # When the agent has connected tools, the TOOL result — not the knowledge
+      # block — is the source of truth for prices, links and actions.
       custom_tools_instruction,
+      continuity_examples
+    ]
+  end
+
+  # What moves every turn. Kept in the SAME relative order as before so the
+  # adjacencies that were tuned deliberately survive: the veracity rule still
+  # sits immediately after the knowledge it sanctions, the reinforcement and the
+  # output-format rule still land last, right before generation.
+  def dynamic_prompt_segment(override)
+    [
+      summary_block,
+      contact_block,
+      knowledge_snippets,
+      GROUNDING_RULES,
       continuity_rules_reinforcement,
-      continuity_examples,
-      # Output-format rule, so it sits after the content rules it reports on.
       # Stripped from the text before anyone sees it (Ai::MetaBlock).
       Ai::MetaBlock::INSTRUCTION,
       override
-    ].compact.join("\n\n")
+    ]
   end
 
   # The tool result — never the knowledge block — is the source of truth for

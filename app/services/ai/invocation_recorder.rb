@@ -26,7 +26,7 @@ class Ai::InvocationRecorder
         input_tokens: input_tokens, output_tokens: output_tokens,
         cache_read_tokens: usage['cache_read_input_tokens'].to_i,
         cache_write_tokens: usage['cache_creation_input_tokens'].to_i,
-        cost_usd: cost_usd(payload[:model], input_tokens, output_tokens),
+        cost_usd: cost_usd(payload[:model], input_tokens, output_tokens, usage),
         cost_brl: cents_brl / 100.0, duration_ms: duration_ms, status: 'success'
       ).merge(response_log(payload))
     )
@@ -76,16 +76,28 @@ class Ai::InvocationRecorder
     }
   end
 
+  # `system` reaches here as a String or, once prompt caching is on, as Anthropic
+  # system BLOCKS. Flatten the blocks back to text so the stored snapshot stays
+  # readable instead of becoming a serialized hash.
   def clip(text)
-    text.to_s.presence&.truncate(Ai::Invocation::SNAPSHOT_MAX_CHARS)
+    flat = text.is_a?(Array) ? text.map { |block| block_text(block) }.join("\n\n") : text
+    flat.to_s.presence&.truncate(Ai::Invocation::SNAPSHOT_MAX_CHARS)
+  end
+
+  def block_text(block)
+    block.is_a?(Hash) ? (block[:text] || block['text']) : block
   end
 
   # Pricing lives in Ai::PricingCalculator (single source of truth) so the
   # telemetry recorded here can never drift from what the ledger debits.
-  def cost_usd(model, input_tokens, output_tokens)
+  def cost_usd(model, input_tokens, output_tokens, usage = {})
     rates = Ai::PricingCalculator::COST_PER_MILLION_USD.fetch(
       model, Ai::PricingCalculator::COST_PER_MILLION_USD['claude-sonnet-4-5']
     )
-    ((input_tokens * rates[:input]) + (output_tokens * rates[:output])) / 1_000_000.0
+    cached_usd = (usage['cache_creation_input_tokens'].to_i * rates[:input] *
+                  Ai::PricingCalculator::CACHE_WRITE_MULTIPLIER) +
+                 (usage['cache_read_input_tokens'].to_i * rates[:input] *
+                  Ai::PricingCalculator::CACHE_READ_MULTIPLIER)
+    ((input_tokens * rates[:input]) + cached_usd + (output_tokens * rates[:output])) / 1_000_000.0
   end
 end

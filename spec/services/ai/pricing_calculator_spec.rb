@@ -3,6 +3,28 @@
 require 'rails_helper'
 
 RSpec.describe Ai::PricingCalculator do
+  # The operator is charged the cache rate, not the full input rate: passing the
+  # saving through is the whole reason prompt caching is turned on.
+  describe 'prompt caching rates' do
+    it 'charges a cache READ at a tenth of the input rate' do
+      full = described_class.cost_cents_brl(model: 'claude-sonnet-4-5', input_tokens: 100_000, output_tokens: 0)
+      read = described_class.cost_cents_brl(
+        model: 'claude-sonnet-4-5', input_tokens: 0, output_tokens: 0, cache_read_tokens: 100_000
+      )
+
+      expect(read).to eq((full * described_class::CACHE_READ_MULTIPLIER).round)
+    end
+
+    it 'charges a cache WRITE above the input rate' do
+      full = described_class.cost_cents_brl(model: 'claude-sonnet-4-5', input_tokens: 100_000, output_tokens: 0)
+      write = described_class.cost_cents_brl(
+        model: 'claude-sonnet-4-5', input_tokens: 0, output_tokens: 0, cache_write_tokens: 100_000
+      )
+
+      expect(write).to eq((full * described_class::CACHE_WRITE_MULTIPLIER).round)
+    end
+  end
+
   describe '.cost_cents_brl' do
     it 'computes the BRL-cents cost for a Sonnet call with the default 2x markup' do
       # 1000 input + 500 output Sonnet tokens => (1000 * 3 + 500 * 15) / 1e6 = $0.0105

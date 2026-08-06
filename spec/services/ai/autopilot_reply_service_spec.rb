@@ -159,6 +159,18 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(chunks.any? { |c| c[:body].include?('R$ 1.200,00') }).to be(true)
     end
 
+    # The split is what lets Anthropic serve the bulk of the prompt from cache.
+    # Nothing may be lost in the process: the joined segments must still be the
+    # whole prompt.
+    it 'splits the prompt into a cacheable stable half and a per-turn half' do
+      stable, per_turn = service.send(:system_prompt_segments)
+
+      expect(stable).to include('Persona:')
+      expect(stable).not_to include('REGRA DE VERACIDADE')
+      expect(per_turn).to include('REGRA DE VERACIDADE')
+      expect(service.send(:build_system_prompt)).to include('Persona:').and include('REGRA DE VERACIDADE')
+    end
+
     it 'ships the hard anti-fabrication rule in every system prompt' do
       prompt = service.send(:build_system_prompt)
 
