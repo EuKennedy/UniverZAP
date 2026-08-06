@@ -40,6 +40,7 @@ class Ai::PricingCalculator
 
   CENTS_PER_REAL = 100
 
+  # rubocop:disable Metrics/ParameterLists
   def self.cost_cents_brl(model:, input_tokens:, output_tokens:, cache_write_tokens: 0, cache_read_tokens: 0,
                           markup: DEFAULT_MARKUP)
     new(markup: markup).cost_cents_brl(
@@ -47,6 +48,7 @@ class Ai::PricingCalculator
       cache_write_tokens: cache_write_tokens, cache_read_tokens: cache_read_tokens
     )
   end
+  # rubocop:enable Metrics/ParameterLists
 
   # Pessimistic upper-bound for the *pre-call* quota check. We don't yet
   # know how many output tokens Claude will emit, so we charge against the
