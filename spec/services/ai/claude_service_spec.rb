@@ -25,6 +25,29 @@ RSpec.describe Ai::ClaudeService do
       expect(service.send(:build_system, ['so isso', ''])).to eq('so isso')
     end
 
+    it 'leaves messages untouched unless the caller asks for a breakpoint' do
+      messages = [{ role: 'user', content: 'oi' }]
+
+      expect(service.send(:cache_messages, messages, false)).to eq(messages)
+    end
+
+    it 'marks the last message so the conversation so far is read back from cache' do
+      messages = [{ role: 'user', content: 'oi' }, { role: 'user', content: [{ type: 'text', text: 'tudo bem?' }] }]
+
+      cached = service.send(:cache_messages, messages, true)
+
+      expect(cached.first).to eq(role: 'user', content: 'oi')
+      expect(cached.last[:content].last).to include(cache_control: { type: 'ephemeral' })
+    end
+
+    it 'wraps a plain string message into a block before marking it' do
+      cached = service.send(:cache_messages, [{ role: 'user', content: 'oi' }], true)
+
+      expect(cached.last[:content]).to eq(
+        [{ type: 'text', text: 'oi', cache_control: { type: 'ephemeral' } }]
+      )
+    end
+
     it 'prices cached tokens at the cache rate instead of full input' do
       usage = { 'cache_read_input_tokens' => 10_000, 'cache_creation_input_tokens' => 0 }
       cached = service.send(:cost_cents_brl, 'claude-sonnet-4-5', [0, 100], usage)

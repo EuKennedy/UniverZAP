@@ -38,7 +38,12 @@ class Ai::Agent::ToolLoopService
   def run_turn
     response = claude.chat(
       messages: @messages, system: @system, conversation: @conversation,
-      phase: @phase, tools: @tools, log_context: @log_context
+      phase: @phase, tools: @tools, log_context: @log_context,
+      # Each iteration re-sends everything the previous ones did, plus the tool
+      # results they collected — the list grows several-fold across a loop. They
+      # run seconds apart, so caching the prefix turns that re-send into a read
+      # at a tenth of the price.
+      cache_messages: true
     )
     @log_context = follow_up_context
     response

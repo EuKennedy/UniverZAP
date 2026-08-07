@@ -59,7 +59,7 @@ class Ai::ClaudeService
       max_tokens: pick(overrides[:max_tokens], @assistant&.max_tokens, 1024),
       temperature: pick(overrides[:temperature], @assistant&.temperature, 0.3),
       system: build_system(system),
-      messages: messages,
+      messages: cache_messages(messages, overrides[:cache_messages]),
       # Optional Anthropic tool-use (function calling). Absent for every
       # existing caller (compact drops nil), so behaviour is unchanged unless
       # a caller passes `tools:`.
@@ -69,6 +69,34 @@ class Ai::ClaudeService
 
   def pick(*candidates)
     candidates.compact.first
+  end
+
+  # A cache breakpoint on the LAST message, so the whole conversation up to here
+  # is reused instead of re-charged.
+  #
+  # This is where the money is in a tool loop: the system prefix is a couple of
+  # thousand tokens, but the message list grows with every tool result — 4k on
+  # the first iteration, 22k by the fifth — and each iteration was paying full
+  # price for everything the previous one had already sent. Iterations are
+  # seconds apart, so the read is as close to guaranteed as caching gets.
+  #
+  # Off by default: a cache WRITE costs 25% more than a plain token, so it is
+  # only worth it where a read is near-certain. The caller decides.
+  def cache_messages(messages, enabled)
+    return messages unless enabled && messages.present?
+
+    last = messages.last
+    marked = last.merge(content: mark_cacheable(last[:content] || last['content']))
+    messages[0..-2] + [marked]
+  end
+
+  def mark_cacheable(content)
+    blocks = content.is_a?(Array) ? content.dup : [{ type: 'text', text: content.to_s }]
+    return blocks if blocks.empty?
+
+    tail = blocks.last
+    tail = tail.is_a?(Hash) ? tail.dup : { type: 'text', text: tail.to_s }
+    blocks[0..-2] + [tail.merge(cache_control: { type: 'ephemeral' })]
   end
 
   # `system` may be a plain String (sent as-is, never cached) or an Array of
