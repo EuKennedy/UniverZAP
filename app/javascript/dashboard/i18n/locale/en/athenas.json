@@ -214,14 +214,18 @@
             "LABEL": "Description (the agent uses this to decide when to call it)",
             "PLACEHOLDER": "Searches real products in the store: name, price, stock."
           },
-          "METHOD": { "LABEL": "Method" },
+          "METHOD": {
+            "LABEL": "Method"
+          },
           "ENDPOINT": {
             "LABEL": "Endpoint URL",
             "PLACEHOLDER": "https://yourstore.com/wp-json/...",
             "ERROR": "Enter a valid HTTPS URL",
             "HINT": "Insert parameters into the URL with {'{{'} name {'}}'}. For search terms, add the url_encode filter."
           },
-          "AUTH_TYPE": { "LABEL": "Authentication" },
+          "AUTH_TYPE": {
+            "LABEL": "Authentication"
+          },
           "AUTH_TYPES": {
             "NONE": "None",
             "BEARER": "Bearer Token",
@@ -265,7 +269,9 @@
             "LABEL": "Response template (optional)",
             "PLACEHOLDER": "Leave empty to return the raw response."
           },
-          "ENABLED": { "LABEL": "Integration active" },
+          "ENABLED": {
+            "LABEL": "Integration active"
+          },
           "CANCEL": "Cancel",
           "SAVE": "Save",
           "CREATE": "Create integration"
@@ -279,6 +285,7 @@
       "EMPTY": "Send the first message, the way a customer would.",
       "PLACEHOLDER": "Write as a customer. e.g. how much does it cost?",
       "SEND": "Send",
+      "TIMEOUT": "The agent did not answer in time. Check the Activity tab or try again.",
       "RESET": "Clear chat",
       "CORRECTED": "Corrected by guardrail",
       "ERROR": "Could not generate a reply right now. Try again.",

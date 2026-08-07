@@ -30,12 +30,18 @@ class Ai::PlaygroundService
     started_at = Time.zone.now
     service = Ai::AutopilotReplyService.new(conversation: conversation, assistant: @assistant)
     result = service.perform
-    reply = persist_outgoing(conversation, result[:content])
-    success(reply, service, started_at)
+    payload = success(result[:content], service, started_at)
+    persist_outgoing(conversation, result[:content], payload[:diagnostics])
+    payload
   rescue Ai::AutopilotReplyService::UngroundedClaim
-    suppressed(:ungrounded_claim, service, started_at)
+    persist_note(conversation, suppressed(:ungrounded_claim, service, started_at))
   rescue Ai::AutopilotReplyService::LoopSuppressed
-    suppressed(:loop_suppressed, service, started_at)
+    persist_note(conversation, suppressed(:loop_suppressed, service, started_at))
+  rescue Ai::ClaudeService::Error => e
+    # The turn is generated in a job now, so an error has nowhere to be rendered
+    # unless it is written down. The operator asked a question and deserves to
+    # see why it produced nothing.
+    persist_note(conversation, { status: 'error', content: nil, error: e.message })
   ensure
     close_sandbox_log(conversation)
   end
@@ -46,11 +52,22 @@ class Ai::PlaygroundService
     sandbox_conversation.update!(additional_attributes: sandbox_stamp)
   end
 
+  # Carries the diagnostics too: with generation moved to a job, the transcript
+  # is the only place the operator ever sees them.
   def transcript
     sandbox_conversation.messages.reorder(created_at: :asc, id: :asc).map do |message|
+      meta = message.content_attributes.to_h['athenas_playground'] || {}
       { id: message.id, role: message.incoming? ? 'user' : 'assistant', content: message.content,
-        created_at: message.created_at.to_i }
+        created_at: message.created_at.to_i,
+        status: meta['status'], error: meta['error'], diagnostics: meta['diagnostics'] }
     end
+  end
+
+  # True while a turn for this sandbox is still being generated, so the UI can
+  # keep waiting and the controller can refuse to queue a second one.
+  def generating?
+    last = sandbox_conversation.messages.reorder(created_at: :desc, id: :desc).first
+    last.present? && last.incoming?
   end
 
   private
@@ -72,10 +89,10 @@ class Ai::PlaygroundService
     Rails.logger.warn("[Athenas playground] could not close sandbox log: #{e.message}")
   end
 
-  def success(reply, service, started_at)
+  def success(content, service, started_at)
     {
       status: 'replied',
-      content: reply.content,
+      content: content,
       diagnostics: service.playground_diagnostics.merge(
         latency_ms: ((Time.zone.now - started_at) * 1000).to_i,
         cost: last_invocation_cost
@@ -120,11 +137,32 @@ class Ai::PlaygroundService
   # playground would then be more permissive than production, which is the one
   # direction a pre-flight test must never fail in. It also keeps sandbox turns
   # out of the account's first-response and reply-time reports.
-  def persist_outgoing(conversation, content)
+  def persist_outgoing(conversation, content, diagnostics = nil)
     conversation.messages.create!(
       account_id: @account.id, inbox_id: conversation.inbox_id,
-      message_type: :outgoing, content: content.to_s, status: :delivered, sender: nil
+      message_type: :outgoing, content: content.to_s, status: :delivered, sender: nil,
+      content_attributes: { 'athenas_playground' => { 'status' => 'replied', 'diagnostics' => diagnostics } }
     )
+  end
+
+  # A suppressed or failed turn produces no reply, and the operator would just
+  # see silence. Written PRIVATE so it shows in the transcript but never becomes
+  # context the agent reads back on the next turn (build_recent_messages filters
+  # private) — a sandbox that fed its own error messages to the model would stop
+  # being a faithful rehearsal of production.
+  def persist_note(conversation, payload)
+    conversation.messages.create!(
+      account_id: @account.id, inbox_id: conversation.inbox_id,
+      message_type: :outgoing, private: true, sender: nil,
+      content: payload[:error].presence || I18n.t('athenas.playground.suppressed', default: 'Sem resposta.'),
+      content_attributes: {
+        'athenas_playground' => {
+          'status' => payload[:status], 'error' => payload[:error],
+          'diagnostics' => payload[:diagnostics]
+        }
+      }
+    )
+    payload
   end
 
   def sandbox_conversation

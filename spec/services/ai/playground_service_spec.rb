@@ -43,6 +43,38 @@ RSpec.describe Ai::PlaygroundService do
     expect(result[:content]).to be_nil
   end
 
+  # Generation runs in a job now, so the transcript is the only place the
+  # operator ever sees these.
+  it 'carries the diagnostics on the stored reply, not just on the return value' do
+    service.send_message('quanto custa?')
+
+    expect(service.transcript.last[:diagnostics]['knowledge_titles']).to eq(['Preços'])
+  end
+
+  it 'knows a turn is still being generated so a second one is not queued on top' do
+    conversation = service.send(:sandbox_conversation)
+    service.send(:persist_incoming, conversation, 'oi')
+
+    expect(service.generating?).to be(true)
+
+    service.send(:persist_outgoing, conversation, 'pronto')
+
+    expect(service.generating?).to be(false)
+  end
+
+  # A suppressed turn is written down so the operator sees why nothing came
+  # back — but PRIVATE, or the agent would read its own failure notice as a
+  # previous reply on the next turn.
+  it 'records a suppressed turn without feeding it back to the agent' do
+    allow(reply).to receive(:perform).and_raise(Ai::AutopilotReplyService::UngroundedClaim)
+
+    service.send_message('me da um desconto')
+    note = service.send(:sandbox_conversation).messages.last
+
+    expect(note.private).to be(true)
+    expect(note.content_attributes['athenas_playground']['status']).to eq('ungrounded_claim')
+  end
+
   describe 'isolation from real customers' do
     it 'hides the sandbox conversation from every conversation list' do
       service.send_message('oi')

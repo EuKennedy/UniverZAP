@@ -42,26 +42,47 @@ const loadTranscript = async () => {
   }
 };
 
+// A turn takes 20-40s — longer than a web request is allowed to live — so the
+// backend queues it and the reply shows up in the transcript. We wait for it
+// here instead of holding a request open.
+const REPLY_POLL_INTERVAL_MS = 2000;
+const REPLY_TIMEOUT_MS = 180000;
+
+const waitForReply = async previousCount => {
+  const deadline = Date.now() + REPLY_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise(resolve => {
+      setTimeout(resolve, REPLY_POLL_INTERVAL_MS);
+    });
+    // eslint-disable-next-line no-await-in-loop
+    const { data } = await AthenasAPI.getPlayground(props.assistantId);
+    const transcript = data.transcript || [];
+    if (transcript.length > previousCount) {
+      messages.value = transcript.map(m => ({ ...m }));
+      scrollToEnd();
+      return true;
+    }
+  }
+  return false;
+};
+
 const send = async () => {
   if (!canSend.value) return;
   const text = draft.value.trim();
   draft.value = '';
   errorMessage.value = '';
+  // The queued turn writes the customer message too; count it so the poll knows
+  // what "a new message arrived" means.
+  const expectedCount = messages.value.length + 2;
   messages.value.push({ role: 'user', content: text });
   isSending.value = true;
   scrollToEnd();
 
   try {
-    const { data } = await AthenasAPI.sendPlaygroundMessage(
-      props.assistantId,
-      text
-    );
-    messages.value.push({
-      role: 'assistant',
-      content: data.content,
-      status: data.status,
-      diagnostics: data.diagnostics,
-    });
+    await AthenasAPI.sendPlaygroundMessage(props.assistantId, text);
+    const arrived = await waitForReply(expectedCount - 1);
+    if (!arrived) errorMessage.value = t('ATHENAS.PLAYGROUND.TIMEOUT');
   } catch (error) {
     errorMessage.value =
       error?.response?.data?.error || t('ATHENAS.PLAYGROUND.ERROR');

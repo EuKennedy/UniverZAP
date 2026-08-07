@@ -214,14 +214,18 @@
             "LABEL": "Descrição (o agente usa isto para decidir quando chamar)",
             "PLACEHOLDER": "Busca produtos reais na loja: nome, preço, estoque."
           },
-          "METHOD": { "LABEL": "Método" },
+          "METHOD": {
+            "LABEL": "Método"
+          },
           "ENDPOINT": {
             "LABEL": "URL do endpoint",
             "PLACEHOLDER": "https://sualoja.com/wp-json/...",
             "ERROR": "Informe uma URL HTTPS válida",
             "HINT": "Insira parâmetros na URL com {'{{'} nome {'}}'}. Para termos de busca, use o filtro url_encode."
           },
-          "AUTH_TYPE": { "LABEL": "Autenticação" },
+          "AUTH_TYPE": {
+            "LABEL": "Autenticação"
+          },
           "AUTH_TYPES": {
             "NONE": "Nenhuma",
             "BEARER": "Bearer Token",
@@ -265,7 +269,9 @@
             "LABEL": "Template da resposta (opcional)",
             "PLACEHOLDER": "Deixe vazio para devolver a resposta como veio."
           },
-          "ENABLED": { "LABEL": "Integração ativa" },
+          "ENABLED": {
+            "LABEL": "Integração ativa"
+          },
           "CANCEL": "Cancelar",
           "SAVE": "Salvar",
           "CREATE": "Criar integração"
@@ -279,6 +285,7 @@
       "EMPTY": "Mande a primeira mensagem, como um cliente mandaria.",
       "PLACEHOLDER": "Escreva como cliente. Ex.: quanto custa a progressiva?",
       "SEND": "Enviar",
+      "TIMEOUT": "O agente não respondeu a tempo. Confira a aba Histórico ou tente de novo.",
       "RESET": "Limpar conversa",
       "CORRECTED": "Corrigido pelo guardrail",
       "ERROR": "Não consegui gerar a resposta agora. Tente de novo.",

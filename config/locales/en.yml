@@ -63,6 +63,9 @@ en:
     inbox_deletetion_response: Your inbox deletion request will be processed in some time.
 
   errors:
+    ai:
+      playground_busy: The agent is still answering your last message. Wait for the reply before sending another.
+      playground_rate_limited: Too many test messages in a row. Wait a minute before sending another.
     account:
       reporting_timezone:
         invalid: is not a valid timezone
