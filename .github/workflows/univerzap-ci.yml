@@ -5,6 +5,10 @@ on:
     branches: [main, develop, 'univerzap/**']
   pull_request:
     branches: [main, develop]
+  # Manual re-run. A GitHub Actions outage once left a commit with no run at
+  # all — the push webhook never fired — and with only push triggers the sole
+  # way to test it again was to invent a new commit.
+  workflow_dispatch:
 
 concurrency:
   group: univerzap-ci-${{ github.workflow }}-${{ github.ref }}
