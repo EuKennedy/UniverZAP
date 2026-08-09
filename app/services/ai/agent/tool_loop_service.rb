@@ -8,6 +8,17 @@
 class Ai::Agent::ToolLoopService
   MAX_ITERATIONS = 6
 
+  # Wall-clock ceiling for one whole turn, enforced in ONE place.
+  #
+  # Counting iterations was never a time limit: each one is a full Claude
+  # generation plus however long the customer's endpoint takes to answer. Now
+  # that the Anthropic call is streamed and no longer dies at 30s, nothing else
+  # bounds a turn, and Sidekiq runs 10 threads across every queue in strict
+  # priority, so a handful of slow turns can starve :critical. 90s is roughly
+  # three unhurried iterations and still inside what someone waiting on
+  # WhatsApp will tolerate.
+  TURN_BUDGET_SECONDS = 90
+
   def initialize(assistant:, conversation:, messages:, system:, tools:, tool_executor:, phase: 'autopilot', log_context: nil) # rubocop:disable Metrics/ParameterLists
     @assistant = assistant
     @conversation = conversation
@@ -22,18 +33,50 @@ class Ai::Agent::ToolLoopService
   end
 
   def perform
+    @deadline = monotonic_now + TURN_BUDGET_SECONDS
     last = nil
     MAX_ITERATIONS.times do
       last = run_turn
       return last if Array(last[:tool_uses]).empty?
 
       feed_tool_results(last)
+      return final_answer if out_of_budget?
     end
     log_max_iterations
     last
   end
 
   private
+
+  def monotonic_now
+    Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  end
+
+  def out_of_budget?
+    monotonic_now >= @deadline
+  end
+
+  # The budget ran out with tool results already in hand. One last call with
+  # tool_choice `none`: Claude cannot ask for another round, so it has to answer
+  # with what it has. A degraded answer beats the silence the customer got
+  # before. The tools stay in the payload because the transcript already
+  # contains tool_use blocks and Anthropic rejects those without their
+  # definitions.
+  def final_answer
+    log_budget_exhausted
+    claude.chat(
+      messages: @messages, system: @system, conversation: @conversation,
+      phase: @phase, tools: @tools, tool_choice: { type: 'none' },
+      log_context: @log_context, cache_messages: true
+    )
+  end
+
+  def log_budget_exhausted
+    Rails.logger.warn(
+      "[Athenas agent] turn budget #{TURN_BUDGET_SECONDS}s exhausted, forcing final answer " \
+      "conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
+    )
+  end
 
   def run_turn
     response = claude.chat(

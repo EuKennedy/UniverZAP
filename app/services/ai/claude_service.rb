@@ -1,6 +1,5 @@
-# Thin wrapper around the Anthropic Messages API. Uses HTTParty directly so we
-# don't depend on any gem version. Designed to log every invocation through the
-# Ai::Invocation model for cost tracking.
+# Thin wrapper around the Anthropic Messages API, streamed over SSE. Designed
+# to log every invocation through the Ai::Invocation model for cost tracking.
 class Ai::ClaudeService
   class Error < StandardError; end
   # Upstream blip that survived the in-request backoff (Anthropic 5xx/429 or a
@@ -63,7 +62,10 @@ class Ai::ClaudeService
       # Optional Anthropic tool-use (function calling). Absent for every
       # existing caller (compact drops nil), so behaviour is unchanged unless
       # a caller passes `tools:`.
-      tools: overrides[:tools]
+      tools: overrides[:tools],
+      # Only the tool loop sets this, and only to `none`, to force a final
+      # answer once the turn budget is spent.
+      tool_choice: overrides[:tool_choice]
     }.compact
   end
 
@@ -127,9 +129,14 @@ class Ai::ClaudeService
   # DNS (SocketError), TLS handshake and connection-refused blips are just as
   # transient as a timeout — classifying them as permanent used to drop the
   # customer's turn for good. Mirrors the belezaki client's list.
+  #
+  # Now that the call is streamed, a Net::ReadTimeout means a full IDLE_TIMEOUT
+  # of silence mid-stream rather than "the model is still writing", so retrying
+  # it is finally the right thing to do. EOFError and Net::HTTPBadResponse are
+  # how a dropped SSE connection surfaces, and they belong in the same bucket.
   RETRYABLE_NET_ERRORS = [
     Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNRESET, Errno::ECONNREFUSED,
-    SocketError, OpenSSL::SSL::SSLError, HTTParty::Error
+    SocketError, OpenSSL::SSL::SSLError, HTTParty::Error, EOFError, Net::HTTPBadResponse
   ].freeze
   MAX_RETRY_ATTEMPTS = 3
 
@@ -151,8 +158,14 @@ class Ai::ClaudeService
     end
   end
 
+  # Streamed, always. The response shape is identical to the non-streaming
+  # endpoint's, so everything below this line is unaware. See
+  # Ai::Anthropic::StreamClient for why the old `timeout: 30` was killing every
+  # turn that took longer than half a minute to generate.
   def post_to_claude(api_key, payload)
-    HTTParty.post("#{API_BASE}/v1/messages", headers: headers(api_key), body: payload.to_json, timeout: 30)
+    Ai::Anthropic::StreamClient.new(
+      url: "#{API_BASE}/v1/messages", headers: headers(api_key), payload: payload
+    ).perform
   end
 
   def retryable_response?(response)

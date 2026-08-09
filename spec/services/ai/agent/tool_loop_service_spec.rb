@@ -37,4 +37,37 @@ RSpec.describe Ai::Agent::ToolLoopService do
 
     expect(run[:content]).to eq('Oi!')
   end
+
+  context 'when the turn budget runs out' do
+    let(:tool_use) { { 'id' => 'tu_1', 'name' => 'listar_servicos', 'input' => {} } }
+    let(:calls) { [] }
+
+    before do
+      # A negative budget puts the deadline in the past, so the very first tool
+      # result already lands over time.
+      stub_const("#{described_class}::TURN_BUDGET_SECONDS", -1)
+      responses = [
+        { content: '', tool_uses: [tool_use], stop_reason: 'tool_use', raw: { 'content' => [] } },
+        { content: 'Com o que tenho aqui, temos progressiva.', tool_uses: [], stop_reason: 'end_turn' }
+      ]
+      allow(claude).to receive(:chat) do |**kwargs|
+        calls << kwargs
+        responses.shift
+      end
+      allow(executor).to receive(:call).and_return('{"services":[]}')
+    end
+
+    # Silence is what the customer used to get. A worse answer is still an answer.
+    it 'forces a final answer instead of starting another iteration' do
+      expect(run[:content]).to eq('Com o que tenho aqui, temos progressiva.')
+      expect(calls.size).to eq(2)
+    end
+
+    it 'takes the tools off the table so Claude cannot ask for another round' do
+      run
+
+      expect(calls.first).not_to include(:tool_choice)
+      expect(calls.last[:tool_choice]).to eq({ type: 'none' })
+    end
+  end
 end
