@@ -10,11 +10,6 @@ RSpec.describe Ai::Anthropic::StreamClient do
   end
 
   let(:endpoint) { 'https://api.anthropic.com/v1/messages' }
-
-  def frame(type, payload = {})
-    "event: #{type}\ndata: #{payload.merge(type: type).to_json}\n\n"
-  end
-
   let(:happy_stream) do
     [
       frame('message_start', message: { id: 'msg_1', model: 'claude-sonnet-4-5', role: 'assistant',
@@ -25,6 +20,10 @@ RSpec.describe Ai::Anthropic::StreamClient do
       frame('message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 5 }),
       frame('message_stop')
     ].join
+  end
+
+  def frame(type, payload = {})
+    "event: #{type}\ndata: #{payload.merge(type: type).to_json}\n\n"
   end
 
   describe 'the request it sends' do

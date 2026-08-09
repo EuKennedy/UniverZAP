@@ -10,6 +10,18 @@ class Ai::Anthropic::StreamAccumulator
   # stream had finished normally.
   FALLBACK_ERROR = { 'type' => 'api_error', 'message' => 'stream interrupted' }.freeze
 
+  # A lookup table rather than a case statement: `ping` frames, the ones that
+  # keep the connection measurably alive, simply miss the table and cost
+  # nothing, and a new Anthropic event type stays a one-line change.
+  HANDLERS = {
+    'message_start' => :start_message,
+    'content_block_start' => :start_block,
+    'content_block_delta' => :apply_delta,
+    'content_block_stop' => :close_block,
+    'message_delta' => :finish_message,
+    'error' => :record_error
+  }.freeze
+
   def initialize
     @message = { 'type' => 'message', 'role' => 'assistant', 'content' => [], 'usage' => {} }
     @blocks = {}
@@ -44,41 +56,37 @@ class Ai::Anthropic::StreamAccumulator
     nil
   end
 
-  # `ping` frames are the reason streaming fixes the timeout at all, and they
-  # carry nothing, so they fall through here on purpose.
   def dispatch(payload)
-    case payload['type']
-    when 'message_start' then start_message(payload['message'])
-    when 'content_block_start' then start_block(payload['index'], payload['content_block'])
-    when 'content_block_delta' then apply_delta(payload['index'], payload['delta'])
-    when 'content_block_stop' then close_block(payload['index'])
-    when 'message_delta' then finish_message(payload)
-    when 'error' then @error = payload['error'].presence || FALLBACK_ERROR
-    end
+    handler = HANDLERS[payload['type']]
+    send(handler, payload) if handler
   end
 
   # `message_start` carries the input side of the usage, including the two cache
   # counters the ledger bills against; the output count only arrives at the end.
-  def start_message(message)
+  def start_message(payload)
+    message = payload['message']
     return if message.blank?
 
     @message.merge!(message.slice('id', 'model', 'role', 'stop_reason', 'stop_sequence'))
     @message['usage'] = (message['usage'] || {}).dup
   end
 
-  def start_block(index, block)
+  def start_block(payload)
+    block = payload['content_block']
     return if block.blank?
 
     prepared = block.dup
     prepared['text'] = prepared['text'].to_s if prepared['type'] == 'text'
-    @json_buffers[index] = +'' if prepared['type'] == 'tool_use'
-    @blocks[index] = prepared
+    @json_buffers[payload['index']] = +'' if prepared['type'] == 'tool_use'
+    @blocks[payload['index']] = prepared
   end
 
   # A tool_use input arrives as a stream of JSON fragments. They are held until
   # the block closes and only parsed then, because half a JSON document is not a
   # document.
-  def apply_delta(index, delta)
+  def apply_delta(payload)
+    index = payload['index']
+    delta = payload['delta']
     return if delta.blank? || @blocks[index].blank?
 
     case delta['type']
@@ -89,7 +97,8 @@ class Ai::Anthropic::StreamAccumulator
     end
   end
 
-  def close_block(index)
+  def close_block(payload)
+    index = payload['index']
     buffer = @json_buffers.delete(index)
     return if buffer.nil? || @blocks[index].blank?
 
@@ -104,5 +113,9 @@ class Ai::Anthropic::StreamAccumulator
   def finish_message(payload)
     @message.merge!(payload['delta'] || {})
     @message['usage'] = @message['usage'].merge(payload['usage'] || {})
+  end
+
+  def record_error(payload)
+    @error = payload['error'].presence || FALLBACK_ERROR
   end
 end

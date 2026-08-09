@@ -14,16 +14,28 @@ RSpec.describe Ai::InvocationRecorder do
   let(:conversation) { create(:conversation, account: account) }
   let(:summarizer) { instance_double(Ai::SummarizeService, perform: { content: 'memo' }) }
 
+  # The HTTP call is stubbed, and only the HTTP call: the real
+  # Ai::Anthropic::StreamClient parses this SSE body, so the log these specs
+  # assert on is built exactly the way production builds it.
   def claude_says(text)
-    body = {
-      'content' => [{ 'type' => 'text', 'text' => text }],
-      'model' => 'claude-sonnet-4-5',
-      'stop_reason' => 'end_turn',
-      'usage' => { 'input_tokens' => 120, 'output_tokens' => 40 }
-    }
-    allow(HTTParty).to receive(:post).and_return(
-      instance_double(HTTParty::Response, success?: true, code: 200, parsed_response: body)
-    )
+    stub_request(:post, 'https://api.anthropic.com/v1/messages')
+      .to_return(status: 200, body: sse_stream(text), headers: { 'content-type' => 'text/event-stream' })
+  end
+
+  def sse_stream(text)
+    [
+      sse_frame('message_start', message: { id: 'msg_1', model: 'claude-sonnet-4-5', role: 'assistant',
+                                            usage: { input_tokens: 120, output_tokens: 1 } }),
+      sse_frame('content_block_start', index: 0, content_block: { type: 'text', text: '' }),
+      sse_frame('content_block_delta', index: 0, delta: { type: 'text_delta', text: text }),
+      sse_frame('content_block_stop', index: 0),
+      sse_frame('message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 40 }),
+      sse_frame('message_stop')
+    ].join
+  end
+
+  def sse_frame(type, payload = {})
+    "event: #{type}\ndata: #{payload.merge(type: type).to_json}\n\n"
   end
 
   before do
