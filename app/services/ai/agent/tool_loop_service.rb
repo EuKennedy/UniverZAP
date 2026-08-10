@@ -91,7 +91,7 @@ class Ai::Agent::ToolLoopService
 
   def log_forced_tool_use
     Rails.logger.info(
-      "[Athenas agent] reply announced a lookup with no tool call, forcing one " \
+      '[Athenas agent] reply announced a lookup with no tool call, forcing one ' \
       "conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
     )
   end
