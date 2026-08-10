@@ -161,9 +161,25 @@ module Ai::KnowledgeGrounding
   # Writes back everything only the generating service knows: the final text,
   # the self-assessment and the guardrail flags a supervisor sorts on.
   def finalize(reply)
+    reply = reply.merge(content: whatsapp_markup(reply[:content]))
     @auto_flags = audit_flags(reply[:content])
     persist_response_log(reply[:content])
     reply.merge(invocation: @last_invocation, confidence: @confidence, auto_flags: @auto_flags)
+  end
+
+  # WhatsApp marks bold with ONE asterisk. The model writes Markdown, so "**R$
+  # 59,90**" reaches the customer with the asterisks showing instead of the
+  # price standing out — the one place emphasis actually earns its keep. Done
+  # here rather than in the prompt because a formatting rule is the kind a model
+  # drops the moment the sentence gets interesting.
+  def whatsapp_markup(content)
+    text = content.to_s
+    return content if text.blank?
+
+    # Bounded to a single line so an unmatched pair cannot swallow the rest of
+    # the message, and the inner text must not start or end with whitespace —
+    # that is what keeps "2 ** 3" from being read as emphasis.
+    text.gsub(/\*\*(?!\s)([^*\n]+?)(?<!\s)\*\*/, '*\1*')
   end
 
   def audit_flags(content)
