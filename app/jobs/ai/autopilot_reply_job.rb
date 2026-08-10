@@ -341,6 +341,10 @@ class Ai::AutopilotReplyJob < ApplicationJob
   def reply_parts(assistant, reply_text)
     text = reply_text.to_s
     return [text] unless assistant.behavior_flag?(:split_messages)
+    # A short answer is one thought however many line breaks the model put in
+    # it. Cutting "R$ 219,00" and "quer que eu mande o link?" into two bubbles
+    # buys the customer a second notification and no extra meaning.
+    return [text] if text.length < SPLIT_FLOOR_CHARS
 
     parts = split_on_paragraphs(text)
     parts.length > 1 ? parts : [text]
@@ -350,8 +354,17 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # shorter than MIN_PART_CHARS are glued to the previous bubble — "Claro!" on
   # its own line is punctuation, not a message — and everything past MAX_PARTS
   # collapses into the last one so a long answer cannot become a burst.
-  MAX_PARTS = 4
-  MIN_PART_CHARS = 12
+  # Tuned down from 4 bubbles and a 12-character floor, which in production
+  # turned a single answer into four notifications: "Quer que eu mande o link?"
+  # is 25 characters and was clearing the old floor comfortably.
+  #
+  # MAX_PARTS matches what the prompt already asks the model for ("no máximo 3
+  # parágrafos"), so the ceiling and the instruction finally agree. A bubble
+  # under MIN_PART_CHARS is a fragment, not a message, and gets glued to the one
+  # before it. Below SPLIT_FLOOR_CHARS the whole reply stays in one bubble.
+  MAX_PARTS = 3
+  MIN_PART_CHARS = 40
+  SPLIT_FLOOR_CHARS = 160
 
   def split_on_paragraphs(text)
     chunks = text.split(/\n{2,}/).map(&:strip).reject(&:blank?)

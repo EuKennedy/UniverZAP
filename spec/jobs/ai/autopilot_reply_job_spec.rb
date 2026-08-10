@@ -8,6 +8,14 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
   # Bypass the real Claude/belezaki round-trip — we only exercise the job's
   # locking / dedup / guard logic here.
   let(:service) { instance_double(Ai::AutopilotReplyService, perform: { content: 'Olá!' }) }
+  # Long enough to clear SPLIT_FLOOR_CHARS, with three paragraphs each worth a
+  # bubble of its own. Shared, because several blocks below need a reply that
+  # actually splits.
+  let(:split_content) do
+    "A progressiva Volume Control Blond sai por R$ 219,00 no tamanho de 1 litro.\n\n" \
+      "Ela é indicada para cabelo loiro e não amarela o fio ao longo das lavagens.\n\n" \
+      'Quer que eu monte o carrinho com ela pra você?'
+  end
 
   after do
     Current.reset
@@ -179,9 +187,6 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
   # types on WhatsApp. Off by default, because an agent that suddenly fires four
   # notifications instead of one is a change the tenant has to choose.
   describe 'split_messages behaviour flag' do
-    let(:split_content) do
-      "Oi, tudo bem?\n\nO Volume Control Blond sai por R$ 219.\n\nQuer que eu mande o link?"
-    end
     let(:long_reply) { instance_double(Ai::AutopilotReplyService, perform: { content: split_content }) }
 
     before { allow(Ai::AutopilotReplyService).to receive(:new).and_return(long_reply) }
@@ -204,8 +209,19 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
 
       sent = conversation.reload.messages.where(message_type: :outgoing).order(:id).pluck(:content)
 
-      expect(sent.first).to include('tudo bem')
-      expect(sent.last).to include('link')
+      expect(sent.first).to include('R$ 219,00')
+      expect(sent.last).to include('carrinho')
+    end
+
+    # A short answer is one thought however many line breaks the model put in
+    # it. Splitting it buys the customer a second notification and no meaning.
+    it 'keeps a short answer in one bubble however it was punctuated' do
+      assistant.update!(behavior_flags: { 'split_messages' => true })
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(
+        instance_double(Ai::AutopilotReplyService, perform: { content: "Sai por R$ 219,00.\n\nQuer que eu mande o link?" })
+      )
+
+      expect { described_class.perform_now(message.id, assistant.id) }.to change { outgoing_count }.by(1)
     end
   end
 
@@ -333,13 +349,13 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     it 'quotes only the first bubble when the reply is split' do
       assistant.update!(behavior_flags: { 'reply_marking' => true, 'split_messages' => true })
       allow(Ai::AutopilotReplyService).to receive(:new).and_return(
-        instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO produto sai por R$ 219,00." })
+        instance_double(Ai::AutopilotReplyService, perform: { content: split_content })
       )
       message.update!(content: 'Quanto custa?')
 
       described_class.perform_now(message.id, assistant.id)
 
-      expect(quoted_ids).to eq([message.source_id, nil])
+      expect(quoted_ids).to eq([message.source_id, nil, nil])
     end
   end
 
@@ -372,11 +388,12 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     it 'sends every bubble of a split reply under the same identity' do
       assistant.update!(conversation_display_name: 'Elisa', behavior_flags: { 'split_messages' => true })
       allow(Ai::AutopilotReplyService).to receive(:new).and_return(
-        instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO produto sai por R$ 219,00." })
+        instance_double(Ai::AutopilotReplyService, perform: { content: split_content })
       )
 
       described_class.perform_now(message.id, assistant.id)
 
+      expect(senders.length).to eq(3)
       expect(senders.map(&:id).uniq.length).to eq(1)
     end
 
@@ -456,7 +473,8 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     end
 
     it 'never bursts past the cap' do
-      parts = job.send(:split_on_paragraphs, (1..9).map { |i| "Paragrafo numero #{i} com texto." }.join("\n\n"))
+      long = (1..9).map { |i| "Paragrafo numero #{i}, com texto suficiente para valer uma mensagem inteira." }
+      parts = job.send(:split_on_paragraphs, long.join("\n\n"))
 
       expect(parts.length).to eq(described_class::MAX_PARTS)
       expect(parts.last).to include('numero 9')
