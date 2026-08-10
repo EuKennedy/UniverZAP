@@ -58,7 +58,13 @@ class Whatsapp::Providers::WhatsappWahaService < Whatsapp::Providers::BaseServic
   end
 
   def send_text_message(chat_id, message)
-    response = session_service.send_text(chat_id: chat_id, text: message.outgoing_content)
+    response = session_service.send_text(
+      chat_id: chat_id,
+      text: message.outgoing_content,
+      # The Cloud provider has always forwarded this (as `context.message_id`);
+      # WAHA dropped it, so a quoted reply arrived here as a plain message.
+      reply_to: message.content_attributes[:in_reply_to_external_id]
+    )
     extract_message_id(response, message)
   rescue Whatsapp::WahaSessionService::WahaError => e
     handle_waha_error(e, message)

@@ -100,8 +100,9 @@ const MODELS = [
   },
 ];
 
-// The three optional "human-like reply" toggles (Slice 0). Each flips a flag in
-// form.behavior_flags; the behaviour itself ships in later slices.
+// The three optional "human-like reply" toggles. Each flips a flag in
+// form.behavior_flags, read back by Ai::Assistant#behavior_flag?.
+// voice_replies is still UI only; the other two are live.
 const HUMANIZE_TOGGLES = [
   {
     key: 'split_messages',

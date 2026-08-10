@@ -101,7 +101,7 @@
         "SPLIT_LABEL": "Reply in several messages",
         "SPLIT_HINT": "Instead of one block with line breaks, the agent sends each part as a separate message — the way a person types.",
         "REPLY_MARK_LABEL": "Quote the question when answering",
-        "REPLY_MARK_HINT": "When the customer asks something directly, the agent replies quoting that message — only for direct questions, and kept natural.",
+        "REPLY_MARK_HINT": "The answer arrives quoting the customer's message, the same as replying by hand on WhatsApp. Useful when several questions arrive at once.",
         "VOICE_LABEL": "Reply with audio when asked",
         "VOICE_HINT": "When the customer asks to talk by voice, the agent answers with a voice note. Uses AI credits like every other AI action.",
         "STOP_WORDS_LABEL": "Stop words",

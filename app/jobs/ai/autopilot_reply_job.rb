@@ -160,7 +160,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
       next if superseded?(conversation, message.id)
       next if rate_limited?(conversation, assistant)
 
-      sent = send_outgoing(conversation, assistant, reply_text)
+      sent = send_outgoing(conversation, assistant, message, reply_text)
       link_invocation(conversation, assistant, message, sent)
       mark_replied!(conversation, message.id)
       record_reply_rate!(conversation)
@@ -206,15 +206,37 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # Returns the LAST message created. The invocation log is stamped with that
   # id, and the history row reads its text from the invocation rather than the
   # message, so a split reply still shows whole in supervision.
-  def send_outgoing(conversation, assistant, reply_text)
-    reply_parts(assistant, reply_text).map do |part|
-      Messages::MessageBuilder.new(
-        assistant_user(assistant),
-        conversation,
-        content: part,
-        message_type: :outgoing
-      ).perform
+  def send_outgoing(conversation, assistant, trigger, reply_text)
+    quoted = quote_attributes(assistant, trigger)
+    reply_parts(assistant, reply_text).each_with_index.map do |part, index|
+      params = { content: part, message_type: :outgoing }
+      # Only the first bubble quotes. WhatsApp renders one quoted header per
+      # message, so four bubbles all citing the same question is noise.
+      params[:content_attributes] = quoted if index.zero? && quoted.present?
+      Messages::MessageBuilder.new(assistant_user(assistant), conversation, params).perform
     end.last
+  end
+
+  # The customer's question, quoted above the answer — the WhatsApp reply arrow.
+  # Off by default: on a conversation with one open question the quote is
+  # redundant, and it only earns its place once the customer has asked several
+  # things at once. The operator decides.
+  #
+  # Keyed on `in_reply_to_external_id`, NOT `in_reply_to`, and that is load
+  # bearing: Messages::MessageBuilder only reads `in_reply_to` out of
+  # content_attributes when the params are ActionController::Parameters, then
+  # assigns the resulting nil back over the key through the store accessor. On
+  # this (plain Hash) path that would wipe the quote on its way to the database.
+  # The external id survives, and Message#ensure_in_reply_to resolves the pair
+  # back from it — scoped to this conversation, so it cannot cite another
+  # tenant's message.
+  def quote_attributes(assistant, trigger)
+    return {} unless assistant.behavior_flag?(:reply_marking)
+    # Blank on channels that carry no provider id (playground, API inbox); there
+    # is nothing to quote and the builder would no-op anyway.
+    return {} if trigger.source_id.blank?
+
+    { in_reply_to_external_id: trigger.source_id }
   end
 
   # One bubble per paragraph, the way a person types on WhatsApp, when the

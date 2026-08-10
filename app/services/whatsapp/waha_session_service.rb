@@ -81,8 +81,13 @@ class Whatsapp::WahaSessionService
     Array(session.is_a?(Hash) ? session.dig('config', 'webhooks') : nil)
   end
 
-  def send_text(chat_id:, text:)
-    request(:post, '/api/sendText', body: { session: @session_name, chatId: chat_id, text: text })
+  # `reply_to` is the provider id of the message being quoted (our
+  # content_attributes[:in_reply_to_external_id]). Omitted when absent rather
+  # than sent as null: WAHA rejects an explicit null on this field.
+  def send_text(chat_id:, text:, reply_to: nil)
+    body = { session: @session_name, chatId: chat_id, text: text }
+    body[:reply_to] = reply_to if reply_to.present?
+    request(:post, '/api/sendText', body: body)
   end
 
   MEDIA_ENDPOINTS = { 'image' => '/api/sendImage', 'video' => '/api/sendVideo',

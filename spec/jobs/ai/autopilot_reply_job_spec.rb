@@ -209,6 +209,76 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     end
   end
 
+  # The WhatsApp reply arrow: the answer arrives quoting the question it
+  # answers. Worth pinning end to end rather than at the unit, because the value
+  # has to survive Messages::MessageBuilder — which reads `in_reply_to` out of
+  # content_attributes only for ActionController::Parameters and then assigns
+  # the resulting nil back over the key, silently dropping the quote on the
+  # plain-Hash path this job uses.
+  describe 'reply_marking behaviour flag' do
+    # What an inbound WhatsApp message carries: the provider's own id.
+    let(:message) do
+      create(:message, conversation: conversation, account: account, inbox: conversation.inbox,
+                       source_id: 'wamid.HBgNNTUxMTk5OTk5OTk5ORUCABIYFjNFQjA=')
+    end
+
+    before { allow(Ai::AutopilotReplyService).to receive(:new).and_return(service) }
+
+    def first_outgoing
+      conversation.reload.messages.where(message_type: :outgoing).order(:id).first
+    end
+
+    it 'quotes the customer question when the flag is on' do
+      assistant.update!(behavior_flags: { 'reply_marking' => true })
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
+    end
+
+    # Message#ensure_in_reply_to resolves the pair from the external id, scoped
+    # to this conversation — which is what keeps a quote from ever pointing at
+    # another tenant's message.
+    it 'resolves the quote back to the trigger message row' do
+      assistant.update!(behavior_flags: { 'reply_marking' => true })
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to']).to eq(message.id)
+    end
+
+    it 'sends a plain reply when the flag is off' do
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to be_nil
+    end
+
+    # Playground and API inboxes have no provider id to quote.
+    it 'sends a plain reply when the trigger carries no provider id' do
+      assistant.update!(behavior_flags: { 'reply_marking' => true })
+      message.update!(source_id: nil)
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to be_nil
+    end
+
+    # WhatsApp draws one quoted header per message, so repeating it on every
+    # bubble of a split reply is noise rather than context.
+    it 'quotes only the first bubble when the reply is split' do
+      assistant.update!(behavior_flags: { 'reply_marking' => true, 'split_messages' => true })
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(
+        instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO produto sai por R$ 219,00." })
+      )
+
+      described_class.perform_now(message.id, assistant.id)
+
+      quoted = conversation.reload.messages.where(message_type: :outgoing).order(:id)
+                           .map { |m| m.content_attributes['in_reply_to_external_id'] }
+      expect(quoted).to eq([message.source_id, nil])
+    end
+  end
+
   describe '#split_on_paragraphs' do
     let(:job) { described_class.new }
 
