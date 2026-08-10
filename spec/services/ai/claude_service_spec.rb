@@ -25,6 +25,17 @@ RSpec.describe Ai::ClaudeService do
       expect(service.send(:build_system, ['so isso', ''])).to eq('so isso')
     end
 
+    # The turn-specific tail carries the retrieved knowledge base, and a
+    # tool-using turn re-sends it on every iteration. Six iterations meant six
+    # full-price copies of it until this breakpoint existed.
+    it 'caches the turn tail too when the caller expects more calls in seconds' do
+      blocks = service.send(:build_system, ['regras estaveis', 'contexto do turno'], true)
+
+      expect(blocks.last).to eq(
+        type: 'text', text: 'contexto do turno', cache_control: { type: 'ephemeral' }
+      )
+    end
+
     it 'leaves messages untouched unless the caller asks for a breakpoint' do
       messages = [{ role: 'user', content: 'oi' }]
 
