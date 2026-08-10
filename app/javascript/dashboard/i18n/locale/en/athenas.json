@@ -527,6 +527,7 @@
     },
     "BANNER": {
       "CTA": "Top up now",
+      "DISMISS": "Dismiss",
       "WARN_80": {
         "TITLE": "AI credits running low",
         "BODY": "You have R$ {balance} left ({percent}% of your starter pack). Top up to keep autopilot answering."

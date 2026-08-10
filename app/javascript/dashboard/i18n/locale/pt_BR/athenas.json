@@ -527,6 +527,7 @@
     },
     "BANNER": {
       "CTA": "Recarregar",
+      "DISMISS": "Dispensar",
       "WARN_80": {
         "TITLE": "Créditos de IA baixos",
         "BODY": "Restam R$ {balance} ({percent}% do seu pacote inicial). Recarregue para manter o autopiloto respondendo."

@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAthenasCredits } from 'dashboard/composables/useAthenasCredits';
 import Icon from 'next/icon/Icon.vue';
@@ -8,9 +8,35 @@ import Icon from 'next/icon/Icon.vue';
 // (80% used → yellow, 95% → orange, exhausted → red) come straight
 // from the backend so the banner state can never disagree with the
 // gate. Each variant gets its own copy + colour scheme + CTA emphasis.
+//
+// POSITIONING. This floats (fixed) instead of participating in the layout.
+// It used to be `sticky`, which sounds harmless but is not: the component is
+// mounted as a sibling of <router-view> inside a `flex` ROW, and sticky stays
+// in flow, so it became a full-height COLUMN beside the page instead of a
+// notice. Every other overlay mounted next to it (Copilot, cookie consent,
+// help) is `fixed` for exactly this reason.
+//
+// Bottom centre and not bottom right: the right rail is an occupied stack
+// (Copilot at bottom-4, help at bottom-20, onboarding at bottom-36), and the
+// top right is where the page keeps its Save/Delete actions. Anchoring to the
+// content area instead of the viewport is not an option either, because the
+// sidebar is user-resizable.
 const { t } = useI18n();
 const { showBanner, status, balanceBrl, percentRemaining, openTopUpModal } =
   useAthenasCredits();
+
+const dismissed = ref(false);
+
+// Exhausted is not dismissible: the agent has actually stopped answering, so
+// hiding it would hide the reason the product looks broken.
+const canDismiss = computed(() => status.value !== 'exhausted');
+const isVisible = computed(() => showBanner.value && !dismissed.value);
+
+// Waving away "running low" must not silence "about to run out". Every
+// escalation re-arms the notice.
+watch(status, () => {
+  dismissed.value = false;
+});
 
 const variant = computed(() => {
   if (status.value === 'exhausted') {
@@ -53,15 +79,15 @@ const variant = computed(() => {
 <template>
   <Transition
     enter-active-class="motion-safe:transition-all motion-safe:duration-400 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]"
-    enter-from-class="opacity-0 -translate-y-2"
+    enter-from-class="opacity-0 translate-y-3"
     enter-to-class="opacity-100 translate-y-0"
     leave-active-class="motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-in"
     leave-from-class="opacity-100"
-    leave-to-class="opacity-0 -translate-y-2"
+    leave-to-class="opacity-0 translate-y-3"
   >
     <div
-      v-if="showBanner"
-      class="sticky top-0 z-40 mx-3 mt-3 border rounded-2xl backdrop-blur-xl shadow-md px-4 py-3 flex items-center gap-3"
+      v-if="isVisible"
+      class="fixed z-[45] bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[440px] border rounded-2xl backdrop-blur-xl shadow-2xl px-4 py-3 flex items-center gap-3"
       :class="variant.ring"
       role="status"
     >
@@ -86,6 +112,15 @@ const variant = computed(() => {
       >
         <Icon icon="i-lucide-credit-card" class="size-3.5" />
         {{ $t('ATHENAS_CREDITS.BANNER.CTA') }}
+      </button>
+      <button
+        v-if="canDismiss"
+        type="button"
+        class="inline-flex items-center justify-center size-7 rounded-lg text-n-slate-11 cursor-pointer transition-colors hover:bg-n-alpha-2 hover:text-n-slate-12 flex-shrink-0"
+        :aria-label="$t('ATHENAS_CREDITS.BANNER.DISMISS')"
+        @click="dismissed = true"
+      >
+        <Icon icon="i-lucide-x" class="size-4" />
       </button>
     </div>
   </Transition>
