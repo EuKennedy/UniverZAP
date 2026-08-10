@@ -17,7 +17,7 @@ RSpec.describe AthenasAutopilotListener do
   end
 
   def dispatch
-    described_class.new.message_created(
+    described_class.instance.message_created(
       Events::Base.new('message.created', Time.zone.now, message: message)
     )
   end
