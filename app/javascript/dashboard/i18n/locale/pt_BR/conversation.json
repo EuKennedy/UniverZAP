@@ -294,7 +294,10 @@
       "NO_ASSISTANTS": "Nenhum agente de IA configurado ainda.",
       "ENABLED": "Autopiloto ativado",
       "DISABLED": "Autopiloto desativado",
-      "ERROR": "Falha ao atualizar o autopiloto"
+      "ERROR": "Falha ao atualizar o autopiloto",
+      "SILENCE": "Silenciar o agente aqui",
+      "SILENCED": "Agente silenciado",
+      "UNSILENCE": "Deixar o agente responder aqui de novo"
     },
     "CHANGE_STATUS": "Estado da conversa mudou",
     "CHANGE_STATUS_FAILED": "Mudança de status da conversa falhou",

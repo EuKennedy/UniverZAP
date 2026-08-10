@@ -111,6 +111,31 @@ const autopilotEnabled = computed(() => {
   if (chat.ai_mode === 'autopilot') return true;
   return !!chat.additional_attributes?.autopilot_enabled;
 });
+// Explicitly silenced HERE. The only state that beats the agent's own switch,
+// so it is read on its own rather than folded into autopilotEnabled: `false`
+// and "never set" mean opposite things now.
+const autopilotSilenced = computed(
+  () => currentChat.value?.additional_attributes?.autopilot_enabled === false
+);
+
+// The agent answers everywhere it is assigned when its own autopilot is on, so
+// a conversation nobody armed by hand is still being answered. Without this the
+// button read "off" while the agent was replying, and turning it "on" looked
+// like the fix when the real action available is to silence it.
+const agentAutopilotOn = computed(() =>
+  aiAssistants.value.some(
+    assistant => assistant.active && assistant.autopilot_enabled
+  )
+);
+
+// What actually happens in THIS conversation, which is the only thing the
+// operator cares about when looking at the button.
+const answeringHere = computed(
+  () =>
+    !autopilotSilenced.value &&
+    (autopilotEnabled.value || agentAutopilotOn.value)
+);
+
 const autopilotAssistantId = computed(() => {
   const chat = currentChat.value;
   return (
@@ -327,12 +352,22 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
     />
     <div class="relative">
       <Button
-        :label="t('CONVERSATION.HEADER.AUTOPILOT')"
-        :icon="autopilotEnabled ? 'i-lucide-sparkles' : 'i-lucide-bot'"
+        :label="
+          autopilotSilenced
+            ? t('CONVERSATION.AUTOPILOT.SILENCED')
+            : t('CONVERSATION.HEADER.AUTOPILOT')
+        "
+        :icon="
+          autopilotSilenced
+            ? 'i-lucide-bell-off'
+            : answeringHere
+              ? 'i-lucide-sparkles'
+              : 'i-lucide-bot'
+        "
         size="sm"
         color="slate"
-        :solid="autopilotEnabled"
-        :faded="!autopilotEnabled"
+        :solid="answeringHere"
+        :faded="!answeringHere"
         no-animation
         data-onboarding="conv-autopilot"
         @click="openAutopilotMenu"
@@ -347,13 +382,33 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
         >
           {{ t('CONVERSATION.AUTOPILOT.MENU_TITLE') }}
         </p>
+        <!-- Answering here, however it was switched on: the useful action is to
+             stop it in this conversation, and saying "desligar autopiloto"
+             would suggest it stops everywhere. -->
         <button
-          v-if="autopilotEnabled"
+          v-if="answeringHere"
           type="button"
           class="w-full text-left px-3 py-2 text-sm text-n-ruby-11 hover:bg-n-alpha-1 rounded-md"
           @click="setAutopilot({ assistantId: null, enabled: false })"
         >
-          {{ t('CONVERSATION.AUTOPILOT.TURN_OFF') }}
+          {{
+            agentAutopilotOn && !autopilotEnabled
+              ? t('CONVERSATION.AUTOPILOT.SILENCE')
+              : t('CONVERSATION.AUTOPILOT.TURN_OFF')
+          }}
+        </button>
+        <!-- Silenced by hand while the agent answers everywhere else. Clearing
+             the flag hands the conversation back to the agent, so it is a
+             separate action from picking an assistant. -->
+        <button
+          v-if="autopilotSilenced && agentAutopilotOn"
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm text-n-teal-11 hover:bg-n-alpha-1 rounded-md"
+          @click="
+            setAutopilot({ assistantId: autopilotAssistantId, enabled: true })
+          "
+        >
+          {{ t('CONVERSATION.AUTOPILOT.UNSILENCE') }}
         </button>
         <p
           v-if="!aiAssistants.length"
