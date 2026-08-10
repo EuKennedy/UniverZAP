@@ -592,9 +592,14 @@ class Ai::AutopilotReplyService
     Escreva como alguém digitando no WhatsApp: ideias curtas, cada uma em seu
     próprio parágrafo, separadas por UMA LINHA EM BRANCO. Cada parágrafo vira uma
     mensagem separada para o cliente.
-    Use no máximo 3 parágrafos. Não separe uma saudação ou uma palavra solta em
-    parágrafo próprio — junte com a ideia seguinte. Links, preços e o passo final
-    ficam no ÚLTIMO parágrafo, para não se perderem no meio.
+    Use no máximo 3 parágrafos, de no máximo 2 frases cada. Não separe uma saudação
+    ou uma palavra solta em parágrafo próprio: junte com a ideia seguinte. Links,
+    preços e o passo final ficam no ÚLTIMO parágrafo, para não se perderem no meio.
+
+    CORTE o que ninguém pediu: adjetivo de propaganda, benefício não perguntado,
+    explicação do porquê do produto ser bom. NÃO corte o que responde a pergunta:
+    preço, nome do produto, prazo, link e a próxima pergunta continuam inteiros.
+    Menos texto vendendo, não menos informação.
   RULES
 
   # What moves every turn. Kept in the SAME relative order as before so the
@@ -786,6 +791,9 @@ class Ai::AutopilotReplyService
       'o produto e siga para link/valor/fechamento.',
       '• Gere APENAS o corpo da próxima mensagem do atendente. Português brasileiro, ' \
       'frases curtas, sem markdown, sem prefixos, sem aspas, sem se identificar como IA.',
+      '• NUNCA use travessão (—) nem meia-risca (–). Ninguém digita isso no WhatsApp e ' \
+      'entrega na hora que a mensagem foi escrita por máquina. Use dois-pontos, vírgula ' \
+      'ou quebre em outra frase.',
       '• Se faltar UMA informação essencial que NÃO está no histórico nem na memória, ' \
       'pergunte só ela, uma vez, de forma natural.'
     ]

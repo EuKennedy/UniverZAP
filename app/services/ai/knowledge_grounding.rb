@@ -179,7 +179,24 @@ module Ai::KnowledgeGrounding
     # Bounded to a single line so an unmatched pair cannot swallow the rest of
     # the message, and the inner text must not start or end with whitespace —
     # that is what keeps "2 ** 3" from being read as emphasis.
-    text.gsub(/\*\*(?!\s)([^*\n]+?)(?<!\s)\*\*/, '*\1*')
+    strip_dashes(text.gsub(/\*\*(?!\s)([^*\n]+?)(?<!\s)\*\*/, '*\1*'))
+  end
+
+  # Nobody types an em dash on a phone, so it reads as machine-written the
+  # moment it lands. The prompt forbids it; this is what makes "never" true,
+  # the same way the bold rule is enforced rather than merely asked for.
+  #
+  # A comma, not a colon: the model reaches for the dash both as a label
+  # separator ("Shampoo X — limpa sem ressecar") and as an aside ("isso — que é
+  # raro — acontece"), and a comma is the one substitution that is never wrong
+  # in either.
+  #
+  # Only spaces and tabs are eaten around it, never a newline, and only a dash
+  # with something before it on its own line counts. A blank line is where the
+  # split-messages flag cuts one bubble from the next, so swallowing one here
+  # would silently merge two messages; a dash starting a line is a bullet.
+  def strip_dashes(text)
+    text.gsub(/(\S)[ \t]*[—–][ \t]*/, '\1, ').gsub(/,[ \t]*,/, ',')
   end
 
   def audit_flags(content)

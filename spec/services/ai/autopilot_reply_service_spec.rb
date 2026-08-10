@@ -181,6 +181,20 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(service.send(:whatsapp_markup, '2 ** 3 e **isto nao fecha')).to eq('2 ** 3 e **isto nao fecha')
     end
 
+    # Nobody types an em dash on a phone, so it reads as machine-written the
+    # moment it lands. The prompt forbids it; this is what makes "never" true.
+    it 'replaces the em dash the model reaches for' do
+      expect(service.send(:whatsapp_markup, 'Shampoo Volume Control — limpa sem ressecar'))
+        .to eq('Shampoo Volume Control, limpa sem ressecar')
+    end
+
+    # The blank line is where split_messages cuts one bubble from the next, so
+    # eating it here would silently merge two messages into one.
+    it 'never swallows the blank line that separates two messages' do
+      expect(service.send(:whatsapp_markup, "primeira — parte\n\nsegunda parte"))
+        .to eq("primeira, parte\n\nsegunda parte")
+    end
+
     it 'ships the hard anti-fabrication rule in every system prompt' do
       prompt = service.send(:build_system_prompt)
 

@@ -180,7 +180,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
       next if superseded?(conversation, message.id)
       next if rate_limited?(conversation, assistant)
 
-      sent = send_outgoing(conversation, assistant, message, reply_text)
+      sent = send_outgoing(conversation, assistant, reply_text)
       link_invocation(conversation, assistant, message, sent)
       mark_replied!(conversation, message.id)
       record_reply_rate!(conversation)
@@ -248,8 +248,8 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # Returns the LAST message created. The invocation log is stamped with that
   # id, and the history row reads its text from the invocation rather than the
   # message, so a split reply still shows whole in supervision.
-  def send_outgoing(conversation, assistant, trigger, reply_text)
-    quoted = quote_attributes(conversation, assistant, trigger)
+  def send_outgoing(conversation, assistant, reply_text)
+    quoted = quote_attributes(conversation, assistant)
     reply_parts(assistant, reply_text).each_with_index.map do |part, index|
       params = { content: part, message_type: :outgoing }
       # Only the first bubble quotes. WhatsApp renders one quoted header per
@@ -269,10 +269,10 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # The external id survives, and Message#ensure_in_reply_to resolves the pair
   # back from it — scoped to this conversation, so it cannot cite another
   # tenant's message.
-  def quote_attributes(conversation, assistant, trigger)
+  def quote_attributes(conversation, assistant)
     return {} unless assistant.behavior_flag?(:reply_marking)
 
-    quoted = message_worth_quoting(conversation, trigger)
+    quoted = message_worth_quoting(conversation)
     # No source_id on channels that carry no provider id (playground, API
     # inbox); there is nothing to quote and the builder would no-op anyway.
     return {} if quoted.nil? || quoted.source_id.blank?
@@ -292,27 +292,29 @@ class Ai::AutopilotReplyJob < ApplicationJob
   #     has scrolled away and needs re-anchoring.
   #
   # Anything else stays quiet.
-  BURST_THRESHOLD = 2
-  STALE_QUESTION_AFTER = 10.minutes
+  # A question mark, or one of the words a question opens with when the customer
+  # cannot be bothered to type one — which on WhatsApp is most of the time.
+  # Deliberately conservative: missing a question costs a quote nobody notices,
+  # while quoting a statement is the tic the operator objected to.
+  QUESTION = /
+    \?
+    |\A\s*(?:qual|quais|quanto|quantos|quantas|quando|onde|como|quem
+            |por\s*qu[eê]|porqu[eê]|t[eê]m|teria|aceita|aceitam
+            |consegue|conseguem|d[aá]\s+pra)\b
+  /xi
 
-  # Which message the arrow points at, or nil for the ordinary case where it
-  # points at nothing.
+  # Which message the arrow points at, or nil when it points at nothing.
   #
-  # A pile-up quotes where the pile STARTS, not the message that happened to
-  # trigger the turn. Since the debounce collapses a burst into one answer, that
-  # answer covers the whole thought — quoting its last fragment ("...aquela de
-  # 1L") would pick out the least meaningful part of it. Quoting the first says
-  # "picking up from here", which is what a person does when they come back to
-  # several unread messages.
+  # The QUESTION, which is what the toggle is named after. Not every message:
+  # answering "ok, vou levar" with a quote is a nervous tic. A question is
+  # exactly where the arrow earns its place — and it keeps earning it when a
+  # burst arrives, because then the answer covers several messages at once and
+  # has to say which one it picked up.
   #
-  # A late answer quotes the question itself, which by then is the only pending
-  # one anyway.
-  def message_worth_quoting(conversation, trigger)
-    pending = unanswered_incoming(conversation)
-    return pending.first if pending.size >= BURST_THRESHOLD
-    return trigger if trigger.created_at < STALE_QUESTION_AFTER.ago
-
-    nil
+  # Oldest first, so a burst quotes the question it starts from rather than the
+  # fragment that happened to trigger the turn ("...aquela de 1L").
+  def message_worth_quoting(conversation)
+    unanswered_incoming(conversation).find { |message| QUESTION.match?(message.content.to_s) }
   end
 
   # Customer messages piled up since the last thing anyone sent them. Runs
@@ -320,13 +322,12 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # so "last outgoing" is genuinely the previous answer. Private notes are
   # excluded: a human's internal note is invisible to the customer, so it never
   # counts as having replied to them.
-  #
-  # Capped at BURST_THRESHOLD because that is all the answer needs — whether a
-  # pile exists, and where it starts.
+  MAX_PENDING_SCANNED = 10
+
   def unanswered_incoming(conversation)
     last_reply_id = conversation.messages.where(message_type: :outgoing, private: false).maximum(:id).to_i
     conversation.messages.where(message_type: :incoming).where('id > ?', last_reply_id)
-                .order(:id).limit(BURST_THRESHOLD).to_a
+                .order(:id).limit(MAX_PENDING_SCANNED).to_a
   end
 
   # One bubble per paragraph, the way a person types on WhatsApp, when the

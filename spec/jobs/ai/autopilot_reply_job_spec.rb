@@ -241,36 +241,46 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       agent_replies.map { |m| m.content_attributes['in_reply_to_external_id'] }
     end
 
-    # An earlier question nobody answered, so the trigger stops being the only
+    # An earlier message nobody answered, so the trigger stops being the only
     # thing waiting. Created before `message` is referenced, so its id is lower.
-    def another_question!
+    def earlier!(content)
       create(:message, conversation: conversation, account: account, inbox: conversation.inbox,
-                       content: 'E vocês entregam em SP?', source_id: 'wamid.FIRST')
+                       content: content, source_id: 'wamid.FIRST')
     end
 
-    # The whole point of the heuristic. "Quanto custa?" → "R$ 299" → "ok, vou
-    # levar": there is only one thing each answer could be about, so an arrow on
-    # every one of them is a nervous tic, not a courtesy.
-    it 'stays out of an ordinary back-and-forth' do
+    it 'quotes a direct question' do
+      message.update!(content: 'Quanto custa a progressiva blond?')
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
+    end
+
+    # Nobody types the question mark on a phone.
+    it 'quotes a question that never got its question mark' do
+      message.update!(content: 'tem essa progressiva em 1L')
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
+    end
+
+    # The tic the operator objected to: "quanto custa?" → "R$ 299" → "ok, vou
+    # levar", and the agent quoting that last one too. There is nothing there to
+    # disambiguate.
+    it 'leaves a statement alone' do
+      message.update!(content: 'ok, vou levar entao')
+
       described_class.perform_now(message.id, assistant.id)
 
       expect(first_outgoing.content_attributes['in_reply_to_external_id']).to be_nil
     end
 
-    # Where the pile STARTS, not the fragment that happened to trigger the turn:
-    # the debounce collapses a burst into one answer covering the whole thought,
-    # so quoting its last line would pick out the least meaningful part of it.
-    it 'quotes where the pile starts when several questions arrived at once' do
-      another_question!
-
-      described_class.perform_now(message.id, assistant.id)
-
-      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq('wamid.FIRST')
-    end
-
-    # By then the customer has scrolled away and needs re-anchoring.
-    it 'quotes when the answer arrives long after the question' do
-      message.update!(created_at: 30.minutes.ago)
+    # The burst arrives as one thought and is answered once, so the arrow has to
+    # point at the question in it, not at whichever fragment happened last.
+    it 'reaches past the small talk to the question behind it' do
+      earlier!('oi bom dia')
+      message.update!(content: 'quanto custa a progressiva?')
 
       described_class.perform_now(message.id, assistant.id)
 
@@ -278,9 +288,9 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     end
 
     # A human's internal note is invisible to the customer, so it never counts
-    # as having replied to them — the backlog is still a backlog.
-    it 'still counts the backlog when the only reply since was a private note' do
-      another_question!
+    # as having replied to them — the question is still unanswered.
+    it 'still finds the question when the only reply since was a private note' do
+      earlier!('vocês entregam em SP?')
       create(:message, conversation: conversation, account: account, inbox: conversation.inbox,
                        message_type: :outgoing, private: true, content: 'cliente VIP')
 
@@ -293,7 +303,7 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     # to this conversation — which is what keeps a quote from ever pointing at
     # another tenant's message.
     it 'resolves the quote back to a real message row in this conversation' do
-      first = another_question!
+      first = earlier!('vocês entregam em SP?')
 
       described_class.perform_now(message.id, assistant.id)
 
@@ -302,7 +312,7 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
 
     it 'sends a plain reply when the flag is off' do
       assistant.update!(behavior_flags: {})
-      another_question!
+      message.update!(content: 'Quanto custa?')
 
       described_class.perform_now(message.id, assistant.id)
 
@@ -311,7 +321,7 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
 
     # Playground and API inboxes have no provider id to quote.
     it 'sends a plain reply when the message carries no provider id' do
-      message.update!(source_id: nil, created_at: 30.minutes.ago)
+      message.update!(content: 'Quanto custa?', source_id: nil)
 
       described_class.perform_now(message.id, assistant.id)
 
@@ -325,11 +335,11 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       allow(Ai::AutopilotReplyService).to receive(:new).and_return(
         instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO produto sai por R$ 219,00." })
       )
-      another_question!
+      message.update!(content: 'Quanto custa?')
 
       described_class.perform_now(message.id, assistant.id)
 
-      expect(quoted_ids).to eq(['wamid.FIRST', nil])
+      expect(quoted_ids).to eq([message.source_id, nil])
     end
   end
 
