@@ -111,6 +111,30 @@ RSpec.describe Ai::CustomTool do
         .to eq('https://loja.example.com/api/products?q=volume+control+blond&in_stock=true')
     end
 
+    # Reproduced against the live store: the URL wanted {{ q }}, the schema
+    # declared only `items`, Liquid rendered q as "" and the search for a
+    # product became a search for nothing — answered 200 with fifteen unrelated
+    # products the agent then quoted as fact.
+    it 'raises instead of silently searching for an empty string' do
+      tool = build_tool(
+        endpoint_url: 'https://loja.example.com/api/products?q={{ q | url_encode }}',
+        param_schema: [{ 'name' => 'items', 'type' => 'array', 'description' => 'lista' }]
+      )
+
+      expect { tool.build_request_url({ 'items' => [] }) }.to raise_error(described_class::TemplateError)
+    end
+
+    # An optional parameter the model chose not to send is not a fault.
+    it 'renders a declared but omitted param as empty' do
+      tool = build_tool(
+        endpoint_url: 'https://loja.example.com/api/products?q={{ q }}&page={{ page }}',
+        param_schema: [{ 'name' => 'q', 'type' => 'string', 'description' => 'termo' },
+                       { 'name' => 'page', 'type' => 'string', 'description' => 'pagina', 'required' => false }]
+      )
+
+      expect(tool.build_request_url({ 'q' => 'blond' })).to eq('https://loja.example.com/api/products?q=blond&page=')
+    end
+
     it 'does not repeat a param the template already consumed' do
       tool = id_tool
 

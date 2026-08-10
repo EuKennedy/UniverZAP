@@ -110,7 +110,18 @@ class Ai::CustomTool < ApplicationRecord
   def render_endpoint(params)
     return endpoint_url if endpoint_url.exclude?('{{')
 
-    render_template(endpoint_url, params)
+    render_template(endpoint_url, declared_blanks.merge(params.to_h.deep_stringify_keys), strict: true)
+  end
+
+  # A DECLARED parameter the model chose not to send renders empty, which is
+  # what an optional query parameter should do. An UNDECLARED one raises,
+  # because that is the configuration fault — and rendering it blank instead is
+  # how a search for "volume control blond" quietly became a search for "",
+  # answered 200 with fifteen unrelated products that the agent then treated as
+  # the truth. A tool returning the wrong data confidently is worse than a tool
+  # that fails.
+  def declared_blanks
+    Array(param_schema).each_with_object({}) { |param, acc| acc[param['name'].to_s] = '' }
   end
 
   # Params the URL template did not consume travel as the query string.
@@ -167,9 +178,19 @@ class Ai::CustomTool < ApplicationRecord
     self.slug = title.parameterize(separator: '_').truncate(MAX_SLUG_LENGTH, omission: '')
   end
 
-  def render_template(template, context)
-    Liquid::Template.parse(template, error_mode: :strict)
-                    .render(context.deep_stringify_keys, strict_variables: true, strict_filters: true)
+  # `strict` picks between Liquid's two renderers, and the difference is not
+  # cosmetic: #render COLLECTS an undefined-variable error and substitutes an
+  # empty string, #render! raises it. Only the endpoint URL opts in for now.
+  # The body and response templates keep the lenient renderer because they are
+  # free-form and may legitimately reference fields that are not always present;
+  # tightening those is a separate change with its own blast radius.
+  def render_template(template, context, strict: false)
+    parsed = Liquid::Template.parse(template, error_mode: :strict)
+    variables = context.deep_stringify_keys
+    options = { strict_variables: true, strict_filters: true }
+    return parsed.render!(variables, **options) if strict
+
+    parsed.render(variables, **options)
   rescue Liquid::Error => e
     raise TemplateError, e.message
   end
