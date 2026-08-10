@@ -222,14 +222,64 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
                        source_id: 'wamid.HBgNNTUxMTk5OTk5OTk5ORUCABIYFjNFQjA=')
     end
 
-    before { allow(Ai::AutopilotReplyService).to receive(:new).and_return(service) }
-
-    def first_outgoing
-      conversation.reload.messages.where(message_type: :outgoing).order(:id).first
+    before do
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(service)
+      assistant.update!(behavior_flags: { 'reply_marking' => true })
     end
 
-    it 'quotes the customer question when the flag is on' do
-      assistant.update!(behavior_flags: { 'reply_marking' => true })
+    # `private: false` on purpose — a private note is an outgoing message too,
+    # and one of the cases below plants one deliberately.
+    def agent_replies
+      conversation.reload.messages.where(message_type: :outgoing, private: false).order(:id)
+    end
+
+    def first_outgoing
+      agent_replies.first
+    end
+
+    def quoted_ids
+      agent_replies.map { |m| m.content_attributes['in_reply_to_external_id'] }
+    end
+
+    # An earlier question nobody answered, so the trigger stops being the only
+    # thing waiting. Created before `message` is referenced, so its id is lower.
+    def another_question!
+      create(:message, conversation: conversation, account: account, inbox: conversation.inbox,
+                       content: 'E vocês entregam em SP?')
+    end
+
+    # The whole point of the heuristic. "Quanto custa?" → "R$ 299" → "ok, vou
+    # levar": there is only one thing each answer could be about, so an arrow on
+    # every one of them is a nervous tic, not a courtesy.
+    it 'stays out of an ordinary back-and-forth' do
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to be_nil
+    end
+
+    it 'quotes when the customer fired several questions before anyone answered' do
+      another_question!
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
+    end
+
+    # By then the customer has scrolled away and needs re-anchoring.
+    it 'quotes when the answer arrives long after the question' do
+      message.update!(created_at: 30.minutes.ago)
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
+    end
+
+    # A human's internal note is invisible to the customer, so it never counts
+    # as having replied to them — the backlog is still a backlog.
+    it 'still counts the backlog when the only reply since was a private note' do
+      another_question!
+      create(:message, conversation: conversation, account: account, inbox: conversation.inbox,
+                       message_type: :outgoing, private: true, content: 'cliente VIP')
 
       described_class.perform_now(message.id, assistant.id)
 
@@ -240,7 +290,7 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     # to this conversation — which is what keeps a quote from ever pointing at
     # another tenant's message.
     it 'resolves the quote back to the trigger message row' do
-      assistant.update!(behavior_flags: { 'reply_marking' => true })
+      another_question!
 
       described_class.perform_now(message.id, assistant.id)
 
@@ -248,6 +298,9 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     end
 
     it 'sends a plain reply when the flag is off' do
+      assistant.update!(behavior_flags: {})
+      another_question!
+
       described_class.perform_now(message.id, assistant.id)
 
       expect(first_outgoing.content_attributes['in_reply_to_external_id']).to be_nil
@@ -255,7 +308,7 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
 
     # Playground and API inboxes have no provider id to quote.
     it 'sends a plain reply when the trigger carries no provider id' do
-      assistant.update!(behavior_flags: { 'reply_marking' => true })
+      another_question!
       message.update!(source_id: nil)
 
       described_class.perform_now(message.id, assistant.id)
@@ -270,12 +323,11 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       allow(Ai::AutopilotReplyService).to receive(:new).and_return(
         instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO produto sai por R$ 219,00." })
       )
+      another_question!
 
       described_class.perform_now(message.id, assistant.id)
 
-      quoted = conversation.reload.messages.where(message_type: :outgoing).order(:id)
-                           .map { |m| m.content_attributes['in_reply_to_external_id'] }
-      expect(quoted).to eq([message.source_id, nil])
+      expect(quoted_ids).to eq([message.source_id, nil])
     end
   end
 

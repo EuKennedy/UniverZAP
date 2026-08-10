@@ -207,7 +207,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # id, and the history row reads its text from the invocation rather than the
   # message, so a split reply still shows whole in supervision.
   def send_outgoing(conversation, assistant, trigger, reply_text)
-    quoted = quote_attributes(assistant, trigger)
+    quoted = quote_attributes(conversation, assistant, trigger)
     reply_parts(assistant, reply_text).each_with_index.map do |part, index|
       params = { content: part, message_type: :outgoing }
       # Only the first bubble quotes. WhatsApp renders one quoted header per
@@ -218,9 +218,6 @@ class Ai::AutopilotReplyJob < ApplicationJob
   end
 
   # The customer's question, quoted above the answer — the WhatsApp reply arrow.
-  # Off by default: on a conversation with one open question the quote is
-  # redundant, and it only earns its place once the customer has asked several
-  # things at once. The operator decides.
   #
   # Keyed on `in_reply_to_external_id`, NOT `in_reply_to`, and that is load
   # bearing: Messages::MessageBuilder only reads `in_reply_to` out of
@@ -230,13 +227,45 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # The external id survives, and Message#ensure_in_reply_to resolves the pair
   # back from it — scoped to this conversation, so it cannot cite another
   # tenant's message.
-  def quote_attributes(assistant, trigger)
+  def quote_attributes(conversation, assistant, trigger)
     return {} unless assistant.behavior_flag?(:reply_marking)
     # Blank on channels that carry no provider id (playground, API inbox); there
     # is nothing to quote and the builder would no-op anyway.
     return {} if trigger.source_id.blank?
+    return {} unless quote_earns_its_place?(conversation, trigger)
 
     { in_reply_to_external_id: trigger.source_id }
+  end
+
+  # A quote on every single reply is a nervous tic, not a courtesy: in an
+  # ordinary back-and-forth ("quanto custa?" → "R$ 299" → "ok, vou levar") there
+  # is only one thing the answer could possibly be about, and the arrow adds
+  # nothing but clutter. People quote on WhatsApp for exactly two reasons, and
+  # these are those two:
+  #
+  #   - the customer fired several messages before anyone answered, so the reply
+  #     has to say WHICH one it picked up;
+  #   - the answer arrives long after the question, by which time the customer
+  #     has scrolled away and needs re-anchoring.
+  #
+  # Anything else stays quiet.
+  BURST_THRESHOLD = 2
+  STALE_QUESTION_AFTER = 10.minutes
+
+  def quote_earns_its_place?(conversation, trigger)
+    return true if trigger.created_at < STALE_QUESTION_AFTER.ago
+
+    unanswered_incoming(conversation) >= BURST_THRESHOLD
+  end
+
+  # Customer messages piled up since the last thing anyone sent them. Runs
+  # inside the conversation lock and before this turn's own reply is written,
+  # so "last outgoing" is genuinely the previous answer. Private notes are
+  # excluded: a human's internal note is invisible to the customer, so it never
+  # counts as having replied to them.
+  def unanswered_incoming(conversation)
+    last_reply_id = conversation.messages.where(message_type: :outgoing, private: false).maximum(:id).to_i
+    conversation.messages.where(message_type: :incoming).where('id > ?', last_reply_id).count
   end
 
   # One bubble per paragraph, the way a person types on WhatsApp, when the
