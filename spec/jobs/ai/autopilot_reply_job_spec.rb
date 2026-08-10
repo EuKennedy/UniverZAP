@@ -343,6 +343,47 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     end
   end
 
+  # Without it the customer sees whatever the channel decides to label the
+  # sender with, which on WhatsApp is a raw phone JID.
+  describe 'the name the customer sees above the reply' do
+    before { allow(Ai::AutopilotReplyService).to receive(:new).and_return(service) }
+
+    def sent
+      conversation.reload.messages.where(message_type: :outgoing).order(:id).pluck(:content)
+    end
+
+    # One asterisk, not two: `*Elisa*` is bold on WhatsApp, `**Elisa**` shows
+    # the asterisks.
+    it 'signs the reply in WhatsApp bold' do
+      assistant.update!(conversation_display_name: 'Elisa')
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(sent.first).to eq("*Elisa*\nOlá!")
+    end
+
+    # It has always sent unsigned, and an operator who never opens the field
+    # must not have their conversations change under them.
+    it 'sends unsigned while the field is empty' do
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(sent.first).to eq('Olá!')
+    end
+
+    # The name answers "who is this?", which is asked once. On all four bubbles
+    # of a split reply it reads as a form letter.
+    it 'signs only the first bubble of a split reply' do
+      assistant.update!(conversation_display_name: 'Elisa', behavior_flags: { 'split_messages' => true })
+      allow(Ai::AutopilotReplyService).to receive(:new).and_return(
+        instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO produto sai por R$ 219,00." })
+      )
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(sent).to eq(["*Elisa*\nOi, tudo bem?", 'O produto sai por R$ 219,00.'])
+    end
+  end
+
   # The customer who thinks out loud: "oi" / "vc tem a progressiva?" / "aquela
   # de 1L" is one question typed in three bursts, and used to buy three Claude
   # calls and send three replies.

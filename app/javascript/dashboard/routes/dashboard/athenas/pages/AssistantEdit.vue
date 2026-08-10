@@ -34,6 +34,7 @@ const success = ref('');
 
 const form = reactive({
   name: '',
+  conversation_display_name: '',
   role: '',
   description: '',
   avatar_url: '',
@@ -145,6 +146,7 @@ const fetchAssistant = async () => {
     assistant.value = data;
     Object.assign(form, {
       name: data.name,
+      conversation_display_name: data.conversation_display_name || '',
       role: data.role,
       description: data.description || '',
       avatar_url: data.avatar_url || '',
@@ -513,6 +515,18 @@ onMounted(() => {
               v-model="form.name"
               :label="t('ATHENAS.WIZARD.IDENTITY.NAME_LABEL')"
             />
+            <div class="flex flex-col gap-1.5">
+              <Input
+                v-model="form.conversation_display_name"
+                :label="t('ATHENAS.WIZARD.IDENTITY.DISPLAY_NAME_LABEL')"
+                :placeholder="
+                  t('ATHENAS.WIZARD.IDENTITY.DISPLAY_NAME_PLACEHOLDER')
+                "
+              />
+              <p class="text-[11px] text-n-slate-11">
+                {{ t('ATHENAS.WIZARD.IDENTITY.DISPLAY_NAME_HINT') }}
+              </p>
+            </div>
             <Input
               v-model="form.role"
               :label="t('ATHENAS.WIZARD.IDENTITY.ROLE_LABEL')"

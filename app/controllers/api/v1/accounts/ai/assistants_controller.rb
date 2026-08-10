@@ -107,7 +107,7 @@ class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseContr
 
   def permitted_params
     params.require(:ai_assistant).permit(
-      :name, :role, :description, :avatar_url, :tone,
+      :name, :conversation_display_name, :role, :description, :avatar_url, :tone,
       :provider, :model, :system_prompt, :temperature, :max_tokens,
       :autopilot_enabled, :encrypted_anthropic_key, :encrypted_openai_key,
       :active,

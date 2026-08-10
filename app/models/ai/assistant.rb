@@ -98,6 +98,7 @@ class Ai::Assistant < ApplicationRecord
     {
       id: id,
       name: name,
+      conversation_display_name: conversation_display_name,
       role: role,
       description: description,
       avatar_url: avatar_url,

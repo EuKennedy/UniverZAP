@@ -251,12 +251,30 @@ class Ai::AutopilotReplyJob < ApplicationJob
   def send_outgoing(conversation, assistant, reply_text)
     quoted = quote_attributes(conversation, assistant)
     reply_parts(assistant, reply_text).each_with_index.map do |part, index|
-      params = { content: part, message_type: :outgoing }
+      params = { content: sign(assistant, part, index), message_type: :outgoing }
       # Only the first bubble quotes. WhatsApp renders one quoted header per
       # message, so four bubbles all citing the same question is noise.
       params[:content_attributes] = quoted if index.zero? && quoted.present?
       Messages::MessageBuilder.new(assistant_user(assistant), conversation, params).perform
     end.last
+  end
+
+  # Who the customer thinks they are talking to, on its own line above the
+  # first bubble. Distinct from `assistant.name`, which is how the OPERATOR
+  # finds the agent in the dashboard and routinely says things like "(teste)".
+  # Unset means unsigned, which is how every reply has been sent until now.
+  #
+  # One asterisk, not two: `*Elisa*` is bold on WhatsApp and `**Elisa**` shows
+  # the asterisks — the same rule that already governs the model's own output.
+  #
+  # First bubble only. The name answers "who is this?", which is asked once;
+  # repeating it on all four bubbles of a split reply would read as a form
+  # letter, and it is the thing this feature exists to stop looking like.
+  def sign(assistant, part, index)
+    name = assistant.conversation_display_name.to_s.strip
+    return part unless index.zero? && name.present?
+
+    "*#{name}*\n#{part}"
   end
 
   # The customer's question, quoted above the answer — the WhatsApp reply arrow.
