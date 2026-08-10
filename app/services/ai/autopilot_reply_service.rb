@@ -570,9 +570,32 @@ class Ai::AutopilotReplyService
       # When the agent has connected tools, the TOOL result — not the knowledge
       # block — is the source of truth for prices, links and actions.
       custom_tools_instruction,
+      behavior_flags_instruction,
       continuity_examples
     ]
   end
+
+  # The opt-in behaviours the operator switched on. Nil when none are, so the
+  # prompt of an agent that wants none is byte-identical to before — which also
+  # keeps its cache prefix intact.
+  def behavior_flags_instruction
+    parts = []
+    parts << SPLIT_MESSAGES_RULE if @assistant.behavior_flag?(:split_messages)
+    parts.compact.presence&.join("\n\n")
+  end
+
+  # The delivery side splits on blank lines (Ai::AutopilotReplyJob#reply_parts).
+  # Without this the model writes one paragraph and there is nothing to split,
+  # so the toggle would look broken rather than off.
+  SPLIT_MESSAGES_RULE = <<~RULES.strip.freeze
+    FORMATO — MENSAGENS CURTAS E SEPARADAS:
+    Escreva como alguém digitando no WhatsApp: ideias curtas, cada uma em seu
+    próprio parágrafo, separadas por UMA LINHA EM BRANCO. Cada parágrafo vira uma
+    mensagem separada para o cliente.
+    Use no máximo 3 parágrafos. Não separe uma saudação ou uma palavra solta em
+    parágrafo próprio — junte com a ideia seguinte. Links, preços e o passo final
+    ficam no ÚLTIMO parágrafo, para não se perderem no meio.
+  RULES
 
   # What moves every turn. Kept in the SAME relative order as before so the
   # adjacencies that were tuned deliberately survive: the veracity rule still

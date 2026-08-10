@@ -203,13 +203,55 @@ class Ai::AutopilotReplyJob < ApplicationJob
     result[:content].to_s.strip
   end
 
+  # Returns the LAST message created. The invocation log is stamped with that
+  # id, and the history row reads its text from the invocation rather than the
+  # message, so a split reply still shows whole in supervision.
   def send_outgoing(conversation, assistant, reply_text)
-    Messages::MessageBuilder.new(
-      assistant_user(assistant),
-      conversation,
-      content: reply_text,
-      message_type: :outgoing
-    ).perform
+    reply_parts(assistant, reply_text).map do |part|
+      Messages::MessageBuilder.new(
+        assistant_user(assistant),
+        conversation,
+        content: part,
+        message_type: :outgoing
+      ).perform
+    end.last
+  end
+
+  # One bubble per paragraph, the way a person types on WhatsApp, when the
+  # operator asked for it. Off by default: an agent that suddenly fires four
+  # notifications instead of one is a behaviour change the tenant has to choose.
+  #
+  # No pause between them, deliberately. This runs inside the conversation row
+  # lock (see #commit_reply), so sleeping here would hold that lock — and a
+  # Sidekiq thread — for the whole performance. Separate bubbles are the win;
+  # simulated typing delay is not worth starving the queue for.
+  def reply_parts(assistant, reply_text)
+    text = reply_text.to_s
+    return [text] unless assistant.behavior_flag?(:split_messages)
+
+    parts = split_on_paragraphs(text)
+    parts.length > 1 ? parts : [text]
+  end
+
+  # Blank lines are where the model already breaks its own thought. Fragments
+  # shorter than MIN_PART_CHARS are glued to the previous bubble — "Claro!" on
+  # its own line is punctuation, not a message — and everything past MAX_PARTS
+  # collapses into the last one so a long answer cannot become a burst.
+  MAX_PARTS = 4
+  MIN_PART_CHARS = 12
+
+  def split_on_paragraphs(text)
+    chunks = text.split(/\n{2,}/).map(&:strip).reject(&:blank?)
+    return chunks if chunks.length <= 1
+
+    merged = chunks.each_with_object([]) do |chunk, acc|
+      if acc.any? && (chunk.length < MIN_PART_CHARS || acc.length >= MAX_PARTS)
+        acc[-1] = "#{acc.last}\n\n#{chunk}"
+      else
+        acc << chunk
+      end
+    end
+    merged
   end
 
   # Ties the reply the customer actually received back to the invocations that

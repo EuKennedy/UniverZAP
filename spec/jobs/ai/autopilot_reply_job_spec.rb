@@ -174,4 +174,54 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       expect(invocation.reload.delivery_status).to eq('failed')
     end
   end
+
+  # A tenant that asked for it gets one bubble per paragraph, the way a person
+  # types on WhatsApp. Off by default, because an agent that suddenly fires four
+  # notifications instead of one is a change the tenant has to choose.
+  describe 'split_messages behaviour flag' do
+    let(:long_reply) { instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO Volume Control Blond sai por R$ 219.\n\nQuer que eu mande o link?" }) }
+
+    before { allow(Ai::AutopilotReplyService).to receive(:new).and_return(long_reply) }
+
+    it 'sends one message per paragraph when the flag is on' do
+      assistant.update!(behavior_flags: { 'split_messages' => true })
+
+      expect { described_class.perform_now(message.id, assistant.id) }.to change { outgoing_count }.by(3)
+    end
+
+    it 'sends a single message when the flag is off' do
+      expect { described_class.perform_now(message.id, assistant.id) }.to change { outgoing_count }.by(1)
+    end
+
+    # The reply still has to read whole in supervision, so the history row must
+    # not end up holding only the last bubble.
+    it 'keeps the paragraphs in order' do
+      assistant.update!(behavior_flags: { 'split_messages' => true })
+      described_class.perform_now(message.id, assistant.id)
+
+      sent = conversation.reload.messages.where(message_type: :outgoing).order(:id).pluck(:content)
+
+      expect(sent.first).to include('tudo bem')
+      expect(sent.last).to include('link')
+    end
+  end
+
+  describe '#split_on_paragraphs' do
+    let(:job) { described_class.new }
+
+    it 'glues a fragment too short to be its own message onto the one before it' do
+      parts = job.send(:split_on_paragraphs, "Claro!\n\nO produto custa R$ 219,00 e sai hoje.")
+
+      expect(parts.length).to eq(1)
+      expect(parts.first).to start_with('Claro!')
+    end
+
+    it 'never bursts past the cap' do
+      parts = job.send(:split_on_paragraphs, (1..9).map { |i| "Paragrafo numero #{i} com texto." }.join("\n\n"))
+
+      expect(parts.length).to eq(described_class::MAX_PARTS)
+      expect(parts.last).to include('numero 9')
+    end
+  end
+
 end
