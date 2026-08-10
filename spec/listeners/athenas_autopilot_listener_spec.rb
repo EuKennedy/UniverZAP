@@ -11,25 +11,25 @@ RSpec.describe AthenasAutopilotListener do
     create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :incoming)
   end
 
+  before do
+    inbox.update!(ai_assistant: assistant)
+    allow(Ai::AutopilotReplyJob).to receive(:perform_later)
+  end
+
   def dispatch
     described_class.new.message_created(
       Events::Base.new('message.created', Time.zone.now, message: message)
     )
   end
 
-  def enqueued?
-    dispatch
-    enqueued_jobs.any? { |job| job['job_class'] == 'Ai::AutopilotReplyJob' || job[:job] == Ai::AutopilotReplyJob }
-  end
-
-  before { inbox.update!(ai_assistant: assistant) }
-
   # What the checkbox on the agent screen has always claimed to do.
   context 'when the agent has autopilot switched on' do
     before { assistant.update!(autopilot_enabled: true) }
 
     it 'answers without the operator arming the conversation or the inbox' do
-      expect(enqueued?).to be(true)
+      dispatch
+
+      expect(Ai::AutopilotReplyJob).to have_received(:perform_later).with(message.id, assistant.id)
     end
 
     # The operator's escape hatch. It has to beat the agent's own switch, or
@@ -38,13 +38,17 @@ RSpec.describe AthenasAutopilotListener do
     it 'stays silent on a conversation the operator silenced' do
       conversation.update!(additional_attributes: { 'autopilot_enabled' => false })
 
-      expect(enqueued?).to be(false)
+      dispatch
+
+      expect(Ai::AutopilotReplyJob).not_to have_received(:perform_later)
     end
   end
 
   context 'when the agent has autopilot switched off' do
     it 'stays silent by default' do
-      expect(enqueued?).to be(false)
+      dispatch
+
+      expect(Ai::AutopilotReplyJob).not_to have_received(:perform_later)
     end
 
     it 'answers a conversation the operator armed by hand' do
@@ -52,7 +56,9 @@ RSpec.describe AthenasAutopilotListener do
         additional_attributes: { 'autopilot_enabled' => true, 'autopilot_assistant_id' => assistant.id }
       )
 
-      expect(enqueued?).to be(true)
+      dispatch
+
+      expect(Ai::AutopilotReplyJob).to have_received(:perform_later).with(message.id, assistant.id)
     end
 
     # Accounts that drive autopilot at the inbox instead of on the agent kept
@@ -60,13 +66,17 @@ RSpec.describe AthenasAutopilotListener do
     it 'answers when the inbox itself is in autopilot mode' do
       inbox.update!(ai_mode: 'autopilot')
 
-      expect(enqueued?).to be(true)
+      dispatch
+
+      expect(Ai::AutopilotReplyJob).to have_received(:perform_later).with(message.id, assistant.id)
     end
   end
 
   it 'never answers when the agent is inactive, however autopilot was switched on' do
     assistant.update!(autopilot_enabled: true, active: false)
 
-    expect(enqueued?).to be(false)
+    dispatch
+
+    expect(Ai::AutopilotReplyJob).not_to have_received(:perform_later)
   end
 end
