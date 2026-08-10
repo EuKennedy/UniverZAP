@@ -38,6 +38,47 @@ RSpec.describe Ai::Agent::ToolLoopService do
     expect(run[:content]).to eq('Oi!')
   end
 
+  # A reply that promises a lookup and calls nothing leaves the customer waiting
+  # for something that will never happen: there is no later turn in which the
+  # agent remembers to do it.
+  describe 'a promised lookup that was never made' do
+    it 'forces the call the reply said it was making' do
+      tool_use = { 'id' => 'tu_1', 'name' => 'listar_servicos', 'input' => {} }
+      allow(claude).to receive(:chat).and_return(
+        { content: 'Deixa eu confirmar o valor certinho pra você.', tool_uses: [], stop_reason: 'end_turn' },
+        { content: '', tool_uses: [tool_use], stop_reason: 'tool_use', raw: { 'content' => [] } },
+        { content: 'Custa R$ 219.', tool_uses: [], stop_reason: 'end_turn', raw: { 'content' => [] } }
+      )
+      allow(executor).to receive(:call).and_return('{"price":219}')
+
+      expect(run[:content]).to eq('Custa R$ 219.')
+      expect(claude).to have_received(:chat).with(hash_including(tool_choice: { type: 'any' })).once
+    end
+
+    it 'leaves an ordinary reply alone' do
+      allow(claude).to receive(:chat).and_return({ content: 'Oi, tudo bem?', tool_uses: [], stop_reason: 'end_turn' })
+
+      run
+
+      expect(claude).to have_received(:chat).once
+    end
+
+    # Later iterations already carry tool results, so a closing "já te confirmo"
+    # is a sign-off rather than an unkept promise.
+    it 'does not force a second call once tools have already run' do
+      tool_use = { 'id' => 'tu_1', 'name' => 'listar_servicos', 'input' => {} }
+      allow(claude).to receive(:chat).and_return(
+        { content: '', tool_uses: [tool_use], stop_reason: 'tool_use', raw: { 'content' => [] } },
+        { content: 'Já te confirmo o restante.', tool_uses: [], stop_reason: 'end_turn', raw: { 'content' => [] } }
+      )
+      allow(executor).to receive(:call).and_return('{}')
+
+      run
+
+      expect(claude).to have_received(:chat).twice
+    end
+  end
+
   context 'when the turn budget runs out' do
     let(:tool_use) { { 'id' => 'tu_1', 'name' => 'listar_servicos', 'input' => {} } }
     let(:calls) { [] }

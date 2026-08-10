@@ -32,11 +32,25 @@ class Ai::Agent::ToolLoopService
     @log_context = log_context
   end
 
+  # Claude routinely writes "deixa eu confirmar o valor certinho" and stops
+  # there, with no tool_use block — then adds a qualifying question, because the
+  # operator's sales script asks for one. The loop sees an empty tool_uses,
+  # calls the turn finished and sends it, and the customer waits for a lookup
+  # that was never started: there is no later turn where the agent remembers.
+  # The prompt forbids this, but a soft rule is exactly what the loop-breaker
+  # and the grounding guard already proved gets overridden by a tenant script.
+  ANNOUNCED_LOOKUP = /
+    \b(?:deixa\s+eu|vou|já\s+vou)\s+(?:ver|verificar|conferir|consultar|checar|buscar|confirmar|puxar|olhar)
+    |\bjá\s+(?:te\s+)?(?:confirmo|retorno|falo|digo|mando|passo)
+    |\b(?:um\s+instante|um\s+momento|só\s+um\s+minuto|um\s+minutinho|só\s+um\s+segundo)
+  /xi
+
   def perform
     @deadline = monotonic_now + TURN_BUDGET_SECONDS
     last = nil
-    MAX_ITERATIONS.times do
+    MAX_ITERATIONS.times do |iteration|
       last = run_turn
+      last = force_tool_use(last) if iteration.zero? && announced_without_calling?(last)
       return last if Array(last[:tool_uses]).empty?
 
       feed_tool_results(last)
@@ -47,6 +61,40 @@ class Ai::Agent::ToolLoopService
   end
 
   private
+
+  # Only on the first iteration: later ones already carry tool results, so a
+  # closing "já te confirmo" is a sign-off, not an unkept promise.
+  def announced_without_calling?(response)
+    @tools.present? &&
+      Array(response[:tool_uses]).empty? &&
+      ANNOUNCED_LOOKUP.match?(response[:content].to_s)
+  end
+
+  # `tool_choice: any` makes the call non-optional — Claude cannot answer with
+  # text this time, so the promise it just made becomes the lookup it described.
+  # The messages are unchanged (the discarded draft was never appended), so this
+  # is the same turn asked again under a constraint, not a new one.
+  #
+  # Falls back to the original draft if the forced call fails: a reply that
+  # over-promises still beats no reply at all.
+  def force_tool_use(draft)
+    log_forced_tool_use
+    claude.chat(
+      messages: @messages, system: @system, conversation: @conversation,
+      phase: @phase, tools: @tools, tool_choice: { type: 'any' },
+      log_context: @log_context, cache_messages: true
+    )
+  rescue Ai::ClaudeService::Error => e
+    Rails.logger.warn("[Athenas agent] forced tool call failed conv=#{@conversation&.display_id}: #{e.message}")
+    draft
+  end
+
+  def log_forced_tool_use
+    Rails.logger.info(
+      "[Athenas agent] reply announced a lookup with no tool call, forcing one " \
+      "conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
+    )
+  end
 
   def monotonic_now
     Process.clock_gettime(Process::CLOCK_MONOTONIC)
