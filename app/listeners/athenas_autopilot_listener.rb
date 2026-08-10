@@ -18,7 +18,7 @@ class AthenasAutopilotListener < BaseListener
     Rails.logger.info(
       "[Athenas autopilot] enqueue job conv=#{conversation.id} message=#{message.id} assistant=#{assistant.id}"
     )
-    Ai::AutopilotReplyJob.perform_later(message.id, assistant.id)
+    Ai::AutopilotReplyJob.set(wait: Ai::AutopilotReplyJob::DEBOUNCE_WINDOW).perform_later(message.id, assistant.id)
   end
 
   # A conversation that closes without a sale is the moment the commercial

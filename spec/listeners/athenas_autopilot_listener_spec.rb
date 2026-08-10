@@ -11,9 +11,14 @@ RSpec.describe AthenasAutopilotListener do
     create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :incoming)
   end
 
+  # The turn is scheduled through .set(wait:) so the rest of a customer's burst
+  # can land before it starts, which puts perform_later on the configured job
+  # rather than on the job class.
+  let(:scheduled) { instance_double(ActiveJob::ConfiguredJob, perform_later: nil) }
+
   before do
     inbox.update!(ai_assistant: assistant)
-    allow(Ai::AutopilotReplyJob).to receive(:perform_later)
+    allow(Ai::AutopilotReplyJob).to receive(:set).and_return(scheduled)
   end
 
   def dispatch
@@ -29,7 +34,7 @@ RSpec.describe AthenasAutopilotListener do
     it 'answers without the operator arming the conversation or the inbox' do
       dispatch
 
-      expect(Ai::AutopilotReplyJob).to have_received(:perform_later).with(message.id, assistant.id)
+      expect(scheduled).to have_received(:perform_later).with(message.id, assistant.id)
     end
 
     # The operator's escape hatch. It has to beat the agent's own switch, or
@@ -40,7 +45,7 @@ RSpec.describe AthenasAutopilotListener do
 
       dispatch
 
-      expect(Ai::AutopilotReplyJob).not_to have_received(:perform_later)
+      expect(scheduled).not_to have_received(:perform_later)
     end
   end
 
@@ -48,7 +53,7 @@ RSpec.describe AthenasAutopilotListener do
     it 'stays silent by default' do
       dispatch
 
-      expect(Ai::AutopilotReplyJob).not_to have_received(:perform_later)
+      expect(scheduled).not_to have_received(:perform_later)
     end
 
     it 'answers a conversation the operator armed by hand' do
@@ -58,7 +63,7 @@ RSpec.describe AthenasAutopilotListener do
 
       dispatch
 
-      expect(Ai::AutopilotReplyJob).to have_received(:perform_later).with(message.id, assistant.id)
+      expect(scheduled).to have_received(:perform_later).with(message.id, assistant.id)
     end
 
     # Accounts that drive autopilot at the inbox instead of on the agent kept
@@ -68,8 +73,18 @@ RSpec.describe AthenasAutopilotListener do
 
       dispatch
 
-      expect(Ai::AutopilotReplyJob).to have_received(:perform_later).with(message.id, assistant.id)
+      expect(scheduled).to have_received(:perform_later).with(message.id, assistant.id)
     end
+  end
+
+  # The debounce window is what lets a customer finish a thought typed in three
+  # bursts before the agent starts answering the first line of it.
+  it 'schedules the turn behind the debounce window' do
+    assistant.update!(autopilot_enabled: true)
+
+    dispatch
+
+    expect(Ai::AutopilotReplyJob).to have_received(:set).with(wait: Ai::AutopilotReplyJob::DEBOUNCE_WINDOW)
   end
 
   it 'never answers when the agent is inactive, however autopilot was switched on' do

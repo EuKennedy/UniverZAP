@@ -245,7 +245,7 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     # thing waiting. Created before `message` is referenced, so its id is lower.
     def another_question!
       create(:message, conversation: conversation, account: account, inbox: conversation.inbox,
-                       content: 'E vocês entregam em SP?')
+                       content: 'E vocês entregam em SP?', source_id: 'wamid.FIRST')
     end
 
     # The whole point of the heuristic. "Quanto custa?" → "R$ 299" → "ok, vou
@@ -257,12 +257,15 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       expect(first_outgoing.content_attributes['in_reply_to_external_id']).to be_nil
     end
 
-    it 'quotes when the customer fired several questions before anyone answered' do
+    # Where the pile STARTS, not the fragment that happened to trigger the turn:
+    # the debounce collapses a burst into one answer covering the whole thought,
+    # so quoting its last line would pick out the least meaningful part of it.
+    it 'quotes where the pile starts when several questions arrived at once' do
       another_question!
 
       described_class.perform_now(message.id, assistant.id)
 
-      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq('wamid.FIRST')
     end
 
     # By then the customer has scrolled away and needs re-anchoring.
@@ -283,18 +286,18 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
 
       described_class.perform_now(message.id, assistant.id)
 
-      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq('wamid.FIRST')
     end
 
     # Message#ensure_in_reply_to resolves the pair from the external id, scoped
     # to this conversation — which is what keeps a quote from ever pointing at
     # another tenant's message.
-    it 'resolves the quote back to the trigger message row' do
-      another_question!
+    it 'resolves the quote back to a real message row in this conversation' do
+      first = another_question!
 
       described_class.perform_now(message.id, assistant.id)
 
-      expect(first_outgoing.content_attributes['in_reply_to']).to eq(message.id)
+      expect(first_outgoing.content_attributes['in_reply_to']).to eq(first.id)
     end
 
     it 'sends a plain reply when the flag is off' do
@@ -307,9 +310,8 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     end
 
     # Playground and API inboxes have no provider id to quote.
-    it 'sends a plain reply when the trigger carries no provider id' do
-      another_question!
-      message.update!(source_id: nil)
+    it 'sends a plain reply when the message carries no provider id' do
+      message.update!(source_id: nil, created_at: 30.minutes.ago)
 
       described_class.perform_now(message.id, assistant.id)
 
@@ -327,7 +329,46 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
 
       described_class.perform_now(message.id, assistant.id)
 
-      expect(quoted_ids).to eq([message.source_id, nil])
+      expect(quoted_ids).to eq(['wamid.FIRST', nil])
+    end
+  end
+
+  # The customer who thinks out loud: "oi" / "vc tem a progressiva?" / "aquela
+  # de 1L" is one question typed in three bursts, and used to buy three Claude
+  # calls and send three replies.
+  describe 'a burst of messages from the same customer' do
+    before { allow(Ai::AutopilotReplyService).to receive(:new).and_return(service) }
+
+    def next_message!
+      create(:message, conversation: conversation, account: account, inbox: conversation.inbox)
+    end
+
+    it 'stands down when the customer has already typed again' do
+      trigger = message
+      next_message!
+
+      expect { described_class.perform_now(trigger.id, assistant.id) }.not_to(change { outgoing_count })
+    end
+
+    it 'answers a burst exactly once' do
+      first = message
+      second = next_message!
+      third = next_message!
+
+      [first, second, third].each { |m| described_class.perform_now(m.id, assistant.id) }
+
+      expect(outgoing_count).to eq(1)
+    end
+
+    # Standing down must not spend the turn: the whole point is that the burst
+    # costs one call, not one per fragment.
+    it 'never reaches Claude for the fragments it stands down on' do
+      trigger = message
+      next_message!
+
+      described_class.perform_now(trigger.id, assistant.id)
+
+      expect(Ai::AutopilotReplyService).not_to have_received(:new)
     end
   end
 

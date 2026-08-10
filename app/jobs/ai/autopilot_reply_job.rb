@@ -10,6 +10,19 @@ class Ai::AutopilotReplyJob < ApplicationJob
   RATE_LIMIT_WINDOW = 1.minute
   MAX_ATTEMPTS = 5
 
+  # The customer who thinks out loud: "oi" / "vc tem a progressiva?" / "aquela
+  # de 1L" arrives as three messages in five seconds, but it is ONE question.
+  #
+  # Every incoming message still enqueues a turn; they just start late enough
+  # for the rest of the burst to land, and then all but the last stand down (see
+  # #outrun?). The winner sees the whole burst in its context window and answers
+  # it as the single thought it was.
+  #
+  # The delay is not a cost. An answer that lands 300ms after the customer hit
+  # send reads as a machine; a few seconds of apparent reading and typing is
+  # what the behaviour toggles on this agent are for in the first place.
+  DEBOUNCE_WINDOW = 8.seconds
+
   # An Anthropic blip used to be swallowed here and the customer simply never
   # got an answer. Now the turn is retried with a growing delay, and when the
   # attempts run out it dies LOUDLY (dead-letter log) instead of silently.
@@ -141,6 +154,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
   def deliver_reply(conversation, assistant, message)
     return if already_replied_to?(conversation, message.id)
     return if superseded?(conversation, message.id)
+    return if outrun?(conversation, message)
     return if rate_limited?(conversation, assistant)
 
     reply_text = generate_reply_text(conversation, assistant, message)
@@ -183,6 +197,28 @@ class Ai::AutopilotReplyJob < ApplicationJob
   def superseded?(conversation, message_id)
     last_replied = conversation.additional_attributes.to_h['autopilot_last_replied_message_id']
     last_replied.present? && last_replied.to_i > message_id.to_i
+  end
+
+  # Another message from the customer landed while this turn sat in the debounce
+  # window, so this turn stands down: the newer message has a turn of its own,
+  # and it will answer the whole burst at once.
+  #
+  # Without this, three messages in five seconds bought three Claude calls and
+  # sent the customer three replies — neither `already_replied_to?` (exact match
+  # on the trigger id) nor `superseded?` (a LATER message already answered)
+  # catches an EARLIER message being answered after this one.
+  #
+  # Checked before generating and NOT again inside the lock, on purpose. Once a
+  # reply exists it has been paid for and still answers what was asked; a
+  # message that arrived mid-generation gets its own turn, the way a person
+  # finishes their sentence before reading the next one.
+  def outrun?(conversation, message)
+    return false unless conversation.messages.where(message_type: :incoming).where('id > ?', message.id).exists?
+
+    Rails.logger.info(
+      "[Athenas autopilot] standing down, newer message arrived conv=#{conversation.display_id} message=#{message.id}"
+    )
+    true
   end
 
   # End-to-end turn latency: what the CUSTOMER actually waited, queue time and
@@ -229,12 +265,13 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # tenant's message.
   def quote_attributes(conversation, assistant, trigger)
     return {} unless assistant.behavior_flag?(:reply_marking)
-    # Blank on channels that carry no provider id (playground, API inbox); there
-    # is nothing to quote and the builder would no-op anyway.
-    return {} if trigger.source_id.blank?
-    return {} unless quote_earns_its_place?(conversation, trigger)
 
-    { in_reply_to_external_id: trigger.source_id }
+    quoted = message_worth_quoting(conversation, trigger)
+    # No source_id on channels that carry no provider id (playground, API
+    # inbox); there is nothing to quote and the builder would no-op anyway.
+    return {} if quoted.nil? || quoted.source_id.blank?
+
+    { in_reply_to_external_id: quoted.source_id }
   end
 
   # A quote on every single reply is a nervous tic, not a courtesy: in an
@@ -252,10 +289,24 @@ class Ai::AutopilotReplyJob < ApplicationJob
   BURST_THRESHOLD = 2
   STALE_QUESTION_AFTER = 10.minutes
 
-  def quote_earns_its_place?(conversation, trigger)
-    return true if trigger.created_at < STALE_QUESTION_AFTER.ago
+  # Which message the arrow points at, or nil for the ordinary case where it
+  # points at nothing.
+  #
+  # A pile-up quotes where the pile STARTS, not the message that happened to
+  # trigger the turn. Since the debounce collapses a burst into one answer, that
+  # answer covers the whole thought — quoting its last fragment ("...aquela de
+  # 1L") would pick out the least meaningful part of it. Quoting the first says
+  # "picking up from here", which is what a person does when they come back to
+  # several unread messages.
+  #
+  # A late answer quotes the question itself, which by then is the only pending
+  # one anyway.
+  def message_worth_quoting(conversation, trigger)
+    pending = unanswered_incoming(conversation)
+    return pending.first if pending.size >= BURST_THRESHOLD
+    return trigger if trigger.created_at < STALE_QUESTION_AFTER.ago
 
-    unanswered_incoming(conversation) >= BURST_THRESHOLD
+    nil
   end
 
   # Customer messages piled up since the last thing anyone sent them. Runs
@@ -263,9 +314,13 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # so "last outgoing" is genuinely the previous answer. Private notes are
   # excluded: a human's internal note is invisible to the customer, so it never
   # counts as having replied to them.
+  #
+  # Capped at BURST_THRESHOLD because that is all the answer needs — whether a
+  # pile exists, and where it starts.
   def unanswered_incoming(conversation)
     last_reply_id = conversation.messages.where(message_type: :outgoing, private: false).maximum(:id).to_i
-    conversation.messages.where(message_type: :incoming).where('id > ?', last_reply_id).count
+    conversation.messages.where(message_type: :incoming).where('id > ?', last_reply_id)
+                .order(:id).limit(BURST_THRESHOLD).to_a
   end
 
   # One bubble per paragraph, the way a person types on WhatsApp, when the
