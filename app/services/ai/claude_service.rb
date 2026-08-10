@@ -57,7 +57,7 @@ class Ai::ClaudeService
       model: pick(overrides[:model], @assistant&.model, 'claude-sonnet-4-5'),
       max_tokens: pick(overrides[:max_tokens], @assistant&.max_tokens, 1024),
       temperature: pick(overrides[:temperature], @assistant&.temperature, 0.3),
-      system: build_system(system, overrides[:cache_messages]),
+      system: build_system(system, cache_tail: overrides[:cache_messages]),
       messages: cache_messages(messages, overrides[:cache_messages]),
       # Optional Anthropic tool-use (function calling). Absent for every
       # existing caller (compact drops nil), so behaviour is unchanged unless
@@ -110,7 +110,7 @@ class Ai::ClaudeService
   # The caller owns the split, because only it knows which parts are identical
   # between turns. A prefix under the model's minimum (1024 tokens on Sonnet) is
   # simply not cached by Anthropic — no error, no behaviour change.
-  def build_system(system, cache_tail = false)
+  def build_system(system, cache_tail: false)
     return system unless system.is_a?(Array)
 
     segments = system.map(&:to_s).reject(&:blank?)
@@ -119,7 +119,7 @@ class Ai::ClaudeService
 
     [
       { type: 'text', text: segments[0..-2].join("\n\n"), cache_control: { type: 'ephemeral' } },
-      tail_block(segments.last, cache_tail)
+      tail_block(segments.last, cache_tail: cache_tail)
     ]
   end
 
@@ -134,7 +134,7 @@ class Ai::ClaudeService
   # message prefix — the caller saying it expects more calls in seconds. Without
   # that signal the write would be pure loss: a cache entry costs 25% more than
   # the plain tokens, and a single-call turn never reads it back.
-  def tail_block(text, cache_tail)
+  def tail_block(text, cache_tail:)
     block = { type: 'text', text: text }
     return block unless cache_tail
 
