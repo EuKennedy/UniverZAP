@@ -251,7 +251,13 @@ class Ai::AutopilotReplyJob < ApplicationJob
   def send_outgoing(conversation, assistant, reply_text)
     quoted = quote_attributes(conversation, assistant)
     reply_parts(assistant, reply_text).each_with_index.map do |part, index|
-      params = { content: part, message_type: :outgoing }
+      # The STRING, not the symbol. Messages::MessageBuilder compares this
+      # against 'outgoing' to decide the sender, and `:outgoing == 'outgoing'`
+      # is false — so every reply this agent ever sent was attributed to the
+      # CUSTOMER, and anything that labels a message by its sender read the
+      # customer's name back. On WhatsApp, where a contact with no pushname is
+      # named after its own JID, that is where "553185900095@c.us:" came from.
+      params = { content: part, message_type: 'outgoing' }
       # Only the first bubble quotes. WhatsApp renders one quoted header per
       # message, so four bubbles all citing the same question is noise.
       params[:content_attributes] = quoted if index.zero? && quoted.present?
@@ -292,29 +298,37 @@ class Ai::AutopilotReplyJob < ApplicationJob
   #     has scrolled away and needs re-anchoring.
   #
   # Anything else stays quiet.
-  # A question mark, or one of the words a question opens with when the customer
-  # cannot be bothered to type one — which on WhatsApp is most of the time.
-  # Deliberately conservative: missing a question costs a quote nobody notices,
-  # while quoting a statement is the tic the operator objected to.
-  QUESTION = /
-    \?
-    |\A\s*(?:qual|quais|quanto|quantos|quantas|quando|onde|como|quem
-            |por\s*qu[eê]|porqu[eê]|t[eê]m|teria|aceita|aceitam
-            |consegue|conseguem|d[aá]\s+pra)\b
+  # Listing the ways to ask something was the wrong shape for this: there are
+  # infinitely many, and a real question ("quero comprar uma progressiva blond")
+  # went unquoted because it opens with none of them. There are, however, only a
+  # handful of ways to say ok — so the rule is inverted, and everything that is
+  # not an acknowledgement or a greeting gets the arrow.
+  ACKNOWLEDGEMENT = /
+    \A\s*(?:ok(?:ay)?|blz|beleza|certo|isso|sim|n[ãa]o|aham|uhum|ata|t[aá]\b
+            |valeu|vlw|obrigad[ao]|brigad[ao]|perfeito|combinado|fechado|show
+            |top|legal|entendi|bom\s*dia|boa\s*(?:tarde|noite)|oi|ol[aá]|opa)\b
   /xi
+  # Past this, a message that opens with "ok" has gone on to say something else.
+  ACKNOWLEDGEMENT_MAX_CHARS = 40
+
+  def acknowledgement?(text)
+    # "ok, mas qual o valor da de 1L?" opens like an acknowledgement and is not
+    # one. A question mark settles it before anything else is considered.
+    return false if text.include?('?')
+
+    text.length <= ACKNOWLEDGEMENT_MAX_CHARS && ACKNOWLEDGEMENT.match?(text)
+  end
 
   # Which message the arrow points at, or nil when it points at nothing.
   #
-  # The QUESTION, which is what the toggle is named after. Not every message:
-  # answering "ok, vou levar" with a quote is a nervous tic. A question is
-  # exactly where the arrow earns its place — and it keeps earning it when a
-  # burst arrives, because then the answer covers several messages at once and
-  # has to say which one it picked up.
+  # Everything the customer actually asked for, and nothing they merely agreed
+  # to: quoting "ok, vou levar" is the nervous tic the operator objected to,
+  # while leaving a real request unquoted is what the toggle exists to stop.
   #
-  # Oldest first, so a burst quotes the question it starts from rather than the
-  # fragment that happened to trigger the turn ("...aquela de 1L").
+  # Oldest first, so a burst quotes what it starts from rather than the fragment
+  # that happened to trigger the turn ("...aquela de 1L").
   def message_worth_quoting(conversation)
-    unanswered_incoming(conversation).find { |message| QUESTION.match?(message.content.to_s) }
+    unanswered_incoming(conversation).find { |message| !acknowledgement?(message.content.to_s.strip) }
   end
 
   # Customer messages piled up since the last thing anyone sent them. Runs

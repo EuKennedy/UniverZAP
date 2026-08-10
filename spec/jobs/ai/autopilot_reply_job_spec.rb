@@ -281,15 +281,34 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
     end
 
+    # The case that broke the previous rule, which matched a list of ways to
+    # ASK: this is a real request and opens with none of them.
+    it 'quotes a request that never looked like a question' do
+      message.update!(content: 'quero comprar uma progressiva blond')
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
+    end
+
     # The tic the operator objected to: "quanto custa?" → "R$ 299" → "ok, vou
     # levar", and the agent quoting that last one too. There is nothing there to
     # disambiguate.
-    it 'leaves a statement alone' do
+    it 'leaves a bare acknowledgement alone' do
       message.update!(content: 'ok, vou levar entao')
 
       described_class.perform_now(message.id, assistant.id)
 
       expect(first_outgoing.content_attributes['in_reply_to_external_id']).to be_nil
+    end
+
+    # An acknowledgement that carries a question is not an acknowledgement.
+    it 'quotes when the customer says ok and then asks something' do
+      message.update!(content: 'ok, mas qual o valor da de 1L?')
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(first_outgoing.content_attributes['in_reply_to_external_id']).to eq(message.source_id)
     end
 
     # The burst arrives as one thought and is answered once, so the arrow has to
