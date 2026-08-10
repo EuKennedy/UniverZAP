@@ -10,6 +10,12 @@
 # Athenas tool loop (Ai::Agent::ToolLoopService), not the `agents` gem — so it
 # survives the FOSS build, which strips enterprise/.
 class Ai::CustomTool < ApplicationRecord
+  # A template that cannot render is a CONFIGURATION fault, not an endpoint
+  # fault, and the two need different words: the endpoint being down is
+  # something the agent should apologise for, a URL referencing a parameter
+  # that does not exist is something the operator has to go and fix.
+  class TemplateError < StandardError; end
+
   self.table_name = 'ai_custom_tools'
 
   HTTP_METHODS = %w[GET POST].freeze
@@ -36,6 +42,11 @@ class Ai::CustomTool < ApplicationRecord
   validates :auth_type, inclusion: { in: AUTH_TYPES }
   validate :endpoint_must_be_safe
   validate :param_schema_must_be_array
+  # Only when the two sides could have drifted, so toggling `enabled` on a tool
+  # that is already misconfigured still works — otherwise the operator could not
+  # even switch off the tool the error is telling them about.
+  validate :endpoint_variables_must_be_declared,
+           if: -> { new_record? || endpoint_url_changed? || param_schema_changed? }
 
   scope :enabled, -> { where(enabled: true) }
 
@@ -92,14 +103,14 @@ class Ai::CustomTool < ApplicationRecord
 
   private
 
-  # Values are URL-encoded BEFORE Liquid substitutes them. Rendered raw, a
-  # product name with a space produced an invalid URI, URI.parse raised inside
-  # the executor, and the agent reported the useless "não consegui completar
-  # essa ação agora" instead of a search result.
+  # Values go in exactly as Liquid renders them. Encoding here would be wrong:
+  # the documented way to write a search endpoint is `{{ q | url_encode }}`, and
+  # pre-encoding would turn a space into %2520. The executor repairs a URL that
+  # comes out unparseable, which is the case this is actually about.
   def render_endpoint(params)
     return endpoint_url if endpoint_url.exclude?('{{')
 
-    render_template(endpoint_url, params.to_h.transform_values { |value| ERB::Util.url_encode(stringify(value)) })
+    render_template(endpoint_url, params)
   end
 
   # Params the URL template did not consume travel as the query string.
@@ -160,13 +171,27 @@ class Ai::CustomTool < ApplicationRecord
     Liquid::Template.parse(template, error_mode: :strict)
                     .render(context.deep_stringify_keys, strict_variables: true, strict_filters: true)
   rescue Liquid::Error => e
-    raise "Template rendering failed: #{e.message}"
+    raise TemplateError, e.message
   end
 
   def parse_json(body)
     JSON.parse(body)
   rescue JSON::ParserError
     body
+  end
+
+  # A URL that references {{ q }} while the only declared parameter is `items`
+  # is not a tool that works badly, it is a tool that cannot run at all: Liquid
+  # renders in strict mode, so every single call dies before the request is
+  # made. Worse, the model is handed the WRONG schema, so on a product search it
+  # gets asked for the ids it was trying to look up and invents them. Both of
+  # those are silent today, so this refuses the save instead.
+  def endpoint_variables_must_be_declared
+    declared = Array(param_schema).filter_map { |param| param['name'].to_s.presence }
+    missing = (endpoint_url.to_s.scan(TEMPLATE_VARIABLE).flatten - declared).uniq
+    return if missing.empty?
+
+    errors.add(:endpoint_url, "uses {{ #{missing.join(', ')} }} but no such parameter is declared")
   end
 
   def param_schema_must_be_array

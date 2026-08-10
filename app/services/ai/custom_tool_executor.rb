@@ -43,6 +43,15 @@ class Ai::CustomToolExecutor
     return error("A ferramenta #{name} não existe.") if tool.nil?
 
     run(tool, input || {})
+  rescue Ai::CustomTool::TemplateError => e
+    # Must precede the generic clause. This is the operator's configuration, not
+    # a bad day for their endpoint, and saying so is the difference between the
+    # agent inventing a workaround and the problem being fixable: a URL that
+    # references a parameter the tool never declares fails on EVERY call, before
+    # the request is even made.
+    Rails.logger.error("[Athenas integration] tool=#{name} misconfigured: #{e.message}")
+    error("A ferramenta #{name} está mal configurada e não pode ser usada: #{e.message}. " \
+          'Não tente outra vez nem invente os dados: diga que vai confirmar com a equipe.')
   rescue StandardError => e
     Rails.logger.error("[Athenas integration] tool=#{name} #{e.class}: #{e.message}")
     error('Não consegui completar essa ação agora.')
@@ -86,13 +95,25 @@ class Ai::CustomToolExecutor
   end
 
   def safe_uri!(url)
-    uri = URI.parse(url)
+    uri = parse_uri(url)
     raise "non-https endpoint: #{uri.scheme}" unless uri.scheme == 'https'
 
     ip = IPAddr.new(Resolv.getaddress(uri.host))
     raise "private ip blocked: #{uri.host}" if PRIVATE_IP_RANGES.any? { |range| range.include?(ip) }
 
     uri
+  end
+
+  # Escaping is a REPAIR, attempted only after a parse actually failed, never as
+  # a blanket transform. A template written the documented way already pipes its
+  # value through Liquid's url_encode, and escaping that a second time would
+  # turn a space into %2520 and break a search that works today. This is only
+  # for the operator who left the filter out and whose URL therefore arrives
+  # with a raw space in it.
+  def parse_uri(url)
+    URI.parse(url)
+  rescue URI::InvalidURIError
+    URI.parse(URI::DEFAULT_PARSER.escape(url))
   end
 
   def request(tool, uri, input)

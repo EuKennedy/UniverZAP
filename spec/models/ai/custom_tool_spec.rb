@@ -50,6 +50,40 @@ RSpec.describe Ai::CustomTool do
       .to eq(%w[u p])
   end
 
+  def id_tool
+    build_tool(
+      endpoint_url: 'https://loja.example.com/api/products/{{ id }}',
+      param_schema: [{ 'name' => 'id', 'type' => 'string', 'description' => 'id' },
+                     { 'name' => 'expand', 'type' => 'string', 'description' => 'extras', 'required' => false }]
+    )
+  end
+
+  # The real incident: the search tool's URL asked for {{ q }} while its only
+  # declared parameter was `items`, pasted over from the cart tool. Liquid runs
+  # in strict mode, so every call died before the request was made, and the
+  # model was simultaneously handed a schema demanding the product ids it was
+  # trying to look up, so it invented them. Silent on both counts until now.
+  describe 'a URL referencing a parameter that does not exist' do
+    it 'is refused instead of failing on every call in production' do
+      tool = build_tool(
+        endpoint_url: 'https://loja.example.com/api/search-products?q={{ q | url_encode }}',
+        param_schema: [{ 'name' => 'items', 'type' => 'array', 'description' => 'lista' }]
+      )
+
+      expect(tool).not_to be_valid
+      expect(tool.errors[:endpoint_url].join).to include('{{ q }}')
+    end
+
+    it 'still lets an already-saved tool be switched off' do
+      tool = build_tool
+      tool.save!
+      tool.endpoint_url = 'https://loja.example.com/api/products?q={{ nope }}'
+      tool.save(validate: false)
+
+      expect(tool.reload.update(enabled: false)).to be(true)
+    end
+  end
+
   describe '#build_request_url' do
     # The bug this covers: a GET tool pointed at a plain endpoint used to drop
     # every parameter, so a product search searched for nothing, the agent
@@ -67,23 +101,24 @@ RSpec.describe Ai::CustomTool do
         .to eq('https://loja.example.com/api/products?store=lizzon&q=blond')
     end
 
-    # A name with spaces rendered raw produced an invalid URI, and the executor
-    # turned that into a generic "could not complete this action".
-    it 'url-encodes a value substituted into the path' do
-      tool = build_tool(endpoint_url: 'https://loja.example.com/api/products/{{ q }}')
+    # The documented way to write a search endpoint. Pre-encoding the value here
+    # would double-encode it into %2520 and break the tools already configured
+    # this way, so the value goes in exactly as Liquid renders it.
+    it 'leaves a template that already pipes through url_encode alone' do
+      tool = build_tool(endpoint_url: 'https://loja.example.com/api/products?q={{ q | url_encode }}&in_stock=true')
 
       expect(tool.build_request_url({ 'q' => 'volume control blond' }))
-        .to eq('https://loja.example.com/api/products/volume%20control%20blond')
+        .to eq('https://loja.example.com/api/products?q=volume+control+blond&in_stock=true')
     end
 
     it 'does not repeat a param the template already consumed' do
-      tool = build_tool(endpoint_url: 'https://loja.example.com/api/products/{{ id }}')
+      tool = id_tool
 
       expect(tool.build_request_url({ 'id' => '42' })).to eq('https://loja.example.com/api/products/42')
     end
 
     it 'appends only the leftovers when the template consumes some of the params' do
-      tool = build_tool(endpoint_url: 'https://loja.example.com/api/products/{{ id }}')
+      tool = id_tool
 
       expect(tool.build_request_url({ 'id' => '42', 'expand' => 'variants' }))
         .to eq('https://loja.example.com/api/products/42?expand=variants')
