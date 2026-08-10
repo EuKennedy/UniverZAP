@@ -213,7 +213,7 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # message that arrived mid-generation gets its own turn, the way a person
   # finishes their sentence before reading the next one.
   def outrun?(conversation, message)
-    return false unless conversation.messages.where(message_type: :incoming).where('id > ?', message.id).exists?
+    return false unless conversation.messages.where(message_type: :incoming).exists?(['id > ?', message.id])
 
     Rails.logger.info(
       "[Athenas autopilot] standing down, newer message arrived conv=#{conversation.display_id} message=#{message.id}"

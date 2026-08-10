@@ -92,6 +92,6 @@ RSpec.describe AthenasAutopilotListener do
 
     dispatch
 
-    expect(Ai::AutopilotReplyJob).not_to have_received(:perform_later)
+    expect(scheduled).not_to have_received(:perform_later)
   end
 end
