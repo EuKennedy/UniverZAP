@@ -603,6 +603,15 @@ class Ai::AutopilotReplyService
     catálogo e os documentos da base podem estar DESATUALIZADOS). Nunca invente nem
     reutilize um preço ou link vindo do seu conhecimento — chame a ferramenta e use
     exatamente o que ela devolver.
+
+    PROIBIDO ANUNCIAR SEM FAZER: nunca escreva "deixa eu verificar", "vou consultar",
+    "já te confirmo" ou equivalente sem chamar a ferramenta NA MESMA resposta. Você
+    não tem um "depois": se o dado é necessário, a chamada é agora. Uma resposta que
+    promete verificar e não chama a ferramenta deixa o cliente esperando algo que
+    nunca vem.
+    Também NÃO adie a consulta para qualificar antes: se o cliente perguntou preço,
+    busque o preço e responda. Perguntas de qualificação vêm DEPOIS do dado, na mesma
+    mensagem, nunca no lugar dele.
     Ferramentas conectadas a este agente:
   RULES
 
