@@ -98,6 +98,12 @@ class Ai::AutopilotReplyJob < ApplicationJob
       # Logged at info — this is the loop-breaker working as designed.
       Rails.logger.info("[Athenas autopilot] #{error.message}")
       hand_off!(message, assistant_id)
+    when Ai::Agent::ToolLoopService::PromiseUnfulfilled
+      # The reply was going to promise a lookup the agent has no later turn to
+      # make. Pages rather than logs: the customer asked something the tools
+      # were supposed to answer and nobody answered it.
+      Rails.logger.error("[Athenas autopilot] #{error.message}")
+      hand_off!(message, assistant_id)
     when Ai::AutopilotReplyService::UngroundedClaim
       # The bot kept quoting a value that exists nowhere in the operator's data.
       # Staying silent beats inventing a price, but it IS a lost reply, so this

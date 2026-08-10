@@ -71,11 +71,11 @@ RSpec.describe Ai::Agent::ToolLoopService do
     # Last line of defence: the customer must never be shown raw markup.
     it 'strips the markup when even the forced call comes back with it' do
       allow(claude).to receive(:chat).and_return(
-        { content: 'Deixa eu ver <tool_uses><tool_use>x</tool_use></tool_uses> pra voce',
+        { content: 'Temos sim <tool_uses><tool_use>x</tool_use></tool_uses> em estoque',
           tool_uses: [], stop_reason: 'end_turn' }
       )
 
-      expect(run[:content]).to eq('Deixa eu ver pra voce')
+      expect(run[:content]).to eq('Temos sim em estoque')
     end
 
     it 'leaves an ordinary reply alone' do
@@ -86,19 +86,38 @@ RSpec.describe Ai::Agent::ToolLoopService do
       expect(claude).to have_received(:chat).once
     end
 
-    # Later iterations already carry tool results, so a closing "já te confirmo"
-    # is a sign-off rather than an unkept promise.
-    it 'does not force a second call once tools have already run' do
+    # This used to be allowed through, on the theory that a promise made after a
+    # tool had run was already kept by it. It was not: "já te confirmo" on the
+    # second iteration is about the NEXT lookup, and no turn is left to make it.
+    # This exact shape reached a real customer, who never heard from us again.
+    it 'forces the call even when a tool has already run this turn' do
       tool_use = { 'id' => 'tu_1', 'name' => 'listar_servicos', 'input' => {} }
       allow(claude).to receive(:chat).and_return(
         { content: '', tool_uses: [tool_use], stop_reason: 'tool_use', raw: { 'content' => [] } },
-        { content: 'Já te confirmo o restante.', tool_uses: [], stop_reason: 'end_turn', raw: { 'content' => [] } }
+        { content: 'Já te confirmo o restante.', tool_uses: [], stop_reason: 'end_turn', raw: { 'content' => [] } },
+        { content: '', tool_uses: [tool_use], stop_reason: 'tool_use', raw: { 'content' => [] } },
+        { content: 'O restante sai por R$ 90.', tool_uses: [], stop_reason: 'end_turn', raw: { 'content' => [] } }
       )
       allow(executor).to receive(:call).and_return('{}')
 
-      run
+      expect(run[:content]).to eq('O restante sai por R$ 90.')
+      expect(claude).to have_received(:chat).with(hash_including(tool_choice: { type: 'any' }))
+    end
 
-      expect(claude).to have_received(:chat).twice
+    # Forcing is the fix; this is what is left when forcing itself fails. Going
+    # quiet puts the conversation in front of a human, which is recoverable —
+    # telling the customer someone is checking and then never speaking again is
+    # not.
+    it 'goes quiet rather than promising, when the forced call itself fails' do
+      calls = 0
+      allow(claude).to receive(:chat) do
+        calls += 1
+        raise Ai::ClaudeService::Error, 'overloaded' if calls > 1
+
+        { content: 'Perfeito, deixa eu buscar aqui pra você!', tool_uses: [], stop_reason: 'end_turn' }
+      end
+
+      expect { run }.to raise_error(described_class::PromiseUnfulfilled)
     end
   end
 

@@ -291,7 +291,8 @@
       "ERROR": "Could not generate a reply right now. Try again.",
       "STATUS": {
         "ungrounded_claim": "The agent stayed silent: it tried to state a value that is not in the knowledge base. Add that fact under Knowledge so it can answer.",
-        "loop_suppressed": "The agent stayed silent: the reply would repeat something it already said in this conversation."
+        "loop_suppressed": "The agent stayed silent: the reply would repeat something it already said in this conversation.",
+        "promise_unfulfilled": "The agent stayed silent: the reply promised to go and check something without calling any tool, and it has no later message to keep that promise in. Check that a connected tool actually covers what was asked."
       }
     },
     "ANALYTICS": {

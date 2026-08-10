@@ -6,6 +6,14 @@
 # tool_result content). Used by the autopilot to let Claude check the salon
 # agenda and create appointments mid-conversation.
 class Ai::Agent::ToolLoopService
+  # Raised when the turn insists on ending with a promise to go and look
+  # something up. The agent has no "later" — it speaks only when the customer
+  # does — so that reply is a conversation that stops dead with the customer
+  # waiting for a message nobody will ever send. Silence at least reads as a
+  # queue; a broken promise reads as being ghosted mid-sentence, and the caller
+  # turns this into a handover to a human.
+  class PromiseUnfulfilled < StandardError; end
+
   MAX_ITERATIONS = 6
 
   # Wall-clock ceiling for one whole turn, enforced in ONE place.
@@ -55,29 +63,45 @@ class Ai::Agent::ToolLoopService
   def perform
     @deadline = monotonic_now + TURN_BUDGET_SECONDS
     last = nil
-    MAX_ITERATIONS.times do |iteration|
+    MAX_ITERATIONS.times do
       last = run_turn
-      last = force_tool_use(last) if force_tool_use?(last, iteration)
-      return sanitize(last) if Array(last[:tool_uses]).empty?
+      last = force_tool_use(last) if force_tool_use?(last)
+      return finish(last) if Array(last[:tool_uses]).empty?
 
       feed_tool_results(last)
-      return final_answer if out_of_budget?
+      return finish(final_answer) if out_of_budget?
     end
     log_max_iterations
-    last
+    finish(last)
   end
 
   private
 
-  # A promise is only suspicious on the first iteration — later ones already
-  # carry tool results, so "já te confirmo" is a sign-off. Written markup is
-  # suspicious always: there is no turn in which showing it to a customer is
-  # right.
-  def force_tool_use?(response, iteration)
+  # Checked on EVERY iteration, not only the first. The old rule assumed a
+  # promise made after a tool call had already been kept by that call — but the
+  # promise being made NOW is about the next lookup, and there is no next
+  # iteration guaranteed to make it. In production the agent called one tool,
+  # read a result that did not answer the question, and then said "deixa eu
+  # buscar aqui pra você" on the second iteration, which sailed past this check
+  # and became the last thing the customer ever heard.
+  def force_tool_use?(response)
     return false if @tools.blank? || Array(response[:tool_uses]).any?
 
     text = response[:content].to_s
-    WRITTEN_TOOL_CALL.match?(text) || (iteration.zero? && ANNOUNCED_LOOKUP.match?(text))
+    WRITTEN_TOOL_CALL.match?(text) || ANNOUNCED_LOOKUP.match?(text)
+  end
+
+  # Every way out of the loop comes through here — the ordinary return, the
+  # budget ceiling and the iteration ceiling — because each of the three has
+  # produced an unkept promise in production at least once. Forcing the call
+  # (above) is the fix; this is what happens when forcing did not work, which in
+  # practice means the forced call itself errored and fell back to the draft.
+  def finish(response)
+    response = sanitize(response)
+    return response unless ANNOUNCED_LOOKUP.match?(response[:content].to_s)
+
+    raise PromiseUnfulfilled,
+          "reply promised a lookup it will never make conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
   end
 
   # Last line of defence. If even the forced call comes back with markup in it,
