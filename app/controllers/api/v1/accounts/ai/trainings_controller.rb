@@ -12,8 +12,15 @@ class Api::V1::Accounts::Ai::TrainingsController < Api::V1::Accounts::BaseContro
     render :show
   end
 
+  # Saved edits mark the document ready, the same way creating one does.
+  # `status` defaults to `pending` at the column level and the retrieval only
+  # reads `ready`, so a document that ever landed pending was invisible to the
+  # agent forever — the operator wrote rules, saw them listed, and the agent
+  # never received a word of them. There is no async ingestion to wait for
+  # (grounding chunks at query time), so a document with content IS ready, and
+  # re-saving it is the way out that did not exist before.
   def update
-    @training.update!(permitted_params)
+    @training.update!(permitted_params.merge(status: 'ready'))
     render :show
   end
 
