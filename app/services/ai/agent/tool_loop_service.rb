@@ -45,13 +45,20 @@ class Ai::Agent::ToolLoopService
     |\b(?:um\s+instante|um\s+momento|só\s+um\s+minuto|um\s+minutinho|só\s+um\s+segundo)
   /xi
 
+  # Claude sometimes WRITES the call instead of making it, emitting a literal
+  # block of tool-call markup as message text — seen in production on a later
+  # iteration, with an invented parameter name to match. Unlike a promise, this
+  # is unambiguous and unsalvageable: the customer would be shown raw markup.
+  # Forced on ANY iteration, and stripped if the retry fails.
+  WRITTEN_TOOL_CALL = %r{<\s*/?\s*(?:tool_uses?|tool_name|antml:invoke|function_calls?)\b}i
+
   def perform
     @deadline = monotonic_now + TURN_BUDGET_SECONDS
     last = nil
     MAX_ITERATIONS.times do |iteration|
       last = run_turn
-      last = force_tool_use(last) if iteration.zero? && announced_without_calling?(last)
-      return last if Array(last[:tool_uses]).empty?
+      last = force_tool_use(last) if force_tool_use?(last, iteration)
+      return sanitize(last) if Array(last[:tool_uses]).empty?
 
       feed_tool_results(last)
       return final_answer if out_of_budget?
@@ -62,12 +69,35 @@ class Ai::Agent::ToolLoopService
 
   private
 
-  # Only on the first iteration: later ones already carry tool results, so a
-  # closing "já te confirmo" is a sign-off, not an unkept promise.
-  def announced_without_calling?(response)
-    @tools.present? &&
-      Array(response[:tool_uses]).empty? &&
-      ANNOUNCED_LOOKUP.match?(response[:content].to_s)
+  # A promise is only suspicious on the first iteration — later ones already
+  # carry tool results, so "já te confirmo" is a sign-off. Written markup is
+  # suspicious always: there is no turn in which showing it to a customer is
+  # right.
+  def force_tool_use?(response, iteration)
+    return false if @tools.blank? || Array(response[:tool_uses]).any?
+
+    text = response[:content].to_s
+    WRITTEN_TOOL_CALL.match?(text) || (iteration.zero? && ANNOUNCED_LOOKUP.match?(text))
+  end
+
+  # Last line of defence. If even the forced call comes back with markup in it,
+  # the customer still must not see it: strip the block and let whatever prose
+  # surrounds it stand.
+  def sanitize(response)
+    text = response[:content].to_s
+    return response unless WRITTEN_TOOL_CALL.match?(text)
+
+    log_written_tool_call
+    cleaned = text.gsub(%r{<\s*(tool_uses?|function_calls?)\b[^>]*>.*?<\s*/\s*\1\s*>}mi, '')
+                  .gsub(/<[^>]{0,80}>/, '').squeeze(' ').strip
+    response.merge(content: cleaned)
+  end
+
+  def log_written_tool_call
+    Rails.logger.warn(
+      '[Athenas agent] model wrote a tool call as text; stripping it ' \
+      "conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
+    )
   end
 
   # `tool_choice: any` makes the call non-optional — Claude cannot answer with

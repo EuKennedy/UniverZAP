@@ -55,6 +55,30 @@ RSpec.describe Ai::Agent::ToolLoopService do
       expect(claude).to have_received(:chat).with(hash_including(tool_choice: { type: 'any' })).once
     end
 
+
+    it 'forces the call when the model writes the markup instead of using it' do
+      tool_use = { 'id' => 'tu_1', 'name' => 'listar_servicos', 'input' => {} }
+      allow(claude).to receive(:chat).and_return(
+        { content: 'Opa! <tool_uses><tool_use><tool_name>listar_servicos</tool_name></tool_use></tool_uses>',
+          tool_uses: [], stop_reason: 'end_turn' },
+        { content: '', tool_uses: [tool_use], stop_reason: 'tool_use', raw: { 'content' => [] } },
+        { content: 'Temos progressiva.', tool_uses: [], stop_reason: 'end_turn', raw: { 'content' => [] } }
+      )
+      allow(executor).to receive(:call).and_return('{}')
+
+      expect(run[:content]).to eq('Temos progressiva.')
+    end
+
+    # Last line of defence: the customer must never be shown raw markup.
+    it 'strips the markup when even the forced call comes back with it' do
+      allow(claude).to receive(:chat).and_return(
+        { content: 'Deixa eu ver <tool_uses><tool_use>x</tool_use></tool_uses> pra voce',
+          tool_uses: [], stop_reason: 'end_turn' }
+      )
+
+      expect(run[:content]).to eq('Deixa eu ver pra voce')
+    end
+
     it 'leaves an ordinary reply alone' do
       allow(claude).to receive(:chat).and_return({ content: 'Oi, tudo bem?', tool_uses: [], stop_reason: 'end_turn' })
 
