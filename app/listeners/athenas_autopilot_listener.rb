@@ -72,28 +72,52 @@ class AthenasAutopilotListener < BaseListener
     nil
   end
 
+  # Three ways autopilot can be on, in the order an operator expects them to
+  # win.
   def resolve_assistant(conversation)
     attrs = conversation.additional_attributes || {}
 
-    # Per-conversation toggle is the source of truth for operator-controlled
-    # autopilot (the "ligar IA neste chat" button). It lives in
-    # additional_attributes (jsonb) which — unlike the `ai_mode` column —
-    # is NOT silently reset by resolve / assign / reopen flows. The column
-    # drifting to nil while the toggle stayed true is exactly why an
-    # operator saw "IA ligada" but the wrong path fired. When the key is
-    # present we honour it verbatim: true = reply, false = stay silent.
-    if attrs.key?('autopilot_enabled')
-      return nil unless ActiveModel::Type::Boolean.new.cast(attrs['autopilot_enabled'])
+    # 1. Silenced on THIS conversation. The only override that beats the agent's
+    #    own switch, and it has to: it is how an operator takes over when the
+    #    customer asks for a human. Without it there is no way to stop the bot
+    #    in one conversation short of switching it off for everybody.
+    return nil if silenced?(attrs)
 
-      return resolve_toggled_assistant(conversation, attrs)
-    end
+    # 2. Switched on for THIS conversation (the "ligar IA neste chat" button).
+    #    Lives in additional_attributes (jsonb) rather than the `ai_mode`
+    #    column, which resolve / assign / reopen silently reset — that drift is
+    #    why an operator once saw "IA ligada" and the wrong path fired.
+    return resolve_toggled_assistant(conversation, attrs) if enabled?(attrs)
 
-    # Fallback: inbox-wide autopilot for accounts that drive it at the
-    # inbox level instead of per-conversation.
+    # 3. The agent's own autopilot switch. Marking it means the agent answers
+    #    wherever it is assigned, without the operator having to arm every
+    #    conversation or the inbox by hand — which is what the checkbox has
+    #    always said it did.
+    assistant = assigned_assistant(conversation)
+    return assistant if assistant&.autopilot?
+
+    inbox_wide_assistant(conversation, assistant)
+  end
+
+  def silenced?(attrs)
+    attrs.key?('autopilot_enabled') && !ActiveModel::Type::Boolean.new.cast(attrs['autopilot_enabled'])
+  end
+
+  def enabled?(attrs)
+    attrs.key?('autopilot_enabled') && ActiveModel::Type::Boolean.new.cast(attrs['autopilot_enabled'])
+  end
+
+  def assigned_assistant(conversation)
+    conversation.ai_assistant || conversation.inbox.ai_assistant
+  end
+
+  # Inbox-wide mode, for accounts that drive autopilot there instead of on the
+  # agent. Kept so nothing that worked before stops working.
+  def inbox_wide_assistant(conversation, assistant)
     mode = conversation.ai_mode.presence || conversation.inbox.ai_mode
     return nil unless mode == 'autopilot'
 
-    conversation.ai_assistant || conversation.inbox.ai_assistant
+    assistant
   end
 
   def resolve_toggled_assistant(conversation, attrs)
