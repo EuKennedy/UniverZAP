@@ -251,30 +251,12 @@ class Ai::AutopilotReplyJob < ApplicationJob
   def send_outgoing(conversation, assistant, reply_text)
     quoted = quote_attributes(conversation, assistant)
     reply_parts(assistant, reply_text).each_with_index.map do |part, index|
-      params = { content: sign(assistant, part, index), message_type: :outgoing }
+      params = { content: part, message_type: :outgoing }
       # Only the first bubble quotes. WhatsApp renders one quoted header per
       # message, so four bubbles all citing the same question is noise.
       params[:content_attributes] = quoted if index.zero? && quoted.present?
       Messages::MessageBuilder.new(assistant_user(assistant), conversation, params).perform
     end.last
-  end
-
-  # Who the customer thinks they are talking to, on its own line above the
-  # first bubble. Distinct from `assistant.name`, which is how the OPERATOR
-  # finds the agent in the dashboard and routinely says things like "(teste)".
-  # Unset means unsigned, which is how every reply has been sent until now.
-  #
-  # One asterisk, not two: `*Elisa*` is bold on WhatsApp and `**Elisa**` shows
-  # the asterisks — the same rule that already governs the model's own output.
-  #
-  # First bubble only. The name answers "who is this?", which is asked once;
-  # repeating it on all four bubbles of a split reply would read as a form
-  # letter, and it is the thing this feature exists to stop looking like.
-  def sign(assistant, part, index)
-    name = assistant.conversation_display_name.to_s.strip
-    return part unless index.zero? && name.present?
-
-    "*#{name}*\n#{part}"
   end
 
   # The customer's question, quoted above the answer — the WhatsApp reply arrow.
@@ -488,10 +470,45 @@ class Ai::AutopilotReplyJob < ApplicationJob
     # rubocop:enable Rails/SkipsModelValidations
   end
 
-  def assistant_user(_assistant)
-    # Outgoing messages without a sender stay anonymous on the API channel; this
-    # mirrors how WAHA injects bot replies via the Chatwoot API.
-    nil
+  # Who the reply comes FROM. Chatwoot's own concept for a non-human sender, so
+  # everything that labels a message by its sender names the agent instead of
+  # falling back to the raw chat id: the dashboard, and the WhatsApp bridge that
+  # writes "Taina Iris:" above a human agent's reply and was writing
+  # "553185900095@c.us:" above the bot's.
+  #
+  # Nil until the operator names the agent, which is how every reply has been
+  # sent until now — an unnamed agent keeps going out anonymous rather than
+  # silently acquiring an identity nobody chose.
+  def assistant_user(assistant)
+    name = assistant.conversation_display_name.to_s.strip
+    return nil if name.blank?
+
+    @assistant_user ||= bot_for(assistant, name)
+  end
+
+  # One bot per assistant, keyed by the assistant id kept in bot_config, and
+  # RENAMED in place when the operator edits the field. Creating a new one per
+  # name would leave a graveyard behind and, worse, would relabel nothing —
+  # messages already sent keep pointing at the bot that sent them.
+  #
+  # Scoped to the assistant's own account on both the lookup and the insert, so
+  # one workspace's agent can never end up speaking as another's.
+  def bot_for(assistant, name)
+    bot = AgentBot.where(account_id: assistant.account_id)
+                  .where('bot_config @> ?', { ai_assistant_id: assistant.id }.to_json).first
+    return create_bot(assistant, name) if bot.nil?
+
+    bot.update!(name: name) unless bot.name == name
+    bot
+  end
+
+  def create_bot(assistant, name)
+    AgentBot.create!(
+      account_id: assistant.account_id,
+      name: name,
+      description: "Agente Athenas ##{assistant.id}",
+      bot_config: { 'ai_assistant_id' => assistant.id }
+    )
   end
 end
 # rubocop:enable Metrics/ClassLength

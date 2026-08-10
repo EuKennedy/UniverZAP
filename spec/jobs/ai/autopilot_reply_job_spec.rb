@@ -343,36 +343,33 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
     end
   end
 
-  # Without it the customer sees whatever the channel decides to label the
-  # sender with, which on WhatsApp is a raw phone JID.
-  describe 'the name the customer sees above the reply' do
+  # Whatever labels a message by its sender — the dashboard, and the WhatsApp
+  # bridge that writes "Taina Iris:" above a human agent's reply — had nothing
+  # to read for the bot and fell back to the raw chat id.
+  describe 'the identity the reply is sent under' do
     before { allow(Ai::AutopilotReplyService).to receive(:new).and_return(service) }
 
-    def sent
-      conversation.reload.messages.where(message_type: :outgoing).order(:id).pluck(:content)
+    def senders
+      conversation.reload.messages.where(message_type: :outgoing).order(:id).map(&:sender)
     end
 
-    # One asterisk, not two: `*Elisa*` is bold on WhatsApp, `**Elisa**` shows
-    # the asterisks.
-    it 'signs the reply in WhatsApp bold' do
+    it 'sends as a bot carrying the name the operator chose' do
       assistant.update!(conversation_display_name: 'Elisa')
 
       described_class.perform_now(message.id, assistant.id)
 
-      expect(sent.first).to eq("*Elisa*\nOlá!")
+      expect(senders.first).to be_a(AgentBot).and have_attributes(name: 'Elisa')
     end
 
-    # It has always sent unsigned, and an operator who never opens the field
-    # must not have their conversations change under them.
-    it 'sends unsigned while the field is empty' do
+    # It has always sent anonymous, and an operator who never opens the field
+    # must not have their agent silently acquire an identity nobody chose.
+    it 'stays anonymous while the field is empty' do
       described_class.perform_now(message.id, assistant.id)
 
-      expect(sent.first).to eq('Olá!')
+      expect(senders.first).to be_nil
     end
 
-    # The name answers "who is this?", which is asked once. On all four bubbles
-    # of a split reply it reads as a form letter.
-    it 'signs only the first bubble of a split reply' do
+    it 'sends every bubble of a split reply under the same identity' do
       assistant.update!(conversation_display_name: 'Elisa', behavior_flags: { 'split_messages' => true })
       allow(Ai::AutopilotReplyService).to receive(:new).and_return(
         instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO produto sai por R$ 219,00." })
@@ -380,7 +377,32 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
 
       described_class.perform_now(message.id, assistant.id)
 
-      expect(sent).to eq(["*Elisa*\nOi, tudo bem?", 'O produto sai por R$ 219,00.'])
+      expect(senders.map(&:id).uniq.length).to eq(1)
+    end
+
+    # Renamed in place: a new bot per name would leave a graveyard behind, and
+    # would relabel nothing, since sent messages keep pointing at their sender.
+    it 'renames the same bot when the operator edits the field' do
+      assistant.update!(conversation_display_name: 'Elisa')
+      described_class.perform_now(message.id, assistant.id)
+      bot = senders.first
+
+      assistant.update!(conversation_display_name: 'Helena')
+      described_class.perform_now(create(:message, conversation: conversation, account: account,
+                                                   inbox: conversation.inbox).id, assistant.id)
+
+      expect(AgentBot.where(account_id: account.id).count).to eq(1)
+      expect(bot.reload.name).to eq('Helena')
+    end
+
+    # One workspace's agent must never be able to speak as another's.
+    it 'never reaches for a bot belonging to another account' do
+      other = create(:agent_bot, account: create(:account), bot_config: { 'ai_assistant_id' => assistant.id })
+      assistant.update!(conversation_display_name: 'Elisa')
+
+      described_class.perform_now(message.id, assistant.id)
+
+      expect(senders.first.id).not_to eq(other.id)
     end
   end
 
