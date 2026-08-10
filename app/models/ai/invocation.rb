@@ -5,6 +5,14 @@ class Ai::Invocation < ApplicationRecord
   belongs_to :account
   has_many :response_feedbacks, class_name: 'Ai::ResponseFeedback', foreign_key: :ai_invocation_id,
                                 inverse_of: :ai_invocation, dependent: :destroy
+  # NULLIFY, never destroy. Deleting an agent cascades to its invocations, and
+  # each one may have charged the account — the ledger entry is the record of
+  # that charge. Losing it would rewrite the account's spend history because
+  # somebody tidied up an agent, so the entry stays and simply forgets which
+  # call produced it. Without this the whole delete failed on a foreign key and
+  # the operator got an Internal Server Error with no way to remove the agent.
+  has_many :credit_ledger_entries, class_name: 'Ai::CreditLedgerEntry', foreign_key: :ai_invocation_id,
+                                   inverse_of: :ai_invocation, dependent: :nullify
 
   # `replay` is the A/B lab. It is billed like any other call, but it is an
   # experiment, not customer service, so the ROI panel excludes it: counting it
