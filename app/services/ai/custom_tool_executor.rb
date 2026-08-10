@@ -53,9 +53,25 @@ class Ai::CustomToolExecutor
   def run(tool, input)
     @performed_write = true if tool.http_method == 'POST'
     uri = safe_uri!(tool.build_request_url(input))
+    started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     response = request(tool, uri, input)
+    log_call(tool, uri, response, started_at, input)
     body = tool.format_response(response.body.to_s)
     body.presence || empty_response_error(tool, response)
+  end
+
+  # One line per call. Until now a tool that answered 200 with an empty list and
+  # a tool that was never reachable looked identical from the outside: the agent
+  # just said it could not find anything, and there was no way to tell which had
+  # happened. Param KEYS only, never values — a query string carries whatever
+  # the customer typed.
+  def log_call(tool, uri, response, started_at, input)
+    elapsed_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
+    Rails.logger.info(
+      "[Athenas integration] tool=#{tool.slug} #{tool.http_method} #{uri.host}#{uri.path} " \
+      "params=#{input.keys.sort.join(',')} http=#{response.code} " \
+      "bytes=#{response.body.to_s.bytesize} #{elapsed_ms}ms"
+    )
   end
 
   # An endpoint that answers with an empty body tells Claude nothing: the blank

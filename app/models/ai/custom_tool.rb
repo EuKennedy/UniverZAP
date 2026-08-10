@@ -19,6 +19,10 @@ class Ai::CustomTool < ApplicationRecord
   # This blocks the obvious ones at save time; the executor re-checks the
   # RESOLVED ip at call time (a hostname can resolve to 127.0.0.1).
   DISALLOWED_HOSTS = ['localhost', /\.local\z/i].freeze
+  # The leading identifier of a Liquid variable, so we can tell which params the
+  # URL already consumes. Tolerates `{{id}}`, `{{ id }}`, `{{- id }}` and
+  # `{{ id | url_encode }}`.
+  TEMPLATE_VARIABLE = /\{\{-?\s*([a-zA-Z_]\w*)/
 
   belongs_to :ai_assistant, class_name: 'Ai::Assistant'
   belongs_to :account
@@ -54,9 +58,10 @@ class Ai::CustomTool < ApplicationRecord
   end
 
   def build_request_url(params)
-    return endpoint_url if endpoint_url.exclude?('{{')
+    rendered = render_endpoint(params)
+    return rendered unless http_method == 'GET'
 
-    render_template(endpoint_url, params)
+    append_query(rendered, leftover_params(params))
   end
 
   def build_request_body(params)
@@ -86,6 +91,48 @@ class Ai::CustomTool < ApplicationRecord
   end
 
   private
+
+  # Values are URL-encoded BEFORE Liquid substitutes them. Rendered raw, a
+  # product name with a space produced an invalid URI, URI.parse raised inside
+  # the executor, and the agent reported the useless "não consegui completar
+  # essa ação agora" instead of a search result.
+  def render_endpoint(params)
+    return endpoint_url if endpoint_url.exclude?('{{')
+
+    render_template(endpoint_url, params.to_h.transform_values { |value| ERB::Util.url_encode(stringify(value)) })
+  end
+
+  # Params the URL template did not consume travel as the query string.
+  #
+  # Without this, a GET tool configured the obvious way — endpoint
+  # https://api.example.com/products plus a `search` param, no {{ }} anywhere —
+  # went out as a bare GET with the search term dropped on the floor. The agent
+  # then "found nothing" no matter what the catalogue held, and fell back to
+  # guessing product ids. POST has had the equivalent fallback since the raw
+  # input started being posted as the JSON body; GET never did.
+  #
+  # GET only, deliberately: on a POST the leftovers are already the body, and
+  # repeating them in the query would send each one twice.
+  def append_query(url, params)
+    return url if params.blank?
+
+    uri = URI.parse(url)
+    pairs = URI.decode_www_form(uri.query.to_s) + params.map { |key, value| [key.to_s, stringify(value)] }
+    uri.query = URI.encode_www_form(pairs)
+    uri.to_s
+  end
+
+  def leftover_params(params)
+    consumed = endpoint_url.to_s.scan(TEMPLATE_VARIABLE).flatten
+    params.to_h.reject { |key, _value| consumed.include?(key.to_s) }
+  end
+
+  def stringify(value)
+    return value if value.is_a?(String)
+    return value.to_json if value.is_a?(Array) || value.is_a?(Hash)
+
+    value.to_s
+  end
 
   def api_key_header
     return {} unless auth_config['location'] == 'header'
