@@ -16,11 +16,21 @@ import Icon from 'next/icon/Icon.vue';
 // notice. Every other overlay mounted next to it (Copilot, cookie consent,
 // help) is `fixed` for exactly this reason.
 //
-// Bottom centre and not bottom right: the right rail is an occupied stack
-// (Copilot at bottom-4, help at bottom-20, onboarding at bottom-36), and the
-// top right is where the page keeps its Save/Delete actions. Anchoring to the
-// content area instead of the viewport is not an option either, because the
-// sidebar is user-resizable.
+// Every edge of this app is already taken, so the position is the result of
+// elimination rather than taste:
+//   bottom right  — the launcher stack (Copilot bottom-4, help bottom-20,
+//                   onboarding bottom-36)
+//   top right     — the pages keep Save and Delete there
+//   left          — the sidebar, and its account row at the bottom
+//   bottom centre — form and modal footers. Tried it, and it covered the Save
+//                   button of the integration form, which had to be dismissed
+//                   before the form could be submitted. A persistent notice
+//                   that blocks a primary action is worse than the layout bug
+//                   it replaced.
+// What is left is the right edge ABOVE the launcher stack: bottom-52 clears
+// onboarding's bottom-36 plus its button height. Anchoring to the content area
+// instead of the viewport was never an option, because the sidebar is
+// user-resizable and there is no offset to hard-code.
 const { t } = useI18n();
 const { showBanner, status, balanceBrl, percentRemaining, openTopUpModal } =
   useAthenasCredits();
@@ -87,7 +97,7 @@ const variant = computed(() => {
   >
     <div
       v-if="isVisible"
-      class="fixed z-[45] bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[440px] border rounded-2xl backdrop-blur-xl shadow-2xl px-4 py-3 flex items-center gap-3"
+      class="fixed z-[45] bottom-52 left-4 right-4 sm:left-auto sm:w-[400px] border rounded-2xl backdrop-blur-xl shadow-2xl px-4 py-3 flex items-center gap-3"
       :class="variant.ring"
       role="status"
     >
