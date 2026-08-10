@@ -244,14 +244,21 @@ class Ai::AutopilotReplyJob < ApplicationJob
     chunks = text.split(/\n{2,}/).map(&:strip).reject(&:blank?)
     return chunks if chunks.length <= 1
 
-    merged = chunks.each_with_object([]) do |chunk, acc|
-      if acc.any? && (chunk.length < MIN_PART_CHARS || acc.length >= MAX_PARTS)
-        acc[-1] = "#{acc.last}\n\n#{chunk}"
-      else
+    chunks.each_with_object([]) do |chunk, acc|
+      if acc.empty? || keep_separate?(acc, chunk)
         acc << chunk
+      else
+        acc[-1] = "#{acc.last}\n\n#{chunk}"
       end
     end
-    merged
+  end
+
+  # A paragraph earns its own bubble only when BOTH it and the one before it are
+  # long enough to read as messages, and the burst cap still has room. Checking
+  # the previous one matters: a greeting arriving first has nothing behind it to
+  # be glued to, and would otherwise ship as a bubble of its own.
+  def keep_separate?(acc, chunk)
+    chunk.length >= MIN_PART_CHARS && acc.last.length >= MIN_PART_CHARS && acc.length < MAX_PARTS
   end
 
   # Ties the reply the customer actually received back to the invocations that

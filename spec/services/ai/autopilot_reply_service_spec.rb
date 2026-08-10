@@ -171,7 +171,6 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(service.send(:build_system_prompt)).to include('Persona:').and include('REGRA DE VERACIDADE')
     end
 
-
     # WhatsApp marks bold with one asterisk; the model writes Markdown, and the
     # customer was seeing the asterisks instead of the price standing out.
     it 'converts markdown bold to the WhatsApp form' do

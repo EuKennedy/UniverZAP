@@ -55,7 +55,6 @@ RSpec.describe Ai::Agent::ToolLoopService do
       expect(claude).to have_received(:chat).with(hash_including(tool_choice: { type: 'any' })).once
     end
 
-
     it 'forces the call when the model writes the markup instead of using it' do
       tool_use = { 'id' => 'tu_1', 'name' => 'listar_servicos', 'input' => {} }
       allow(claude).to receive(:chat).and_return(

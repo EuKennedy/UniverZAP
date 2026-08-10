@@ -179,7 +179,10 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
   # types on WhatsApp. Off by default, because an agent that suddenly fires four
   # notifications instead of one is a change the tenant has to choose.
   describe 'split_messages behaviour flag' do
-    let(:long_reply) { instance_double(Ai::AutopilotReplyService, perform: { content: "Oi, tudo bem?\n\nO Volume Control Blond sai por R$ 219.\n\nQuer que eu mande o link?" }) }
+    let(:split_content) do
+      "Oi, tudo bem?\n\nO Volume Control Blond sai por R$ 219.\n\nQuer que eu mande o link?"
+    end
+    let(:long_reply) { instance_double(Ai::AutopilotReplyService, perform: { content: split_content }) }
 
     before { allow(Ai::AutopilotReplyService).to receive(:new).and_return(long_reply) }
 
@@ -223,5 +226,4 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       expect(parts.last).to include('numero 9')
     end
   end
-
 end
