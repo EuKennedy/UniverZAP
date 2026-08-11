@@ -71,6 +71,11 @@ describe Instagram::SendOnInstagramService do
         # the reply arrow over a message Instagram had never been told was a
         # reply, so it showed here and nowhere the customer could see it.
         it 'forwards the quoted message id when the reply is marked' do
+          # The quoted message has to exist: Message#ensure_in_reply_to resolves
+          # the pair by source_id on every save and NULLS the field when it
+          # finds nothing, so a dangling id would be wiped before the send.
+          create(:message, message_type: 'incoming', inbox: instagram_inbox, account: account,
+                           conversation: conversation, source_id: 'mid.ABC123')
           message = create(:message, message_type: 'outgoing', inbox: instagram_inbox, account: account,
                                      conversation: conversation,
                                      content_attributes: { in_reply_to_external_id: 'mid.ABC123' })
