@@ -110,7 +110,9 @@
         "STOP_WORDS_LABEL": "Stop words",
         "STOP_WORDS_PLACEHOLDER": "humano, atendente, falar com gente",
         "STOP_WORDS_HINT": "If the customer types any of these, the bot will hand the conversation to a human.",
-        "RATE_LIMIT_LABEL": "Max messages per minute"
+        "RATE_LIMIT_LABEL": "Max messages per minute",
+        "SKIP_GROUPS_LABEL": "Never reply in group chats",
+        "SKIP_GROUPS_HINT": "A group is people talking to each other, not a customer talking to the shop: the agent cannot tell which messages are meant for it. On by default."
       },
       "REVIEW": {
         "HELPER": "You can come back to edit prompts, knowledge and guardrails any time.",

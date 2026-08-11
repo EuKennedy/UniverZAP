@@ -77,6 +77,48 @@ RSpec.describe AthenasAutopilotListener do
     end
   end
 
+  # A group is several people talking to each other, not a customer talking to
+  # the shop, and the agent cannot tell which messages are addressed to it.
+  # Answering them all is the fastest way to get the number reported, so this
+  # guard is ON until somebody deliberately turns it off.
+  describe 'group chats' do
+    let(:contact) { create(:contact, account: account, identifier: '551199999999-1234@g.us') }
+    let(:conversation) { create(:conversation, account: account, inbox: inbox, contact: contact) }
+
+    before { assistant.update!(autopilot_enabled: true) }
+
+    it 'stays out of a group without anyone configuring anything' do
+      dispatch
+
+      expect(scheduled).not_to have_received(:perform_later)
+    end
+
+    # Every agent that predates the flag reads nil, and nil has to mean ON.
+    it 'stays out of a group for an agent that has never seen this setting' do
+      assistant.update!(behavior_flags: { 'split_messages' => true })
+
+      dispatch
+
+      expect(scheduled).not_to have_received(:perform_later)
+    end
+
+    it 'answers a group only once the operator switches the guard off' do
+      assistant.update!(behavior_flags: { 'skip_groups' => false })
+
+      dispatch
+
+      expect(scheduled).to have_received(:perform_later).with(message.id, assistant.id)
+    end
+  end
+
+  it 'keeps answering an ordinary one-to-one conversation' do
+    assistant.update!(autopilot_enabled: true)
+
+    dispatch
+
+    expect(scheduled).to have_received(:perform_later).with(message.id, assistant.id)
+  end
+
   # The debounce window is what lets a customer finish a thought typed in three
   # bursts before the agent starts answering the first line of it.
   it 'schedules the turn behind the debounce window' do

@@ -110,7 +110,9 @@
         "STOP_WORDS_LABEL": "Palavras de pausa",
         "STOP_WORDS_PLACEHOLDER": "humano, atendente, falar com gente",
         "STOP_WORDS_HINT": "Se o cliente disser qualquer uma dessas palavras, o agente entrega a conversa para um humano.",
-        "RATE_LIMIT_LABEL": "Mensagens máximas por minuto"
+        "RATE_LIMIT_LABEL": "Mensagens máximas por minuto",
+        "SKIP_GROUPS_LABEL": "Nunca responder em grupos",
+        "SKIP_GROUPS_HINT": "Grupo é gente conversando entre si, não cliente falando com a loja: o agente não tem como saber quais mensagens são para ele. Ligado por padrão."
       },
       "REVIEW": {
         "HELPER": "Você pode editar prompts, conhecimento e regras a qualquer momento.",

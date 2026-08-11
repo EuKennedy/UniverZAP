@@ -51,6 +51,9 @@ const form = reactive({
     split_messages: false,
     reply_marking: false,
     voice_replies: false,
+    // The one that starts ON. Mirrors Ai::Assistant#skip_groups?, where an
+    // unset flag also means "on".
+    skip_groups: true,
   },
 });
 
@@ -123,6 +126,12 @@ const HUMANIZE_TOGGLES = [
     labelKey: 'ATHENAS.WIZARD.BEHAVIOR.VOICE_LABEL',
     hintKey: 'ATHENAS.WIZARD.BEHAVIOR.VOICE_HINT',
   },
+  {
+    key: 'skip_groups',
+    icon: 'i-lucide-users',
+    labelKey: 'ATHENAS.WIZARD.BEHAVIOR.SKIP_GROUPS_LABEL',
+    hintKey: 'ATHENAS.WIZARD.BEHAVIOR.SKIP_GROUPS_HINT',
+  },
 ];
 
 const tones = computed(() =>
@@ -162,10 +171,14 @@ const fetchAssistant = async () => {
         stop_words: [],
         max_messages_per_minute: 4,
       },
-      behavior_flags: data.behavior_flags || {
+      behavior_flags: {
         split_messages: false,
         reply_marking: false,
         voice_replies: false,
+        ...(data.behavior_flags || {}),
+        // `?? true` and not `||`: an agent that predates this flag has no value
+        // for it and must read as ON, the same way the backend reads nil.
+        skip_groups: data.behavior_flags?.skip_groups ?? true,
       },
     });
   } catch (e) {

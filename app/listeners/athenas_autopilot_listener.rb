@@ -13,6 +13,7 @@ class AthenasAutopilotListener < BaseListener
     assistant = resolve_assistant(conversation)
     return log_skip(:no_assistant, message) if assistant.blank?
     return log_skip(:inactive_assistant, message, assistant) unless assistant.active?
+    return log_skip(:group_conversation, message, assistant) if assistant.skip_groups? && conversation.is_group?
     return log_skip(:guardrail, message, assistant) if guardrail_triggered?(message, assistant)
 
     Rails.logger.info(

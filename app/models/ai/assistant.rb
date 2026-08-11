@@ -88,6 +88,22 @@ class Ai::Assistant < ApplicationRecord
     ActiveModel::Type::Boolean.new.cast(behavior_flags_payload[key.to_s])
   end
 
+  # The one behaviour that is ON until somebody turns it off, so it cannot use
+  # behavior_flag? — an unset flag there means "off", and off here means the
+  # agent starts answering group chats.
+  #
+  # A group is several people talking to each other, not a customer talking to
+  # the shop: the agent has no way to know which messages are addressed to it,
+  # and answering them all is the fastest way to get the number reported. Every
+  # agent that already exists reads `nil` and gets the safe behaviour without
+  # anyone touching it.
+  def skip_groups?
+    value = behavior_flags_payload['skip_groups']
+    return true if value.nil?
+
+    ActiveModel::Type::Boolean.new.cast(value)
+  end
+
   def push_event_data
     identity_payload.merge(model_payload).merge(behavior_payload).merge(meta_payload)
   end

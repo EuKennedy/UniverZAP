@@ -113,7 +113,7 @@ class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseContr
       :active,
       router_config: {},
       guardrails: {},
-      behavior_flags: [:split_messages, :reply_marking, :voice_replies]
+      behavior_flags: [:split_messages, :reply_marking, :voice_replies, :skip_groups]
     )
   end
 end
