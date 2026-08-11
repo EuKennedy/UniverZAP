@@ -60,6 +60,9 @@
         "NAME_LABEL": "Nome do agente",
         "NAME_PLACEHOLDER": "Ex: Sofia · Helena · Atlas",
         "NAME_REQUIRED": "Diga o nome do agente para continuar.",
+        "DISPLAY_NAME_LABEL": "Nome mostrado na conversa",
+        "DISPLAY_NAME_PLACEHOLDER": "Ex: Elisa",
+        "DISPLAY_NAME_HINT": "De quem o cliente vê a resposta chegando, do mesmo jeito que o nome de um atendente aparece acima das mensagens dele. Deixe vazio para continuar enviando sem identificação.",
         "ROLE_LABEL": "Papel / função",
         "ROLE_PLACEHOLDER": "Ex: SDR, Closer, Suporte",
         "DESCRIPTION_LABEL": "Descrição",
@@ -101,7 +104,7 @@
         "SPLIT_LABEL": "Responder em várias mensagens",
         "SPLIT_HINT": "Em vez de um bloco com quebras de linha, o agente manda cada parte como uma mensagem separada — do jeito que uma pessoa digita.",
         "REPLY_MARK_LABEL": "Marcar a pergunta ao responder",
-        "REPLY_MARK_HINT": "Quando o cliente pergunta algo direto, o agente responde citando aquela mensagem — só em perguntas diretas, e de forma natural.",
+        "REPLY_MARK_HINT": "A resposta chega citando o que o cliente pediu. Um \"ok\", um agradecimento ou um bom dia são respondidos sem citação, para a setinha continuar querendo dizer alguma coisa.",
         "VOICE_LABEL": "Responder em áudio quando pedirem",
         "VOICE_HINT": "Quando o cliente pede pra falar por áudio, o agente responde com uma nota de voz. Consome créditos de IA, como toda ação de IA.",
         "STOP_WORDS_LABEL": "Palavras de pausa",
@@ -291,7 +294,8 @@
       "ERROR": "Não consegui gerar a resposta agora. Tente de novo.",
       "STATUS": {
         "ungrounded_claim": "O agente ficou em silêncio: ele tentou afirmar um valor que não está na base de conhecimento. Cadastre esse dado no Conhecimento para ele poder responder.",
-        "loop_suppressed": "O agente ficou em silêncio: a resposta repetiria algo que ele já disse nesta conversa."
+        "loop_suppressed": "O agente ficou em silêncio: a resposta repetiria algo que ele já disse nesta conversa.",
+        "promise_unfulfilled": "O agente ficou em silêncio: a resposta prometia consultar algo sem chamar nenhuma ferramenta, e ele não tem uma próxima mensagem para cumprir isso. Confira se alguma ferramenta conectada cobre o que foi perguntado."
       }
     },
     "ANALYTICS": {
