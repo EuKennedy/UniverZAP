@@ -67,6 +67,32 @@ describe Instagram::SendOnInstagramService do
           expect(response['message_id']).to eq('random_message_id')
         end
 
+        # The quote used to live only in our own database: the dashboard drew
+        # the reply arrow over a message Instagram had never been told was a
+        # reply, so it showed here and nowhere the customer could see it.
+        it 'forwards the quoted message id when the reply is marked' do
+          message = create(:message, message_type: 'outgoing', inbox: instagram_inbox, account: account,
+                                     conversation: conversation,
+                                     content_attributes: { in_reply_to_external_id: 'mid.ABC123' })
+
+          described_class.new(message: message).perform
+
+          expect(HTTParty).to have_received(:post).with(
+            anything, hash_including(body: hash_including(reply_to: { mid: 'mid.ABC123' }))
+          )
+        end
+
+        it 'sends no reply context on an ordinary message' do
+          message = create(:message, message_type: 'outgoing', inbox: instagram_inbox, account: account,
+                                     conversation: conversation)
+
+          described_class.new(message: message).perform
+
+          expect(HTTParty).to have_received(:post).with(
+            anything, hash_including(body: hash_excluding(:reply_to))
+          )
+        end
+
         it 'if message is sent from chatwoot and is outgoing with multiple attachments' do
           message = build(:message, content: nil, message_type: 'outgoing', inbox: instagram_inbox, account: account,
                                     conversation: conversation)

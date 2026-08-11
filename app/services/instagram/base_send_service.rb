@@ -34,7 +34,20 @@ class Instagram::BaseSendService < Base::SendOnChannelService
       }
     }
 
-    merge_human_agent_tag(params)
+    merge_human_agent_tag(with_reply_context(params))
+  end
+
+  # The quoted message, which Meta takes at the TOP level of the send payload
+  # rather than inside `message`. Without this the quote existed only in our
+  # own database: the dashboard drew the reply arrow over a message Instagram
+  # had never been told was a reply.
+  #
+  # Omitted entirely when there is nothing to quote, rather than sent as null.
+  def with_reply_context(params)
+    replied_to = message.content_attributes[:in_reply_to_external_id]
+    return params if replied_to.blank?
+
+    params.merge(reply_to: { mid: replied_to })
   end
 
   def attachment_message_params(attachment)
