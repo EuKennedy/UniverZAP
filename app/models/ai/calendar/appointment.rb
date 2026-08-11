@@ -15,7 +15,8 @@ class Ai::Calendar::Appointment < ApplicationRecord
 
   belongs_to :professional, class_name: 'Ai::Calendar::Professional',
                             foreign_key: :ai_calendar_professional_id, inverse_of: :appointments
-  belongs_to :service, class_name: 'Ai::Calendar::Service', foreign_key: :ai_calendar_service_id, optional: true
+  belongs_to :service, class_name: 'Ai::Calendar::Service', foreign_key: :ai_calendar_service_id,
+                       optional: true, inverse_of: :appointments
   belongs_to :ai_assistant, class_name: 'Ai::Assistant'
   belongs_to :account
   belongs_to :contact

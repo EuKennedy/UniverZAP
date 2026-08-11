@@ -15,6 +15,7 @@ class CreateAiCalendarTables < ActiveRecord::Migration[7.1]
     create_connections
     create_professionals
     create_services
+    create_service_professionals
     create_hours
     create_appointments
     create_settings
@@ -62,8 +63,8 @@ class CreateAiCalendarTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
     add_index :ai_calendar_professionals, %i[ai_assistant_id active]
-    add_index :ai_calendar_professionals, %i[ai_calendar_connection_id calendar_id], unique: true,
-                                                                                    name: 'idx_calendar_pro_on_conn_calendar'
+    add_index :ai_calendar_professionals, %i[ai_calendar_connection_id calendar_id],
+              unique: true, name: 'idx_calendar_pro_on_conn_calendar'
   end
 
   # Of the BUSINESS, not of the person: "progressiva, 90min, R$ 219" is entered
@@ -88,14 +89,17 @@ class CreateAiCalendarTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
     add_index :ai_calendar_services, %i[ai_assistant_id active]
+  end
 
+  # Only ever written for services with `global: false`.
+  def create_service_professionals
     create_table :ai_calendar_service_professionals do |t|
       t.references :ai_calendar_service, null: false, foreign_key: true, index: false
       t.references :ai_calendar_professional, null: false, foreign_key: true, index: false
       t.timestamps
     end
-    add_index :ai_calendar_service_professionals, %i[ai_calendar_service_id ai_calendar_professional_id], unique: true,
-                                                                                                         name: 'idx_calendar_service_pro'
+    add_index :ai_calendar_service_professionals, %i[ai_calendar_service_id ai_calendar_professional_id],
+              unique: true, name: 'idx_calendar_service_pro'
     add_index :ai_calendar_service_professionals, :ai_calendar_professional_id, name: 'idx_calendar_service_pro_on_pro'
   end
 
