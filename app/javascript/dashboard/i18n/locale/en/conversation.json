@@ -354,7 +354,8 @@
       "REJECT_CALL": "Reject",
       "JOIN_CALL": "Join call",
       "END_CALL": "End call"
-    }
+    },
+    "AUDIO_NOT_TRANSCRIBED": "Voice note not transcribed: "
   },
   "EMAIL_TRANSCRIPT": {
     "TITLE": "Send conversation transcript",

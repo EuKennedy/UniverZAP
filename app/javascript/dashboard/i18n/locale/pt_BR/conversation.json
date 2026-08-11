@@ -350,7 +350,8 @@
       "REJECT_CALL": "Recusar",
       "JOIN_CALL": "Entrar na chamada",
       "END_CALL": "Encerrar chamada"
-    }
+    },
+    "AUDIO_NOT_TRANSCRIBED": "Áudio não transcrito: "
   },
   "EMAIL_TRANSCRIPT": {
     "TITLE": "Enviar transcrição de conversa",

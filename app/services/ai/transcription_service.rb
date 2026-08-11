@@ -40,15 +40,39 @@ class Ai::TranscriptionService
   # provider failure the caller may want to retry.
   def perform
     return existing_transcription if existing_transcription.present?
-    return nil unless transcribable?
+
+    blocker = untranscribable_reason
+    return give_up!(blocker) if blocker
 
     adapter = build_adapter
-    return nil if adapter.nil?
+    return give_up!('nenhuma chave do ElevenLabs configurada (ELEVENLABS_API_KEY)') if adapter.nil?
 
     Ai::QuotaService.check_transcription!(
       account: @account, model: adapter.model, duration_seconds: estimated_seconds
     )
     transcribe_with(adapter)
+  rescue StandardError => e
+    # Recorded, then re-raised untouched: the caller decides what a provider
+    # failure means for the turn, and this only makes sure the reason survives.
+    give_up!(e.message.to_s.truncate(300))
+    raise
+  end
+
+  # Why the customer's voice note did not become text, written where somebody
+  # will actually see it.
+  #
+  # Every one of these paths used to return nil in silence, so the only visible
+  # symptom was the agent telling a customer it could not hear — an explanation
+  # the model invents, and a plausible one, which is what made it cost hours to
+  # track down. An invalid API key was being reported by ElevenLabs on every
+  # single call and reached nobody.
+  def give_up!(reason)
+    Rails.logger.info(
+      "[Athenas audio] not transcribed attachment=#{@attachment.id} " \
+      "account=#{@account&.id}: #{reason}"
+    )
+    stamp_meta('transcription_error' => reason)
+    nil
   end
 
   private
@@ -57,25 +81,30 @@ class Ai::TranscriptionService
     @existing_transcription ||= @attachment.meta&.dig('transcribed_text').presence
   end
 
-  def transcribable?
-    owned_audio? && within_provider_limits?
-  end
+  # Nil when the voice note can be transcribed; otherwise the reason it cannot,
+  # in words an operator can act on. One method rather than three booleans
+  # because the reason IS the product here: "false" is what made this whole
+  # path invisible.
+  #
+  # The first three checks are the tenant guard: the audio, the credential and
+  # the bill all belong to one account, and a crossed id must never make one
+  # workspace's voice note run on another workspace's key. Order preserved.
+  def untranscribable_reason
+    return 'anexo sem conta ou agente associado' if @account.blank? || @assistant.blank?
+    return 'anexo pertence a outra conta' if @assistant.account_id != @account.id
+    return "anexo nao e audio (tipo: #{@attachment.file_type})" unless @attachment.file_type.to_s == 'audio'
 
-  # The audio, the credential and the bill all belong to one account. A crossed
-  # id must never make one workspace's voice note run on another workspace's key.
-  def owned_audio?
-    return false if @account.blank? || @assistant.blank?
-    return false if @assistant.account_id != @account.id
-
-    @attachment.file_type.to_s == 'audio'
+    blob_blocker
   end
 
   # Past either limit the file stays attached; it just is not transcribed.
-  def within_provider_limits?
+  def blob_blocker
     blob = @attachment.file&.blob
-    return false if blob.blank?
+    return 'arquivo nao esta no storage (so a URL externa do canal)' if blob.blank?
+    return "arquivo maior que o limite de #{MAX_BYTES / 1_000_000} MB" if blob.byte_size > MAX_BYTES
+    return "audio mais longo que o limite de #{MAX_DURATION_SECONDS / 60} min" if estimated_seconds > MAX_DURATION_SECONDS
 
-    blob.byte_size <= MAX_BYTES && estimated_seconds <= MAX_DURATION_SECONDS
+    nil
   end
 
   def estimated_seconds
@@ -136,10 +165,17 @@ class Ai::TranscriptionService
   end
 
   def persist!(result)
-    # Merge, never replace: `meta` is shared with whatever else the channel
-    # stored on this attachment.
-    @attachment.update!(meta: (@attachment.meta || {}).merge('transcribed_text' => result.text))
+    # Clearing the error alongside is what makes a retry after a fixed key look
+    # fixed, instead of leaving a stale reason next to a working transcript.
+    stamp_meta('transcribed_text' => result.text, 'transcription_error' => nil)
     @message.reload
+  end
+
+  # Merge, never replace: `meta` is shared with whatever else the channel stored
+  # on this attachment. Nil values are dropped rather than written.
+  def stamp_meta(values)
+    merged = (@attachment.meta || {}).merge(values).compact
+    @attachment.update!(meta: merged)
   end
 
   # Same log every other AI call writes, so the cost of voice shows up next to

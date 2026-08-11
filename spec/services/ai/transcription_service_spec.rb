@@ -146,6 +146,45 @@ RSpec.describe Ai::TranscriptionService do
     end
   end
 
+  # Every path that ends without a transcript used to return nil in silence, so
+  # the only visible symptom was the agent telling a customer it could not hear
+  # — an excuse the model invents, and a convincing one. An invalid API key was
+  # being reported by ElevenLabs on every call and reached nobody for hours.
+  describe 'why it did not transcribe' do
+    it 'records the provider failure on the attachment and re-raises it' do
+      attachment = audio
+      allow(adapter).to receive(:call).and_raise(
+        Ai::Transcription::BaseAdapter::Error, 'ElevenLabs 400: invalid_api_key'
+      )
+
+      expect { run(attachment) }.to raise_error(Ai::Transcription::BaseAdapter::Error)
+      expect(attachment.reload.meta['transcription_error']).to include('invalid_api_key')
+    end
+
+    it 'names the missing key rather than failing mute' do
+      assistant.update!(encrypted_elevenlabs_key: nil)
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with('ELEVENLABS_API_KEY', nil).and_return(nil)
+      attachment = audio
+
+      run(attachment)
+
+      expect(attachment.reload.meta['transcription_error']).to include('ELEVENLABS_API_KEY')
+    end
+
+    # A retry after the operator fixes the key must not leave a stale reason
+    # sitting next to a working transcript.
+    it 'clears the reason once the audio finally goes through' do
+      attachment = audio
+      attachment.update!(meta: { 'transcription_error' => 'chave invalida' })
+
+      run(attachment)
+
+      expect(attachment.reload.meta['transcribed_text']).to be_present
+      expect(attachment.meta).not_to have_key('transcription_error')
+    end
+  end
+
   describe 'tenant isolation' do
     # The audio, the key and the bill all belong to one account. A crossed id
     # must never make one workspace's voice note run on another's credential.

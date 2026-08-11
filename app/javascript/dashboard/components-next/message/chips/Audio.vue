@@ -6,6 +6,7 @@ import {
   ref,
   getCurrentInstance,
 } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Icon from 'next/icon/Icon.vue';
 import { timeStampAppendedURL } from 'dashboard/helper/URLHelper';
 import { downloadFile } from '@chatwoot/utils';
@@ -26,6 +27,8 @@ const { attachment } = defineProps({
 defineOptions({
   inheritAttrs: false,
 });
+
+const { t } = useI18n();
 
 const timeStampURL = computed(() => {
   return timeStampAppendedURL(attachment.dataUrl);
@@ -190,6 +193,20 @@ const downloadAudio = async () => {
       class="text-n-slate-12 p-3 text-sm bg-n-alpha-1 rounded-lg w-full break-words"
     >
       {{ attachment.transcribedText }}
+    </div>
+
+    <!-- Only when there is no transcript to show instead: the agent answers a
+    voice note it could not hear by improvising an excuse, so the real reason
+    has to be visible to whoever is watching the conversation. -->
+    <div
+      v-else-if="attachment.transcriptionError && showTranscribedText"
+      class="flex items-start gap-2 p-3 text-sm rounded-lg w-full break-words text-n-slate-11 bg-n-alpha-1"
+    >
+      <Icon icon="i-lucide-mic-off" class="size-4 shrink-0 mt-0.5" />
+      <span>
+        {{ t('CONVERSATION.AUDIO_NOT_TRANSCRIBED') }}
+        <span class="text-n-slate-12">{{ attachment.transcriptionError }}</span>
+      </span>
     </div>
   </div>
 </template>

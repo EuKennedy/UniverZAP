@@ -104,7 +104,10 @@ class Attachment < ApplicationRecord
     audio_file_data = base_data.merge(file_metadata)
     audio_file_data.merge(
       {
-        transcribed_text: meta&.[]('transcribed_text') || ''
+        transcribed_text: meta&.[]('transcribed_text') || '',
+        # Why the voice note has no transcript, so the operator reads the real
+        # reason instead of the excuse the agent improvises to the customer.
+        transcription_error: meta&.[]('transcription_error') || ''
       }
     )
   end
