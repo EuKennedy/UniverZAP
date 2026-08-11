@@ -491,6 +491,19 @@ RSpec.describe Ai::AutopilotReplyJob, type: :job do
       expect(parts.first).to start_with('Claro!')
     end
 
+    # Instagram rejected a link-only message with "508 - Invalid message id"
+    # while delivering the sentence above it, so the customer was told to click
+    # a link that never arrived.
+    it 'never leaves a link alone in its own message' do
+      text = "Fechado! O kit sai por R$ 297,00 e voce garante o curso junto.\n\n" \
+             "É só finalizar por aqui, leva menos de um minuto pra concluir.\n\n" \
+             'https://pay.hotmart.com/G97223562F?off=ooygruqk'
+
+      parts = job.send(:split_on_paragraphs, text)
+
+      expect(parts.last).to include('menos de um minuto').and include('pay.hotmart.com')
+    end
+
     it 'never bursts past the cap' do
       long = (1..9).map { |i| "Paragrafo numero #{i}, com texto suficiente para valer uma mensagem inteira." }
       parts = job.send(:split_on_paragraphs, long.join("\n\n"))

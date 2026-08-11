@@ -397,7 +397,18 @@ class Ai::AutopilotReplyJob < ApplicationJob
   # long enough to read as messages, and the burst cap still has room. Checking
   # the previous one matters: a greeting arriving first has nothing behind it to
   # be glued to, and would otherwise ship as a bubble of its own.
+  # A bubble that is nothing but a link. Instagram rejected exactly this with
+  # "508 - Invalid message id" while delivering the sentence above it, so the
+  # customer read "clica no link aqui embaixo" and got no link.
+  #
+  # It reads worse even where it does send: the sentence that explains the link
+  # arrives in one notification and the link in another, and on a phone the two
+  # are seconds apart.
+  BARE_LINK = %r{\A<?https?://\S+>?\z}
+
   def keep_separate?(acc, chunk)
+    return false if BARE_LINK.match?(chunk)
+
     chunk.length >= MIN_PART_CHARS && acc.last.length >= MIN_PART_CHARS && acc.length < MAX_PARTS
   end
 

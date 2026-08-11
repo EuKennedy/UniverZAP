@@ -593,8 +593,11 @@ class Ai::AutopilotReplyService
     próprio parágrafo, separadas por UMA LINHA EM BRANCO. Cada parágrafo vira uma
     mensagem separada para o cliente.
     Use no máximo 3 parágrafos, de no máximo 2 frases cada. Não separe uma saudação
-    ou uma palavra solta em parágrafo próprio: junte com a ideia seguinte. Links,
-    preços e o passo final ficam no ÚLTIMO parágrafo, para não se perderem no meio.
+    ou uma palavra solta em parágrafo próprio: junte com a ideia seguinte. Preços e
+    o passo final ficam no ÚLTIMO parágrafo, para não se perderem no meio.
+    NUNCA deixe um link sozinho num parágrafo: escreva o link na MESMA linha da frase
+    que o apresenta ("é só clicar aqui: https://..."), senão a frase chega numa
+    mensagem e o link em outra.
 
     CORTE o que ninguém pediu: adjetivo de propaganda, benefício não perguntado,
     explicação do porquê do produto ser bom. NÃO corte o que responde a pergunta:
