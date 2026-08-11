@@ -12,6 +12,18 @@ class Ai::Assistant < ApplicationRecord
   # blows up on destroy. Cascade deletion keeps the table consistent.
   has_many :invocations, class_name: 'Ai::Invocation', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
   has_many :custom_tools, class_name: 'Ai::CustomTool', foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :destroy
+  # Scheduling. All `:destroy` so removing an agent cannot trip over a foreign
+  # key the way it did twice before; the Google events survive regardless.
+  has_many :calendar_connections, class_name: 'Ai::Calendar::Connection', foreign_key: :ai_assistant_id,
+                                  inverse_of: :ai_assistant, dependent: :destroy
+  has_many :calendar_professionals, class_name: 'Ai::Calendar::Professional', foreign_key: :ai_assistant_id,
+                                    inverse_of: :ai_assistant, dependent: :destroy
+  has_many :calendar_services, class_name: 'Ai::Calendar::Service', foreign_key: :ai_assistant_id,
+                               inverse_of: :ai_assistant, dependent: :destroy
+  has_many :calendar_appointments, class_name: 'Ai::Calendar::Appointment', foreign_key: :ai_assistant_id,
+                                   inverse_of: :ai_assistant, dependent: :destroy
+  has_one :calendar_setting, class_name: 'Ai::Calendar::Setting', foreign_key: :ai_assistant_id,
+                             inverse_of: :ai_assistant, dependent: :destroy
   has_many :inboxes, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
   has_many :conversations, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
   has_many :chat_threads, class_name: 'Ai::ChatThread', foreign_key: :ai_assistant_id,
