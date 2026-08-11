@@ -119,6 +119,19 @@ RSpec.describe Ai::Agent::ToolLoopService do
 
       expect { run }.to raise_error(described_class::PromiseUnfulfilled)
     end
+
+    # The same trigger words inside a complete answer. Silencing this is how
+    # the first version of the guard took a sales agent off the air: "já te
+    # mando o link" is how half of its replies end.
+    it 'lets an answer through when the promise is not the whole of it' do
+      allow(claude).to receive(:chat).and_return(
+        { content: 'Fechado! Ja te mando o link do carrinho aqui: https://lizzon.com.br/uc/abc123 ' \
+                   'e qualquer duvida e so falar comigo, viu?',
+          tool_uses: [], stop_reason: 'end_turn' }
+      )
+
+      expect(run[:content]).to include('lizzon.com.br')
+    end
   end
 
   context 'when the turn budget runs out' do

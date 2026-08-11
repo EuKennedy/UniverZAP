@@ -96,12 +96,34 @@ class Ai::Agent::ToolLoopService
   # produced an unkept promise in production at least once. Forcing the call
   # (above) is the fix; this is what happens when forcing did not work, which in
   # practice means the forced call itself errored and fell back to the draft.
+  # Only a reply that is NOTHING BUT the promise. "Perfeito, deixa eu buscar
+  # aqui pra você!" is 38 characters and answers nothing; "Fechado! Já te mando
+  # o link do carrinho: https://..." contains the same trigger words and is a
+  # complete answer with the link already in it.
+  #
+  # The first version of this guard checked only the words, so it silenced every
+  # reply that closed with "já te mando o link" — which for a sales agent is
+  # most of them. Forcing the tool call (above) stays broad because forcing is
+  # cheap and recoverable; going silent is neither.
+  PROMISE_ONLY_MAX_CHARS = 140
+  # What the promise was FOR. A reply carrying a link or a price already
+  # delivered whatever it announced, whatever words it wrapped that in.
+  DELIVERED = %r{https?://|R\$\s?\d|\d+[.,]\d{2}}i
+
   def finish(response)
     response = sanitize(response)
-    return response unless ANNOUNCED_LOOKUP.match?(response[:content].to_s)
+    text = response[:content].to_s.strip
+    return response unless bare_promise?(text)
 
     raise PromiseUnfulfilled,
           "reply promised a lookup it will never make conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
+  end
+
+  # All three have to hold before a turn is thrown away: it announces a lookup,
+  # it delivered nothing, and it is short enough to be nothing else. Going
+  # silent is unrecoverable, so the bar to do it is deliberately high.
+  def bare_promise?(text)
+    ANNOUNCED_LOOKUP.match?(text) && !DELIVERED.match?(text) && text.length <= PROMISE_ONLY_MAX_CHARS
   end
 
   # Last line of defence. If even the forced call comes back with markup in it,
