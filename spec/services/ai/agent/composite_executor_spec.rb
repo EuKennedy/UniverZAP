@@ -1,15 +1,14 @@
 require 'rails_helper'
 
 RSpec.describe Ai::Agent::CompositeExecutor do
-  let(:cart) { double('cart executor', performed_write?: false) } # rubocop:disable RSpec/VerifiedDoubles
-  let(:agenda) { double('agenda executor', performed_write?: false) } # rubocop:disable RSpec/VerifiedDoubles
-
-  let(:cart_definitions) { [{ name: 'montar_carrinho' }] }
-  let(:agenda_definitions) { [{ name: 'consultar_horarios' }, { name: 'agendar' }] }
-
   subject(:executor) do
     described_class.new([[cart_definitions, cart], [agenda_definitions, agenda]])
   end
+
+  let(:cart) { double('cart executor', performed_write?: false) } # rubocop:disable RSpec/VerifiedDoubles
+  let(:agenda) { double('agenda executor', performed_write?: false) } # rubocop:disable RSpec/VerifiedDoubles
+  let(:cart_definitions) { [{ name: 'montar_carrinho' }] }
+  let(:agenda_definitions) { [{ name: 'consultar_horarios' }, { name: 'agendar' }] }
 
   # The reason this class exists: a salon sells products AND books chairs, and
   # before it the router picked one, so an agent with a cart tool could never

@@ -10,13 +10,16 @@ class Ai::Calendar::BookService
   class Unavailable < StandardError; end
   class NothingToBook < StandardError; end
 
-  def initialize(assistant:, contact:, services:, starts_at:, conversation: nil, professional: nil)
+  # The agenda is not a parameter: the MVP has exactly one and never says the
+  # word to the operator. When a second chair arrives it becomes one, and the
+  # caller that has to choose will be the one that knows how.
+  def initialize(assistant:, contact:, services:, starts_at:, conversation: nil)
     @assistant = assistant
     @contact = contact
     @services = Array(services).compact
     @starts_at = starts_at
     @conversation = conversation
-    @professional = professional || assistant.calendar_professionals.active.first
+    @professional = assistant.calendar_professionals.active.first
   end
 
   def perform
@@ -79,7 +82,7 @@ class Ai::Calendar::BookService
       ("Telefone: #{@contact.phone_number}" if @contact.phone_number.present?),
       "Profissional: #{@professional.name}",
       "Serviço: #{@services.map(&:name).join(' + ')}",
-      (conversation_url if conversation_url.present?),
+      conversation_url.presence,
       'Agendado pelo agente de IA da UniverZAP.'
     ].compact.join("\n")
   end

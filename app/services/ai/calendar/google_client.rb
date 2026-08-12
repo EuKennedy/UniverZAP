@@ -88,6 +88,7 @@ class Ai::Calendar::GoogleClient
   def handle!(response)
     code = response.code.to_i
     return JSON.parse(response.body.presence || '{}') if code.between?(200, 299)
+
     # 401 is a token Google no longer honours. Recorded on the connection so the
     # screen can say why the agenda stopped, instead of the agent apologising
     # forever for something the operator could fix in one click.
