@@ -645,6 +645,7 @@ class Ai::AutopilotReplyService
   # output-format rule still land last, right before generation.
   def dynamic_prompt_segment(override)
     [
+      now_block,
       summary_block,
       contact_block,
       knowledge_snippets,
@@ -654,6 +655,36 @@ class Ai::AutopilotReplyService
       Ai::MetaBlock::INSTRUCTION,
       override
     ]
+  end
+
+  WEEKDAY_NAMES = %w[domingo segunda-feira terça-feira quarta-feira quinta-feira sexta-feira sábado].freeze
+  MONTH_NAMES = %w[janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro].freeze
+
+  # The model has no clock. Without this it cannot turn "amanhã" into the
+  # AAAA-MM-DD the agenda demands, and it cannot tell the customer which day a
+  # slot it just received falls on — it reads 2026-08-13T09:00 and has nothing
+  # to compare it against.
+  #
+  # Deliberately in the DYNAMIC segment: today's date sitting in the cached
+  # prefix would be written once and then served from cache, so the agent would
+  # keep insisting it was yesterday until the prefix changed for another reason.
+  #
+  # Names spelled out here rather than through I18n.l because the prompt around
+  # it is pt-BR regardless of the operator's dashboard locale, and a missing
+  # date format in some locale would surface as an exception mid-conversation.
+  def now_block
+    now = Time.current.in_time_zone(agent_zone)
+    "AGORA: #{WEEKDAY_NAMES[now.wday]}, #{now.day} de #{MONTH_NAMES[now.month - 1]} de #{now.year}, " \
+      "#{now.strftime('%H:%M')} (#{agent_zone.name}). Data de hoje em número: #{now.strftime('%Y-%m-%d')}.\n" \
+      'Resolva "hoje", "amanhã", "sexta" e "semana que vem" a partir daqui, e converta para AAAA-MM-DD ' \
+      'antes de passar para qualquer ferramenta. Ao oferecer um horário, diga o dia por extenso ' \
+      '("amanhã", "quinta"), nunca a data crua que a ferramenta devolveu.'
+  end
+
+  # The agenda's zone when there is an agenda, because "amanhã" is decided where
+  # the chair is, not where the server runs.
+  def agent_zone
+    @agent_zone ||= ActiveSupport::TimeZone[@assistant.calendar_professionals.active.first&.timezone.to_s] || Time.zone
   end
 
   # The tool result — never the knowledge block — is the source of truth for
