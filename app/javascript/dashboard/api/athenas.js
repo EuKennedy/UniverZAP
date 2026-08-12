@@ -143,6 +143,22 @@ class AthenasAssistantsAPI extends ApiClient {
     return axios.delete(`${this.url}/${assistantId}/custom_tools/${toolId}`);
   }
 
+  // Agenda: this agent's own Google grant. Per agent, so connecting the salon
+  // on one and the clinic on another keeps the two calendars apart.
+  calendarConnection(assistantId) {
+    return axios.get(`${this.url}/${assistantId}/calendar_connection`);
+  }
+
+  // Returns the Google URL to send the browser to. Not a redirect, because a
+  // 302 answering an XHR lands the operator nowhere.
+  startCalendarConnection(assistantId) {
+    return axios.post(`${this.url}/${assistantId}/calendar_connection`);
+  }
+
+  disconnectCalendar(assistantId) {
+    return axios.delete(`${this.url}/${assistantId}/calendar_connection`);
+  }
+
   // Measured performance for one agent, plus the last replies it sent.
   analytics(assistantId, { days = 30 } = {}) {
     return axios.get(`${this.url}/${assistantId}/analytics`, {

@@ -188,6 +188,24 @@
         "DELETE_CONFIRM": "Remover este conhecimento? Esta ação não pode ser desfeita.",
         "DELETE_SUCCESS": "Conhecimento removido."
       },
+      "CALENDAR": {
+        "TITLE": "Google Calendar",
+        "SUBTITLE": "Conecte a agenda do seu negócio e o agente passa a marcar, remarcar e desmarcar horário direto na conversa.",
+        "LOADING": "Verificando conexão…",
+        "CONNECT": "Conectar",
+        "CONNECTED": "Agenda conectada. Agora configure seu negócio.",
+        "CONNECTED_AS": "Conectado em",
+        "CONNECT_FAILED": "Não deu para conectar a agenda. Tente de novo.",
+        "NOT_CONFIGURED": "As credenciais do Google ainda não foram configuradas nesta instalação.",
+        "DISCONNECT": "Desconectar",
+        "DISCONNECTED": "Agenda desconectada. Os horários já marcados continuam no seu Google.",
+        "DISCONNECT_FAILED": "Não deu para desconectar agora.",
+        "ERRORS": {
+          "NO_REFRESH_TOKEN": "O Google não devolveu a permissão de acesso contínuo. Conecte de novo e aceite todas as permissões na tela do Google.",
+          "INVALID_STATE": "O pedido de conexão expirou. Clique em Conectar de novo.",
+          "AGENT_NOT_FOUND": "Esse agente não existe mais."
+        }
+      },
       "INTEGRATIONS": {
         "TITLE": "Integrações",
         "SUBTITLE": "Conecte o agente às suas próprias APIs. Ele consulta e age durante a conversa — por exemplo, busca produtos reais e monta o carrinho com o link pro cliente.",

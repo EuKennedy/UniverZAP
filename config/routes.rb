@@ -508,6 +508,10 @@ Rails.application.routes.draw do
               resources :intents, only: [:index, :create, :update, :destroy]
               # The workspace's own HTTP integrations this agent can call (univercart etc.).
               resources :custom_tools, only: [:index, :create, :update, :destroy]
+              # The agent's own Google Calendar grant. Per agent, so one
+              # operator can run a salon and a clinic without their agendas
+              # ever seeing each other.
+              resource :calendar_connection, only: [:show, :create, :destroy], controller: 'calendar_connections'
               # Test sandbox: talk to this assistant as if you were a customer.
               resource :playground, only: [:show, :create, :destroy], controller: 'playground'
               # Supervision queue: every reply the agent produced, the automatic
@@ -903,6 +907,9 @@ Rails.application.routes.draw do
 
   get 'microsoft/callback', to: 'microsoft/callbacks#show'
   get 'google/callback', to: 'google/callbacks#show'
+  # Scheduling has its own callback because it has its own grant: the inbox one
+  # above asks for mailbox access, and the agent must never be handed that.
+  get 'ai/calendar/google/callback', to: 'ai/calendar/google_callbacks#show'
   get 'instagram/callback', to: 'instagram/callbacks#show'
   get 'tiktok/callback', to: 'tiktok/callbacks#show'
   get 'notion/callback', to: 'notion/callbacks#show'

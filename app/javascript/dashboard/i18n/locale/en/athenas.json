@@ -188,6 +188,24 @@
         "DELETE_CONFIRM": "Remove this knowledge? This cannot be undone.",
         "DELETE_SUCCESS": "Knowledge removed."
       },
+      "CALENDAR": {
+        "TITLE": "Google Calendar",
+        "SUBTITLE": "Connect your business calendar and the agent starts booking, rescheduling and cancelling right in the conversation.",
+        "LOADING": "Checking connection…",
+        "CONNECT": "Connect",
+        "CONNECTED": "Calendar connected. Now set up your business.",
+        "CONNECTED_AS": "Connected as",
+        "CONNECT_FAILED": "Could not connect the calendar. Try again.",
+        "NOT_CONFIGURED": "Google credentials have not been configured on this installation yet.",
+        "DISCONNECT": "Disconnect",
+        "DISCONNECTED": "Calendar disconnected. Appointments already booked stay in your Google.",
+        "DISCONNECT_FAILED": "Could not disconnect right now.",
+        "ERRORS": {
+          "NO_REFRESH_TOKEN": "Google did not return offline access. Connect again and accept every permission on the Google screen.",
+          "INVALID_STATE": "The connection request expired. Click Connect again.",
+          "AGENT_NOT_FOUND": "That agent no longer exists."
+        }
+      },
       "INTEGRATIONS": {
         "TITLE": "Integrations",
         "SUBTITLE": "Connect the agent to your own APIs. It searches and acts mid-conversation — for example, look up real products and build a checkout cart for the customer.",

@@ -13,10 +13,16 @@ import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import AthenasIntegrationForm from 'dashboard/components-next/athenas/AthenasIntegrationForm.vue';
+import AthenasCalendarConnect from 'dashboard/components-next/athenas/AthenasCalendarConnect.vue';
 
 const props = defineProps({
   assistantId: { type: Number, required: true },
 });
+
+// Bubbled up so the agent screen can reveal the "Configurar negócio" tab the
+// moment the calendar is connected, without this component knowing the tabs
+// exist.
+defineEmits(['calendarConnected']);
 
 const { t } = useI18n();
 
@@ -136,6 +142,15 @@ const performDelete = async () => {
         @click="openCreate"
       />
     </header>
+
+    <!-- Above the HTTP tools because it is the one integration with a real
+         onboarding behind it: connecting is what makes the "Configurar
+         negócio" tab exist. -->
+    <AthenasCalendarConnect
+      v-if="view === 'list'"
+      :assistant-id="assistantId"
+      @connected="$emit('calendarConnected')"
+    />
 
     <AthenasIntegrationForm
       v-if="view === 'form'"
