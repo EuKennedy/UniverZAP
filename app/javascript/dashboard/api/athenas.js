@@ -159,6 +159,40 @@ class AthenasAssistantsAPI extends ApiClient {
     return axios.delete(`${this.url}/${assistantId}/calendar_connection`);
   }
 
+  // "Configurar negócio": the agenda name, the week and the rules travel
+  // together because they are one form, and a half-saved one leaves services
+  // nobody can be booked for.
+  calendarSetup(assistantId) {
+    return axios.get(`${this.url}/${assistantId}/calendar_setup`);
+  }
+
+  updateCalendarSetup(assistantId, payload) {
+    return axios.patch(`${this.url}/${assistantId}/calendar_setup`, payload);
+  }
+
+  listCalendarServices(assistantId) {
+    return axios.get(`${this.url}/${assistantId}/calendar_services`);
+  }
+
+  createCalendarService(assistantId, payload) {
+    return axios.post(`${this.url}/${assistantId}/calendar_services`, {
+      service: payload,
+    });
+  }
+
+  updateCalendarService(assistantId, serviceId, payload) {
+    return axios.patch(
+      `${this.url}/${assistantId}/calendar_services/${serviceId}`,
+      { service: payload }
+    );
+  }
+
+  deleteCalendarService(assistantId, serviceId) {
+    return axios.delete(
+      `${this.url}/${assistantId}/calendar_services/${serviceId}`
+    );
+  }
+
   // Measured performance for one agent, plus the last replies it sent.
   analytics(assistantId, { days = 30 } = {}) {
     return axios.get(`${this.url}/${assistantId}/analytics`, {

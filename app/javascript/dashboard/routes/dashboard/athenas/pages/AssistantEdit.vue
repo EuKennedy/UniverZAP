@@ -19,6 +19,7 @@ import AthenasReviewQueue from 'dashboard/components-next/athenas/AthenasReviewQ
 import AthenasPromptLab from 'dashboard/components-next/athenas/AthenasPromptLab.vue';
 import AthenasRadar from 'dashboard/components-next/athenas/AthenasRadar.vue';
 import AthenasIntegrations from 'dashboard/components-next/athenas/AthenasIntegrations.vue';
+import AthenasBusinessSetup from 'dashboard/components-next/athenas/AthenasBusinessSetup.vue';
 
 const props = defineProps({ id: { type: Number, required: true } });
 
@@ -63,6 +64,11 @@ const TABS = [
   // Give the agent tools before you test it: knowledge is what it knows,
   // integrations are what it can DO (search a catalog, build a cart).
   { key: 'integrations', icon: 'i-lucide-plug' },
+  // Only once a calendar is connected. Everything on it — the week, the
+  // services, the rules — is meaningless without an agenda to write into, and
+  // an empty screen asking for opening hours is how an operator concludes the
+  // feature is broken.
+  { key: 'business', icon: 'i-lucide-calendar-cog', requiresCalendar: true },
   // Right after knowledge on purpose: you feed the agent, then you test it.
   { key: 'test', icon: 'i-lucide-message-circle' },
   { key: 'activity', icon: 'i-lucide-activity' },
@@ -80,6 +86,29 @@ const TABS = [
 ];
 
 const currentTab = ref('general');
+
+// Checked once when the screen opens, and flipped the moment Integrações says
+// the connection landed, so the operator is carried straight into setting the
+// business up instead of hunting for a tab that just appeared.
+const hasCalendar = ref(false);
+
+const visibleTabs = computed(() =>
+  TABS.filter(tab => !tab.requiresCalendar || hasCalendar.value)
+);
+
+const checkCalendar = async () => {
+  try {
+    const { data } = await AthenasAssistantsAPI.calendarConnection(props.id);
+    hasCalendar.value = data?.connection?.status === 'active';
+  } catch {
+    hasCalendar.value = false;
+  }
+};
+
+const onCalendarConnected = async () => {
+  await checkCalendar();
+  if (hasCalendar.value) currentTab.value = 'business';
+};
 // Advanced tuning is collapsed: it is set once, unlike name/tone/prompt.
 const advancedOpen = ref(false);
 
@@ -397,6 +426,7 @@ watch(
 onMounted(() => {
   fetchAssistant();
   fetchTrainings();
+  checkCalendar();
 });
 </script>
 
@@ -469,7 +499,7 @@ onMounted(() => {
       class="flex items-center gap-1 px-8 pt-3 border-b border-n-weak flex-shrink-0"
     >
       <button
-        v-for="tab in TABS"
+        v-for="tab in visibleTabs"
         :key="tab.key"
         type="button"
         class="flex items-center gap-2 px-4 py-2.5 -mb-px text-[13px] font-medium transition-colors border-b-2"
@@ -996,7 +1026,15 @@ onMounted(() => {
 
         <!-- TAB: INTEGRATIONS -->
         <template v-if="currentTab === 'integrations'">
-          <AthenasIntegrations :assistant-id="id" />
+          <AthenasIntegrations
+            :assistant-id="id"
+            @calendar-connected="onCalendarConnected"
+          />
+        </template>
+
+        <!-- TAB: CONFIGURAR NEGÓCIO -->
+        <template v-if="currentTab === 'business'">
+          <AthenasBusinessSetup :assistant-id="id" />
         </template>
 
         <template v-if="currentTab === 'test'">
