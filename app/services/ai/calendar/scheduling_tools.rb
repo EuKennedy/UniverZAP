@@ -31,7 +31,11 @@ class Ai::Calendar::SchedulingTools
     error('A agenda foi desconectada. Avise que vai confirmar com a equipe e não ofereça horário.')
   rescue StandardError => e
     Rails.logger.error("[Athenas calendar] tool=#{name} #{e.class}: #{e.message}")
-    error('Não consegui falar com a agenda agora.')
+    # Says what to DO, like the Revoked branch above. Left as a bare fact, the
+    # model fills the gap with "volto já já" — a follow-up it cannot perform,
+    # and the one promise the prompt forbids.
+    error('Não consegui falar com a agenda agora. Diga que a equipe confirma o horário, ' \
+          'não ofereça horário e não prometa voltar depois.')
   end
 
   private

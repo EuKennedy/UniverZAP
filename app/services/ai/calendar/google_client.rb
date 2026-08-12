@@ -112,11 +112,16 @@ class Ai::Calendar::GoogleClient
     body['access_token']
   end
 
+  # The SAME credentials the grant was issued under. Refreshing a calendar
+  # refresh token against the SSO client is a token Google will not honour, and
+  # it fails as a generic blip: the connection still says "active", the screen
+  # still says connected, and the only symptom is the agent telling customers
+  # the agenda is down.
   def token_response
     uri = URI.parse(TOKEN_URL)
     Net::HTTP.post_form(uri, {
-                          client_id: GlobalConfigService.load('GOOGLE_OAUTH_CLIENT_ID', nil),
-                          client_secret: GlobalConfigService.load('GOOGLE_OAUTH_CLIENT_SECRET', nil),
+                          client_id: GlobalConfigService.load(GoogleCalendarConcern::CLIENT_ID_KEY, nil),
+                          client_secret: GlobalConfigService.load(GoogleCalendarConcern::CLIENT_SECRET_KEY, nil),
                           refresh_token: @connection.encrypted_refresh_token,
                           grant_type: 'refresh_token'
                         })
