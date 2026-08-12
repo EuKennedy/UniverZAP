@@ -244,7 +244,7 @@
         "CONNECTED": "Calendar connected. Now set up your business.",
         "CONNECTED_AS": "Connected as",
         "CONNECT_FAILED": "Could not connect the calendar. Try again.",
-        "NOT_CONFIGURED": "Google credentials have not been configured on this installation yet.",
+        "NOT_CONFIGURED": "Google credentials have not been configured yet. Add them in Super Admin, under Google Calendar (they are separate from the Google login keys).",
         "DISCONNECT": "Disconnect",
         "DISCONNECTED": "Calendar disconnected. Appointments already booked stay in your Google.",
         "DISCONNECT_FAILED": "Could not disconnect right now.",

@@ -24,10 +24,19 @@ module GoogleCalendarConcern
   # nothing fails until the agent is asked for a slot the next morning.
   OFFLINE_PARAMS = { access_type: 'offline', prompt: 'consent' }.freeze
 
+  # Its OWN credentials, which is the whole point of the paragraph above and was
+  # not what the code did: it reused GOOGLE_OAUTH_CLIENT_ID, the key Chatwoot
+  # uses for SSO. Setting that key to make scheduling work also switched on the
+  # "sign in with Google" button on the login screen of every installation, and
+  # anyone who set it in the environment instead of Super Admin got a module
+  # insisting it was unconfigured while the button sat there.
+  CLIENT_ID_KEY = 'GOOGLE_CALENDAR_CLIENT_ID'.freeze
+  CLIENT_SECRET_KEY = 'GOOGLE_CALENDAR_CLIENT_SECRET'.freeze
+
   def google_calendar_client
     ::OAuth2::Client.new(
-      GlobalConfigService.load('GOOGLE_OAUTH_CLIENT_ID', nil),
-      GlobalConfigService.load('GOOGLE_OAUTH_CLIENT_SECRET', nil),
+      GlobalConfigService.load(CLIENT_ID_KEY, nil),
+      GlobalConfigService.load(CLIENT_SECRET_KEY, nil),
       site: 'https://oauth2.googleapis.com',
       authorize_url: 'https://accounts.google.com/o/oauth2/auth',
       token_url: 'https://accounts.google.com/o/oauth2/token'

@@ -483,6 +483,24 @@
   type: boolean
 ## ------ End of Configs added for Google OAuth ------ ##
 
+## ------ Athenas scheduling: its own Google app, NOT the SSO one ------ ##
+# Separate on purpose. The keys above drive "sign in with Google" on the login
+# screen and the Gmail inbox; filling them to make scheduling work would switch
+# on a login method nobody asked for, and hand an agent that needs free/busy the
+# same grant that reads mail.
+- name: GOOGLE_CALENDAR_CLIENT_ID
+  display_title: 'Google Calendar Client ID'
+  value:
+  locked: false
+  description: 'OAuth Client ID of the Google app used by the AI agent to read availability and book appointments'
+- name: GOOGLE_CALENDAR_CLIENT_SECRET
+  display_title: 'Google Calendar Client Secret'
+  value:
+  locked: false
+  description: 'OAuth Client Secret paired with the Client ID above'
+  type: secret
+## ------ End of Athenas scheduling configs ------ ##
+
 ## ------ Configs added for SAML SSO ------ ##
 - name: ENABLE_SAML_SSO_LOGIN
   display_title: 'Enable SAML SSO login'

@@ -106,6 +106,17 @@ google:
   enabled: true
   icon: 'icon-google'
   config_key: 'google'
+# Its own entry rather than more fields under Google, because these two do
+# something entirely different: the keys above put a "sign in with Google"
+# button on the login screen, and these let an AI agent read free/busy and book
+# an appointment. Filling one to get the other is exactly the mix-up this
+# separation exists to prevent.
+google_calendar:
+  name: 'Google Calendar (agendamento)'
+  description: 'Credenciais do app Google usado pelo agente de IA para ler a agenda e marcar horários. Separadas do login com Google.'
+  enabled: true
+  icon: 'icon-google'
+  config_key: 'google_calendar'
 microsoft:
   name: 'Microsoft'
   description: 'Configuration for setting up Microsoft Email'

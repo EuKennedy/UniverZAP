@@ -244,7 +244,7 @@
         "CONNECTED": "Agenda conectada. Agora configure seu negócio.",
         "CONNECTED_AS": "Conectado em",
         "CONNECT_FAILED": "Não deu para conectar a agenda. Tente de novo.",
-        "NOT_CONFIGURED": "As credenciais do Google ainda não foram configuradas nesta instalação.",
+        "NOT_CONFIGURED": "As credenciais do Google ainda não foram configuradas. Preencha em Super Admin, na página Google Calendar (são separadas das chaves de login com Google).",
         "DISCONNECT": "Desconectar",
         "DISCONNECTED": "Agenda desconectada. Os horários já marcados continuam no seu Google.",
         "DISCONNECT_FAILED": "Não deu para desconectar agora.",

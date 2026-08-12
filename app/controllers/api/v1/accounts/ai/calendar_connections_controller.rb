@@ -49,8 +49,10 @@ class Api::V1::Accounts::Ai::CalendarConnectionsController < Api::V1::Accounts::
     )
   end
 
+  # Reads the same keys the client is built from, so "not configured" cannot
+  # disagree with what the connection attempt would actually use.
   def client_missing?
-    GlobalConfigService.load('GOOGLE_OAUTH_CLIENT_ID', nil).blank? ||
-      GlobalConfigService.load('GOOGLE_OAUTH_CLIENT_SECRET', nil).blank?
+    GlobalConfigService.load(GoogleCalendarConcern::CLIENT_ID_KEY, nil).blank? ||
+      GlobalConfigService.load(GoogleCalendarConcern::CLIENT_SECRET_KEY, nil).blank?
   end
 end
