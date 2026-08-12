@@ -44,6 +44,42 @@ RSpec.describe Ai::AutopilotReplyService do
     end
   end
 
+  # The tool discipline shipped gated on custom_tools, so an agent whose only
+  # tools were the agenda got none of it. On a booking agent that gap reads as
+  # an invented time, which sends somebody to a salon not expecting them.
+  describe 'discipline for the agenda tools' do
+    def prompt_for(assistant)
+      described_class.new(conversation: conversation, assistant: assistant)
+                     .send(:system_prompt_segments).join("\n")
+    end
+
+    def connect_calendar!
+      connection = Ai::Calendar::Connection.create!(
+        ai_assistant: assistant, account: account,
+        google_email: 'salao@exemplo.com', encrypted_refresh_token: 'token'
+      )
+      Ai::Calendar::Professional.create!(
+        connection: connection, ai_assistant: assistant, account: account,
+        name: 'Agenda do salão', calendar_id: 'primary'
+      )
+      Ai::Calendar::Service.create!(
+        ai_assistant: assistant, account: account, name: 'Progressiva', duration_minutes: 90
+      )
+    end
+
+    it 'tells an agent with an agenda never to invent a time' do
+      connect_calendar!
+
+      expect(prompt_for(assistant)).to include('consultar_horarios').and include('AGENDA CONECTADA')
+    end
+
+    # No professional and no service means no booking tools, and a rule about
+    # tools the model was never given is noise it has to read every turn.
+    it 'says nothing about the agenda to an agent that has none' do
+      expect(prompt_for(assistant)).not_to include('AGENDA CONECTADA')
+    end
+  end
+
   describe 'context de-poison (build_recent_messages)' do
     it 'collapses repeated assistant turns and opens with a user turn' do
       conv = create(:conversation, account: account)

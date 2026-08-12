@@ -603,6 +603,7 @@ class Ai::AutopilotReplyService
       # When the agent has connected tools, the TOOL result — not the knowledge
       # block — is the source of truth for prices, links and actions.
       custom_tools_instruction,
+      calendar_tools_instruction,
       behavior_flags_instruction,
       continuity_examples
     ]
@@ -685,6 +686,45 @@ class Ai::AutopilotReplyService
 
     listed = custom_tools.map { |tool| "- #{tool.slug}: #{tool.description}" }.join("\n")
     "#{CUSTOM_TOOLS_DISCIPLINE}\n#{listed}"
+  end
+
+  # The discipline above shipped gated on custom_tools, so an agent whose only
+  # tools are the agenda got none of it: no "never announce a lookup without
+  # making it", no "do not answer from memory". That is the exact shape of the
+  # failure that reached a customer as "deixa eu buscar aqui pra você" followed
+  # by silence — and on a booking agent it would be an invented time, which
+  # sends somebody to a salon that is not expecting them.
+  #
+  # Written separately rather than folded into the block above because the
+  # rules differ in kind: an HTTP tool must not have its result invented, while
+  # the agenda must not have its result invented OR its write skipped.
+  SCHEDULING_DISCIPLINE = <<~RULES.strip.freeze
+    AGENDA CONECTADA — a fonte da verdade sobre horários:
+    Você NÃO sabe quais horários estão livres. Só a ferramenta sabe. Nunca ofereça,
+    sugira ou confirme um horário que não tenha vindo de `consultar_horarios` nesta
+    mesma resposta, nem diga "vou ver a agenda" sem chamar a ferramenta agora.
+    Horário inventado é pior que preço inventado: manda uma pessoa até o salão numa
+    hora em que ninguém a espera.
+
+    A ORDEM É OBRIGATÓRIA: `consultar_horarios` → o cliente escolhe um da lista →
+    `agendar`. Nunca chame `agendar` com um horário que o cliente não escolheu, e
+    nunca sem ter consultado antes. Se o horário que ele pediu não estava na lista,
+    diga que aquele não está livre e ofereça os que estão.
+
+    Para remarcar ou desmarcar, primeiro `meus_agendamentos`, porque você precisa do
+    id. Você só alcança os agendamentos DESTE cliente; compromissos que o dono do
+    salão marcou por conta dele aparecem como horário ocupado e não são seus para
+    mexer.
+
+    Só está agendado depois que `agendar` responder com sucesso. Até lá, não diga
+    "agendei", "está marcado" nem "te espero". Se a ferramenta falhar, diga que não
+    conseguiu concluir agora, e não invente confirmação.
+  RULES
+
+  def calendar_tools_instruction
+    return nil if calendar_definitions.blank?
+
+    SCHEDULING_DISCIPLINE
   end
 
   # High-emphasis primer placed at the TOP of the prompt. Claude's
