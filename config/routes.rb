@@ -512,6 +512,12 @@ Rails.application.routes.draw do
               # operator can run a salon and a clinic without their agendas
               # ever seeing each other.
               resource :calendar_connection, only: [:show, :create, :destroy], controller: 'calendar_connections'
+              # "Configurar negócio": the agenda's name, the week and the rules,
+              # read and written as one form so the operator cannot leave the
+              # screen half-applied.
+              resource :calendar_setup, only: [:show, :update], controller: 'calendar_setup'
+              # A list that grows over months, unlike the form above.
+              resources :calendar_services, only: [:index, :create, :update, :destroy]
               # Test sandbox: talk to this assistant as if you were a customer.
               resource :playground, only: [:show, :create, :destroy], controller: 'playground'
               # Supervision queue: every reply the agent produced, the automatic
