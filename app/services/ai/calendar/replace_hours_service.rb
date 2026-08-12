@@ -12,7 +12,7 @@ class Ai::Calendar::ReplaceHoursService
   end
 
   def perform
-    rows = @ranges.map { |range| normalize(range) }.compact
+    rows = @ranges.filter_map { |range| normalize(range) }
     reject_overlaps!(rows)
 
     Ai::Calendar::Hour.transaction do
