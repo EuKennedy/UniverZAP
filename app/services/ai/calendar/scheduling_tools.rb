@@ -56,29 +56,39 @@ class Ai::Calendar::SchedulingTools
     return unknown_service if services.empty?
 
     block = combined(services)
+    chosen = professional(input[:profissional])
     slots = Ai::Calendar::AvailabilityService.new(
-      assistant: @assistant, service: block, from: day_start(input[:data]), to: day_end(input[:data])
+      assistant: @assistant, service: block, professional: chosen,
+      from: day_start(input[:data]), to: day_end(input[:data])
     ).perform
+    # The CUSTOMER's duration, not the chair's. The slot arithmetic still blocks
+    # duration + buffer, but the buffer is the salon turning the room around:
+    # answering with it tells someone a 60 minute cut takes 70.
     { horarios: slots.first(MAX_LISTED_SLOTS).map { |slot| local(slot) },
-      duracao_minutos: block.occupied_minutes }.to_json
+      duracao_minutos: block.duration_minutes, preco: price_label(services),
+      profissional: chosen&.name }.to_json
   end
 
   def book(input)
     services = resolve_services(input[:servicos])
     return unknown_service if services.empty?
 
+    chosen = professional(input[:profissional])
     appointment = Ai::Calendar::BookService.new(
       assistant: @assistant, contact: @contact, services: services,
-      starts_at: parse_time(input[:inicio]), conversation: @conversation
+      starts_at: parse_time(input[:inicio]), conversation: @conversation, professional: chosen
     ).perform
-    { agendado: true, id: appointment.id, inicio: local(appointment.starts_at) }.to_json
+    { agendado: true, id: appointment.id, inicio: local(appointment.starts_at),
+      duracao_minutos: services.sum(&:duration_minutes), preco: price_label(services),
+      profissional: chosen&.name }.to_json
   rescue Ai::Calendar::BookService::Unavailable
     error('Esse horário acabou de ser ocupado. Consulte de novo e ofereça outro.')
   end
 
   def mine
     rows = Ai::Calendar::Appointment.reachable_by(@assistant, @contact).map do |appointment|
-      { id: appointment.id, inicio: local(appointment.starts_at), servicos: appointment.services.map(&:name) }
+      { id: appointment.id, inicio: local(appointment.starts_at), servicos: appointment.services.map(&:name),
+        profissional: appointment.professional.name }
     end
     { agendamentos: rows }.to_json
   end
@@ -152,11 +162,34 @@ class Ai::Calendar::SchedulingTools
   end
 
   def zone
-    @zone ||= ActiveSupport::TimeZone[professional&.timezone.to_s] || Time.zone
+    @zone ||= ActiveSupport::TimeZone[default_professional&.timezone.to_s] || Time.zone
   end
 
-  def professional
-    @professional ||= @assistant.calendar_professionals.active.first
+  # Accepted from day one even though the MVP has a single chair, so the tool
+  # signature the agent learns today is the one it keeps when a second arrives.
+  # An unrecognised name falls back rather than failing: the customer naming the
+  # wrong person is not a reason to refuse to show any time at all.
+  def professional(name = nil)
+    return default_professional if name.blank?
+
+    professionals.find { |pro| normalize(pro.name).include?(normalize(name)) } || default_professional
+  end
+
+  def professionals
+    @professionals ||= @assistant.calendar_professionals.active.to_a
+  end
+
+  def default_professional
+    @default_professional ||= professionals.first
+  end
+
+  # The price is stated with the offer, not left for the customer to ask. Summed
+  # across the block, because "progressiva + corte" is quoted once.
+  def price_label(services)
+    cents = services.sum { |service| service.price_cents.to_i }
+    return nil if cents.zero?
+
+    format('R$ %.2f', cents / 100.0).tr('.', ',')
   end
 
   def day_start(value)

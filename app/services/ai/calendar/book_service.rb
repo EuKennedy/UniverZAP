@@ -10,16 +10,17 @@ class Ai::Calendar::BookService
   class Unavailable < StandardError; end
   class NothingToBook < StandardError; end
 
-  # The agenda is not a parameter: the MVP has exactly one and never says the
-  # word to the operator. When a second chair arrives it becomes one, and the
-  # caller that has to choose will be the one that knows how.
-  def initialize(assistant:, contact:, services:, starts_at:, conversation: nil)
+  # The agenda is optional: with one chair the caller omits it and gets the only
+  # one there is. It is a parameter rather than a lookup so that the day a second
+  # professional exists, the choice is made by the caller that knows who the
+  # customer asked for, and not silently by `.first` here.
+  def initialize(assistant:, contact:, services:, starts_at:, conversation: nil, professional: nil)
     @assistant = assistant
     @contact = contact
     @services = Array(services).compact
     @starts_at = starts_at
     @conversation = conversation
-    @professional = assistant.calendar_professionals.active.first
+    @professional = professional || assistant.calendar_professionals.active.first
   end
 
   def perform

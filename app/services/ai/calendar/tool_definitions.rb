@@ -7,13 +7,15 @@
 class Ai::Calendar::ToolDefinitions
   def self.for(assistant)
     services = assistant.calendar_services.active.to_a
-    return nil if assistant.calendar_professionals.active.none? || services.empty?
+    professionals = assistant.calendar_professionals.active.to_a
+    return nil if professionals.none? || services.empty?
 
-    new(services.map(&:name).join(', ')).all
+    new(services.map(&:name).join(', '), professionals.map(&:name).join(', ')).all
   end
 
-  def initialize(menu)
+  def initialize(menu, staff)
     @menu = menu
+    @staff = staff
   end
 
   def all
@@ -27,7 +29,8 @@ class Ai::Calendar::ToolDefinitions
          'Horários REAIS livres na agenda. Use SEMPRE antes de oferecer qualquer horário. Nunca invente ' \
          'horário e nunca diga que vai verificar sem chamar esta ferramenta.',
          { servicos: array_of("nomes exatos, dentre: #{@menu}"),
-           data: str('opcional, dia desejado no formato AAAA-MM-DD') },
+           data: str('opcional, dia desejado no formato AAAA-MM-DD'),
+           profissional: staff_param },
          ['servicos'])
   end
 
@@ -36,8 +39,17 @@ class Ai::Calendar::ToolDefinitions
          'Marca o horário na agenda. Só chame depois de consultar_horarios e com o cliente confirmando um ' \
          'horário que apareceu na lista.',
          { servicos: array_of("nomes exatos, dentre: #{@menu}"),
-           inicio: str('início escolhido, formato AAAA-MM-DDTHH:MM') },
+           inicio: str('início escolhido, formato AAAA-MM-DDTHH:MM'),
+           profissional: staff_param },
          %w[servicos inicio])
+  end
+
+  # Optional from day one, and deliberately so: with a single chair the model
+  # never sends it, but the day a second professional is added the signature is
+  # already the one the agent learned, instead of every prompt having to be
+  # retaught around a new required argument.
+  def staff_param
+    str("opcional, quem vai atender, dentre: #{@staff}")
   end
 
   def list

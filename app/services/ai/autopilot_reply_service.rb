@@ -374,6 +374,9 @@ class Ai::AutopilotReplyService
     loop_service.perform
   ensure
     @tool_calls = loop_service&.tool_calls
+    # Sanctioned for the grounding guard below: a price the agenda or the store
+    # ANSWERED is the opposite of an invented one, and the guard runs after this.
+    @tool_results = loop_service&.tool_results
     # Same replay guard as belezaki: a tool that wrote — a cart POST or a
     # booking — must not be replayed on a transient retry (see #perform's
     # rescue).
@@ -527,7 +530,28 @@ class Ai::AutopilotReplyService
   # The rolling summary is a sanctioned factual source here (it carries facts
   # the customer already gave), which the suggestion path does not have.
   def extra_grounding_sources
-    cached_summary_text
+    [cached_summary_text, calendar_grounding_text, tool_results_text].compact.join(' ')
+  end
+
+  # What the tools ANSWERED this turn. Without it the agent may quote only the
+  # exact numbers already written down, so adding two services — 90 + 70 — reads
+  # as a fabricated 160 and the reply is suppressed for doing arithmetic right.
+  def tool_results_text
+    Array(@tool_results).join(' ').presence
+  end
+
+  # The menu MUST be sanctioned here or the guard suppresses exactly the price we
+  # just gave the agent: grounding_sources reads the assistant's own prompt
+  # COLUMN, never the assembled prompt, so a block rendered above is invisible to
+  # it and every quoted price would look invented.
+  #
+  # Whole reais are appended because the comparison is on DIGITS: "R$ 90,00" is
+  # 9000 while "R$ 90" is 90, and a round price is written the short way.
+  def calendar_grounding_text
+    return nil if calendar_definitions.blank?
+
+    whole = calendar_menu_services.filter_map { |service| service.price_cents.to_i / 100 if service.price_cents? }
+    [calendar_menu_block, whole.join(' ')].join(' ')
   end
 
   def cached_summary_text
@@ -610,6 +634,7 @@ class Ai::AutopilotReplyService
       # block — is the source of truth for prices, links and actions.
       custom_tools_instruction,
       calendar_tools_instruction,
+      calendar_menu_block,
       behavior_flags_instruction,
       continuity_examples
     ]
@@ -762,6 +787,47 @@ class Ai::AutopilotReplyService
     return nil if calendar_definitions.blank?
 
     SCHEDULING_DISCIPLINE
+  end
+
+  CALENDAR_MENU_HEADER = <<~HEADER.strip.freeze
+    CARDÁPIO DA AGENDA — fonte da verdade para preço e duração dos serviços.
+    Ao oferecer, confirmar ou fechar um horário, diga o preço, quanto tempo o
+    cliente vai passar no procedimento e quem vai atender. Nunca invente valor,
+    duração ou nome de profissional: o que não está aqui, você não sabe.
+  HEADER
+
+  # The menu, rendered from the tables. The model used to receive the service
+  # NAMES and nothing else, because the tool schema was the only place they were
+  # listed — so it could arrange an appointment without ever being able to say
+  # what it costs or who performs it, however the prompt was worded.
+  #
+  # Static segment: this changes when the operator edits the menu, not turn by
+  # turn, so it belongs in the cached prefix. Duration shown is the CUSTOMER's;
+  # the buffer stays in the slot arithmetic where it belongs.
+  def calendar_menu_block
+    return nil if calendar_definitions.blank?
+
+    lines = calendar_menu_services.map do |service|
+      ["• #{service.name}", "#{service.duration_minutes} min", service_price_label(service)].compact.join(' — ')
+    end
+    [CALENDAR_MENU_HEADER, lines.join("\n"), calendar_staff_line].compact.join("\n")
+  end
+
+  def calendar_menu_services
+    @calendar_menu_services ||= @assistant.calendar_services.active.order(:id).to_a
+  end
+
+  def calendar_staff_line
+    names = @assistant.calendar_professionals.active.order(:id).pluck(:name)
+    return nil if names.empty?
+
+    "Quem atende: #{names.join(', ')}."
+  end
+
+  def service_price_label(service)
+    return 'valor a combinar' if service.price_cents.blank?
+
+    format('R$ %.2f', service.price_cents / 100.0).tr('.', ',')
   end
 
   # High-emphasis primer placed at the TOP of the prompt. Claude's

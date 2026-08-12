@@ -66,10 +66,17 @@ class Ai::Agent::ToolLoopService
     # several calls and each one must be auditable on its own.
     @log_context = log_context
     @tool_calls = []
+    @tool_results = []
   end
 
   # Readable after #perform, so the caller can show or log what ran.
   attr_reader :tool_calls
+
+  # The same results, UNTRUNCATED, for the grounding guard. What a tool answered
+  # is a sanctioned source — it is the one number in the turn that was not
+  # invented — and `tool_calls` above is clipped for display, so a price sitting
+  # past the 300th character of a slot list would be read as fabricated.
+  attr_reader :tool_results
 
   # Claude routinely writes "deixa eu confirmar o valor certinho" and stops
   # there, with no tool_use block — then adds a qualifying question, because the
@@ -310,5 +317,6 @@ class Ai::Agent::ToolLoopService
       input: tool_use['input'],
       result: result.to_s.truncate(300)
     }
+    @tool_results << result.to_s
   end
 end
