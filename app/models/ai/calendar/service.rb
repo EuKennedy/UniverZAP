@@ -16,10 +16,13 @@ class Ai::Calendar::Service < ApplicationRecord
   has_many :service_professionals, class_name: 'Ai::Calendar::ServiceProfessional',
                                    foreign_key: :ai_calendar_service_id, dependent: :destroy, inverse_of: :service
   has_many :professionals, through: :service_professionals
-  # `:nullify`, which is why the column is nullable: retiring a service from the
-  # menu must not erase the appointments already booked under it.
-  has_many :appointments, class_name: 'Ai::Calendar::Appointment',
-                          foreign_key: :ai_calendar_service_id, dependent: :nullify, inverse_of: :service
+  # Retiring a service from the menu must not erase the appointments booked
+  # under it: only the link goes, and the block stays on the agenda where the
+  # owner can still read what Thursday was for. In practice a service is
+  # deactivated rather than destroyed, precisely for that reason.
+  has_many :appointment_services, class_name: 'Ai::Calendar::AppointmentService',
+                                  foreign_key: :ai_calendar_service_id, dependent: :destroy, inverse_of: :service
+  has_many :appointments, through: :appointment_services
 
   validates :name, presence: true
   validates :duration_minutes, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: 600 }

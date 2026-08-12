@@ -15,8 +15,12 @@ class Ai::Calendar::Appointment < ApplicationRecord
 
   belongs_to :professional, class_name: 'Ai::Calendar::Professional',
                             foreign_key: :ai_calendar_professional_id, inverse_of: :appointments
-  belongs_to :service, class_name: 'Ai::Calendar::Service', foreign_key: :ai_calendar_service_id,
-                       optional: true, inverse_of: :appointments
+  # Several, because "progressiva + corte" is ONE block on the agenda with the
+  # durations summed, not two bookings the customer has to keep track of.
+  has_many :appointment_services, class_name: 'Ai::Calendar::AppointmentService',
+                                  foreign_key: :ai_calendar_appointment_id, dependent: :destroy,
+                                  inverse_of: :appointment
+  has_many :services, through: :appointment_services, source: :service
   belongs_to :ai_assistant, class_name: 'Ai::Assistant'
   belongs_to :account
   belongs_to :contact

@@ -280,10 +280,12 @@ class Ai::AutopilotReplyService
   # agent can check the salon agenda and create appointments mid-conversation.
   # Otherwise fall back to the plain single-shot reply.
   def generate_response(messages)
-    # A workspace that connected its own integrations gets its own tool loop,
-    # ahead of and fully separate from the belezaki branch: the working
-    # scheduling path is untouched, and no agent has both today.
-    return run_custom_tool_loop(messages) if custom_tools.any?
+    # The workspace's OWN tools, ahead of and fully separate from the belezaki
+    # branch: HTTP integrations and the Google agenda, together in one turn. A
+    # salon sells products and books chairs, and picking one would mean the
+    # agent could never reach its calendar because a cart tool existed.
+    own = own_tools
+    return run_own_tool_loop(messages, own) if own.any?
 
     client = belezaki_client
     return call_claude(messages) if client.nil?
@@ -328,16 +330,47 @@ class Ai::AutopilotReplyService
     @custom_tools ||= @assistant.custom_tools.enabled.to_a
   end
 
-  def run_custom_tool_loop(messages)
-    executor = Ai::CustomToolExecutor.new(custom_tools)
+  # The agent's own tools: the workspace's HTTP integrations plus its agenda,
+  # in that order. Memoized because the routing decision and the loop must see
+  # the same set.
+  def own_tools
+    @own_tools ||= begin
+      parts = []
+      parts << [custom_tool_executor.definitions, custom_tool_executor] if custom_tools.any?
+      parts << [calendar_definitions, calendar_executor] if calendar_definitions.present?
+      Ai::Agent::CompositeExecutor.new(parts)
+    end
+  end
+
+  def custom_tool_executor
+    @custom_tool_executor ||= Ai::CustomToolExecutor.new(custom_tools)
+  end
+
+  # Nil when the agent has no agenda or no services, so the tools are simply not
+  # offered: a model holding a booking tool it cannot fulfil promises a time
+  # anyway.
+  def calendar_definitions
+    return @calendar_definitions if defined?(@calendar_definitions)
+
+    @calendar_definitions = Ai::Calendar::ToolDefinitions.for(@assistant)
+  end
+
+  def calendar_executor
+    @calendar_executor ||= Ai::Calendar::SchedulingTools.new(
+      assistant: @assistant, contact: @conversation.contact, conversation: @conversation
+    )
+  end
+
+  def run_own_tool_loop(messages, executor)
     Ai::Agent::ToolLoopService.new(
       assistant: @assistant, conversation: @conversation, messages: messages,
       system: system_prompt_segments, tools: executor.definitions,
       tool_executor: executor, log_context: reply_log_context
     ).perform
   ensure
-    # Same replay guard as belezaki: a tool that wrote (POST) must not be
-    # replayed on a transient retry (see #perform's rescue).
+    # Same replay guard as belezaki: a tool that wrote — a cart POST or a
+    # booking — must not be replayed on a transient retry (see #perform's
+    # rescue).
     @performed_external_write = true if executor&.performed_write?
   end
 
