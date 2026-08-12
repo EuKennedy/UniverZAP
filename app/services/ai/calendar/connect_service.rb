@@ -53,10 +53,17 @@ class Ai::Calendar::ConnectService
     )
   end
 
+  # Asks the TABLE, not the association. The assistant is the same object across
+  # a reconnect and its cached has_one still answers nil after the first call
+  # wrote the row, which is how the second connect attempt used to die on the
+  # unique index — a 500 for the operator who only wanted to make sure it had
+  # worked. The rescue covers the other way in: two connects racing.
   def ensure_setting
-    return if @assistant.calendar_setting.present?
+    return if Ai::Calendar::Setting.exists?(ai_assistant_id: @assistant.id)
 
     Ai::Calendar::Setting.create!(ai_assistant_id: @assistant.id, account_id: @assistant.account_id)
+  rescue ActiveRecord::RecordNotUnique
+    nil
   end
 
   # The email is what the screen shows so the operator can tell WHICH account is
