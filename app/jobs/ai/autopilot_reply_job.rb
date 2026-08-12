@@ -104,6 +104,14 @@ class Ai::AutopilotReplyJob < ApplicationJob
       # were supposed to answer and nobody answered it.
       Rails.logger.error("[Athenas autopilot] #{error.message}")
       hand_off!(message, assistant_id)
+    when Ai::Agent::ToolLoopService::BookingUnperformed
+      # The reply confirmed an appointment nothing created. Handing to a human
+      # loses a turn; sending it would send somebody to the salon on a day
+      # nobody is expecting them, and they only find out at the door. Paged,
+      # because a booking agent that cannot book is broken, not degraded.
+      Rails.logger.error("[Athenas autopilot] #{error.message}")
+      hand_off!(message, assistant_id)
+      ChatwootExceptionTracker.new(error, account: message&.account).capture_exception
     when Ai::AutopilotReplyService::UngroundedClaim
       # The bot kept quoting a value that exists nowhere in the operator's data.
       # Staying silent beats inventing a price, but it IS a lost reply, so this

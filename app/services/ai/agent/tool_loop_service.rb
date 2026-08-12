@@ -14,6 +14,33 @@ class Ai::Agent::ToolLoopService
   # turns this into a handover to a human.
   class PromiseUnfulfilled < StandardError; end
 
+  # Raised when the reply CONFIRMS a booking that no tool ever made. The worst
+  # thing this module can do: the customer is told they have an appointment,
+  # writes it down, and shows up to a salon expecting nobody.
+  #
+  # Seen in the sandbox: the agent listed real slots from the agenda, the
+  # customer picked one, and the answer was "Fechado, Kennedy! Escova marcada
+  # pra quarta às 16h45" with nothing in Google Calendar and no row in our
+  # index. Two exits from the loop below produce exactly this — the 90s budget
+  # and the six-iteration cap both ask for a closing answer with tool_choice
+  # `none`, and a model mid-plan closes by describing the call it was about to
+  # make.
+  class BookingUnperformed < StandardError; end
+
+  # What a tool says when the write really happened. Matched against the tool
+  # RESULT rather than trusting performed_write?, which is set before the work
+  # on purpose (a timed-out write may still have landed) and so answers
+  # "attempted", not "done".
+  WRITE_CONFIRMED = /"(?:agendado|remarcado|desmarcado)"\s*:\s*true/i
+
+  # First person, past or present, next to a time or a weekday.
+  BOOKING_CLAIM = /
+    \b(?:marquei|agendei|reservei|remarquei|desmarquei|cancelei)\b
+    |\b(?:est[áa]|ficou|fica|deixei)\s+(?:tudo\s+)?(?:marcad|agendad|reservad)\w*
+    |\b(?:marcad|agendad|reservad)\w*\s+(?:pra|para|em|no|na)\s+
+      (?:\d{1,2}\s*[:h]|segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo|hoje|amanh[ãa])
+  /xi
+
   MAX_ITERATIONS = 6
 
   # Wall-clock ceiling for one whole turn, enforced in ONE place.
@@ -38,7 +65,11 @@ class Ai::Agent::ToolLoopService
     # Carried on every iteration, not just the last: a tool-using turn bills
     # several calls and each one must be auditable on its own.
     @log_context = log_context
+    @tool_calls = []
   end
+
+  # Readable after #perform, so the caller can show or log what ran.
+  attr_reader :tool_calls
 
   # Claude routinely writes "deixa eu confirmar o valor certinho" and stops
   # there, with no tool_use block — then adds a qualifying question, because the
@@ -113,10 +144,25 @@ class Ai::Agent::ToolLoopService
   def finish(response)
     response = sanitize(response)
     text = response[:content].to_s.strip
+    raise_unbooked!(text) if claims_booking?(text) && !@confirmed_write
     return response unless bare_promise?(text)
 
     raise PromiseUnfulfilled,
           "reply promised a lookup it will never make conv=#{@conversation&.display_id} assistant=#{@assistant.id}"
+  end
+
+  def raise_unbooked!(text)
+    raise BookingUnperformed,
+          'reply confirmed a booking no tool performed ' \
+          "conv=#{@conversation&.display_id} assistant=#{@assistant.id} text=#{text.truncate(120).inspect}"
+  end
+
+  # Only a claim in the FIRST person about a slot: "marquei", "está agendado
+  # para as 14h". Deliberately requires a time or a weekday next to it, so
+  # "posso marcar quinta?" and "quer que eu marque?" — questions, which is most
+  # of what the agent says while arranging — do not trip it.
+  def claims_booking?(text)
+    BOOKING_CLAIM.match?(text)
   end
 
   # All three have to hold before a turn is thrown away: it announces a lookup,
@@ -243,10 +289,26 @@ class Ai::Agent::ToolLoopService
   end
 
   def tool_result_block(tool_use)
+    result = @executor.call(tool_use['name'], tool_use['input'])
+    @confirmed_write = true if WRITE_CONFIRMED.match?(result.to_s)
+    record_call(tool_use, result)
     {
       type: 'tool_result',
       tool_use_id: tool_use['id'],
-      content: @executor.call(tool_use['name'], tool_use['input'])
+      content: result
+    }
+  end
+
+  # What the agent actually DID this turn, for the sandbox to show. Without it,
+  # an operator testing a booking agent can only read the prose and take the
+  # agent's word for it — which is precisely the word that turned out to be
+  # worthless. Truncated because a slot list is long and the point here is
+  # which call happened and whether it worked, not the payload.
+  def record_call(tool_use, result)
+    @tool_calls << {
+      name: tool_use['name'],
+      input: tool_use['input'],
+      result: result.to_s.truncate(300)
     }
   end
 end

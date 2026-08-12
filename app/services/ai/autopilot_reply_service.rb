@@ -101,7 +101,11 @@ class Ai::AutopilotReplyService
       regenerated_for_grounding: @regenerated_for_grounding.present?,
       regenerated_for_loop: @regenerated_for_loop.present?,
       confidence: @confidence,
-      auto_flags: @auto_flags.to_a
+      auto_flags: @auto_flags.to_a,
+      # The whole point of a sandbox for a booking agent: whether it called the
+      # agenda, with what, and what came back. Prose alone was enough to read
+      # "Escova marcada pra quarta às 16h45" and believe it.
+      tool_calls: @tool_calls.presence || []
     }
   end
 
@@ -362,12 +366,14 @@ class Ai::AutopilotReplyService
   end
 
   def run_own_tool_loop(messages, executor)
-    Ai::Agent::ToolLoopService.new(
+    loop_service = Ai::Agent::ToolLoopService.new(
       assistant: @assistant, conversation: @conversation, messages: messages,
       system: system_prompt_segments, tools: executor.definitions,
       tool_executor: executor, log_context: reply_log_context
-    ).perform
+    )
+    loop_service.perform
   ensure
+    @tool_calls = loop_service&.tool_calls
     # Same replay guard as belezaki: a tool that wrote — a cart POST or a
     # booking — must not be replayed on a transient retry (see #perform's
     # rescue).

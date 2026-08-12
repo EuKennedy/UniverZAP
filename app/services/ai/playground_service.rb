@@ -39,6 +39,8 @@ class Ai::PlaygroundService
     persist_note(conversation, suppressed(:loop_suppressed, service, started_at))
   rescue Ai::Agent::ToolLoopService::PromiseUnfulfilled
     persist_note(conversation, suppressed(:promise_unfulfilled, service, started_at))
+  rescue Ai::Agent::ToolLoopService::BookingUnperformed
+    persist_note(conversation, suppressed(:booking_unperformed, service, started_at))
   rescue Ai::ClaudeService::Error => e
     # The turn is generated in a job now, so an error has nowhere to be rendered
     # unless it is written down. The operator asked a question and deserves to
