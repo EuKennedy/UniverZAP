@@ -14,6 +14,12 @@ class Ai::Calendar::Hour < ApplicationRecord
   validates :starts_at, :ends_at, presence: true
   validate :ends_after_it_starts
 
+  # "09:00", because the screen binds these straight into <input type="time">
+  # and a Time would arrive there as a full timestamp the input silently drops.
+  def push_event_data
+    { id: id, weekday: weekday, starts_at: starts_at.strftime('%H:%M'), ends_at: ends_at.strftime('%H:%M') }
+  end
+
   private
 
   # A range that ends before it begins produces no slots and no error, which is

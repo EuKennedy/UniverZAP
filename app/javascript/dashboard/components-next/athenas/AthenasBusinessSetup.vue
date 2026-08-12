@@ -29,6 +29,10 @@ const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
 const INPUT_CLASS =
   'w-full px-3 h-9 rounded-lg bg-n-alpha-1 border border-n-weak text-[13px] text-n-slate-12 outline-none focus:border-n-brand';
 
+// One template for the caption row and every service row, so the columns are
+// the same columns and not two lists that happen to look alike.
+const SERVICE_GRID = 'gap-2 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]';
+
 const loading = ref(true);
 const saving = ref(false);
 const connected = ref(false);
@@ -47,6 +51,24 @@ const newService = ref(null);
 
 const hoursFor = weekday =>
   hours.value.filter(hour => Number(hour.weekday) === weekday);
+
+// The column is cents because money in a float is a rounding bug waiting for a
+// price that ends in 90. The operator types 199, never 19900, so the conversion
+// lives here and the two never meet.
+const toReais = cents =>
+  cents === null || cents === undefined || cents === '' ? '' : cents / 100;
+
+const toCents = price => {
+  if (price === null || price === undefined || String(price).trim() === '') {
+    return null;
+  }
+  return Math.round(Number(String(price).replace(',', '.')) * 100);
+};
+
+const withPrice = service => ({
+  ...service,
+  price: toReais(service.price_cents),
+});
 
 const isOpen = weekday => hoursFor(weekday).length > 0;
 
@@ -86,7 +108,7 @@ const load = async () => {
       }));
     }
     if (setup.data?.settings) settings.value = { ...setup.data.settings };
-    services.value = serviceList.data?.payload || [];
+    services.value = (serviceList.data?.payload || []).map(withPrice);
   } catch {
     useAlert(t('ATHENAS.EDIT.BUSINESS.LOAD_FAILED'));
   } finally {
@@ -120,7 +142,7 @@ const startService = () => {
     name: '',
     duration_minutes: 60,
     buffer_minutes: 0,
-    price_cents: null,
+    price: '',
   };
 };
 
@@ -129,7 +151,7 @@ const saveService = async service => {
     name: service.name,
     duration_minutes: Number(service.duration_minutes),
     buffer_minutes: Number(service.buffer_minutes || 0),
-    price_cents: service.price_cents === '' ? null : service.price_cents,
+    price_cents: toCents(service.price),
   };
   try {
     if (service.id) {
@@ -143,7 +165,7 @@ const saveService = async service => {
       newService.value = null;
     }
     const { data } = await AthenasAPI.listCalendarServices(props.assistantId);
-    services.value = data?.payload || [];
+    services.value = (data?.payload || []).map(withPrice);
     useAlert(t('ATHENAS.EDIT.BUSINESS.SERVICE_SAVED'));
   } catch {
     useAlert(t('ATHENAS.EDIT.BUSINESS.SERVICE_FAILED'));
@@ -308,50 +330,66 @@ onMounted(load);
           />
         </div>
 
+        <!-- The captions sit here once instead of above every row: repeated on
+             ten services they stop reading as a table and the columns stop
+             lining up to the eye. Below `sm` the grid stacks and the
+             placeholders carry the same words. -->
+        <div
+          v-if="services.length || newService"
+          :class="SERVICE_GRID"
+          class="hidden sm:grid text-[11px] text-n-slate-11"
+        >
+          <span>{{ t('ATHENAS.EDIT.BUSINESS.SERVICE_NAME') }}</span>
+          <span>{{ t('ATHENAS.EDIT.BUSINESS.DURATION') }}</span>
+          <span>{{ t('ATHENAS.EDIT.BUSINESS.BUFFER') }}</span>
+          <span>{{ t('ATHENAS.EDIT.BUSINESS.PRICE') }}</span>
+          <span />
+        </div>
+
         <div
           v-for="service in [...services, newService].filter(Boolean)"
           :key="service.id || 'new'"
-          class="grid items-end gap-2 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]"
+          :class="SERVICE_GRID"
+          class="grid items-center"
         >
-          <label class="flex flex-col gap-1">
-            <span class="text-[11px] text-n-slate-11">
-              {{ t('ATHENAS.EDIT.BUSINESS.SERVICE_NAME') }}
-            </span>
-            <input v-model="service.name" :class="INPUT_CLASS" />
-          </label>
-          <label class="flex flex-col gap-1">
-            <span class="text-[11px] text-n-slate-11">
-              {{ t('ATHENAS.EDIT.BUSINESS.DURATION') }}
-            </span>
-            <input
-              v-model="service.duration_minutes"
-              type="number"
-              min="5"
-              :class="INPUT_CLASS"
-            />
-          </label>
-          <label class="flex flex-col gap-1">
-            <span class="text-[11px] text-n-slate-11">
-              {{ t('ATHENAS.EDIT.BUSINESS.BUFFER') }}
-            </span>
-            <input
-              v-model="service.buffer_minutes"
-              type="number"
-              min="0"
-              :class="INPUT_CLASS"
-            />
-          </label>
-          <label class="flex flex-col gap-1">
-            <span class="text-[11px] text-n-slate-11">
-              {{ t('ATHENAS.EDIT.BUSINESS.PRICE_CENTS') }}
+          <input
+            v-model="service.name"
+            :class="INPUT_CLASS"
+            :placeholder="t('ATHENAS.EDIT.BUSINESS.SERVICE_NAME')"
+            :aria-label="t('ATHENAS.EDIT.BUSINESS.SERVICE_NAME')"
+          />
+          <input
+            v-model="service.duration_minutes"
+            type="number"
+            min="5"
+            :class="INPUT_CLASS"
+            :placeholder="t('ATHENAS.EDIT.BUSINESS.DURATION')"
+            :aria-label="t('ATHENAS.EDIT.BUSINESS.DURATION')"
+          />
+          <input
+            v-model="service.buffer_minutes"
+            type="number"
+            min="0"
+            :class="INPUT_CLASS"
+            :placeholder="t('ATHENAS.EDIT.BUSINESS.BUFFER')"
+            :aria-label="t('ATHENAS.EDIT.BUSINESS.BUFFER')"
+          />
+          <div class="relative">
+            <span
+              class="absolute inset-y-0 left-3 flex items-center text-[13px] text-n-slate-10 pointer-events-none"
+            >
+              {{ t('ATHENAS.EDIT.BUSINESS.CURRENCY') }}
             </span>
             <input
-              v-model="service.price_cents"
-              type="number"
-              min="0"
+              v-model="service.price"
+              type="text"
+              inputmode="decimal"
               :class="INPUT_CLASS"
+              class="pl-9"
+              :placeholder="t('ATHENAS.EDIT.BUSINESS.PRICE_PLACEHOLDER')"
+              :aria-label="t('ATHENAS.EDIT.BUSINESS.PRICE')"
             />
-          </label>
+          </div>
           <div class="flex items-center gap-1">
             <Button
               size="sm"
