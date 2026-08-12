@@ -419,7 +419,7 @@ RSpec.describe Ai::AutopilotReplyService do
                              endpoint_url: 'https://loja.example.com/api', http_method: 'GET',
                              auth_type: 'none', param_schema: [])
       allow(Ai::Agent::ToolLoopService).to receive(:new)
-        .and_return(instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' }))
+        .and_return(instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' }, tool_calls: []))
       allow(Ai::CustomToolExecutor).to receive(:new).and_call_original
 
       expect(service.send(:generate_response, [])).to eq(content: 'ok')

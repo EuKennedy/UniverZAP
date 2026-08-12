@@ -37,10 +37,11 @@ class Ai::PlaygroundService
     persist_note(conversation, suppressed(:ungrounded_claim, service, started_at))
   rescue Ai::AutopilotReplyService::LoopSuppressed
     persist_note(conversation, suppressed(:loop_suppressed, service, started_at))
-  rescue Ai::Agent::ToolLoopService::PromiseUnfulfilled
-    persist_note(conversation, suppressed(:promise_unfulfilled, service, started_at))
-  rescue Ai::Agent::ToolLoopService::BookingUnperformed
-    persist_note(conversation, suppressed(:booking_unperformed, service, started_at))
+  # Both mean "the draft was thrown away because it asserted something it had
+  # not done". The class name IS the status the transcript shows, so the two
+  # share a branch instead of drifting apart.
+  rescue Ai::Agent::ToolLoopService::PromiseUnfulfilled, Ai::Agent::ToolLoopService::BookingUnperformed => e
+    persist_note(conversation, suppressed(e.class.name.demodulize.underscore, service, started_at))
   rescue Ai::ClaudeService::Error => e
     # The turn is generated in a job now, so an error has nowhere to be rendered
     # unless it is written down. The operator asked a question and deserves to
