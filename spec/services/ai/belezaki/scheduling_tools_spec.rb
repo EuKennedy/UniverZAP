@@ -271,6 +271,15 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
 
       # A blip was already retried. Stamping it would cry wolf on the screen for
       # something that fixed itself a second later.
+      # Their billing, not this operator's onboarding: reconnecting would fix
+      # nothing, so the binding stays and the reason goes on the card.
+      it 'records a lapsed subscription without unbinding the agenda' do
+        result = failing('entitlement_inactive')
+
+        expect(result).to be_active
+        expect(result.last_error).to be_present
+      end
+
       it 'says nothing about a transient failure' do
         expect(failing('http_429').last_error).to be_nil
       end

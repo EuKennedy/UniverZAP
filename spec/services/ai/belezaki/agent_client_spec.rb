@@ -57,6 +57,32 @@ RSpec.describe Ai::Belezaki::AgentClient do
     end
   end
 
+  # Confirmed against production on 2026-08-13. Pinned because getting it wrong
+  # is silent: the salon answers 404 for /agent/v1 without the /api, which reads
+  # as "no such appointment" rather than "wrong address", and the agent would
+  # apologise to customers all day without anyone knowing why.
+  it 'addresses the salon at the confirmed production URL' do
+    expect("#{described_class.base_url}#{described_class::PREFIX}")
+      .to eq('https://api.belezaki.com.br/api/agent/v1')
+  end
+
+  # The salon used to read the subscription status and never check it, so an
+  # unpaid salon kept getting appointments booked into it.
+  describe 'a lapsed subscription' do
+    it 'keeps the code and falls back to it for the message' do
+      stub_request(:get, "#{base}/services")
+        .to_return(status: 403, body: '{"error":"entitlement_inactive"}',
+                   headers: { 'Content-Type' => 'application/json' })
+
+      expect { client.services }.to raise_error(Ai::Belezaki::AgentClient::Error) { |e|
+        expect(e.code).to eq('entitlement_inactive')
+        # Blank would reach the connection as a falsy last_error and the card
+        # would go on claiming everything is fine.
+        expect(e.message).to be_present
+      }
+    end
+  end
+
   describe 'the routes that change an existing appointment' do
     # POST, so the salon answers 201. A success check written as `== 200` would
     # turn every completed cancellation into a silent error.

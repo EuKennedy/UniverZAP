@@ -149,7 +149,11 @@ class Ai::Belezaki::AgentClient
   def build_error(response)
     body = decode(response)
     status = response.code.to_i
-    return Error.new(body['message'].to_s, code: body['error'], status: status) if conflict_shape?(body)
+    # Falls back to the code when the salon sends none: `entitlement_inactive`
+    # arrives as a bare {"error": ...}, and an empty message would be written to
+    # the connection as a blank last_error — which the card reads as "no failure"
+    # and shows nothing.
+    return Error.new(body['message'].presence || body['error'], code: body['error'], status: status) if conflict_shape?(body)
     return validation_error(body, status) if validation_shape?(body)
 
     message = (body.is_a?(Hash) ? body['message'] : nil).presence || "HTTP #{status}"
