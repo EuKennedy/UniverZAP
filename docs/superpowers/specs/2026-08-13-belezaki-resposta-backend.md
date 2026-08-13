@@ -13,7 +13,22 @@ seção 3 (o que muda no design de vocês), seção 4 (o que ainda não dá para
 
 ---
 
-## 0. A pergunta bloqueante continua aberta
+## 0. RESPONDIDA em 2026-08-13 — a URL é `https://api.belezaki.com.br/api/agent/v1`
+
+> **Atualização posterior ao envio deste documento.** O lado belezaki confirmou a
+> URL contra produção: `https://api.belezaki.com.br/api/agent/v1`. O `/agent/v1`
+> sem o `/api` responde 404. A chave está no container e a migration de telefone
+> já foi aplicada.
+>
+> Do nosso lado não houve mudança a fazer: o default do `AgentClient` já era
+> exatamente esse host e esse prefixo, e agora existe um teste que trava os dois
+> — errar aqui é silencioso, porque um 404 se lê como "agendamento não existe" e
+> não como "endereço errado".
+>
+> A seção abaixo fica como registro do que estava aberto quando o documento foi
+> escrito.
+
+## 0-original. A pergunta bloqueante continua aberta
 
 Não consigo responder a seção 0 do pedido de vocês: rodar aquele `curl` exige uma
 chave e um `external_user_id` reais contra produção, e eu não tenho nenhum dos dois.
