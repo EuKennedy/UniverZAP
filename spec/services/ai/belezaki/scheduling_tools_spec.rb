@@ -151,6 +151,56 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       end
     end
 
+    describe 'writing the failure down on the connection' do
+      let(:account) { create(:account) }
+      let(:assistant) { create(:ai_assistant, account: account) }
+      let(:connection) do
+        Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
+      end
+
+      def failing(code)
+        allow(client).to receive(:services)
+          .and_raise(Ai::Belezaki::AgentClient::Error.new('salão sumiu', code: code))
+        described_class.new(client, scope: 'conv-1', connection: connection).call('listar_servicos', {})
+        connection.reload
+      end
+
+      # The screen would otherwise keep saying "connected" while the agent has
+      # quietly lost the ability to book, and nobody finds out until a customer
+      # does.
+      it 'revokes when the salon or the link is gone' do
+        expect(failing('http_404')).not_to be_active
+      end
+
+      # Our shared key and our configuration: every connection on the platform is
+      # affected, and sending this one operator to reconnect fixes nothing while
+      # making it look like their fault.
+      it 'records a configuration failure without revoking the binding' do
+        result = failing('http_503')
+
+        expect(result).to be_active
+        expect(result.last_error).to eq('salão sumiu')
+      end
+
+      # A blip was already retried. Stamping it would cry wolf on the screen for
+      # something that fixed itself a second later.
+      it 'says nothing about a transient failure' do
+        expect(failing('http_429').last_error).to be_nil
+      end
+
+      # A screen that failed to update is not a reason to lose the reply the
+      # customer is waiting for.
+      it 'still answers the model when the row cannot be written' do
+        allow(connection).to receive(:revoke!).and_raise(ActiveRecord::RecordInvalid)
+        allow(client).to receive(:services)
+          .and_raise(Ai::Belezaki::AgentClient::Error.new('x', code: 'http_404'))
+
+        result = described_class.new(client, scope: 'conv-1', connection: connection).call('listar_servicos', {})
+
+        expect(result).to include('http_404')
+      end
+    end
+
     describe 'the booking answer' do
       # The turn guard reads a booking off `"agendado": true`. belezaki answers
       # `{"appointment": {"status": "confirmed"}}`, which matches nothing — so

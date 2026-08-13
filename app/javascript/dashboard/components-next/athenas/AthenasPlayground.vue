@@ -27,6 +27,14 @@ const latencyLabel = ms => `${Math.round(ms / 100) / 10}s`;
 const confidencePercent = value =>
   value === null || value === undefined ? null : Math.round(value * 100);
 
+// Every tool in the module answers JSON, and reports its own failures as
+// `{"error": true, ...}` rather than raising. So a red mark here means the
+// agenda refused the call, not that the model picked the wrong tool.
+const toolFailed = call => /"error"\s*:\s*true/.test(call.result || '');
+
+const compact = value =>
+  typeof value === 'string' ? value : JSON.stringify(value ?? {});
+
 const scrollToEnd = async () => {
   await nextTick();
   if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
@@ -163,6 +171,51 @@ onMounted(loadTranscript);
             <span v-else class="italic text-n-slate-11">
               {{ t(`ATHENAS.PLAYGROUND.STATUS.${message.status}`) }}
             </span>
+          </div>
+
+          <!-- What the agent actually DID, ahead of everything else: for a
+               booking agent the prose is not evidence. "Escova marcada pra
+               quarta às 16h45" read perfectly while Google had no such event
+               and our index had no row. -->
+          <div
+            v-if="message.diagnostics?.tool_calls?.length"
+            class="flex flex-col gap-1 px-1"
+          >
+            <span class="text-[11px] text-n-slate-10">
+              {{ t('ATHENAS.PLAYGROUND.TOOLS.TITLE') }}
+            </span>
+            <details
+              v-for="(call, callIndex) in message.diagnostics.tool_calls"
+              :key="callIndex"
+              class="rounded-md bg-n-alpha-2 ring-1 ring-n-weak"
+            >
+              <summary
+                class="flex items-center gap-1.5 px-2 py-1 cursor-pointer select-none text-[11px]"
+              >
+                <span
+                  class="size-3 shrink-0"
+                  :class="
+                    toolFailed(call)
+                      ? 'i-lucide-circle-x text-n-ruby-11'
+                      : 'i-lucide-circle-check text-n-teal-11'
+                  "
+                />
+                <span class="font-mono text-n-slate-12">{{ call.name }}</span>
+                <span class="font-mono text-n-slate-10 truncate">
+                  {{ compact(call.input) }}
+                </span>
+              </summary>
+              <div class="flex flex-col gap-0.5 px-2 pb-2 text-[11px]">
+                <span class="text-n-slate-10">
+                  {{ t('ATHENAS.PLAYGROUND.TOOLS.RESULT') }}
+                </span>
+                <span
+                  class="font-mono text-n-slate-11 whitespace-pre-wrap break-words"
+                >
+                  {{ call.result }}
+                </span>
+              </div>
+            </details>
           </div>
 
           <!-- Diagnostics are the point of the sandbox: they answer "where did

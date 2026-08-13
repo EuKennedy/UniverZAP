@@ -37,6 +37,11 @@ const showOnlyOne = ref(false);
 
 const connected = computed(() => connection.value?.status === 'active');
 
+// The agenda failed and the row says so. Shown because the alternative is a card
+// that reads "connected" while the agent has quietly stopped being able to book,
+// and nobody finds out until a customer does.
+const agendaFailed = computed(() => Boolean(connection.value?.last_error));
+
 const fetchConnection = async () => {
   loading.value = true;
   try {
@@ -135,6 +140,20 @@ onMounted(fetchConnection);
         </p>
         <p v-else class="m-0 text-[13px] text-n-slate-11">
           {{ t('ATHENAS.EDIT.BELEZAKI.SUBTITLE') }}
+        </p>
+
+        <!-- Two different messages because the fixes are different: a dropped
+             binding is reconnected here, a configuration failure is ours. -->
+        <p
+          v-if="agendaFailed"
+          class="m-0 text-[12px] text-n-amber-11 flex items-center gap-1"
+        >
+          <Icon icon="i-lucide-triangle-alert" class="size-3 flex-shrink-0" />
+          {{
+            connected
+              ? t('ATHENAS.EDIT.BELEZAKI.LAST_FAILURE')
+              : t('ATHENAS.EDIT.BELEZAKI.DROPPED')
+          }}
         </p>
       </div>
 

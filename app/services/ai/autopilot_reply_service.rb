@@ -357,7 +357,8 @@ class Ai::AutopilotReplyService
     @belezaki_executor ||= Ai::Belezaki::SchedulingTools.new(
       Ai::Belezaki::AgentClient.new(external_id: belezaki_connection.external_id),
       scope: "conv-#{@conversation.id}",
-      contact: { name: @conversation.contact&.name, phone: @conversation.contact&.phone_number }
+      contact: { name: @conversation.contact&.name, phone: @conversation.contact&.phone_number },
+      connection: belezaki_connection
     )
   end
 

@@ -1,8 +1,9 @@
 # Server-to-server client for the belezaki agent API (salon scheduling).
 #
-# Auth: shared UNIVERZAP_AGENT_API_KEY + the account's belezaki external_user_id
-# (which salon). Built per-connection now that an agent binds to one salon
-# explicitly; `.for_account` remains for callers that still resolve by account.
+# Auth: shared UNIVERZAP_AGENT_API_KEY + the salon id, which comes from the
+# agent's own Ai::Belezaki::Connection. Never resolved from the account here:
+# that is what allowed a cached, arbitrary row to point an agent at the wrong
+# salon, and it is why the id is frozen on the connection instead.
 class Ai::Belezaki::AgentClient
   # Carries the CODE, not just the message. Three different error shapes come
   # out of this API and only one of them is the documented one, so matching on
@@ -41,13 +42,6 @@ class Ai::Belezaki::AgentClient
 
   def self.api_key
     ENV['UNIVERZAP_AGENT_API_KEY'].presence
-  end
-
-  def self.for_account(account)
-    external_id = Ai::Belezaki::TenantResolver.external_id(account)
-    return nil if external_id.blank? || api_key.blank?
-
-    new(external_id: external_id)
   end
 
   def initialize(external_id:, api_key: self.class.api_key)

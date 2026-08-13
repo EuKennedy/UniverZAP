@@ -267,6 +267,8 @@
         "DISCONNECT": "Desconectar",
         "DISCONNECTED": "Salão desconectado. Os horários já marcados continuam na agenda do belezaki.",
         "DISCONNECT_FAILED": "Não deu para desconectar agora.",
+        "LAST_FAILURE": "A agenda não respondeu na última tentativa. Se continuar, fale com o suporte.",
+        "DROPPED": "A conexão com o salão caiu. Conecte de novo para o agente voltar a marcar.",
         "ONLY_ONE": "Suportamos apenas uma integração de agenda por vez.",
         "ONLY_ONE_BODY": "Este agente está usando o Google Calendar. Desconecte para conectar o belezaki no lugar.",
         "DISCONNECT_GOOGLE": "Desconectar Google Calendar",
@@ -387,7 +389,12 @@
       "STATUS": {
         "ungrounded_claim": "O agente ficou em silêncio: ele tentou afirmar um valor que não está na base de conhecimento. Cadastre esse dado no Conhecimento para ele poder responder.",
         "loop_suppressed": "O agente ficou em silêncio: a resposta repetiria algo que ele já disse nesta conversa.",
-        "promise_unfulfilled": "O agente ficou em silêncio: a resposta prometia consultar algo sem chamar nenhuma ferramenta, e ele não tem uma próxima mensagem para cumprir isso. Confira se alguma ferramenta conectada cobre o que foi perguntado."
+        "promise_unfulfilled": "O agente ficou em silêncio: a resposta prometia consultar algo sem chamar nenhuma ferramenta, e ele não tem uma próxima mensagem para cumprir isso. Confira se alguma ferramenta conectada cobre o que foi perguntado.",
+        "booking_unperformed": "O agente ficou em silêncio: a resposta confirmava um agendamento que nenhuma ferramenta chegou a fazer. Nada foi marcado na agenda — foi exatamente por isso que a resposta não saiu."
+      },
+      "TOOLS": {
+        "TITLE": "O que o agente fez",
+        "RESULT": "Resposta"
       }
     },
     "ANALYTICS": {

@@ -55,8 +55,12 @@ class Ai::Belezaki::SchedulingTools
     { type: 'string', description: description }
   end
 
-  def initialize(client, scope:, contact: {})
+  def initialize(client, scope:, contact: {}, connection: nil)
     @client = client
+    # Optional. When present, a salon that refuses the binding gets written down
+    # on it, so the screen stops claiming "connected" while the agent has quietly
+    # lost the ability to book.
+    @connection = connection
     # Namespace for booking idempotency keys — keeps this conversation's
     # bookings from ever colliding with another conversation's on belezaki.
     @scope = scope
@@ -113,7 +117,29 @@ class Ai::Belezaki::SchedulingTools
   private
 
   def salon_error(error)
+    note_failure(error)
     { error: error.code.presence || 'belezaki_error', message: ADVICE.fetch(error.code, UNREACHABLE) }.to_json
+  end
+
+  # Only a 404 revokes: the salon or the link itself is gone, and reconnecting is
+  # exactly what fixes it. A 401 or 503 is OUR shared key and OUR configuration —
+  # every connection on the platform is affected, and sending this one operator
+  # to reconnect would fix nothing while making it look like their fault.
+  #
+  # Never raises: a screen that failed to update is not a reason to lose the
+  # reply the customer is waiting for.
+  # A blip is not written down at all: 429, 5xx and network errors were already
+  # retried, and stamping one on the card would cry wolf on the screen for
+  # something that fixed itself a second later.
+  CONFIG_FAILURES = %w[http_401 http_503].freeze
+
+  def note_failure(error)
+    return if @connection.blank?
+
+    @connection.revoke!(error.message) if error.code == 'http_404'
+    @connection.note_failure!(error.message) if CONFIG_FAILURES.include?(error.code)
+  rescue StandardError => e
+    Rails.logger.warn("[Belezaki] could not record agenda failure: #{e.message}")
   end
 
   def dispatch(name, input)

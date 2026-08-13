@@ -32,7 +32,16 @@ class Ai::Belezaki::Connection < ApplicationRecord
     update!(status: 'revoked', last_error: reason.to_s.truncate(300), last_error_at: Time.current)
   end
 
+  # The agenda failed, but the BINDING is still valid — our shared key, their
+  # outage. Revoking would send the operator to reconnect something that is not
+  # broken; saying nothing would leave the screen claiming everything is fine
+  # while the agent quietly stops offering times.
+  def note_failure!(reason)
+    update!(last_error: reason.to_s.truncate(300), last_error_at: Time.current)
+  end
+
   def push_event_data
-    { id: id, salon_name: salon_name, timezone: timezone, status: status, connected_at: connected_at }
+    { id: id, salon_name: salon_name, timezone: timezone, status: status,
+      connected_at: connected_at, last_error: last_error, last_error_at: last_error_at }
   end
 end

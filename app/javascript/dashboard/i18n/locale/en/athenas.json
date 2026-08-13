@@ -267,6 +267,8 @@
         "DISCONNECT": "Disconnect",
         "DISCONNECTED": "Salon disconnected. Appointments already made stay in the belezaki agenda.",
         "DISCONNECT_FAILED": "Could not disconnect right now.",
+        "LAST_FAILURE": "The agenda did not answer on the last attempt. If it keeps happening, contact support.",
+        "DROPPED": "The connection to the salon was dropped. Connect again so the agent can book.",
         "ONLY_ONE": "We support one agenda integration at a time.",
         "ONLY_ONE_BODY": "This agent is using Google Calendar. Disconnect it to connect belezaki instead.",
         "DISCONNECT_GOOGLE": "Disconnect Google Calendar",
@@ -387,7 +389,12 @@
       "STATUS": {
         "ungrounded_claim": "The agent stayed silent: it tried to state a value that is not in the knowledge base. Add that fact under Knowledge so it can answer.",
         "loop_suppressed": "The agent stayed silent: the reply would repeat something it already said in this conversation.",
-        "promise_unfulfilled": "The agent stayed silent: the reply promised to go and check something without calling any tool, and it has no later message to keep that promise in. Check that a connected tool actually covers what was asked."
+        "promise_unfulfilled": "The agent stayed silent: the reply promised to go and check something without calling any tool, and it has no later message to keep that promise in. Check that a connected tool actually covers what was asked.",
+        "booking_unperformed": "The agent stayed silent: the reply confirmed an appointment that no tool ever made. Nothing was booked on the agenda, which is exactly why the reply was withheld."
+      },
+      "TOOLS": {
+        "TITLE": "What the agent did",
+        "RESULT": "Answer"
       }
     },
     "ANALYTICS": {
