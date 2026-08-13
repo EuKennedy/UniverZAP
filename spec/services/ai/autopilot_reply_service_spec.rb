@@ -474,6 +474,19 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(prompt).to include('NUNCA diga que enviou confirmação no WhatsApp')
     end
 
+    # price_cents is the LIST price, not what a promotion actually charges. The
+    # agent quoting it as final means the customer arrives expecting one number
+    # and pays another — with the AI as the one who promised.
+    it 'stops the agent from promising a price as final' do
+      Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
+
+      prompt = described_class.new(conversation: conversation, assistant: assistant)
+                              .send(:system_prompt_segments).join("\n")
+
+      expect(prompt).to include('preço').and include('tabela')
+      expect(prompt).to include('nunca garanta que é o')
+    end
+
     # The salon already decided whether this appointment can still be touched,
     # and it says so on every row. An agent that recomputed the window itself
     # would try anyway and eat a 409 in front of the customer.

@@ -787,6 +787,11 @@ class Ai::AutopilotReplyService
     antes de oferecer qualquer horário. Nunca invente horário, nunca arredonde e
     nunca diga "por volta de".
 
+    O preço que vem em `listar_servicos` é o de tabela e pode não ser o que o
+    salão vai cobrar numa promoção. Pode informá-lo, mas nunca garanta que é o
+    valor final, não prometa desconto e não feche negociação de preço: diga que
+    a equipe confirma o valor no atendimento.
+
     Ao agendar, copie `start` e `professional_id` EXATAMENTE do horário que o
     cliente escolheu na lista. Não reformate, não converta fuso, não recalcule:
     o salão só aceita o horário idêntico ao que ele mesmo devolveu, e qualquer
