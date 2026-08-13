@@ -402,11 +402,12 @@ RSpec.describe Ai::AutopilotReplyService do
     end
 
     it 'records the external write for the whole turn, not just inside the tool loop' do
-      executor = instance_double(Ai::Belezaki::SchedulingTools, performed_write?: true)
-      loop_service = instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' })
+      executor = instance_double(Ai::Agent::CompositeExecutor, performed_write?: true, definitions: [])
+      loop_service = instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' },
+                                                                tool_calls: [], tool_results: [])
       allow(Ai::Agent::ToolLoopService).to receive(:new).and_return(loop_service)
 
-      service.send(:run_tool_loop, [], executor)
+      service.send(:run_own_tool_loop, [], executor)
 
       expect(service.instance_variable_get(:@performed_external_write)).to be(true)
     end
@@ -419,11 +420,55 @@ RSpec.describe Ai::AutopilotReplyService do
                              endpoint_url: 'https://loja.example.com/api', http_method: 'GET',
                              auth_type: 'none', param_schema: [])
       allow(Ai::Agent::ToolLoopService).to receive(:new)
-        .and_return(instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' }, tool_calls: []))
+        .and_return(instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' },
+                                                               tool_calls: [], tool_results: []))
       allow(Ai::CustomToolExecutor).to receive(:new).and_call_original
 
       expect(service.send(:generate_response, [])).to eq(content: 'ok')
       expect(Ai::CustomToolExecutor).to have_received(:new)
+    end
+  end
+
+  describe 'belezaki is opt-in per agent' do
+    def tool_names(subject_assistant)
+      described_class.new(conversation: conversation, assistant: subject_assistant)
+                     .send(:own_tools).definitions.map { |definition| definition[:name] }
+    end
+
+    # The whole reason this module exists: a LINKED ACCOUNT used to switch
+    # scheduling on for every one of its agents, putting five tool schemas in
+    # every turn of agents that book nothing.
+    it 'offers no belezaki tool to an agent that has not connected one' do
+      allow(Ai::Belezaki::TenantResolver).to receive(:external_id).and_return('ext-1')
+
+      expect(tool_names(assistant)).not_to include('sugerir_dias', 'listar_profissionais')
+    end
+
+    it 'offers them once THIS agent is connected' do
+      Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
+
+      expect(tool_names(assistant)).to include('sugerir_dias', 'agendar')
+    end
+
+    # A revoked connection is not a connection: the agent must stop offering
+    # times it can no longer verify.
+    it 'stops offering them when the connection is revoked' do
+      connection = Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
+      connection.revoke!('token rejected')
+
+      expect(tool_names(assistant.reload)).not_to include('agendar')
+    end
+
+    # The frozen id is the point: resolving the account again on every reply is
+    # what could move a live agent onto another salon's agenda.
+    it 'builds the client from the connection id, not by resolving the account' do
+      Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-frozen')
+      allow(Ai::Belezaki::TenantResolver).to receive(:external_id).and_return('ext-other')
+      allow(Ai::Belezaki::AgentClient).to receive(:new).and_call_original
+
+      described_class.new(conversation: conversation, assistant: assistant).send(:belezaki_executor)
+
+      expect(Ai::Belezaki::AgentClient).to have_received(:new).with(external_id: 'ext-frozen')
     end
   end
 

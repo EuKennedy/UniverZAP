@@ -283,48 +283,20 @@ class Ai::AutopilotReplyService
   # When the account is linked to belezaki, run the Claude tool-use loop so the
   # agent can check the salon agenda and create appointments mid-conversation.
   # Otherwise fall back to the plain single-shot reply.
+  # Every tool this agent owns, in ONE loop: HTTP integrations, the Google
+  # agenda and the belezaki agenda. A salon sells products and books chairs, and
+  # picking one would mean the agent could never reach its calendar because a
+  # cart tool existed.
+  #
+  # belezaki used to sit outside this, on its own branch, switched on by whether
+  # the ACCOUNT was linked. That is why every agent of a linked workspace paid
+  # for five scheduling tools it never used. It is now opt-in per agent like
+  # everything else here.
   def generate_response(messages)
-    # The workspace's OWN tools, ahead of and fully separate from the belezaki
-    # branch: HTTP integrations and the Google agenda, together in one turn. A
-    # salon sells products and books chairs, and picking one would mean the
-    # agent could never reach its calendar because a cart tool existed.
     own = own_tools
     return run_own_tool_loop(messages, own) if own.any?
 
-    client = belezaki_client
-    return call_claude(messages) if client.nil?
-
-    Rails.logger.info("[Athenas agent] belezaki scheduling enabled conv=#{@conversation.display_id}")
-    executor = Ai::Belezaki::SchedulingTools.new(
-      client,
-      scope: "conv-#{@conversation.id}",
-      contact: { name: @conversation.contact&.name, phone: @conversation.contact&.phone_number }
-    )
-    run_tool_loop(messages, executor)
-  end
-
-  # The tool loop can COMMIT external writes (an appointment on the salon
-  # agenda) before Claude fails on a later turn of the loop. Those writes are
-  # not covered by the reply dedup stamp, so replaying the turn could book a
-  # second slot. Once a booking has been attempted we therefore downgrade a
-  # transient failure to a permanent one: the job logs it instead of retrying.
-  # At-most-once beats at-least-once when the side effect is a real appointment.
-  def run_tool_loop(messages, executor)
-    Ai::Agent::ToolLoopService.new(
-      assistant: @assistant,
-      conversation: @conversation,
-      messages: messages,
-      system: system_prompt_segments,
-      tools: Ai::Belezaki::SchedulingTools.definitions(include_booking: true),
-      tool_executor: executor,
-      log_context: reply_log_context
-    ).perform
-  ensure
-    # `ensure`, so the flag is recorded whether the loop returned or blew up.
-    # Turn-scoped state (not the executor local) because the guard in #perform
-    # must also cover everything that runs AFTER the tool loop. Latches on:
-    # once a write landed it must never be cleared for the rest of the turn.
-    @performed_external_write = true if executor.performed_write?
+    call_claude(messages)
   end
 
   # This agent's own integrations (Ai::CustomTool), scoped to THIS agent so one
@@ -342,6 +314,7 @@ class Ai::AutopilotReplyService
       parts = []
       parts << [custom_tool_executor.definitions, custom_tool_executor] if custom_tools.any?
       parts << [calendar_definitions, calendar_executor] if calendar_definitions.present?
+      parts << [belezaki_definitions, belezaki_executor] if belezaki_connection.present?
       Ai::Agent::CompositeExecutor.new(parts)
     end
   end
@@ -365,6 +338,32 @@ class Ai::AutopilotReplyService
     )
   end
 
+  # Per AGENT, and only once connected. Resolving this from the ACCOUNT is what
+  # used to put five tool schemas into every turn of every agent of a linked
+  # workspace — including the ones that never book anything and were paying for
+  # a salon agenda they do not have.
+  def belezaki_connection
+    return @belezaki_connection if defined?(@belezaki_connection)
+
+    connection = @assistant.belezaki_connection
+    @belezaki_connection = connection&.active? ? connection : nil
+  end
+
+  def belezaki_definitions
+    Ai::Belezaki::SchedulingTools.definitions(include_booking: true)
+  end
+
+  # The salon id comes from the CONNECTION, not from resolving the account again:
+  # the whole point of freezing it is that a re-link can never move a live agent
+  # onto somebody else's agenda mid-conversation.
+  def belezaki_executor
+    @belezaki_executor ||= Ai::Belezaki::SchedulingTools.new(
+      Ai::Belezaki::AgentClient.new(external_id: belezaki_connection.external_id),
+      scope: "conv-#{@conversation.id}",
+      contact: { name: @conversation.contact&.name, phone: @conversation.contact&.phone_number }
+    )
+  end
+
   def run_own_tool_loop(messages, executor)
     loop_service = Ai::Agent::ToolLoopService.new(
       assistant: @assistant, conversation: @conversation, messages: messages,
@@ -381,15 +380,6 @@ class Ai::AutopilotReplyService
     # booking — must not be replayed on a transient retry (see #perform's
     # rescue).
     @performed_external_write = true if executor&.performed_write?
-  end
-
-  # Never let belezaki resolution (DB lookup / ENV) break the reply for
-  # accounts that don't use scheduling — fall back to the plain path on error.
-  def belezaki_client
-    Ai::Belezaki::AgentClient.for_account(@conversation.account)
-  rescue StandardError => e
-    Rails.logger.warn("[Athenas agent] belezaki resolve failed conv=#{@conversation.display_id}: #{e.message}")
-    nil
   end
 
   def call_claude(messages, override: nil)
