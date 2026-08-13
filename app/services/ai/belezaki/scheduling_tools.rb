@@ -111,8 +111,10 @@ class Ai::Belezaki::SchedulingTools
 
   # 401, 404, 503, 500 e falha de rede caem aqui: a agenda não está acessível, e
   # a única resposta honesta é parar de oferecer horário.
-  UNREACHABLE = ('Não consegui falar com a agenda do salão. Diga que a equipe confirma o horário, ' \
-                 'não ofereça horário e não prometa voltar depois.').freeze
+  UNREACHABLE = <<~ADVICE.squish.freeze
+    Não consegui falar com a agenda do salão. Diga que a equipe confirma o horário,
+    não ofereça horário e não prometa voltar depois.
+  ADVICE
 
   private
 
