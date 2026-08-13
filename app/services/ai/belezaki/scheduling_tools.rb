@@ -26,18 +26,24 @@ class Ai::Belezaki::SchedulingTools
     defs
   end
 
+  # `professional_id` is required HERE even though the API allows omitting it.
+  # Omitted, the salon opens a separate transaction just to pick somebody — a
+  # second race window — and its auto-choice can land on a professional the book
+  # itself then rejects with a 400, after the customer was already offered the
+  # time. Every slot already carries the id; copying it removes both problems.
   def self.booking_tool
     tool(
       'agendar',
-      'Cria o agendamento na agenda do salão. SÓ chame depois de confirmar nome e horário com o cliente.',
+      'Cria o agendamento na agenda do salão. SÓ chame depois de confirmar nome e horário com o cliente. ' \
+      'Copie start e professional_id EXATAMENTE do slot escolhido em consultar_horarios, sem reformatar.',
       {
         service_id: str('id do serviço'),
-        start: str('início ISO 8601 com offset, ex 2026-06-20T16:00:00-03:00'),
-        professional_id: str('opcional — se vazio o salão escolhe um livre'),
+        start: str('cópia literal do campo start do slot escolhido'),
+        professional_id: str('id do profissional do MESMO slot'),
         client_name: str('nome do cliente'),
         client_phone: str('telefone E.164, ex +5531999999999')
       },
-      %w[service_id start client_name client_phone]
+      %w[service_id start professional_id client_name client_phone]
     )
   end
 
@@ -86,6 +92,9 @@ class Ai::Belezaki::SchedulingTools
   private
 
   def dispatch(name, input)
+    invalid = invalid_input(name, input)
+    return invalid if invalid
+
     case name
     when 'listar_servicos' then @client.services
     when 'listar_profissionais' then @client.professionals
@@ -98,16 +107,81 @@ class Ai::Belezaki::SchedulingTools
     end
   end
 
+  # Checked here because the salon does NOT check it, and the failure is silent
+  # rather than loud: `date=2026-02-30` answers 200 with the real slots of March
+  # 2nd under an envelope that says February 30th, so the agent would offer a day
+  # that does not exist. A missing date is worse still — it reaches Prisma as NaN
+  # and comes back 500.
+  #
+  # Deliberately NOT validating id formats: the ids come from the salon's own
+  # tool results, and a hallucinated one would be shaped like a real one anyway.
+  def invalid_input(name, input)
+    case name
+    when 'consultar_horarios'
+      refuse('Data inválida. Use AAAA-MM-DD com um dia que exista.') unless real_date?(input['date'])
+    when 'sugerir_dias'
+      refuse('Mês inválido. Use AAAA-MM.') unless real_month?(input['month'])
+    when 'agendar'
+      refuse('Horário inválido. Copie o campo start do slot escolhido.') unless parsable_time?(input['start'])
+    end
+  end
+
+  def refuse(message)
+    { error: 'invalid_input', message: message }
+  end
+
+  def real_date?(value)
+    Date.strptime(value.to_s, '%Y-%m-%d').present?
+  rescue Date::Error, TypeError
+    false
+  end
+
+  def real_month?(value)
+    Date.strptime(value.to_s, '%Y-%m').present?
+  rescue Date::Error, TypeError
+    false
+  end
+
+  def parsable_time?(value)
+    Time.iso8601(value.to_s).present?
+  rescue ArgumentError, TypeError
+    false
+  end
+
   def book(input)
     @performed_write = true
-    @client.create_appointment(
-      service_id: input['service_id'],
-      start: input['start'],
-      professional_id: input['professional_id'],
-      client: { name: booking_name(input), phone: booking_phone(input) },
-      source: 'whatsapp_agent',
-      idempotency_key: booking_idempotency_key(input)
-    )
+    confirmation(@client.create_appointment(
+                   service_id: input['service_id'],
+                   start: input['start'],
+                   professional_id: input['professional_id'],
+                   client: { name: booking_name(input), phone: booking_phone(input) },
+                   source: 'whatsapp_agent',
+                   idempotency_key: booking_idempotency_key(input)
+                 ))
+  end
+
+  # Two things at once, and both matter.
+  #
+  # `agendado` is what the turn guard reads to tell a real confirmation from a
+  # model describing a call it was about to make. belezaki answers
+  # `{"appointment": {"status": "confirmed"}}`, which matches nothing, so without
+  # this every SUCCESSFUL booking would have its reply thrown away.
+  #
+  # And the status is checked rather than the HTTP code, because a replay of an
+  # idempotency key whose appointment was cancelled also answers 201 — with
+  # `"status": "canceled"`. Treating that as success tells a customer they have a
+  # time that nobody is holding.
+  def confirmation(response)
+    appointment = response.is_a?(Hash) ? response['appointment'] : nil
+    return { agendado: false, motivo: 'o salão não confirmou o agendamento' } unless appointment.is_a?(Hash)
+    return { agendado: false, motivo: "situação do agendamento: #{appointment['status']}" } unless confirmed?(appointment)
+
+    { agendado: true, id: appointment['id'], inicio: appointment['start'],
+      servico: appointment['service'], profissional: appointment['professional'] }
+  end
+
+  def confirmed?(appointment)
+    appointment['status'].to_s == 'confirmed'
   end
 
   # Idempotency must key on the ACTION (this specific appointment), not on the

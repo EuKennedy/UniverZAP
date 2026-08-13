@@ -115,5 +115,88 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
 
       expect(tools.call('listar_servicos', {})).to include('belezaki_error')
     end
+
+    describe 'the booking answer' do
+      # The turn guard reads a booking off `"agendado": true`. belezaki answers
+      # `{"appointment": {"status": "confirmed"}}`, which matches nothing — so
+      # without normalising it every SUCCESSFUL booking would have its reply
+      # thrown away as a confirmation of something that never happened.
+      it 'says agendado when the salon confirmed' do
+        allow(client).to receive(:create_appointment).and_return(
+          'appointment' => { 'id' => 'a1', 'status' => 'confirmed', 'start' => '2026-06-20T16:00:00-03:00' }
+        )
+
+        body = JSON.parse(tools.call('agendar', booking_input))
+
+        expect(body['agendado']).to be(true)
+        expect(body['inicio']).to eq('2026-06-20T16:00:00-03:00')
+      end
+
+      # A replay of a key whose appointment was cancelled also answers 201, with
+      # `"status": "canceled"`. HTTP success is not the same as an appointment.
+      it 'does not claim a booking when the status is not confirmed' do
+        allow(client).to receive(:create_appointment).and_return(
+          'appointment' => { 'id' => 'a1', 'status' => 'canceled' }
+        )
+
+        body = JSON.parse(tools.call('agendar', booking_input))
+
+        expect(body['agendado']).to be(false)
+        expect(body['motivo']).to include('canceled')
+      end
+
+      it 'does not claim a booking when the salon answered nothing usable' do
+        allow(client).to receive(:create_appointment).and_return({})
+
+        expect(JSON.parse(tools.call('agendar', booking_input))['agendado']).to be(false)
+      end
+    end
+
+    describe 'validation before the call' do
+      # 2026-02-30 does not fail on their side: it answers 200 with the real
+      # slots of March 2nd under an envelope that says February 30th, so the
+      # agent would offer a day that does not exist.
+      it 'refuses a date that is not a real day, without calling the salon' do
+        expect(client).not_to receive(:availability)
+
+        body = JSON.parse(tools.call('consultar_horarios', { 'service_id' => 's1', 'date' => '2026-02-30' }))
+
+        expect(body['error']).to eq('invalid_input')
+      end
+
+      # A missing date reaches Prisma as NaN and comes back as a 500, which the
+      # agent would then treat as transient and retry.
+      it 'refuses a missing date' do
+        expect(client).not_to receive(:availability)
+
+        expect(tools.call('consultar_horarios', { 'service_id' => 's1' })).to include('invalid_input')
+      end
+
+      it 'refuses a start it cannot parse, so nothing is written' do
+        expect(client).not_to receive(:create_appointment)
+        executor = tools
+
+        executor.call('agendar', booking_input('start' => 'sexta que vem'))
+
+        expect(executor.performed_write?).to be(false)
+      end
+
+      it 'lets a real date through' do
+        allow(client).to receive(:availability).and_return({ 'slots' => [] })
+
+        tools.call('consultar_horarios', { 'service_id' => 's1', 'date' => '2026-06-20' })
+
+        expect(client).to have_received(:availability)
+      end
+    end
+
+    # Omitted, the salon opens a second transaction just to pick somebody and can
+    # land on a professional its own book then rejects with a 400 — after the
+    # customer was already offered the time.
+    it 'requires the professional the slot came from' do
+      schema = described_class.definitions(include_booking: true).find { |t| t[:name] == 'agendar' }
+
+      expect(schema[:input_schema][:required]).to include('professional_id')
+    end
   end
 end
