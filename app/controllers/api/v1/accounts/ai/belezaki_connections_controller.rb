@@ -37,6 +37,15 @@ class Api::V1::Accounts::Ai::BelezakiConnectionsController < Api::V1::Accounts::
 
   private
 
+  # Connecting an agenda decides where every customer this agent talks to ends
+  # up booked. Each Ai controller carries its own copy — there is no shared
+  # helper for this in the base class.
+  def ensure_admin
+    render_unauthorized('Administrator privileges required') unless Current.account_user&.administrator?
+  end
+
+  # Scoped to the current account's agents, so one workspace can never reach
+  # another's agenda even with a guessed id.
   def set_assistant
     @assistant = Current.account.ai_assistants.find(params[:assistant_id])
   end

@@ -403,8 +403,9 @@ RSpec.describe Ai::AutopilotReplyService do
 
     it 'records the external write for the whole turn, not just inside the tool loop' do
       executor = instance_double(Ai::Agent::CompositeExecutor, performed_write?: true, definitions: [])
-      loop_service = instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' },
-                                                                tool_calls: [], tool_results: [])
+      loop_service = instance_double(
+        Ai::Agent::ToolLoopService, perform: { content: 'ok' }, tool_calls: [], tool_results: []
+      )
       allow(Ai::Agent::ToolLoopService).to receive(:new).and_return(loop_service)
 
       service.send(:run_own_tool_loop, [], executor)
@@ -419,9 +420,10 @@ RSpec.describe Ai::AutopilotReplyService do
       Ai::CustomTool.create!(ai_assistant: assistant, account: account, title: 'Buscar', slug: 'buscar',
                              endpoint_url: 'https://loja.example.com/api', http_method: 'GET',
                              auth_type: 'none', param_schema: [])
-      allow(Ai::Agent::ToolLoopService).to receive(:new)
-        .and_return(instance_double(Ai::Agent::ToolLoopService, perform: { content: 'ok' },
-                                                               tool_calls: [], tool_results: []))
+      loop_double = instance_double(
+        Ai::Agent::ToolLoopService, perform: { content: 'ok' }, tool_calls: [], tool_results: []
+      )
+      allow(Ai::Agent::ToolLoopService).to receive(:new).and_return(loop_double)
       allow(Ai::CustomToolExecutor).to receive(:new).and_call_original
 
       expect(service.send(:generate_response, [])).to eq(content: 'ok')

@@ -134,10 +134,10 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       # Their validation strings are an English array written for us. The
       # customer must never see one.
       it 'never passes the salon own words through' do
-        body = raising(Ai::Belezaki::AgentClient::Error.new(
-                         'Dados inválidos.', code: 'validation_failed',
-                         validation: ['idempotency_key must be longer']
-                       ))
+        error = Ai::Belezaki::AgentClient::Error.new(
+          'Dados inválidos.', code: 'validation_failed', validation: ['idempotency_key must be longer']
+        )
+        body = raising(error)
 
         expect(body['message']).not_to include('idempotency_key')
       end

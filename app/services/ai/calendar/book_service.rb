@@ -14,7 +14,9 @@ class Ai::Calendar::BookService
   # one there is. It is a parameter rather than a lookup so that the day a second
   # professional exists, the choice is made by the caller that knows who the
   # customer asked for, and not silently by `.first` here.
-  def initialize(assistant:, contact:, services:, starts_at:, conversation: nil, professional: nil)
+  # Each argument is a distinct fact about the booking; folding them into an
+  # options hash would hide which one the slot arithmetic reads.
+  def initialize(assistant:, contact:, services:, starts_at:, conversation: nil, professional: nil) # rubocop:disable Metrics/ParameterLists
     @assistant = assistant
     @contact = contact
     @services = Array(services).compact

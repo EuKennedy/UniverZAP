@@ -9,14 +9,25 @@ RSpec.describe 'Api::V1::Accounts::Ai::BelezakiConnectionsController', type: :re
   let(:assistant) { create(:ai_assistant, account: account) }
   let(:url) { "/api/v1/accounts/#{account.id}/ai/assistants/#{assistant.id}/belezaki_connection" }
 
+  # Doubled at the class rather than any-instance: the controller builds its own
+  # service, and this is the seam that lets the request spec stay about the HTTP
+  # contract instead of about belezaki being reachable.
+  def stub_connect(result = nil, error: nil)
+    service = instance_double(Ai::Belezaki::ConnectService)
+    allow(Ai::Belezaki::ConnectService).to receive(:new).and_return(service)
+    if error
+      allow(service).to receive(:perform).and_raise(error)
+    else
+      allow(service).to receive(:perform).and_return(result)
+    end
+  end
+
   def connect(as_user = admin)
     post url, headers: as_user.create_new_auth_token, as: :json
   end
 
   it 'connects and names the salon' do
-    allow_any_instance_of(Ai::Belezaki::ConnectService).to receive(:perform).and_return(
-      Ai::Belezaki::Connection.new(salon_name: 'Studio Bella', status: 'active')
-    )
+    stub_connect(Ai::Belezaki::Connection.new(salon_name: 'Studio Bella', status: 'active'))
 
     connect
 
@@ -24,19 +35,18 @@ RSpec.describe 'Api::V1::Accounts::Ai::BelezakiConnectionsController', type: :re
     expect(response.parsed_body['connection']['salon_name']).to eq('Studio Bella')
   end
 
-  # Connecting an agenda is an admin action: it decides where every customer this
-  # agent talks to ends up booked.
+  # Connecting an agenda decides where every customer this agent talks to ends
+  # up booked.
   it 'is administrator-only' do
     connect(agent)
 
     expect(response).to have_http_status(:unauthorized)
   end
 
-  # The operator has to be told WHICH thing is wrong. "Not linked" is their
+  # The operator has to be told WHICH thing is wrong: "not linked" is their
   # onboarding, "not configured" is ours, and the two have different fixes.
   it 'reports the reason it could not connect' do
-    allow_any_instance_of(Ai::Belezaki::ConnectService)
-      .to receive(:perform).and_raise(Ai::Belezaki::ConnectService::NotLinked)
+    stub_connect(error: Ai::Belezaki::ConnectService::NotLinked)
 
     connect
 
@@ -45,23 +55,22 @@ RSpec.describe 'Api::V1::Accounts::Ai::BelezakiConnectionsController', type: :re
   end
 
   it 'reports a refusal to hold two agendas at once' do
-    allow_any_instance_of(Ai::Belezaki::ConnectService)
-      .to receive(:perform).and_raise(Ai::Belezaki::ConnectService::AgendaTaken)
+    stub_connect(error: Ai::Belezaki::ConnectService::AgendaTaken)
 
     connect
 
     expect(response.parsed_body['error']).to eq('agenda_taken')
   end
 
-  # A belezaki that answered something we cannot act on must not read as a bug in
-  # the dashboard.
+  # A salon that answered something we cannot act on must not read as a bug in
+  # the dashboard, and its wording must not reach the screen.
   it 'reports a failed probe without leaking the salon message' do
-    allow_any_instance_of(Ai::Belezaki::ConnectService)
-      .to receive(:perform).and_raise(Ai::Belezaki::AgentClient::Error.new('Salão não encontrado', code: 'http_404'))
+    stub_connect(error: Ai::Belezaki::AgentClient::Error.new('Salão não encontrado', code: 'http_404'))
 
     connect
 
     expect(response.parsed_body['error']).to eq('probe_failed')
+    expect(response.body).not_to include('Salão não encontrado')
   end
 
   it 'reads back nothing when the agent has no connection' do
@@ -80,7 +89,7 @@ RSpec.describe 'Api::V1::Accounts::Ai::BelezakiConnectionsController', type: :re
   end
 
   # Another workspace's agent is not addressable from this account, whatever id
-  # is typed in the URL.
+  # is typed into the URL.
   it 'cannot reach an agent from another account' do
     other = create(:ai_assistant, account: create(:account))
 

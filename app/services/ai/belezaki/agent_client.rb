@@ -88,7 +88,7 @@ class Ai::Belezaki::AgentClient
     begin
       attempt += 1
       response = HTTParty.public_send(method, url, **http_options, headers: headers, timeout: timeout)
-      return response.parsed_response if response.success?
+      return decode(response) if response.success?
 
       raise build_error(response)
     rescue Error => e
@@ -116,8 +116,21 @@ class Ai::Belezaki::AgentClient
     (0.4 * (2**(attempt - 1))) + (rand * 0.2)
   end
 
+  # HTTParty only parses when the response carries a JSON content-type, and the
+  # whole error contract would then hang off that header: a 409 arriving without
+  # it collapses `slot_taken` — a normal turn in a booking conversation — into a
+  # generic http_409, and the agent stops offering another time.
+  def decode(response)
+    parsed = response.parsed_response
+    return parsed unless parsed.is_a?(String)
+
+    JSON.parse(parsed)
+  rescue JSON::ParserError
+    parsed
+  end
+
   def build_error(response)
-    body = response.parsed_response
+    body = decode(response)
     status = response.code.to_i
     return Error.new(body['message'].to_s, code: body['error'], status: status) if conflict_shape?(body)
     return validation_error(body, status) if validation_shape?(body)
