@@ -20,9 +20,12 @@ import Icon from 'next/icon/Icon.vue';
 
 const props = defineProps({
   assistantId: { type: Number, required: true },
+  // One agenda per agent. While belezaki holds it, connecting Google here would
+  // put two tools called `consultar_horarios` in the same payload.
+  blocked: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['connected']);
+const emit = defineEmits(['connected', 'state']);
 
 const { t } = useI18n();
 const route = useRoute();
@@ -43,6 +46,9 @@ const fetchConnection = async () => {
     connection.value = null;
   } finally {
     loading.value = false;
+    // Reported up so the belezaki block beside this one knows whether the agenda
+    // is already taken, without asking the API a second time.
+    emit('state', connected.value);
   }
 };
 
@@ -71,6 +77,7 @@ const disconnect = async () => {
   try {
     await AthenasAPI.disconnectCalendar(props.assistantId);
     connection.value = null;
+    emit('state', false);
     useAlert(t('ATHENAS.EDIT.CALENDAR.DISCONNECTED'));
   } catch {
     useAlert(t('ATHENAS.EDIT.CALENDAR.DISCONNECT_FAILED'));
@@ -151,8 +158,17 @@ onMounted(async () => {
       </p>
     </div>
 
+    <!-- Said rather than silently disabled: a dead button reads as a bug, and
+         the operator would never learn that belezaki is what is holding the
+         agenda. -->
+    <p
+      v-if="!loading && !connected && blocked"
+      class="m-0 text-[12px] text-n-slate-11 max-w-[13rem] text-right"
+    >
+      {{ t('ATHENAS.EDIT.CALENDAR.BLOCKED') }}
+    </p>
     <Button
-      v-if="!loading && !connected"
+      v-else-if="!loading && !connected"
       size="sm"
       icon="i-lucide-link"
       :label="t('ATHENAS.EDIT.CALENDAR.CONNECT')"

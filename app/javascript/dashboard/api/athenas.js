@@ -159,6 +159,21 @@ class AthenasAssistantsAPI extends ApiClient {
     return axios.delete(`${this.url}/${assistantId}/calendar_connection`);
   }
 
+  // The other agenda. No OAuth to run: belezaki authenticates server-to-server,
+  // so connecting is the operator confirming WHICH salon this agent books on,
+  // and the POST proves it by reading the salon back.
+  belezakiConnection(assistantId) {
+    return axios.get(`${this.url}/${assistantId}/belezaki_connection`);
+  }
+
+  connectBelezaki(assistantId) {
+    return axios.post(`${this.url}/${assistantId}/belezaki_connection`);
+  }
+
+  disconnectBelezaki(assistantId) {
+    return axios.delete(`${this.url}/${assistantId}/belezaki_connection`);
+  }
+
   // "Configurar negócio": the agenda name, the week and the rules travel
   // together because they are one form, and a half-saved one leaves services
   // nobody can be booked for.

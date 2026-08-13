@@ -254,6 +254,28 @@
           "NO_REFRESH_TOKEN": "Google did not return offline access. Connect again and accept every permission on the Google screen.",
           "INVALID_STATE": "The connection request expired. Click Connect again.",
           "AGENT_NOT_FOUND": "That agent no longer exists."
+        },
+        "BLOCKED": "Blocked: this agent is using the belezaki agenda."
+      },
+      "BELEZAKI": {
+        "TITLE": "belezaki",
+        "SUBTITLE": "Already on belezaki? Connect and the agent books straight into the salon's real agenda. Services, prices, professionals and hours stay configured there.",
+        "LOADING": "Checking connection…",
+        "CONNECT": "Connect",
+        "CONNECTED": "Salon connected. The agent can book now.",
+        "CONNECTED_TO": "Connected to",
+        "DISCONNECT": "Disconnect",
+        "DISCONNECTED": "Salon disconnected. Appointments already made stay in the belezaki agenda.",
+        "DISCONNECT_FAILED": "Could not disconnect right now.",
+        "ONLY_ONE": "We support one agenda integration at a time.",
+        "ONLY_ONE_BODY": "This agent is using Google Calendar. Disconnect it to connect belezaki instead.",
+        "DISCONNECT_GOOGLE": "Disconnect Google Calendar",
+        "CANCEL": "Cancel",
+        "ERRORS": {
+          "NOT_LINKED": "Your account is not linked to a belezaki salon. Link it in belezaki and try again.",
+          "NOT_CONFIGURED": "The belezaki integration is not configured on the server. Our team has been notified.",
+          "AGENDA_TAKEN": "This agent already has an agenda connected.",
+          "PROBE_FAILED": "We could not reach belezaki right now. Try again in a moment."
         }
       },
       "INTEGRATIONS": {

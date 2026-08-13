@@ -254,6 +254,28 @@
           "NO_REFRESH_TOKEN": "O Google não devolveu a permissão de acesso contínuo. Conecte de novo e aceite todas as permissões na tela do Google.",
           "INVALID_STATE": "O pedido de conexão expirou. Clique em Conectar de novo.",
           "AGENT_NOT_FOUND": "Esse agente não existe mais."
+        },
+        "BLOCKED": "Bloqueado: este agente está usando a agenda do belezaki."
+      },
+      "BELEZAKI": {
+        "TITLE": "belezaki",
+        "SUBTITLE": "Já usa o belezaki? Conecte e o agente marca na agenda real do salão. Serviços, preços, profissionais e horários continuam sendo configurados lá.",
+        "LOADING": "Verificando conexão…",
+        "CONNECT": "Conectar",
+        "CONNECTED": "Salão conectado. O agente já pode marcar na agenda.",
+        "CONNECTED_TO": "Conectado a",
+        "DISCONNECT": "Desconectar",
+        "DISCONNECTED": "Salão desconectado. Os horários já marcados continuam na agenda do belezaki.",
+        "DISCONNECT_FAILED": "Não deu para desconectar agora.",
+        "ONLY_ONE": "Suportamos apenas uma integração de agenda por vez.",
+        "ONLY_ONE_BODY": "Este agente está usando o Google Calendar. Desconecte para conectar o belezaki no lugar.",
+        "DISCONNECT_GOOGLE": "Desconectar Google Calendar",
+        "CANCEL": "Cancelar",
+        "ERRORS": {
+          "NOT_LINKED": "Sua conta não está ligada a um salão do belezaki. Faça o vínculo no belezaki e tente de novo.",
+          "NOT_CONFIGURED": "A integração com o belezaki ainda não foi configurada no servidor. Nosso time foi avisado.",
+          "AGENDA_TAKEN": "Este agente já tem uma agenda conectada.",
+          "PROBE_FAILED": "Não conseguimos falar com o belezaki agora. Tente de novo em instantes."
         }
       },
       "INTEGRATIONS": {

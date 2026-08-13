@@ -14,6 +14,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import AthenasIntegrationForm from 'dashboard/components-next/athenas/AthenasIntegrationForm.vue';
 import AthenasCalendarConnect from 'dashboard/components-next/athenas/AthenasCalendarConnect.vue';
+import AthenasBelezakiConnect from 'dashboard/components-next/athenas/AthenasBelezakiConnect.vue';
 
 const props = defineProps({
   assistantId: { type: Number, required: true },
@@ -34,6 +35,24 @@ const editing = ref(null);
 
 const deleteDialogRef = ref(null);
 const pendingDelete = ref(null);
+
+// An agent books on ONE agenda. Held here rather than inside either block
+// because each has to know about the other, and neither should ask the API
+// about a connection that is not its own.
+const googleConnected = ref(false);
+const belezakiConnected = ref(false);
+
+// Called from the belezaki block's popup, so the operator switches agendas in
+// one place instead of hunting for the other card's button.
+const releaseGoogleAgenda = async () => {
+  try {
+    await AthenasAPI.disconnectCalendar(props.assistantId);
+    googleConnected.value = false;
+    useAlert(t('ATHENAS.EDIT.CALENDAR.DISCONNECTED'));
+  } catch {
+    useAlert(t('ATHENAS.EDIT.CALENDAR.DISCONNECT_FAILED'));
+  }
+};
 
 const errorMessage = (error, fallback) =>
   error?.response?.data?.message || error?.response?.data?.error || fallback;
@@ -149,7 +168,20 @@ const performDelete = async () => {
     <AthenasCalendarConnect
       v-if="view === 'list'"
       :assistant-id="assistantId"
+      :blocked="belezakiConnected"
       @connected="$emit('calendarConnected')"
+      @state="googleConnected = $event"
+    />
+
+    <!-- Below Google, and the same size: for a salon already running on
+         belezaki this is the one that costs nothing to set up, because the
+         services, prices and hours are already entered over there. -->
+    <AthenasBelezakiConnect
+      v-if="view === 'list'"
+      :assistant-id="assistantId"
+      :google-connected="googleConnected"
+      @connected="belezakiConnected = $event"
+      @disconnect-google="releaseGoogleAgenda"
     />
 
     <AthenasIntegrationForm
