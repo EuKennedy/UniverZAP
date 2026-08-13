@@ -512,6 +512,10 @@ Rails.application.routes.draw do
               # operator can run a salon and a clinic without their agendas
               # ever seeing each other.
               resource :calendar_connection, only: [:show, :create, :destroy], controller: 'calendar_connections'
+              # The other agenda: a salon already running on belezaki keeps its
+              # services, professionals and hours there. One agenda per agent —
+              # connecting this one requires the Google grant to be gone.
+              resource :belezaki_connection, only: [:show, :create, :destroy], controller: 'belezaki_connections'
               # "Configurar negócio": the agenda's name, the week and the rules,
               # read and written as one form so the operator cannot leave the
               # screen half-applied.

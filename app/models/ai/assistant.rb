@@ -24,6 +24,11 @@ class Ai::Assistant < ApplicationRecord
                                    inverse_of: :ai_assistant, dependent: :destroy
   has_one :calendar_setting, class_name: 'Ai::Calendar::Setting', foreign_key: :ai_assistant_id,
                              inverse_of: :ai_assistant, dependent: :destroy
+  # The other agenda an agent can book on: a salon that already runs on belezaki
+  # keeps its services, professionals and hours there, so connecting reads them
+  # instead of asking the owner to type everything a second time.
+  has_one :belezaki_connection, class_name: 'Ai::Belezaki::Connection', foreign_key: :ai_assistant_id,
+                                inverse_of: :ai_assistant, dependent: :destroy
   has_many :inboxes, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
   has_many :conversations, foreign_key: :ai_assistant_id, inverse_of: :ai_assistant, dependent: :nullify
   has_many :chat_threads, class_name: 'Ai::ChatThread', foreign_key: :ai_assistant_id,
@@ -57,6 +62,17 @@ class Ai::Assistant < ApplicationRecord
 
   def effective_few_shots
     live_prompt_version&.few_shot_pairs || []
+  end
+
+  # Which agenda this agent books on, answered in one place. The screen, the tool
+  # gate and the mutual block all read this rather than each deciding for itself
+  # — and the answer is at most one, because two agendas would mean two tools
+  # named `consultar_horarios` in the same payload.
+  def agenda_provider
+    return :belezaki if belezaki_connection&.active?
+    return :google if calendar_connections.active.exists?
+
+    nil
   end
 
   def effective_prompt_version
