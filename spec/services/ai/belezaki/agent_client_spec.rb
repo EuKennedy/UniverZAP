@@ -77,7 +77,8 @@ RSpec.describe Ai::Belezaki::AgentClient do
     # Only the parameters the salon whitelists: an extra one is a 400 now, not
     # something it ignores.
     it 'sends only the query parameters the salon accepts' do
-      stub_request(:get, "#{base}/appointments").with(query: { phone: '+55319' })
+      stub_request(:get, "#{base}/appointments")
+        .with(query: { phone: '+55319' })
         .to_return(status: 200, body: '{"appointments":[]}', headers: { 'Content-Type' => 'application/json' })
 
       expect(client.appointments(phone: '+55319')['appointments']).to eq([])

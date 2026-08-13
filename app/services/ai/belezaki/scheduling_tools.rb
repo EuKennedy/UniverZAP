@@ -111,10 +111,22 @@ class Ai::Belezaki::SchedulingTools
     Rails.logger.warn("[Belezaki] could not record agenda failure: #{e.message}")
   end
 
+  READS = %w[listar_servicos listar_profissionais consultar_horarios sugerir_dias meus_agendamentos].freeze
+  WRITES = %w[agendar remarcar desmarcar].freeze
+
+  # Split in two rather than one long case: reads and writes are different
+  # risks, and the branch count of a single table crosses the complexity limit
+  # the moment a ninth tool appears.
   def dispatch(name, input)
     invalid = invalid_input(name, input)
     return invalid if invalid
+    return read(name, input) if READS.include?(name)
+    return write(name, input) if WRITES.include?(name)
 
+    { error: 'unknown_tool', message: "Ferramenta #{name} não existe." }
+  end
+
+  def read(name, input)
     case name
     when 'listar_servicos' then @client.services
     when 'listar_profissionais' then @client.professionals
@@ -122,11 +134,15 @@ class Ai::Belezaki::SchedulingTools
       @client.availability(service_id: input['service_id'], date: input['date'], professional_id: input['professional_id'])
     when 'sugerir_dias'
       @client.availability_month(service_id: input['service_id'], month: input['month'], professional_id: input['professional_id'])
+    else mine
+    end
+  end
+
+  def write(name, input)
+    case name
     when 'agendar' then book(input)
-    when 'meus_agendamentos' then mine
     when 'remarcar' then reschedule(input)
-    when 'desmarcar' then cancel(input)
-    else { error: 'unknown_tool', message: "Ferramenta #{name} não existe." }
+    else cancel(input)
     end
   end
 
