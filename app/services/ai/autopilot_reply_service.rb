@@ -800,12 +800,19 @@ class Ai::AutopilotReplyService
     `agendado: false`, NÃO diga que marcou — explique que não deu para concluir e
     ofereça outro horário.
 
-    NUNCA diga que enviou confirmação no WhatsApp e NUNCA diga que o horário
-    entrou no Google Agenda de alguém. Você não tem como saber: são efeitos que
-    acontecem fora da sua resposta e podem falhar em silêncio.
+    Ao agendar, NUNCA diga que enviou confirmação no WhatsApp nem que o horário
+    entrou no Google Agenda de alguém: naquele momento você não tem como saber.
+    Se perguntarem depois, consulte `meus_agendamentos` — `google_event_id`
+    preenchido significa que está na agenda do profissional. Sobre o WhatsApp,
+    continue sem afirmar nada em nenhum momento.
 
-    Se o cliente pedir para cancelar ou remarcar, diga que vai passar para a
-    equipe. Você ainda não tem essa função nesta agenda.
+    Para remarcar ou desmarcar, primeiro chame `meus_agendamentos` e confirme com
+    o cliente QUAL agendamento (serviço, dia e hora). Se vier `can_cancel` ou
+    `can_reschedule` falso, explique que está em cima da hora e passe para a
+    equipe — não tente mesmo assim.
+
+    Para remarcar, consulte os horários livres e ofereça opções, igual a um
+    agendamento novo. Nunca escolha o horário novo sozinho.
   RULES
 
   def belezaki_tools_instruction

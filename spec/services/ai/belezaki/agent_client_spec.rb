@@ -57,6 +57,33 @@ RSpec.describe Ai::Belezaki::AgentClient do
     end
   end
 
+  describe 'the routes that change an existing appointment' do
+    # POST, so the salon answers 201. A success check written as `== 200` would
+    # turn every completed cancellation into a silent error.
+    it 'treats the 201 of a cancellation as success' do
+      stub_request(:post, "#{base}/appointments/a1/cancel")
+        .to_return(status: 201, body: '{"changed":true}', headers: { 'Content-Type' => 'application/json' })
+
+      expect(client.cancel_appointment('a1', { client_phone: '+55319' })['changed']).to be(true)
+    end
+
+    it 'moves an appointment with PATCH' do
+      stub_request(:patch, "#{base}/appointments/a1")
+        .to_return(status: 200, body: '{"changed":true}', headers: { 'Content-Type' => 'application/json' })
+
+      expect(client.reschedule_appointment('a1', { start: 'x' })['changed']).to be(true)
+    end
+
+    # Only the parameters the salon whitelists: an extra one is a 400 now, not
+    # something it ignores.
+    it 'sends only the query parameters the salon accepts' do
+      stub_request(:get, "#{base}/appointments").with(query: { phone: '+55319' })
+        .to_return(status: 200, body: '{"appointments":[]}', headers: { 'Content-Type' => 'application/json' })
+
+      expect(client.appointments(phone: '+55319')['appointments']).to eq([])
+    end
+  end
+
   describe 'retry' do
     it 'retries a 500 and gives up after two attempts' do
       stub_request(:get, "#{base}/salon").to_return(status: 500, body: '{"message":"boom"}')

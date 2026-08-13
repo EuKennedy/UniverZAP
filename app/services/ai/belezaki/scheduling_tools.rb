@@ -1,58 +1,15 @@
-# Anthropic tool-use definitions + executor for belezaki scheduling.
+# Executes a belezaki scheduling tool call. Schemas live next door in
+# Ai::Belezaki::ToolDefinitions, the same split the Google calendar module uses.
 #
-# `.definitions` returns the tool schemas exposed to Claude (read tools always;
-# the `agendar` write tool only when booking is allowed). An instance executes
-# a tool call by name against the belezaki AgentClient and returns a JSON string
-# (the tool_result content fed back to Claude).
+# `call(name, input) -> String` never raises: a salon that refuses is data the
+# model can act on, not an exception that costs the customer their reply. What
+# comes back is normalised — `agendado`, `remarcado`, `desmarcado` — because the
+# turn guard reads a completed write off those words, and belezaki answers in a
+# shape that matches none of them.
 class Ai::Belezaki::SchedulingTools
+  # Schemas live in Ai::Belezaki::ToolDefinitions.
   def self.definitions(include_booking:)
-    defs = [
-      tool('listar_servicos', 'Lista os serviços agendáveis do salão (id, nome, duração, preço, profissionais).'),
-      tool('listar_profissionais', 'Lista os profissionais do salão e os serviços que cada um faz.'),
-      tool(
-        'consultar_horarios',
-        'Horários livres de um serviço num dia específico. Use antes de agendar.',
-        { service_id: str('id do serviço'), date: str('dia YYYY-MM-DD'), professional_id: str('opcional') },
-        %w[service_id date]
-      ),
-      tool(
-        'sugerir_dias',
-        'Dias com vaga de um serviço num mês (quando o cliente não deu uma data).',
-        { service_id: str('id do serviço'), month: str('mês YYYY-MM'), professional_id: str('opcional') },
-        %w[service_id month]
-      )
-    ]
-    defs << booking_tool if include_booking
-    defs
-  end
-
-  # `professional_id` is required HERE even though the API allows omitting it.
-  # Omitted, the salon opens a separate transaction just to pick somebody — a
-  # second race window — and its auto-choice can land on a professional the book
-  # itself then rejects with a 400, after the customer was already offered the
-  # time. Every slot already carries the id; copying it removes both problems.
-  def self.booking_tool
-    tool(
-      'agendar',
-      'Cria o agendamento na agenda do salão. SÓ chame depois de confirmar nome e horário com o cliente. ' \
-      'Copie start e professional_id EXATAMENTE do slot escolhido em consultar_horarios, sem reformatar.',
-      {
-        service_id: str('id do serviço'),
-        start: str('cópia literal do campo start do slot escolhido'),
-        professional_id: str('id do profissional do MESMO slot'),
-        client_name: str('nome do cliente'),
-        client_phone: str('telefone E.164, ex +5531999999999')
-      },
-      %w[service_id start professional_id client_name client_phone]
-    )
-  end
-
-  def self.tool(name, description, properties = {}, required = [])
-    { name: name, description: description, input_schema: { type: 'object', properties: properties, required: required } }
-  end
-
-  def self.str(description)
-    { type: 'string', description: description }
+    Ai::Belezaki::ToolDefinitions.all(include_booking: include_booking)
   end
 
   def initialize(client, scope:, contact: {}, connection: nil)
@@ -106,7 +63,13 @@ class Ai::Belezaki::SchedulingTools
                            'sem mencionar erro técnico.',
     'http_400' => 'O salão recusou esse dado. Tente outro profissional ou outro horário e não repasse isso ao cliente.',
     'http_429' => 'A agenda não respondeu agora. Diga que a equipe confirma o horário, não ofereça horário ' \
-                  'e não prometa voltar depois.'
+                  'e não prometa voltar depois.',
+    # The salon's own rule, phrased so the agent hands over instead of arguing
+    # about it with the customer.
+    'notice_window_closed' => 'Está perto demais do horário para mexer sozinho. Explique isso e diga que a ' \
+                              'equipe vai confirmar.',
+    'not_cancellable' => 'Esse agendamento não pode mais ser cancelado. Explique e diga que a equipe confirma.',
+    'not_reschedulable' => 'Esse agendamento não pode mais ser remarcado. Explique e diga que a equipe confirma.'
   }.freeze
 
   # 401, 404, 503, 500 e falha de rede caem aqui: a agenda não está acessível, e
@@ -123,18 +86,22 @@ class Ai::Belezaki::SchedulingTools
     { error: error.code.presence || 'belezaki_error', message: ADVICE.fetch(error.code, UNREACHABLE) }.to_json
   end
 
+  # Failures worth putting on the operator's screen, as opposed to blips: 429,
+  # 5xx and network errors were already retried, and stamping one on the card
+  # would cry wolf for something that healed a second later.
+  #
+  # `entitlement_inactive` belongs here — the salon's subscription lapsed, which
+  # will not heal on retry and which the operator cannot fix from this screen.
+  CONFIG_FAILURES = %w[http_401 http_503 entitlement_inactive].freeze
+
   # Only a 404 revokes: the salon or the link itself is gone, and reconnecting is
-  # exactly what fixes it. A 401 or 503 is OUR shared key and OUR configuration —
-  # every connection on the platform is affected, and sending this one operator
-  # to reconnect would fix nothing while making it look like their fault.
+  # exactly what repairs it. A 401, 503 or lapsed subscription is OUR shared key,
+  # OUR configuration or their billing — every connection is affected at once,
+  # and sending this one operator to reconnect fixes nothing while making it look
+  # like their fault.
   #
   # Never raises: a screen that failed to update is not a reason to lose the
-  # reply the customer is waiting for.
-  # A blip is not written down at all: 429, 5xx and network errors were already
-  # retried, and stamping one on the card would cry wolf on the screen for
-  # something that fixed itself a second later.
-  CONFIG_FAILURES = %w[http_401 http_503].freeze
-
+  # reply a customer is waiting for.
   def note_failure(error)
     return if @connection.blank?
 
@@ -156,6 +123,9 @@ class Ai::Belezaki::SchedulingTools
     when 'sugerir_dias'
       @client.availability_month(service_id: input['service_id'], month: input['month'], professional_id: input['professional_id'])
     when 'agendar' then book(input)
+    when 'meus_agendamentos' then mine
+    when 'remarcar' then reschedule(input)
+    when 'desmarcar' then cancel(input)
     else { error: 'unknown_tool', message: "Ferramenta #{name} não existe." }
     end
   end
@@ -174,7 +144,7 @@ class Ai::Belezaki::SchedulingTools
       refuse('Data inválida. Use AAAA-MM-DD com um dia que exista.') unless real_date?(input['date'])
     when 'sugerir_dias'
       refuse('Mês inválido. Use AAAA-MM.') unless real_month?(input['month'])
-    when 'agendar'
+    when 'agendar', 'remarcar'
       refuse('Horário inválido. Copie o campo start do slot escolhido.') unless parsable_time?(input['start'])
     end
   end
@@ -235,6 +205,42 @@ class Ai::Belezaki::SchedulingTools
 
   def confirmed?(appointment)
     appointment['status'].to_s == 'confirmed'
+  end
+
+  # The phone is the scope: the salon answers 404 for an appointment belonging to
+  # anyone else, so this is also what keeps the agent off other people's agendas.
+  def mine
+    phone = booking_phone({})
+    # A conversation with no number on the contact (web widget, for instance)
+    # cannot be scoped, and asking the salon without one would either error or,
+    # worse, be answered for somebody else.
+    return refuse('Não tenho o WhatsApp deste cliente. Peça o número com DDD antes de consultar.') if phone.blank?
+
+    @client.appointments(phone: phone)
+  end
+
+  # `changed: false` means the appointment was ALREADY at that time. That is the
+  # outcome the customer asked for, so it is success — and it is what makes a
+  # retry safe without an idempotency key.
+  def reschedule(input)
+    @performed_write = true
+    response = @client.reschedule_appointment(
+      input['appointment_id'],
+      client_phone: booking_phone(input), start: input['start'], professional_id: input['professional_id']
+    )
+    { remarcado: true, quando: appointment_of(response)&.dig('start') }
+  end
+
+  def cancel(input)
+    @performed_write = true
+    @client.cancel_appointment(
+      input['appointment_id'], client_phone: booking_phone(input), reason: input['reason']
+    )
+    { desmarcado: true }
+  end
+
+  def appointment_of(response)
+    response.is_a?(Hash) ? response['appointment'] : nil
   end
 
   # Idempotency must key on the ACTION (this specific appointment), not on the

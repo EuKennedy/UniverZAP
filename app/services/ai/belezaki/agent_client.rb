@@ -76,6 +76,23 @@ class Ai::Belezaki::AgentClient
     request(:post, '/appointments', { body: payload.to_json }, WRITE_TIMEOUT)
   end
 
+  # This customer's appointments, scoped by their phone. An id belonging to
+  # somebody else answers 404 exactly like one that does not exist, so the agent
+  # cannot go fishing through other people's agendas.
+  def appointments(phone:, from: nil, to: nil)
+    get('/appointments', phone: phone, from: from, to: to)
+  end
+
+  def reschedule_appointment(id, payload)
+    request(:patch, "/appointments/#{CGI.escape(id.to_s)}", { body: payload.to_json }, WRITE_TIMEOUT)
+  end
+
+  # POST, so the salon answers 201 rather than 200. A success check written as
+  # `== 200` would turn every completed cancellation into a silent error.
+  def cancel_appointment(id, payload)
+    request(:post, "/appointments/#{CGI.escape(id.to_s)}/cancel", { body: payload.to_json }, WRITE_TIMEOUT)
+  end
+
   private
 
   def get(path, params = {}, timeout = READ_TIMEOUT)

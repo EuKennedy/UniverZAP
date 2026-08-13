@@ -151,6 +151,93 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       end
     end
 
+    describe 'moving and cancelling what the customer already has' do
+      let(:with_contact) { described_class.new(client, scope: 'conv-1', contact: { name: 'Ana', phone: '+5531999999999' }) }
+
+      # The phone IS the scope: the salon answers 404 for anything belonging to
+      # somebody else. Taking it from the chat text would let a mistyped digit
+      # hand this customer another person's agenda.
+      it 'looks the customer up by the contact record, never by the model input' do
+        allow(client).to receive(:appointments).and_return({ 'appointments' => [] })
+
+        with_contact.call('meus_agendamentos', { 'phone' => '+5531000000000' })
+
+        expect(client).to have_received(:appointments).with(phone: '+5531999999999')
+      end
+
+      it 'asks for the number instead of querying without one' do
+        expect(client).not_to receive(:appointments)
+
+        expect(tools.call('meus_agendamentos', {})).to include('invalid_input')
+      end
+
+      # The turn guard reads a move off "remarcado". belezaki answers
+      # {"appointment": ..., "changed": true}, which matches nothing.
+      it 'says remarcado when the salon moved it' do
+        allow(client).to receive(:reschedule_appointment).and_return(
+          'appointment' => { 'start' => '2027-03-16T14:00:00-03:00' }, 'changed' => true
+        )
+
+        body = JSON.parse(with_contact.call('remarcar', { 'appointment_id' => 'a1',
+                                                          'start' => '2027-03-16T14:00:00-03:00' }))
+
+        expect(body['remarcado']).to be(true)
+        expect(body['quando']).to eq('2027-03-16T14:00:00-03:00')
+      end
+
+      # `changed: false` means it was ALREADY at that time. That is the outcome
+      # the customer asked for, and it is what makes a retry safe without a key.
+      it 'treats an unchanged appointment as success' do
+        allow(client).to receive(:reschedule_appointment).and_return(
+          'appointment' => { 'start' => '2027-03-16T14:00:00-03:00' }, 'changed' => false
+        )
+
+        body = JSON.parse(with_contact.call('remarcar', { 'appointment_id' => 'a1',
+                                                          'start' => '2027-03-16T14:00:00-03:00' }))
+
+        expect(body['remarcado']).to be(true)
+      end
+
+      it 'says desmarcado when the salon cancelled it' do
+        allow(client).to receive(:cancel_appointment).and_return('changed' => true)
+
+        body = JSON.parse(with_contact.call('desmarcar', { 'appointment_id' => 'a1' }))
+
+        expect(body['desmarcado']).to be(true)
+      end
+
+      it 'sends the contact phone and the reason on a cancellation' do
+        allow(client).to receive(:cancel_appointment).and_return('changed' => true)
+
+        with_contact.call('desmarcar', { 'appointment_id' => 'a1', 'reason' => 'imprevisto' })
+
+        expect(client).to have_received(:cancel_appointment)
+          .with('a1', hash_including(client_phone: '+5531999999999', reason: 'imprevisto'))
+      end
+
+      # Too close to the appointment is the salon's rule, and the agent has to
+      # hand over rather than argue about it with the customer.
+      it 'tells the agent to hand over when the notice window closed' do
+        allow(client).to receive(:cancel_appointment)
+          .and_raise(Ai::Belezaki::AgentClient::Error.new('x', code: 'notice_window_closed'))
+
+        body = JSON.parse(with_contact.call('desmarcar', { 'appointment_id' => 'a1' }))
+
+        expect(body['error']).to eq('notice_window_closed')
+        expect(body['message']).to include('equipe vai confirmar')
+      end
+
+      # A move that timed out may still have landed, so the turn must not replay.
+      it 'marks the turn as written even when the move fails' do
+        allow(client).to receive(:reschedule_appointment).and_raise(Ai::Belezaki::AgentClient::Error, 'timeout')
+        executor = with_contact
+
+        executor.call('remarcar', { 'appointment_id' => 'a1', 'start' => '2027-03-16T14:00:00-03:00' })
+
+        expect(executor.performed_write?).to be(true)
+      end
+    end
+
     describe 'writing the failure down on the connection' do
       let(:account) { create(:account) }
       let(:assistant) { create(:ai_assistant, account: account) }
