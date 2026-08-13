@@ -81,7 +81,7 @@ class Ai::Belezaki::SchedulingTools
     result = dispatch(name, input)
     result.is_a?(String) ? result : result.to_json
   rescue Ai::Belezaki::AgentClient::Error => e
-    { error: 'belezaki_error', message: e.message }.to_json
+    salon_error(e)
   rescue StandardError => e
     # Never crash the tool loop / autopilot job — hand the error back to Claude
     # as data so it can apologise and continue.
@@ -89,7 +89,32 @@ class Ai::Belezaki::SchedulingTools
     { error: 'tool_error', message: 'Não consegui completar essa ação agora.' }.to_json
   end
 
+  # What the model should DO, per error code — never what the salon SAID.
+  #
+  # Their validation messages are an English array written for us, and their
+  # business ones are technical: "Profissional indisponível" means the
+  # professional is hidden from the public, which is nothing the customer can
+  # act on. Every line says the next move, because left as a bare fact the model
+  # fills the gap with "volto já já" — a follow-up it has no turn to perform.
+  ADVICE = {
+    'slot_taken' => 'Esse horário acabou de ser preenchido. Consulte os horários de novo e ofereça outras opções.',
+    'validation_failed' => 'Não consegui montar esse pedido. Consulte os horários de novo e ofereça outro, ' \
+                           'sem mencionar erro técnico.',
+    'http_400' => 'O salão recusou esse dado. Tente outro profissional ou outro horário e não repasse isso ao cliente.',
+    'http_429' => 'A agenda não respondeu agora. Diga que a equipe confirma o horário, não ofereça horário ' \
+                  'e não prometa voltar depois.'
+  }.freeze
+
+  # 401, 404, 503, 500 e falha de rede caem aqui: a agenda não está acessível, e
+  # a única resposta honesta é parar de oferecer horário.
+  UNREACHABLE = 'Não consegui falar com a agenda do salão. Diga que a equipe confirma o horário, ' \
+                'não ofereça horário e não prometa voltar depois.'
+
   private
+
+  def salon_error(error)
+    { error: error.code.presence || 'belezaki_error', message: ADVICE.fetch(error.code, UNREACHABLE) }.to_json
+  end
 
   def dispatch(name, input)
     invalid = invalid_input(name, input)

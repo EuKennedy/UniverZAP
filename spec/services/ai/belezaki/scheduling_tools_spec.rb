@@ -113,7 +113,42 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
     it 'returns belezaki errors as data instead of raising' do
       allow(client).to receive(:services).and_raise(Ai::Belezaki::AgentClient::Error, 'boom')
 
-      expect(tools.call('listar_servicos', {})).to include('belezaki_error')
+      expect(tools.call('listar_servicos', {})).to include('Não consegui falar com a agenda')
+    end
+
+    describe 'what the model is told when the salon refuses' do
+      def raising(error)
+        allow(client).to receive(:availability).and_raise(error)
+        JSON.parse(tools.call('consultar_horarios', { 'service_id' => 's1', 'date' => '2026-06-20' }))
+      end
+
+      # A taken slot is a normal turn in a booking conversation, not a failure —
+      # but only if the code survives the executor.
+      it 'keeps the code so a taken slot is not just an error' do
+        body = raising(Ai::Belezaki::AgentClient::Error.new('Horário não está mais disponível.', code: 'slot_taken'))
+
+        expect(body['error']).to eq('slot_taken')
+        expect(body['message']).to include('Consulte os horários de novo')
+      end
+
+      # Their validation strings are an English array written for us. The
+      # customer must never see one.
+      it 'never passes the salon own words through' do
+        body = raising(Ai::Belezaki::AgentClient::Error.new(
+                         'Dados inválidos.', code: 'validation_failed',
+                         validation: ['idempotency_key must be longer']
+                       ))
+
+        expect(body['message']).not_to include('idempotency_key')
+      end
+
+      # Left as a bare fact, the model fills the gap with "volto já já" — a
+      # follow-up it has no turn to perform.
+      it 'tells the agent to stop offering times when the agenda is unreachable' do
+        body = raising(Ai::Belezaki::AgentClient::Error.new('boom', code: 'http_503'))
+
+        expect(body['message']).to include('não ofereça horário')
+      end
     end
 
     describe 'the booking answer' do

@@ -459,6 +459,26 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(tool_names(assistant.reload)).not_to include('agendar')
     end
 
+    # Tools without discipline is exactly what produced a confirmed appointment
+    # that never existed on the Google side.
+    it 'ships the salon agenda rules to a connected agent' do
+      Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
+
+      prompt = described_class.new(conversation: conversation, assistant: assistant)
+                              .send(:system_prompt_segments).join("\n")
+
+      expect(prompt).to include('AGENDA DO SALÃO CONECTADA')
+      # The two things it cannot see and must therefore never claim.
+      expect(prompt).to include('NUNCA diga que enviou confirmação no WhatsApp')
+    end
+
+    it 'says nothing about the salon agenda to an agent without one' do
+      prompt = described_class.new(conversation: conversation, assistant: assistant)
+                              .send(:system_prompt_segments).join("\n")
+
+      expect(prompt).not_to include('AGENDA DO SALÃO CONECTADA')
+    end
+
     # The frozen id is the point: resolving the account again on every reply is
     # what could move a live agent onto another salon's agenda.
     it 'builds the client from the connection id, not by resolving the account' do

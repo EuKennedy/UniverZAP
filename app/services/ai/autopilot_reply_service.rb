@@ -280,9 +280,6 @@ class Ai::AutopilotReplyService
     OVERRIDE
   end
 
-  # When the account is linked to belezaki, run the Claude tool-use loop so the
-  # agent can check the salon agenda and create appointments mid-conversation.
-  # Otherwise fall back to the plain single-shot reply.
   # Every tool this agent owns, in ONE loop: HTTP integrations, the Google
   # agenda and the belezaki agenda. A salon sells products and books chairs, and
   # picking one would mean the agent could never reach its calendar because a
@@ -625,6 +622,7 @@ class Ai::AutopilotReplyService
       custom_tools_instruction,
       calendar_tools_instruction,
       calendar_menu_block,
+      belezaki_tools_instruction,
       behavior_flags_instruction,
       continuity_examples
     ]
@@ -777,6 +775,42 @@ class Ai::AutopilotReplyService
     return nil if calendar_definitions.blank?
 
     SCHEDULING_DISCIPLINE
+  end
+
+  # The salon's own agenda, which is NOT ours: we cannot see what it did after
+  # answering, so most of these rules are about what the agent must not claim.
+  BELEZAKI_DISCIPLINE = <<~RULES.strip.freeze
+    AGENDA DO SALÃO CONECTADA. Você marca de verdade, na agenda real.
+
+    Use `listar_servicos` uma vez e reaproveite; use `consultar_horarios` SEMPRE
+    antes de oferecer qualquer horário. Nunca invente horário, nunca arredonde e
+    nunca diga "por volta de".
+
+    Ao agendar, copie `start` e `professional_id` EXATAMENTE do horário que o
+    cliente escolheu na lista. Não reformate, não converta fuso, não recalcule:
+    o salão só aceita o horário idêntico ao que ele mesmo devolveu, e qualquer
+    diferença faz parecer que a vaga foi ocupada quando ela nunca existiu.
+
+    Antes de chamar `agendar`, repita serviço, profissional, dia e hora e espere
+    o cliente confirmar. Depois do "sim", consulte os horários DE NOVO: se o
+    horário sumiu, avise e ofereça outros, nunca marque outro por conta própria.
+
+    Só está agendado quando a ferramenta responder `agendado: true`. Se responder
+    `agendado: false`, NÃO diga que marcou — explique que não deu para concluir e
+    ofereça outro horário.
+
+    NUNCA diga que enviou confirmação no WhatsApp e NUNCA diga que o horário
+    entrou no Google Agenda de alguém. Você não tem como saber: são efeitos que
+    acontecem fora da sua resposta e podem falhar em silêncio.
+
+    Se o cliente pedir para cancelar ou remarcar, diga que vai passar para a
+    equipe. Você ainda não tem essa função nesta agenda.
+  RULES
+
+  def belezaki_tools_instruction
+    return nil if belezaki_connection.blank?
+
+    BELEZAKI_DISCIPLINE
   end
 
   CALENDAR_MENU_HEADER = <<~HEADER.strip.freeze
