@@ -474,6 +474,20 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(prompt).to include('NUNCA diga que enviou confirmação no WhatsApp')
     end
 
+    # The salon already decided whether this appointment can still be touched,
+    # and it says so on every row. An agent that recomputed the window itself
+    # would try anyway and eat a 409 in front of the customer.
+    it 'tells the agent to obey the salon own can_cancel flag' do
+      Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
+
+      prompt = described_class.new(conversation: conversation, assistant: assistant)
+                              .send(:system_prompt_segments).join("\n")
+
+      expect(prompt).to include('can_cancel').and include('passe para a')
+      # The line that came out the day the salon shipped the routes.
+      expect(prompt).not_to include('Você ainda não tem essa função')
+    end
+
     it 'says nothing about the salon agenda to an agent without one' do
       prompt = described_class.new(conversation: conversation, assistant: assistant)
                               .send(:system_prompt_segments).join("\n")
