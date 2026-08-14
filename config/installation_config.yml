@@ -18,6 +18,11 @@
   value: 'UniverZAP'
   display_title: 'Installation Name'
   description: 'The installation wide name that would be used in the dashboard, title etc.'
+- name: SIDEBAR_LAYOUT
+  value: {}
+  locked: true
+  display_title: 'Sidebar Layout'
+  description: 'How the sidebar is organised for the whole installation. Written by the organiser screen in Settings, never by hand — it is a structure, not a setting. Empty means the menu the product ships with.'
 - name: LOGO_THUMBNAIL
   value: '/brand-assets/logo_thumbnail.png'
   display_title: 'Logo Thumbnail'

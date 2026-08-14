@@ -647,6 +647,10 @@ Rails.application.routes.draw do
       # end of account scoped api routes
       # ----------------------------------
 
+      # Not account scoped on purpose: one layout serves every tenant, and only
+      # a super admin may write it.
+      resource :sidebar_layout, only: [:update], controller: 'sidebar_layout'
+
       namespace :integrations do
         resources :webhooks, only: [:create]
       end

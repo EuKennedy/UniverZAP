@@ -13,6 +13,8 @@ import { useWindowSize, useEventListener } from '@vueuse/core';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
+import { applyLayout } from './helper/applyLayout';
+import { useSidebarLayout } from 'dashboard/composables/useSidebarLayout';
 import SidebarProfileMenu from './SidebarProfileMenu.vue';
 import SidebarChangelogCard from './SidebarChangelogCard.vue';
 import SidebarChangelogButton from './SidebarChangelogButton.vue';
@@ -217,7 +219,7 @@ const newReportRoutes = () => [
 
 const reportRoutes = computed(() => newReportRoutes());
 
-const menuItems = computed(() => {
+const builtMenu = computed(() => {
   return [
     {
       name: 'Inbox',
@@ -781,6 +783,14 @@ const menuItems = computed(() => {
     },
   ];
 });
+// The installation's layout, arranged over the menu this component just built.
+// applyLayout does the whole job and falls back to the untouched menu whenever
+// there is nothing usable to apply — a corrupt preference must never take the
+// product off the air.
+const { layout: sidebarLayout } = useSidebarLayout();
+const menuItems = computed(() =>
+  applyLayout(builtMenu.value, sidebarLayout.value)
+);
 </script>
 
 <template>

@@ -6,6 +6,7 @@ class DashboardController < ActionController::Base
     LOGO_DARK
     LOGO_THUMBNAIL
     INSTALLATION_NAME
+    SIDEBAR_LAYOUT
     WIDGET_BRAND_URL
     TERMS_URL
     BRAND_URL
