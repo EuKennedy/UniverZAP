@@ -938,13 +938,14 @@
     "NO_GROUPS": "Nenhum grupo ainda. Crie um e escolha o que vai dentro dele.",
     "GROUP_NAME": "Nome do grupo",
     "LOOSE": "Itens do menu",
-    "LOOSE_HINT": "Escolha em qual grupo cada item vai. Deixe em \"Topo\" para ele ficar solto na barra, sem precisar abrir nada — é o que mantém a Caixa de entrada a um clique.",
+    "LOOSE_HINT": "Arraste um item para dentro de um grupo. O que ficar aqui aparece solto no topo da barra, sem precisar abrir nada. Clique no nome para renomear, e no olho para esconder.",
     "TOP": "Topo",
     "RENAME": "Renomear",
     "PREVIEW": "Como vai ficar",
     "SAVE": "Salvar",
     "SAVED": "Menu salvo. Todos os clientes já veem assim.",
     "SAVE_FAILED": "Não consegui salvar o menu. Tente de novo.",
-    "RESET": "Voltar ao padrão"
+    "RESET": "Voltar ao padrão",
+    "DROP_HERE": "Arraste itens de cima para cá."
   }
 }

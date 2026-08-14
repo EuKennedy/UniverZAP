@@ -938,13 +938,14 @@
     "NO_GROUPS": "No groups yet. Create one and choose what goes inside.",
     "GROUP_NAME": "Group name",
     "LOOSE": "Menu items",
-    "LOOSE_HINT": "Choose which group each item belongs to. Leave it on \"Top\" to keep it loose in the bar, with nothing to open — that is what keeps the Inbox one click away.",
+    "LOOSE_HINT": "Drag an item into a group. Whatever stays here sits loose at the top of the bar, with nothing to open. Click a name to rename it, and the eye to hide it.",
     "TOP": "Top",
     "RENAME": "Rename",
     "PREVIEW": "How it will look",
     "SAVE": "Save",
     "SAVED": "Menu saved. Every customer sees it now.",
     "SAVE_FAILED": "Could not save the menu. Try again.",
-    "RESET": "Back to default"
+    "RESET": "Back to default",
+    "DROP_HERE": "Drag items here from above."
   }
 }
