@@ -479,7 +479,19 @@ RSpec.describe Ai::AutopilotReplyService do
     # stops replying — to every customer, instantly — which is why one agenda is
     # chosen here rather than trusted to the connect-time guards.
     it 'never puts both agendas in the same payload' do
-      connect_calendar!
+      # Built here rather than through the helper next door: that one lives in a
+      # different describe, and this case is about the two agendas colliding.
+      calendar = Ai::Calendar::Connection.create!(
+        ai_assistant: assistant, account: account,
+        google_email: 'salao@exemplo.com', encrypted_refresh_token: 'token'
+      )
+      Ai::Calendar::Professional.create!(
+        connection: calendar, ai_assistant: assistant, account: account,
+        name: 'Agenda do salão', calendar_id: 'primary'
+      )
+      Ai::Calendar::Service.create!(
+        ai_assistant: assistant, account: account, name: 'Progressiva', duration_minutes: 90
+      )
       Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
 
       names = described_class.new(conversation: conversation, assistant: assistant.reload)
