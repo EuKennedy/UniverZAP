@@ -474,6 +474,22 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(prompt).to include('NUNCA diga que enviou confirmação no WhatsApp')
     end
 
+    # Anthropic rejects the ENTIRE request with a 400 when a tool name repeats,
+    # and the two agendas share five of them. An agent holding both therefore
+    # stops replying — to every customer, instantly — which is why one agenda is
+    # chosen here rather than trusted to the connect-time guards.
+    it 'never puts both agendas in the same payload' do
+      connect_calendar!
+      Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
+
+      names = described_class.new(conversation: conversation, assistant: assistant.reload)
+                             .send(:own_tools).definitions.map { |definition| definition[:name] }
+
+      expect(names).to eq(names.uniq)
+      # belezaki wins the tie: it is the one the operator most recently chose.
+      expect(names).to include('listar_servicos')
+    end
+
     # price_cents is the LIST price, not what a promotion actually charges. The
     # agent quoting it as final means the customer arrives expecting one number
     # and pays another — with the AI as the one who promised.

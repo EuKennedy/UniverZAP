@@ -253,7 +253,8 @@
         "ERRORS": {
           "NO_REFRESH_TOKEN": "O Google não devolveu a permissão de acesso contínuo. Conecte de novo e aceite todas as permissões na tela do Google.",
           "INVALID_STATE": "O pedido de conexão expirou. Clique em Conectar de novo.",
-          "AGENT_NOT_FOUND": "Esse agente não existe mais."
+          "AGENT_NOT_FOUND": "Esse agente não existe mais.",
+          "AGENDA_TAKEN": "Este agente já usa a agenda do belezaki. Desconecte-a antes de ligar o Google Agenda — um agente marca em uma agenda só."
         },
         "BLOCKED": "Bloqueado: este agente está usando a agenda do belezaki."
       },

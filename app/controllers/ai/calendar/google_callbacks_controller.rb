@@ -30,6 +30,11 @@ class Ai::Calendar::GoogleCallbacksController < ApplicationController
 
     Ai::Calendar::ConnectService.new(assistant: assistant, token: token).perform
     redirect_to success_path(assistant.account_id, assistant.id)
+  rescue Ai::Calendar::ConnectService::AgendaTaken
+    # Google grant already given at this point, and deliberately not kept: an
+    # agent holding both agendas sends Anthropic duplicate tool names and stops
+    # replying to everyone. The operator is sent back with the reason instead.
+    redirect_to failure_path(assistant.account_id, assistant.id, 'agenda_taken')
   end
 
   def verified_state

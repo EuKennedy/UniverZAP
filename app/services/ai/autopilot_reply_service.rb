@@ -310,8 +310,15 @@ class Ai::AutopilotReplyService
     @own_tools ||= begin
       parts = []
       parts << [custom_tool_executor.definitions, custom_tool_executor] if custom_tools.any?
-      parts << [calendar_definitions, calendar_executor] if calendar_definitions.present?
-      parts << [belezaki_definitions, belezaki_executor] if belezaki_connection.present?
+      # Exactly ONE agenda, decided by the model rather than by both branches
+      # answering yes. The two providers declare five tool names in common
+      # (consultar_horarios, agendar, meus_agendamentos, remarcar, desmarcar),
+      # and Anthropic rejects the whole request with a 400 when a name repeats —
+      # so an agent holding both stops replying at all, to everyone, instantly.
+      # Guarding only at connect time was not enough: it left the reverse order
+      # open, and any row that predates the guard reaches this line anyway.
+      parts << [calendar_definitions, calendar_executor] if agenda == :google && calendar_definitions.present?
+      parts << [belezaki_definitions, belezaki_executor] if agenda == :belezaki
       Ai::Agent::CompositeExecutor.new(parts)
     end
   end
@@ -344,6 +351,13 @@ class Ai::AutopilotReplyService
 
     connection = @assistant.belezaki_connection
     @belezaki_connection = connection&.active? ? connection : nil
+  end
+
+  # Ai::Assistant#agenda_provider is the single answer to "which agenda does this
+  # agent book on". belezaki wins a tie because it is the one the operator most
+  # recently chose on purpose.
+  def agenda
+    @agenda ||= @assistant.agenda_provider
   end
 
   def belezaki_definitions

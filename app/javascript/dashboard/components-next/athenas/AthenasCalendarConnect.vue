@@ -97,6 +97,8 @@ const failureMessage = reason => {
     return t('ATHENAS.EDIT.CALENDAR.ERRORS.INVALID_STATE');
   if (reason === 'agent_not_found')
     return t('ATHENAS.EDIT.CALENDAR.ERRORS.AGENT_NOT_FOUND');
+  if (reason === 'agenda_taken')
+    return t('ATHENAS.EDIT.CALENDAR.ERRORS.AGENDA_TAKEN');
   return t('ATHENAS.EDIT.CALENDAR.CONNECT_FAILED');
 };
 

@@ -6,6 +6,13 @@
 # attempt must refresh the token rather than leave two grants where the agent
 # has to guess which one is live.
 class Ai::Calendar::ConnectService
+  # Raised rather than silently taking over: the belezaki agenda declares five of
+  # the same tool names, and an agent holding both sends Anthropic a duplicate
+  # name — which fails the whole request with a 400 and stops the agent replying
+  # to anyone. The belezaki side has refused this since it shipped; this is the
+  # missing half, for an operator who connects the agendas in the other order.
+  class AgendaTaken < StandardError; end
+
   # Google's alias for the calendar the account already uses. Writing there is
   # deliberate: whatever the owner puts in it by hand — the dentist, the lunch —
   # then blocks a slot without anybody having to copy it into our tables.
@@ -18,6 +25,8 @@ class Ai::Calendar::ConnectService
   end
 
   def perform
+    raise AgendaTaken, 'belezaki agenda connected' if @assistant.belezaki_connection&.active?
+
     profile = fetch_profile
     connection = upsert_connection(profile)
     ensure_professional(connection, profile)

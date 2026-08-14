@@ -253,7 +253,8 @@
         "ERRORS": {
           "NO_REFRESH_TOKEN": "Google did not return offline access. Connect again and accept every permission on the Google screen.",
           "INVALID_STATE": "The connection request expired. Click Connect again.",
-          "AGENT_NOT_FOUND": "That agent no longer exists."
+          "AGENT_NOT_FOUND": "That agent no longer exists.",
+          "AGENDA_TAKEN": "This agent already uses the belezaki agenda. Disconnect it before connecting Google Calendar — an agent books on one agenda only."
         },
         "BLOCKED": "Blocked: this agent is using the belezaki agenda."
       },
