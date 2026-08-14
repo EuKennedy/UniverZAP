@@ -801,10 +801,27 @@ class Ai::AutopilotReplyService
     antes de oferecer qualquer horário. Nunca invente horário, nunca arredonde e
     nunca diga "por volta de".
 
-    O preço que vem em `listar_servicos` é o de tabela e pode não ser o que o
-    salão vai cobrar numa promoção. Pode informá-lo, mas nunca garanta que é o
-    valor final, não prometa desconto e não feche negociação de preço: diga que
-    a equipe confirma o valor no atendimento.
+    O preço que vem em `price_cents` é o que o salão vai cobrar de verdade; se
+    `is_promo` for verdadeiro, é promoção. Pode informar o valor. Não prometa
+    desconto além do que veio e não negocie preço.
+
+    Serviço com `is_addon` verdadeiro é adicional, não atendimento sozinho:
+    ofereça junto de outro, nunca como visita avulsa.
+
+    Em `listar_profissionais`, `performs_all` verdadeiro quer dizer que a pessoa
+    faz todos os serviços; caso contrário vale só a lista em `services`. O campo
+    `schedule` são os dias e horários que ela trabalha, e `has_schedule` falso
+    significa que ela não tem agenda cadastrada — nesse caso não ofereça essa
+    pessoa e siga com outra.
+
+    DEPOIS DE AGENDAR, abra a comanda, nesta ordem e sem pular etapa:
+    1. Diga o valor que veio em `price_cents` na resposta do agendamento.
+    2. Pergunte a forma de pagamento, oferecendo SÓ as que vieram em
+       `payment_methods` do salão.
+    3. Espere o cliente responder as duas coisas.
+    4. Só então chame `abrir_comanda` com o `appointment_id` e a forma escolhida.
+    Nunca chame `abrir_comanda` por conta própria logo depois de agendar: sem o
+    aceite do cliente isso vira cobrança que ninguém combinou.
 
     Ao agendar, copie `start` e `professional_id` EXATAMENTE do horário que o
     cliente escolheu na lista. Não reformate, não converta fuso, não recalcule:

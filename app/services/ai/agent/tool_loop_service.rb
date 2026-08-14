@@ -31,7 +31,7 @@ class Ai::Agent::ToolLoopService
   # RESULT rather than trusting performed_write?, which is set before the work
   # on purpose (a timed-out write may still have landed) and so answers
   # "attempted", not "done".
-  WRITE_CONFIRMED = /"(?:agendado|remarcado|desmarcado)"\s*:\s*true/i
+  WRITE_CONFIRMED = /"(?:agendado|remarcado|desmarcado|comanda_aberta)"\s*:\s*true/i
 
   # First person, past or present, next to a time or a weekday.
   BOOKING_CLAIM = /

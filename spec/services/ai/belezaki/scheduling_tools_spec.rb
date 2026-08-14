@@ -238,6 +238,55 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       end
     end
 
+    describe 'the till record' do
+      let(:with_contact) { described_class.new(client, scope: 'conv-1', contact: { name: 'Ana', phone: '+5531999999999' }) }
+
+      # The salon answers {"comanda": ..., "confirmado": true}, which the turn
+      # guard reads as no write at all — so a comanda that really opened would
+      # have had its reply suppressed as a false confirmation.
+      it 'says comanda_aberta so the reply is not thrown away' do
+        allow(client).to receive(:open_comanda)
+          .and_return('comanda' => { 'total_cents' => 15_000, 'intended_payment_method' => 'PIX' })
+
+        body = JSON.parse(with_contact.call('abrir_comanda',
+                                            { 'appointment_id' => 'a1', 'forma_pagamento' => 'PIX' }))
+
+        expect(body['comanda_aberta']).to be(true)
+        expect(body['valor_centavos']).to eq(15_000)
+        expect(body['forma_pagamento']).to eq('PIX')
+      end
+
+      it 'takes the phone from the contact, never from the model' do
+        allow(client).to receive(:open_comanda).and_return('comanda' => {})
+
+        with_contact.call('abrir_comanda',
+                          { 'appointment_id' => 'a1', 'forma_pagamento' => 'PIX', 'client_phone' => '+5531000000000' })
+
+        expect(client).to have_received(:open_comanda)
+          .with('a1', hash_including(client_phone: '+5531999999999'))
+      end
+
+      # Money moved, or may have. The turn must not replay either way.
+      it 'marks the turn as written even when the salon refuses' do
+        allow(client).to receive(:open_comanda).and_raise(Ai::Belezaki::AgentClient::Error, 'timeout')
+        executor = with_contact
+
+        executor.call('abrir_comanda', { 'appointment_id' => 'a1', 'forma_pagamento' => 'PIX' })
+
+        expect(executor.performed_write?).to be(true)
+      end
+
+      # Before these codes existed the agent could only improvise an excuse.
+      it 'tells the agent to offer somebody else when the professional is refused' do
+        allow(client).to receive(:services)
+          .and_raise(Ai::Belezaki::AgentClient::Error.new('x', code: 'professional_does_not_offer'))
+
+        body = JSON.parse(tools.call('listar_servicos', {}))
+
+        expect(body['message']).to include('Consulte quem faz')
+      end
+    end
+
     describe 'writing the failure down on the connection' do
       let(:account) { create(:account) }
       let(:assistant) { create(:ai_assistant, account: account) }

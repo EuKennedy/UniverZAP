@@ -7,7 +7,7 @@
 class Ai::Belezaki::ToolDefinitions
   def self.all(include_booking:)
     defs = [services_tool, professionals_tool, availability_tool, month_tool, appointments_tool]
-    defs += [booking_tool, reschedule_tool, cancel_tool] if include_booking
+    defs += [booking_tool, comanda_tool, reschedule_tool, cancel_tool] if include_booking
     defs
   end
 
@@ -67,6 +67,22 @@ class Ai::Belezaki::ToolDefinitions
         client_phone: str('telefone E.164, ex +5531999999999')
       },
       %w[service_id start professional_id client_name client_phone]
+    )
+  end
+
+  # Separate from `agendar` on purpose, and the prompt spells out the order:
+  # reserve the chair, say the price out loud, offer only the methods the salon
+  # takes, wait for a yes, THEN open. A comanda opened for someone who never
+  # agreed is a phantom line in the salon's takings.
+  def self.comanda_tool
+    tool(
+      'abrir_comanda',
+      'Abre a comanda (registro de faturamento) de um agendamento. SÓ chame depois de dizer o valor ao ' \
+      'cliente e ele confirmar que aceita, e depois de ele escolher a forma de pagamento. Nunca chame por ' \
+      'conta própria logo após agendar.',
+      { appointment_id: str('id devolvido por agendar ou por meus_agendamentos'),
+        forma_pagamento: str('PIX, CREDIT, DEBIT, CASH ou PACKAGE — só as que o salão aceita') },
+      %w[appointment_id forma_pagamento]
     )
   end
 

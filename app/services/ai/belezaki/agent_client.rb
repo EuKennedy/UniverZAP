@@ -89,6 +89,12 @@ class Ai::Belezaki::AgentClient
 
   # POST, so the salon answers 201 rather than 200. A success check written as
   # `== 200` would turn every completed cancellation into a silent error.
+  # Opens the salon's till record. Also a POST, so also 201 — the same trap the
+  # cancellation carries.
+  def open_comanda(id, payload)
+    request(:post, "/appointments/#{CGI.escape(id.to_s)}/comanda", { body: payload.to_json }, WRITE_TIMEOUT)
+  end
+
   def cancel_appointment(id, payload)
     request(:post, "/appointments/#{CGI.escape(id.to_s)}/cancel", { body: payload.to_json }, WRITE_TIMEOUT)
   end

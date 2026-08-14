@@ -3,7 +3,8 @@
 #
 # `call(name, input) -> String` never raises: a salon that refuses is data the
 # model can act on, not an exception that costs the customer their reply. What
-# comes back is normalised — `agendado`, `remarcado`, `desmarcado` — because the
+# comes back is normalised — `agendado`, `comanda_aberta`, `remarcado`,
+# `desmarcado` — because the
 # turn guard reads a completed write off those words, and belezaki answers in a
 # shape that matches none of them.
 class Ai::Belezaki::SchedulingTools
@@ -50,40 +51,11 @@ class Ai::Belezaki::SchedulingTools
     { error: 'tool_error', message: 'Não consegui completar essa ação agora.' }.to_json
   end
 
-  # What the model should DO, per error code — never what the salon SAID.
-  #
-  # Their validation messages are an English array written for us, and their
-  # business ones are technical: "Profissional indisponível" means the
-  # professional is hidden from the public, which is nothing the customer can
-  # act on. Every line says the next move, because left as a bare fact the model
-  # fills the gap with "volto já já" — a follow-up it has no turn to perform.
-  ADVICE = {
-    'slot_taken' => 'Esse horário acabou de ser preenchido. Consulte os horários de novo e ofereça outras opções.',
-    'validation_failed' => 'Não consegui montar esse pedido. Consulte os horários de novo e ofereça outro, ' \
-                           'sem mencionar erro técnico.',
-    'http_400' => 'O salão recusou esse dado. Tente outro profissional ou outro horário e não repasse isso ao cliente.',
-    'http_429' => 'A agenda não respondeu agora. Diga que a equipe confirma o horário, não ofereça horário ' \
-                  'e não prometa voltar depois.',
-    # The salon's own rule, phrased so the agent hands over instead of arguing
-    # about it with the customer.
-    'notice_window_closed' => 'Está perto demais do horário para mexer sozinho. Explique isso e diga que a ' \
-                              'equipe vai confirmar.',
-    'not_cancellable' => 'Esse agendamento não pode mais ser cancelado. Explique e diga que a equipe confirma.',
-    'not_reschedulable' => 'Esse agendamento não pode mais ser remarcado. Explique e diga que a equipe confirma.'
-  }.freeze
-
-  # 401, 404, 503, 500 e falha de rede caem aqui: a agenda não está acessível, e
-  # a única resposta honesta é parar de oferecer horário.
-  UNREACHABLE = <<~ADVICE.squish.freeze
-    Não consegui falar com a agenda do salão. Diga que a equipe confirma o horário,
-    não ofereça horário e não prometa voltar depois.
-  ADVICE
-
   private
 
   def salon_error(error)
     note_failure(error)
-    { error: error.code.presence || 'belezaki_error', message: ADVICE.fetch(error.code, UNREACHABLE) }.to_json
+    { error: error.code.presence || 'belezaki_error', message: Ai::Belezaki::ErrorAdvice.for(error.code) }.to_json
   end
 
   # Failures worth putting on the operator's screen, as opposed to blips: 429,
@@ -112,7 +84,7 @@ class Ai::Belezaki::SchedulingTools
   end
 
   READS = %w[listar_servicos listar_profissionais consultar_horarios sugerir_dias meus_agendamentos].freeze
-  WRITES = %w[agendar remarcar desmarcar].freeze
+  WRITES = %w[agendar abrir_comanda remarcar desmarcar].freeze
 
   # Split in two rather than one long case: reads and writes are different
   # risks, and the branch count of a single table crosses the complexity limit
@@ -141,6 +113,7 @@ class Ai::Belezaki::SchedulingTools
   def write(name, input)
     case name
     when 'agendar' then book(input)
+    when 'abrir_comanda' then open_comanda(input)
     when 'remarcar' then reschedule(input)
     else cancel(input)
     end
@@ -215,8 +188,12 @@ class Ai::Belezaki::SchedulingTools
     return { agendado: false, motivo: 'o salão não confirmou o agendamento' } unless appointment.is_a?(Hash)
     return { agendado: false, motivo: "situação do agendamento: #{appointment['status']}" } unless confirmed?(appointment)
 
+    # `valor_centavos` is what the agent must say out loud before opening the
+    # comanda. Quoting the catalogue instead is how a customer hears one number
+    # and the till takes another.
     { agendado: true, id: appointment['id'], inicio: appointment['start'],
-      servico: appointment['service'], profissional: appointment['professional'] }
+      servico: appointment['service'], profissional: appointment['professional'],
+      valor_centavos: appointment['price_cents'] }
   end
 
   def confirmed?(appointment)
@@ -245,6 +222,26 @@ class Ai::Belezaki::SchedulingTools
       client_phone: booking_phone(input), start: input['start'], professional_id: input['professional_id']
     )
     { remarcado: true, quando: appointment_of(response)&.dig('start') }
+  end
+
+  # The salon answers {"comanda": {...}, "confirmado": true} — a shape the turn
+  # guard reads as no write at all. Normalised like the others, so a successful
+  # billing record is not suppressed as a false confirmation.
+  #
+  # Idempotent on the salon side: a nervous retry, or a client switching from PIX
+  # to cash, updates the same comanda instead of opening a second one.
+  def open_comanda(input)
+    @performed_write = true
+    response = @client.open_comanda(
+      input['appointment_id'],
+      client_phone: booking_phone(input), payment_method: input['forma_pagamento']
+    )
+    comanda = response.is_a?(Hash) ? response['comanda'] : nil
+    {
+      comanda_aberta: true,
+      valor_centavos: comanda&.dig('total_cents'),
+      forma_pagamento: comanda&.dig('intended_payment_method')
+    }
   end
 
   def cancel(input)
