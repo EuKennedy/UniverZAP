@@ -14,12 +14,33 @@ import { ref, readonly } from 'vue';
  */
 const layout = ref(window.globalConfig?.SIDEBAR_LAYOUT || {});
 
+/**
+ * The menu as the sidebar built it, published by the sidebar itself.
+ *
+ * The organiser screen needs the real menu — with this account's inboxes, this
+ * user's permissions and the features actually enabled — and that is assembled
+ * inside Sidebar.vue. Rebuilding it in the organiser would produce a preview of
+ * a menu nobody sees; extracting the builder out of a 962-line component is a
+ * refactor for another day. The sidebar is always mounted, so it simply hands
+ * over what it built.
+ */
+const builtMenu = ref([]);
+
 export function useSidebarLayout() {
   const setLayout = next => {
     layout.value = next || {};
   };
 
-  return { layout: readonly(layout), setLayout };
+  const publishMenu = menu => {
+    builtMenu.value = Array.isArray(menu) ? menu : [];
+  };
+
+  return {
+    layout: readonly(layout),
+    setLayout,
+    menu: readonly(builtMenu),
+    publishMenu,
+  };
 }
 
 export default useSidebarLayout;

@@ -390,7 +390,8 @@
     "DOCS": "Read docs",
     "SECURITY": "Security",
     "CAPTAIN_AI": "Captain",
-    "CONVERSATION_WORKFLOW": "Conversation Workflow"
+    "CONVERSATION_WORKFLOW": "Conversation Workflow",
+    "SIDEBAR_ORGANISER": "Sidebar organiser"
   },
   "CAPTAIN_SETTINGS": {
     "TITLE": "Captain Settings",
@@ -927,5 +928,23 @@
       "CONFIRM_BUTTON_LABEL": "Delete",
       "CANCEL_BUTTON_LABEL": "Cancel"
     }
+  },
+  "SIDEBAR_ORGANISER": {
+    "TITLE": "Sidebar organiser",
+    "SUBTITLE": "Build the sidebar every customer on the platform will see. Create groups, move items into them, hide what is not useful and rename what needs it. Applies to every tenant.",
+    "GROUPS": "Groups",
+    "ADD_GROUP": "Create group",
+    "NEW_GROUP": "New group",
+    "NO_GROUPS": "No groups yet. Create one and choose what goes inside.",
+    "GROUP_NAME": "Group name",
+    "LOOSE": "Menu items",
+    "LOOSE_HINT": "Choose which group each item belongs to. Leave it on \"Top\" to keep it loose in the bar, with nothing to open — that is what keeps the Inbox one click away.",
+    "TOP": "Top",
+    "RENAME": "Rename",
+    "PREVIEW": "How it will look",
+    "SAVE": "Save",
+    "SAVED": "Menu saved. Every customer sees it now.",
+    "SAVE_FAILED": "Could not save the menu. Try again.",
+    "RESET": "Back to default"
   }
 }

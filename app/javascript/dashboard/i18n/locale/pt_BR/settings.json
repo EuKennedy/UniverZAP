@@ -390,7 +390,8 @@
     "DOCS": "Ler documentos",
     "SECURITY": "Segurança",
     "CAPTAIN_AI": "Capitão",
-    "CONVERSATION_WORKFLOW": "Fluxo de Conversa"
+    "CONVERSATION_WORKFLOW": "Fluxo de Conversa",
+    "SIDEBAR_ORGANISER": "Organizador do menu"
   },
   "CAPTAIN_SETTINGS": {
     "TITLE": "Configurações do Capitão",
@@ -927,5 +928,23 @@
       "CONFIRM_BUTTON_LABEL": "Excluir",
       "CANCEL_BUTTON_LABEL": "Cancelar"
     }
+  },
+  "SIDEBAR_ORGANISER": {
+    "TITLE": "Organizador do menu",
+    "SUBTITLE": "Monte a barra lateral que todos os clientes da plataforma vão ver. Crie grupos, arraste os itens para dentro deles, esconda o que não serve e renomeie o que precisar. Vale para todos os tenants.",
+    "GROUPS": "Grupos",
+    "ADD_GROUP": "Criar grupo",
+    "NEW_GROUP": "Novo grupo",
+    "NO_GROUPS": "Nenhum grupo ainda. Crie um e escolha o que vai dentro dele.",
+    "GROUP_NAME": "Nome do grupo",
+    "LOOSE": "Itens do menu",
+    "LOOSE_HINT": "Escolha em qual grupo cada item vai. Deixe em \"Topo\" para ele ficar solto na barra, sem precisar abrir nada — é o que mantém a Caixa de entrada a um clique.",
+    "TOP": "Topo",
+    "RENAME": "Renomear",
+    "PREVIEW": "Como vai ficar",
+    "SAVE": "Salvar",
+    "SAVED": "Menu salvo. Todos os clientes já veem assim.",
+    "SAVE_FAILED": "Não consegui salvar o menu. Tente de novo.",
+    "RESET": "Voltar ao padrão"
   }
 }

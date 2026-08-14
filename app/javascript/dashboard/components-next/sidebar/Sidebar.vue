@@ -1,5 +1,5 @@
 <script setup>
-import { h, ref, computed, onMounted } from 'vue';
+import { h, ref, computed, onMounted, watch } from 'vue';
 import { provideSidebarContext, useSidebarResize } from './provider';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useKbd } from 'dashboard/composables/utils/useKbd';
@@ -59,6 +59,12 @@ const { width: windowWidth } = useWindowSize();
 const isMobile = computed(() => windowWidth.value < 768);
 
 const accountId = useMapGetter('getCurrentAccountId');
+
+// SuperAdmin is an STI subclass of User and `type` already travels in the user
+// JSON, so the tab hides itself without a new endpoint. The API checks again —
+// a hidden tab is convenience, not authorisation.
+const currentUser = useMapGetter('getCurrentUser');
+const isSuperAdmin = computed(() => currentUser.value?.type === 'SuperAdmin');
 const isFeatureEnabledonAccount = useMapGetter(
   'accounts/isFeatureEnabledonAccount'
 );
@@ -779,6 +785,18 @@ const builtMenu = computed(() => {
           icon: 'i-lucide-credit-card',
           to: accountScopedRoute('billing_settings_index'),
         },
+        // Last, and only for a super admin: this one rewrites the menu of every
+        // tenant on the installation, not of the account you happen to be in.
+        ...(isSuperAdmin.value
+          ? [
+              {
+                name: 'Settings Sidebar Organiser',
+                label: t('SIDEBAR.SIDEBAR_ORGANISER'),
+                icon: 'i-lucide-list-tree',
+                to: accountScopedRoute('sidebar_organiser_index'),
+              },
+            ]
+          : []),
       ],
     },
   ];
@@ -787,10 +805,14 @@ const builtMenu = computed(() => {
 // applyLayout does the whole job and falls back to the untouched menu whenever
 // there is nothing usable to apply — a corrupt preference must never take the
 // product off the air.
-const { layout: sidebarLayout } = useSidebarLayout();
+const { layout: sidebarLayout, publishMenu } = useSidebarLayout();
 const menuItems = computed(() =>
   applyLayout(builtMenu.value, sidebarLayout.value)
 );
+
+// Handed to the organiser screen so its preview runs on the same menu this
+// component renders, rather than on a rebuilt guess.
+watch(builtMenu, publishMenu, { immediate: true });
 </script>
 
 <template>
