@@ -502,17 +502,18 @@ RSpec.describe Ai::AutopilotReplyService do
       expect(names).to include('listar_servicos')
     end
 
-    # price_cents is the LIST price, not what a promotion actually charges. The
-    # agent quoting it as final means the customer arrives expecting one number
-    # and pays another — with the AI as the one who promised.
-    it 'stops the agent from promising a price as final' do
+    # The caveat about a list price existed because the salon API returned one
+    # while the till charged another. It returns the charged figure now, so the
+    # rule flipped: state the value, and stop there — no invented discount, no
+    # negotiating.
+    it 'lets the agent state the price but never negotiate it' do
       Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-1')
 
       prompt = described_class.new(conversation: conversation, assistant: assistant)
                               .send(:system_prompt_segments).join("\n")
 
-      expect(prompt).to include('preço').and include('tabela')
-      expect(prompt).to include('nunca garanta que é o')
+      expect(prompt).to include('price_cents').and include('is_promo')
+      expect(prompt).to include('não negocie preço')
     end
 
     # The salon already decided whether this appointment can still be touched,
