@@ -27,16 +27,18 @@ const newGroupId = () => `g_${Date.now()}_${Math.floor(Math.random() * 1e4)}`;
 const hydrate = () => {
   const saved = savedLayout.value || {};
   const rules = saved.items || {};
-  // Every top-level entry, groups included: the sidebar renders three levels,
-  // so a native group can live inside a custom one like anything else.
-  const leaves = (menu.value || []).map(entry => ({
-    name: entry.name,
-    icon: entry.icon,
-    original: entry.label,
-    childCount: entry.children?.length || 0,
-    label: rules[entry.name]?.label || '',
-    hidden: Boolean(rules[entry.name]?.hidden),
-  }));
+  // Leaves only. A native group already fills the three levels the sidebar
+  // renders — Conversas holds Canais, Canais holds the inboxes — so putting one
+  // inside a custom group loses the inboxes entirely.
+  const leaves = (menu.value || [])
+    .filter(entry => !(Array.isArray(entry.children) && entry.children.length))
+    .map(entry => ({
+      name: entry.name,
+      icon: entry.icon,
+      original: entry.label,
+      label: rules[entry.name]?.label || '',
+      hidden: Boolean(rules[entry.name]?.hidden),
+    }));
 
   groups.value = (saved.groups || [])
     .slice()

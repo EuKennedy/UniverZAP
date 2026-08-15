@@ -71,13 +71,11 @@ describe('SidebarOrganiser', () => {
     expect(shown).toContain('Relatórios');
   });
 
-  // The sidebar renders three levels, so a native group is draggable like
-  // anything else — leaving it out was an assumption, not a limit.
-  it('offers a native group too, saying how many tabs it carries', () => {
-    const wrapper = mountScreen();
-
-    expect(placeholders(wrapper)).toContain('Conversas');
-    expect(wrapper.text()).toContain('1');
+  // Offering it is what broke the live menu: Conversas already holds Canais and
+  // Canais holds the inboxes, so a custom group on top pushes the inboxes to a
+  // fourth level nothing renders, and they simply disappear.
+  it('never offers a native group, so its inboxes cannot be lost', () => {
+    expect(placeholders(mountScreen())).not.toContain('Conversas');
   });
 
   it('rebuilds the lists from a layout that was already saved', () => {

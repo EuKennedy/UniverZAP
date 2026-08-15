@@ -33,6 +33,22 @@ function usable(layout) {
   );
 }
 
+/**
+ * A native group can be reordered but never adopted into a custom one.
+ *
+ * The components render three levels — SidebarGroup, SidebarSubGroup,
+ * SidebarGroupLeaf — and the native groups already spend all three: Conversas
+ * holds Canais, and Canais holds the inboxes. Wrapping one in a custom group
+ * pushes its grandchildren to a fourth level, where SidebarGroupLeaf has no way
+ * to draw children — so the inboxes vanish, Pastas renders as a dead item and
+ * the dropdown arrow never appears.
+ *
+ * This was removed once, after checking the components and not the data they
+ * carry, and it took the live menu apart.
+ */
+const isNativeGroup = entry =>
+  Array.isArray(entry.children) && entry.children.length > 0;
+
 const byOrder = (a, b) => a.order - b.order;
 
 /**
@@ -67,11 +83,7 @@ export function applyLayout(menu, layout) {
   const top = [];
   visible.forEach(entry => {
     const target = rules[entry.name]?.group;
-    // A native group (Conversations, Reports) may be adopted like anything
-    // else: SidebarGroup renders a SidebarSubGroup per child, which renders its
-    // own leaves, so custom group → native group → leaves is three levels the
-    // sidebar already draws.
-    if (target) {
+    if (target && !isNativeGroup(entry)) {
       const siblings = adoptable.get(target) ?? [];
       siblings.push(entry);
       adoptable.set(target, siblings);

@@ -109,19 +109,20 @@ describe('applyLayout', () => {
       ]);
     });
 
-    // SidebarGroup renders a SidebarSubGroup per child, which renders its own
-    // leaves — so custom group → native group → leaves is three levels the
-    // sidebar already draws, and a native group can be adopted like anything
-    // else.
-    it('adopts a native group into a custom one, children and all', () => {
+    // The native groups already spend all three levels the components render:
+    // Conversas holds Canais, and Canais holds the inboxes. Wrapping one in a
+    // custom group pushes the inboxes to a fourth level that SidebarGroupLeaf
+    // cannot draw — which is exactly how the live menu was taken apart once.
+    it('refuses to adopt a native group, so its grandchildren survive', () => {
       const result = applyLayout(
         menu(),
         layout({ items: { Conversation: { group: 'g_gestao', order: 0 } } })
       );
 
-      const custom = result.find(entry => entry.name === 'g_gestao');
-      expect(names(custom.children)).toEqual(['Conversation']);
-      expect(names(custom.children[0].children)).toEqual(['All']);
+      const conversation = result.find(entry => entry.name === 'Conversation');
+      expect(conversation).toBeDefined();
+      expect(names(conversation.children)).toEqual(['All']);
+      expect(names(result)).not.toContain('g_gestao');
     });
   });
 
