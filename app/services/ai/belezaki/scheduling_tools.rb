@@ -13,8 +13,12 @@ class Ai::Belezaki::SchedulingTools
     Ai::Belezaki::ToolDefinitions.all(include_booking: include_booking)
   end
 
-  def initialize(client, scope:, contact: {}, connection: nil)
+  def initialize(client, scope:, contact: {}, connection: nil, conversation: nil)
     @client = client
+    # Only so a booking can be attributed to the conversation that produced it.
+    # Optional like the connection: the playground has neither, and a sandbox
+    # turn must never write a sale.
+    @conversation = conversation
     # Optional. When present, a salon that refuses the binding gets written down
     # on it, so the screen stops claiming "connected" while the agent has quietly
     # lost the ability to book.
@@ -188,6 +192,11 @@ class Ai::Belezaki::SchedulingTools
     return { agendado: false, motivo: 'o salão não confirmou o agendamento' } unless appointment.is_a?(Hash)
     return { agendado: false, motivo: "situação do agendamento: #{appointment['status']}" } unless confirmed?(appointment)
 
+    # The salon holds the book, so this is the only moment the appointment is
+    # ours to write down. Everything the commercial panel needs is in this hash
+    # and used to be dropped on the floor the instant the model had read it.
+    recorder.booked(appointment)
+
     # `valor_centavos` is what the agent must say out loud before opening the
     # comanda. Quoting the catalogue instead is how a customer hears one number
     # and the till takes another.
@@ -237,6 +246,10 @@ class Ai::Belezaki::SchedulingTools
       client_phone: booking_phone(input), payment_method: input['forma_pagamento']
     )
     comanda = response.is_a?(Hash) ? response['comanda'] : nil
+    # The till is what actually happened; the price quoted at booking was a
+    # promise. Same row, keyed by the same appointment id, so the figure gets
+    # truer without ever being counted twice.
+    recorder.billed(input['appointment_id'], comanda&.dig('total_cents'))
     {
       comanda_aberta: true,
       valor_centavos: comanda&.dig('total_cents'),
@@ -249,7 +262,14 @@ class Ai::Belezaki::SchedulingTools
     @client.cancel_appointment(
       input['appointment_id'], client_phone: booking_phone(input), reason: input['reason']
     )
+    # A cancelled appointment was never money, and leaving it behind inflates
+    # the one figure an operator repeats to somebody else.
+    recorder.cancelled(input['appointment_id'])
     { desmarcado: true }
+  end
+
+  def recorder
+    @recorder ||= Ai::Belezaki::BookingRecorder.new(connection: @connection, conversation: @conversation)
   end
 
   def appointment_of(response)

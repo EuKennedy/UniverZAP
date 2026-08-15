@@ -86,7 +86,6 @@
       "FLAGGED": "Review",
       "REVENUE": "Revenue",
       "BOOKINGS": "Bookings",
-      "BOOKINGS_ELSEWHERE": "This agent books on the salon's own system, so the record does not live here.",
       "ROI": "Return"
     }
   },

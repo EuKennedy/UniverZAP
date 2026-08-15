@@ -372,7 +372,10 @@ class Ai::AutopilotReplyService
       Ai::Belezaki::AgentClient.new(external_id: belezaki_connection.external_id),
       scope: "conv-#{@conversation.id}",
       contact: { name: @conversation.contact&.name, phone: @conversation.contact&.phone_number },
-      connection: belezaki_connection
+      connection: belezaki_connection,
+      # So a booking the salon confirms can be attributed to the conversation
+      # that produced it, instead of leaving no trace on our side at all.
+      conversation: @conversation
     )
   end
 

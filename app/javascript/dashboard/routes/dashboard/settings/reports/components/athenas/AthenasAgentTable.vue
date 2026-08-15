@@ -86,25 +86,6 @@ const numberColumn = (key, labelKey, format, muted = false) =>
     },
   });
 
-// An agent whose agenda lives on belezaki books into the salon's own system and
-// leaves no row in our table. Printing 0 there would read as "booked nothing"
-// when it means "we do not hold the book".
-const bookingsColumn = columnHelper.accessor('bookings', {
-  header: header('BOOKINGS'),
-  size: 120,
-  cell: cellProps =>
-    cellProps.row.original.agenda_provider === 'belezaki'
-      ? h(
-          'span',
-          {
-            class: 'text-n-slate-11',
-            title: t('ATHENAS_REPORT.TABLE.BOOKINGS_ELSEWHERE'),
-          },
-          '—'
-        )
-      : cell(decimal.format(cellProps.getValue() || 0)),
-});
-
 const columns = [
   nameColumn,
   numberColumn('replies', 'REPLIES', value => decimal.format(value)),
@@ -120,7 +101,11 @@ const columns = [
   numberColumn('success_rate', 'RELIABILITY', value => `${value}%`),
   numberColumn('flagged', 'FLAGGED', value => decimal.format(value), true),
   numberColumn('revenue_brl', 'REVENUE', value => money.format(value)),
-  bookingsColumn,
+  // Both agendas count here now. A belezaki agent used to show an em dash,
+  // because the salon holds the book and the confirmation was being dropped;
+  // Ai::Belezaki::BookingRecorder writes it down, so the column is a number for
+  // every agent again.
+  numberColumn('bookings', 'BOOKINGS', value => decimal.format(value)),
   numberColumn('roi', 'ROI', value => `${value.toFixed(2).replace('.', ',')}x`),
 ];
 

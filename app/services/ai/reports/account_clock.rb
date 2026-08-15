@@ -9,7 +9,8 @@
 # In order of how much we trust it:
 #   1. The agenda's timezone. Typed by hand in "Configurar negócio" by the
 #      person who runs the place, and the agent books real appointments against
-#      it, so a wrong value there would already be visible.
+#      it, so a wrong value there would already be visible. The belezaki
+#      connection carries the same statement for a salon whose book lives there.
 #   2. An inbox timezone that is not the default. Chatwoot ships 'UTC' on every
 #      inbox, so only a value somebody changed counts as a statement.
 #   3. Time.zone, which is the installation's own answer and the only one left.
@@ -27,7 +28,7 @@ class Ai::Reports::AccountClock
   # take the report down, so anything TZInfo refuses falls through to the next
   # source rather than raising.
   def zone
-    @zone ||= resolve(agenda_timezone) || resolve(inbox_timezone) || Time.zone
+    @zone ||= resolve(agenda_timezone) || resolve(belezaki_timezone) || resolve(inbox_timezone) || Time.zone
   end
 
   # The IANA name, which is what Postgres understands in AT TIME ZONE.
@@ -46,6 +47,10 @@ class Ai::Reports::AccountClock
   def agenda_timezone
     Ai::Calendar::Professional.where(account_id: @account.id, active: true)
                               .order(:id).pick(:timezone)
+  end
+
+  def belezaki_timezone
+    Ai::Belezaki::Connection.where(account_id: @account.id, status: 'active').order(:id).pick(:timezone)
   end
 
   def inbox_timezone

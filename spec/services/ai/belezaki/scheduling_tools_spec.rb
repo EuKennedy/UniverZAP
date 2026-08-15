@@ -428,5 +428,47 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
 
       expect(schema[:input_schema][:required]).to include('professional_id')
     end
+
+    # The salon holds the book, so the confirmation is the only moment the
+    # appointment is ours to write down. It used to be handed to the model and
+    # dropped, which left every commercial number blind to the agenda that books
+    # the most. Ai::Belezaki::BookingRecorder covers the writing itself; what
+    # matters here is that the tool actually calls it.
+    describe 'writing the booking down on our side' do
+      let(:account) { create(:account) }
+      let(:assistant) { create(:ai_assistant, account: account) }
+      let(:conversation) { create(:conversation, account: account) }
+      let(:connection) do
+        Ai::Belezaki::Connection.create!(
+          ai_assistant: assistant, account: account, external_id: 'salon-1', status: 'active'
+        )
+      end
+
+      def bound_tools
+        described_class.new(client, scope: 'conv-1', connection: connection, conversation: conversation)
+      end
+
+      def confirmed(overrides = {})
+        { 'appointment' => { 'id' => 'apt-1', 'status' => 'confirmed', 'price_cents' => 9_000 }.merge(overrides) }
+      end
+
+      it 'records a confirmed booking as attributed revenue' do
+        allow(client).to receive(:create_appointment).and_return(confirmed)
+
+        bound_tools.call('agendar', booking_input)
+
+        expect(Ai::RevenueEvent.where(account_id: account.id).count).to eq(1)
+      end
+
+      # A booking the salon refused is not a sale, and the agent already tells
+      # the customer so.
+      it 'records nothing when the salon did not confirm' do
+        allow(client).to receive(:create_appointment).and_return(confirmed('status' => 'canceled'))
+
+        bound_tools.call('agendar', booking_input)
+
+        expect(Ai::RevenueEvent.count).to be_zero
+      end
+    end
   end
 end

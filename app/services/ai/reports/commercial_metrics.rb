@@ -56,12 +56,19 @@ class Ai::Reports::CommercialMetrics
     }
   end
 
-  # Only the agenda we host. A salon booking through belezaki writes to the
-  # salon's own system and leaves no row here, so counting zero for that agent
-  # would read as "the agent booked nothing" when it means "we do not hold the
-  # book". The provider travels with the number so the screen can say so.
+  # Both agendas, from the two different places they are written.
+  #
+  # The Google agenda has our own index of what we booked. belezaki holds the
+  # book itself and leaves us only the confirmation, which
+  # Ai::Belezaki::BookingRecorder writes into the attribution ledger keyed by the
+  # salon's appointment id. Matching on that prefix is exact: the only rows it
+  # can ever reach are the ones that recorder wrote, so the day something starts
+  # posting Google bookings to the ledger too, this cannot double count them.
   def build_bookings
-    { booked: appointments_scope.booked.count, cancelled: appointments_scope.where(status: 'cancelled').count }
+    {
+      booked: appointments_scope.booked.count + belezaki_bookings.count,
+      cancelled: appointments_scope.where(status: 'cancelled').count
+    }
   end
 
   def build_by_agent
@@ -126,5 +133,11 @@ class Ai::Reports::CommercialMetrics
 
   def bookings_by_agent
     @bookings_by_agent ||= appointments_scope.booked.group(:ai_assistant_id).count
+                                             .merge(belezaki_bookings.group(:ai_assistant_id).count) { |_id, a, b| a + b }
+  end
+
+  def belezaki_bookings
+    @belezaki_bookings ||= revenue_scope.where(recorded_by: Ai::Belezaki::BookingRecorder::RECORDER)
+                                        .where('external_ref LIKE ?', "#{Ai::Belezaki::BookingRecorder::REF_PREFIX}%")
   end
 end

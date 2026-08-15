@@ -86,7 +86,6 @@
       "FLAGGED": "Revisão",
       "REVENUE": "Receita",
       "BOOKINGS": "Agendamentos",
-      "BOOKINGS_ELSEWHERE": "Este agente marca na agenda do próprio salão, então o registro não fica aqui.",
       "ROI": "Retorno"
     }
   },
