@@ -58,7 +58,10 @@ RSpec.describe Ai::Reports::AccountClock do
   # into that state from outside Rails, which is exactly the case worth covering.
   it 'falls through a timezone it cannot resolve' do
     inbox = create(:inbox, account: account, timezone: 'America/Sao_Paulo')
-    inbox.update_column(:timezone, 'Mars/Olympus_Mons')
+    # Skipping the validation IS the test: the model rejects this value, so the
+    # only way the column ever holds it is a write from outside Rails, and that
+    # is the case the fallback exists for.
+    inbox.update_column(:timezone, 'Mars/Olympus_Mons') # rubocop:disable Rails/SkipsModelValidations
 
     expect(clock.tz_name).to eq(Time.zone.tzinfo.name)
   end

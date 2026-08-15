@@ -24,10 +24,10 @@
 # a time; failing to write our own bookkeeping is our problem, not theirs, so
 # every path is rescued and logged.
 class Ai::Belezaki::BookingRecorder
-  SOURCE = 'agendamento'
+  SOURCE = 'agendamento'.freeze
   # Written by the agent itself, which is a value the model already allowed and
   # nothing had ever produced.
-  RECORDER = 'agent'
+  RECORDER = 'agent'.freeze
   REF_PREFIX = 'belezaki:appointment:'.freeze
 
   def initialize(connection:, conversation: nil)
