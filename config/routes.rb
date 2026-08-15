@@ -68,8 +68,6 @@ Rails.application.routes.draw do
   # Public marketing landing page — no auth, self-contained page.
   get '/lp', to: 'landing#show'
   get '/lpteste', to: 'landing#lpteste'
-  # Página de vendas do ZapGrup, o produto comercial.
-  get '/zapgrup', to: 'landing#zapgrup'
   get '/api', to: 'api#index'
   namespace :api, defaults: { format: 'json' } do
     namespace :v1 do

@@ -7,9 +7,4 @@ class LandingController < ActionController::Base # rubocop:disable Rails/Applica
   def show; end
 
   def lpteste; end
-
-  # ZapGrup, o produto comercial, na mesma linguagem visual do UniverZAP.
-  # Página própria e não um layout compartilhado: são dois produtos, e mexer na
-  # LP de um nunca pode repintar a do outro.
-  def zapgrup; end
 end
