@@ -931,22 +931,22 @@
   },
   "SIDEBAR_ORGANISER": {
     "TITLE": "Sidebar organiser",
-    "SUBTITLE": "Build the sidebar every customer on the platform will see. Create groups, move items into them, hide what is not useful and rename what needs it. Applies to every tenant.",
-    "GROUPS": "Groups",
+    "SUBTITLE": "Build the sidebar every customer on the platform will see: drag the items into the order that makes sense, group the ones that belong together, and hide what is not useful. Whatever you save applies to every tenant.",
+    "ITEMS": "Menu items",
+    "ITEMS_HINT": "Drag by the handle to reorder, and drop an item inside a group to file it there. An item that carries its own tabs, like Conversations or Reports, goes into the group with those tabs and still opens as it always did. Click a name to rename it, and the eye to hide it.",
     "ADD_GROUP": "Create group",
     "NEW_GROUP": "New group",
-    "NO_GROUPS": "No groups yet. Create one and choose what goes inside.",
     "GROUP_NAME": "Group name",
-    "LOOSE": "Menu items",
-    "LOOSE_HINT": "Drag an item into a group. Whatever stays here sits loose at the top of the bar, with nothing to open. Click a name to rename it, and the eye to hide it.",
-    "TOP": "Top",
-    "RENAME": "Rename",
+    "REMOVE_GROUP": "Delete the group and release its items",
+    "ICON": "Group icon",
+    "HOME": "Open here on sign in",
+    "HOME_HINT": "The house sets the platform's home screen, so everyone who signs in lands on that item instead of the conversation list. Only one item can be the home screen, and clicking it again goes back to the default.",
     "PREVIEW": "How it will look",
     "SAVE": "Save",
     "SAVED": "Menu saved. Every customer sees it now.",
     "SAVE_FAILED": "Could not save the menu. Try again.",
     "RESET": "Back to default",
-    "DROP_HERE": "Drag items here from above.",
-    "CARRIES_TABS": "This item is a group and brings its tabs along"
+    "DROP_HERE": "Drag items here.",
+    "CARRIES_TABS": "This item brings its tabs along"
   }
 }

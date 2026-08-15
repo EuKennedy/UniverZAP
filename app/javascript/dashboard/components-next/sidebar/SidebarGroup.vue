@@ -15,6 +15,10 @@ const props = defineProps({
   label: { type: String, required: true },
   icon: { type: [String, Object, Function], default: null },
   to: { type: Object, default: null },
+  // An address outside the app, for a tab that lives on another product. It
+  // exists so those tabs can sit in the menu and be organised like any other,
+  // instead of being hardcoded beside it where nobody can move them.
+  href: { type: String, default: '' },
   activeOn: { type: Array, default: () => [] },
   children: { type: Array, default: undefined },
   getterKeys: { type: Object, default: () => ({}) },
@@ -232,9 +236,12 @@ watch(
         @mouseleave="handleMouseLeave"
       >
         <component
-          :is="to && !hasChildren ? 'router-link' : 'button'"
+          :is="href ? 'a' : to && !hasChildren ? 'router-link' : 'button'"
           ref="triggerRef"
-          :to="to && !hasChildren ? to : undefined"
+          :to="!href && to && !hasChildren ? to : undefined"
+          :href="href || undefined"
+          :target="href ? '_blank' : undefined"
+          :rel="href ? 'noopener noreferrer' : undefined"
           type="button"
           class="flex items-center justify-center size-10 rounded-lg"
           :class="{
@@ -266,6 +273,7 @@ watch(
         :name
         :label
         :to
+        :href
         :getter-keys="getterKeys"
         :is-active="isActive"
         :has-active-child="hasActiveChild"

@@ -931,22 +931,22 @@
   },
   "SIDEBAR_ORGANISER": {
     "TITLE": "Organizador do menu",
-    "SUBTITLE": "Monte a barra lateral que todos os clientes da plataforma vão ver. Crie grupos, arraste os itens para dentro deles, esconda o que não serve e renomeie o que precisar. Vale para todos os tenants.",
-    "GROUPS": "Grupos",
+    "SUBTITLE": "Monte aqui a barra lateral que todos os clientes da plataforma vão ver, arrastando os itens na ordem que fizer sentido, juntando num grupo o que anda junto e escondendo o que não serve. O que for salvo vale para todos os tenants.",
+    "ITEMS": "Itens do menu",
+    "ITEMS_HINT": "Arraste pela alça para mudar a ordem e solte um item dentro de um grupo para guardá-lo ali. Um item que leva abas próprias, como Conversas ou Relatórios, entra no grupo com as abas dele junto e continua abrindo normalmente. Clique no nome para renomear e no olho para esconder.",
     "ADD_GROUP": "Criar grupo",
     "NEW_GROUP": "Novo grupo",
-    "NO_GROUPS": "Nenhum grupo ainda. Crie um e escolha o que vai dentro dele.",
     "GROUP_NAME": "Nome do grupo",
-    "LOOSE": "Itens do menu",
-    "LOOSE_HINT": "Arraste um item para dentro de um grupo. O que ficar aqui aparece solto no topo da barra, sem precisar abrir nada. Clique no nome para renomear, e no olho para esconder.",
-    "TOP": "Topo",
-    "RENAME": "Renomear",
+    "REMOVE_GROUP": "Excluir o grupo e devolver os itens",
+    "ICON": "Ícone do grupo",
+    "HOME": "Abrir aqui ao entrar",
+    "HOME_HINT": "A casinha define a tela inicial da plataforma, de modo que todo mundo que fizer login cai direto naquele item em vez da lista de conversas. Só um item pode ser a tela inicial, e clicar nele de novo volta para o padrão.",
     "PREVIEW": "Como vai ficar",
     "SAVE": "Salvar",
     "SAVED": "Menu salvo. Todos os clientes já veem assim.",
     "SAVE_FAILED": "Não consegui salvar o menu. Tente de novo.",
     "RESET": "Voltar ao padrão",
-    "DROP_HERE": "Arraste itens de cima para cá.",
-    "CARRIES_TABS": "Este item é um grupo e leva as abas dele junto"
+    "DROP_HERE": "Arraste itens para cá.",
+    "CARRIES_TABS": "Este item leva as abas dele junto"
   }
 }

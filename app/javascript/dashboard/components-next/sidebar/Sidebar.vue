@@ -13,6 +13,7 @@ import { useWindowSize, useEventListener } from '@vueuse/core';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
+import SidebarSection from './SidebarSection.vue';
 import { applyLayout } from './helper/applyLayout';
 import { useSidebarLayout } from 'dashboard/composables/useSidebarLayout';
 import SidebarProfileMenu from './SidebarProfileMenu.vue';
@@ -20,7 +21,6 @@ import SidebarChangelogCard from './SidebarChangelogCard.vue';
 import SidebarChangelogButton from './SidebarChangelogButton.vue';
 import ChannelLeaf from './ChannelLeaf.vue';
 import ChannelIcon from 'next/icon/ChannelIcon.vue';
-import Icon from 'next/icon/Icon.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
 import Logo from 'next/icon/Logo.vue';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
@@ -227,6 +227,16 @@ const reportRoutes = computed(() => newReportRoutes());
 
 const builtMenu = computed(() => {
   return [
+    // Part of the menu rather than hardcoded beside it. It used to be an <li>
+    // pinned above everything, which put the one tab that points at another
+    // product out of reach of the organiser: it could not be moved, grouped,
+    // renamed or hidden, and it always sat first.
+    {
+      name: 'ZapGrup',
+      label: t('SIDEBAR.ZAPGRUP'),
+      icon: 'i-lucide-layout-grid',
+      href: 'https://grupo.univerzap.cloud/',
+    },
     {
       name: 'Inbox',
       label: t('SIDEBAR.INBOX'),
@@ -919,33 +929,18 @@ watch(builtMenu, publishMenu, { immediate: true });
         class="flex flex-col gap-1 m-0 list-none min-w-0"
         :class="{ 'items-center': isEffectivelyCollapsed }"
       >
-        <li class="list-none min-w-0">
-          <a
-            href="https://grupo.univerzap.cloud/"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center rounded-lg text-n-slate-11 transition-colors cursor-pointer hover:bg-n-alpha-2 hover:text-n-slate-12"
-            :class="
-              isEffectivelyCollapsed
-                ? 'justify-center size-10'
-                : 'gap-2 px-2 h-9'
-            "
-            :title="t('SIDEBAR.ZAPGRUP')"
-          >
-            <Icon icon="i-lucide-layout-grid" class="size-4 shrink-0" />
-            <span
-              v-if="!isEffectivelyCollapsed"
-              class="text-sm font-medium truncate"
-            >
-              {{ t('SIDEBAR.ZAPGRUP') }}
-            </span>
-          </a>
-        </li>
-        <SidebarGroup
-          v-for="item in menuItems"
-          :key="item.name"
-          v-bind="item"
-        />
+        <template v-for="item in menuItems" :key="item.name">
+          <!-- Bound one by one rather than spread, so the flag that chose this
+            branch does not land on the element as an attribute. -->
+          <SidebarSection
+            v-if="item.section"
+            :name="item.name"
+            :label="item.label"
+            :icon="item.icon"
+            :items="item.items"
+          />
+          <SidebarGroup v-else v-bind="item" />
+        </template>
       </ul>
     </nav>
     <section
