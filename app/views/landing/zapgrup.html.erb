@@ -33,6 +33,10 @@
   --bt-bg:#17281F;--bt-bd:rgba(255,255,255,.07);--bt-tx:#E7F1EB;
   --bm-bg:linear-gradient(160deg,#0E5E45,#0A4C39);--bm-tx:#E4FBEE;
   --ba-bg:linear-gradient(160deg,#123A2B,#0E3325);--ba-bd:rgba(52,210,107,.28);--ba-tx:#D8F5E5;
+  /* Uma cor por participante, como o WhatsApp faz no grupo. Escolhidas para
+     ficarem legíveis sobre o balão escuro e para não se confundirem com o verde
+     da marca, que ali significa "fui eu que mandei". */
+  --nm-1:#53BDEB;--nm-2:#F2A33C;--nm-3:#C58AF9;
 }
 :root[data-theme="light"]{
   color-scheme:light;
@@ -53,6 +57,9 @@
   --bt-bg:#fff;--bt-bd:var(--line-2);--bt-tx:#07130D;
   --bm-bg:linear-gradient(160deg,#D9FBE6,#BBF7D0);--bm-tx:#0F3D26;
   --ba-bg:linear-gradient(160deg,#ECFDF3,#DCFCE7);--ba-bd:#BBF7D0;--ba-tx:#0F3D26;
+  /* Os mesmos três, escurecidos: sobre o balão branco do tema claro as versões
+     do tema escuro sumiriam. */
+  --nm-1:#0B7FAE;--nm-2:#B26205;--nm-3:#7B3FBF;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -159,6 +166,11 @@ h1.hero-h{font-size:clamp(2.9rem,9vw,5.2rem);letter-spacing:-.045em;margin-top:2
    diferença entre uma ilustração e uma demonstração. */
 .chat .step-in{opacity:0;transform:translateY(9px) scale(.985);transition:opacity .42s var(--ease),transform .42s var(--ease)}
 .chat.playing .step-in.shown{opacity:1;transform:none}
+/* Quem falou, acima do balão, só nas mensagens que chegam. As suas nunca levam
+   nome, e é justamente esse contraste que faz a peça ler como grupo e não como
+   conversa de duas pessoas. */
+.bub .snd{display:block;font-family:var(--sans);font-weight:600;font-size:12.5px;line-height:1.25;letter-spacing:-.01em;margin-bottom:3px}
+.snd.n1{color:var(--nm-1)}.snd.n2{color:var(--nm-2)}.snd.n3{color:var(--nm-3)}
 .bub .mt{display:inline-flex;align-items:center;gap:3px;font-size:10px;opacity:.65;float:right;margin:4px 0 -2px 10px;transform:translateY(2px)}
 .bub .mt i{width:14px;height:14px}.bub .mt .rd{color:#53BDEB}
 .bub.t{align-self:flex-start;background:var(--bt-bg);border:1px solid var(--bt-bd);color:var(--bt-tx);border-bottom-left-radius:5px}
@@ -398,8 +410,9 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
             </div>
             <div class="chat" id="chat">
               <div class="bub m step-in">🔥 Entrou lote novo agora. Primeiras 50 peças com 30% off, link direto pro carrinho: loja.com/vip<span class="mt">09:41<i class="rd" data-lucide="check-check"></i></span></div>
-              <div class="bub t step-in">peguei 2! 🙌<span class="mt">09:41</span></div>
-              <div class="bub t step-in">o meu já foi, valeu avisar aqui primeiro<span class="mt">09:42</span></div>
+              <div class="bub t step-in"><span class="snd n1">Camila</span>peguei 2! 🙌<span class="mt">09:41</span></div>
+              <div class="bub t step-in"><span class="snd n2">Rafa</span>o meu já foi, valeu avisar aqui primeiro<span class="mt">09:41</span></div>
+              <div class="bub t step-in"><span class="snd n3">Juliana</span>fechei o meu também 🧡<span class="mt">09:42</span></div>
               <div class="bub m step-in">Mesmo aviso saiu em <b>142 grupos</b> ao mesmo tempo 💚<span class="mt">09:42<i class="rd" data-lucide="check-check"></i></span></div>
             </div>
           </div>
@@ -781,11 +794,11 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
       var co=new IntersectionObserver(function(es){es.forEach(function(e){
         if(!e.isIntersecting)return;
         co.disconnect();chat.classList.add('playing');
+        // 620ms entre uma fala e outra: com cinco balões, um intervalo maior
+        // deixaria a conversa terminando depois que a pessoa já rolou a página.
         falas.forEach(function(f,i){setTimeout(function(){
           f.classList.add('shown');
-          // O "digitando" some quando a resposta que ele anunciava chega.
-          if(f.classList.contains('typing'))setTimeout(function(){f.style.display='none'},900);
-        },420+i*820)});
+        },380+i*620)});
       })},{threshold:.35});
       co.observe(chat);
     }
