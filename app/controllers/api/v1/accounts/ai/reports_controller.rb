@@ -5,12 +5,19 @@
 # the product just let into that screen is a hole in a page they were invited
 # to open. Whoever may see Relatórios may see what Relatórios shows.
 class Api::V1::Accounts::Ai::ReportsController < Api::V1::Accounts::BaseController
-  # `controller_name` is "reports", so this resolves to the same Report policy
-  # the conversation reports use. Kept implicit for exactly that reason: the two
-  # screens must never drift into different answers about who may read them.
-  before_action :check_authorization
+  before_action :ensure_report_access
 
   def show
     render json: Ai::Reports::AccountOverview.new(account: Current.account, days: params[:days].to_i).perform
+  end
+
+  private
+
+  # The policy is named, not inferred. The inherited `check_authorization`
+  # derives a model from the controller name — "reports" becomes `Report` — and
+  # there is no Report class in this codebase, so every request would have died
+  # as a NameError long before anybody's permissions were consulted.
+  def ensure_report_access
+    authorize(:report, :view?)
   end
 end

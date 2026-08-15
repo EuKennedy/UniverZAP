@@ -7,6 +7,13 @@ RSpec.describe Ai::Reports::AccountOverview do
   let(:assistant) { create(:ai_assistant, account: account, name: 'Marina') }
   let(:report) { described_class.new(account: account, days: 30).perform }
 
+  # Every account is seeded with an agent called Sofia the moment it is created,
+  # so "the agents of this account" is never an empty list and these tests must
+  # not pretend otherwise.
+  def agent_names
+    report[:agents].map { |row| row[:name] }
+  end
+
   def log(agent = assistant, **attrs)
     create(:ai_invocation, { account: agent.account, ai_assistant: agent }.merge(attrs))
   end
@@ -122,9 +129,10 @@ RSpec.describe Ai::Reports::AccountOverview do
     end
 
     # The agent carrying the account is the first line, not an alphabetical
-    # accident: 'Aurora' sorts before 'Marina' and answered a third as much.
+    # accident: 'Aurora' sorts before 'Marina' and answered a third as much, and
+    # the seeded 'Sofia' answered nothing at all.
     it 'leads with the agent doing the work' do
-      expect(report[:agents].map { |row| row[:name] }).to eq(%w[Marina Aurora])
+      expect(agent_names).to eq(%w[Marina Aurora Sofia])
     end
 
     it 'gives every agent a row even when it did nothing' do
@@ -150,7 +158,8 @@ RSpec.describe Ai::Reports::AccountOverview do
   describe 'quality' do
     it 'separates the machine flagging itself from a human saying so' do
       log(message_id: 5, conversation_id: 1, auto_flag: 'preco_inventado')
-      create(:ai_response_feedback, ai_assistant: assistant, rating: 'down')
+      # A thumbs-down carries a reason or it is a shrug the model refuses.
+      create(:ai_response_feedback, ai_assistant: assistant, rating: 'down', reason: 'info_incorreta')
 
       expect(report[:flags]['preco_inventado']).to eq(1)
       expect(report[:quality][:down]).to eq(1)
@@ -165,7 +174,8 @@ RSpec.describe Ai::Reports::AccountOverview do
     end
 
     it 'counts a correction nobody applied, because it is work already done' do
-      create(:ai_response_feedback, ai_assistant: assistant, rating: 'down', applied_at: nil)
+      create(:ai_response_feedback, ai_assistant: assistant, rating: 'down',
+                                    reason: 'info_incorreta', applied_at: nil)
 
       expect(report[:quality][:pending_application]).to eq(1)
     end
@@ -203,13 +213,13 @@ RSpec.describe Ai::Reports::AccountOverview do
     # One global screen, many tenants. A number that crosses this line is the
     # worst bug this module could ship.
     it 'never counts another account' do
-      other = create(:ai_assistant)
+      other = create(:ai_assistant, name: 'Estranha')
       create(:ai_invocation, account: other.account, ai_assistant: other, message_id: 99, conversation_id: 99)
       create(:ai_revenue_event, ai_assistant: other, amount_brl: 5_000.0)
 
       expect(report[:totals][:replies]).to be_zero
       expect(report[:totals][:revenue_brl]).to eq(0.0)
-      expect(report[:agents]).to be_empty
+      expect(agent_names).not_to include('Estranha')
     end
   end
 

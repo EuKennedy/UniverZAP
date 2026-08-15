@@ -54,8 +54,11 @@ RSpec.describe Ai::Reports::AccountClock do
   end
 
   # A name TZInfo refuses must not take the whole report down over a chart axis.
+  # Written past the model's own validation on purpose: the row can only get
+  # into that state from outside Rails, which is exactly the case worth covering.
   it 'falls through a timezone it cannot resolve' do
-    create(:inbox, account: account, timezone: 'Mars/Olympus_Mons')
+    inbox = create(:inbox, account: account, timezone: 'America/Sao_Paulo')
+    inbox.update_column(:timezone, 'Mars/Olympus_Mons')
 
     expect(clock.tz_name).to eq(Time.zone.tzinfo.name)
   end

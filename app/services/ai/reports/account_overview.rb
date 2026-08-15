@@ -109,7 +109,10 @@ class Ai::Reports::AccountOverview
   def agents
     log = invocations.by_agent
     @account.ai_assistants.order(:name).map { |assistant| agent_row(assistant, log[assistant.id] || {}) }
-            .sort_by { |row| -row[:replies].to_i }
+            # Name breaks the tie, so two idle agents do not swap places between
+            # one refresh and the next: sort_by is not stable, and a table that
+            # reshuffles under the reader is a table nobody trusts.
+            .sort_by { |row| [-row[:replies].to_i, row[:name].to_s] }
   end
 
   def agent_row(assistant, stats)

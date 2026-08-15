@@ -22,11 +22,13 @@ RSpec.describe 'Api::V1::Accounts::Ai::ReportsController', type: :request do
     expect(response.parsed_body['totals']['replies']).to eq(1)
   end
 
+  # 'Sofia' is seeded on every account the moment it is created, so the list is
+  # never empty and an idle agent still gets a row.
   it 'names every agent of the account, including the idle ones' do
     assistant
     fetch(administrator)
 
-    expect(response.parsed_body['agents'].map { |row| row['name'] }).to eq(['Marina'])
+    expect(response.parsed_body['agents'].map { |row| row['name'] }).to eq(%w[Marina Sofia])
   end
 
   # The same gate as the rest of Relatórios, by design. This section renders
