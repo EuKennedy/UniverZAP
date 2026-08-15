@@ -946,6 +946,7 @@
     "SAVED": "Menu saved. Every customer sees it now.",
     "SAVE_FAILED": "Could not save the menu. Try again.",
     "RESET": "Back to default",
-    "DROP_HERE": "Drag items here from above."
+    "DROP_HERE": "Drag items here from above.",
+    "CARRIES_TABS": "This item is a group and brings its tabs along"
   }
 }

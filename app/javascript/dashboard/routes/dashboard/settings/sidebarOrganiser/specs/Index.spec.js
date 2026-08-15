@@ -71,10 +71,13 @@ describe('SidebarOrganiser', () => {
     expect(shown).toContain('Relatórios');
   });
 
-  // Nesting one inside a custom group would be a third level the sidebar does
-  // not render, so it is never offered as draggable.
-  it('leaves a native group out of the lists', () => {
-    expect(placeholders(mountScreen())).not.toContain('Conversas');
+  // The sidebar renders three levels, so a native group is draggable like
+  // anything else — leaving it out was an assumption, not a limit.
+  it('offers a native group too, saying how many tabs it carries', () => {
+    const wrapper = mountScreen();
+
+    expect(placeholders(wrapper)).toContain('Conversas');
+    expect(wrapper.text()).toContain('1');
   });
 
   it('rebuilds the lists from a layout that was already saved', () => {

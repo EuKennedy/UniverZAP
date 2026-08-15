@@ -946,6 +946,7 @@
     "SAVED": "Menu salvo. Todos os clientes já veem assim.",
     "SAVE_FAILED": "Não consegui salvar o menu. Tente de novo.",
     "RESET": "Voltar ao padrão",
-    "DROP_HERE": "Arraste itens de cima para cá."
+    "DROP_HERE": "Arraste itens de cima para cá.",
+    "CARRIES_TABS": "Este item é um grupo e leva as abas dele junto"
   }
 }

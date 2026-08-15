@@ -109,16 +109,19 @@ describe('applyLayout', () => {
       ]);
     });
 
-    // Three levels is not something the sidebar renders, so a native group is
-    // reordered but never adopted into a custom one.
-    it('refuses to nest a native group inside a custom group', () => {
+    // SidebarGroup renders a SidebarSubGroup per child, which renders its own
+    // leaves — so custom group → native group → leaves is three levels the
+    // sidebar already draws, and a native group can be adopted like anything
+    // else.
+    it('adopts a native group into a custom one, children and all', () => {
       const result = applyLayout(
         menu(),
         layout({ items: { Conversation: { group: 'g_gestao', order: 0 } } })
       );
 
-      expect(names(result)).toContain('Conversation');
-      expect(names(result)).not.toContain('g_gestao');
+      const custom = result.find(entry => entry.name === 'g_gestao');
+      expect(names(custom.children)).toEqual(['Conversation']);
+      expect(names(custom.children[0].children)).toEqual(['All']);
     });
   });
 

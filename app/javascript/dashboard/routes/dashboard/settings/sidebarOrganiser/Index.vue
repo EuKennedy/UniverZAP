@@ -20,11 +20,6 @@ const loose = ref([]);
 const groups = ref([]);
 const isSaving = ref(false);
 
-// Only leaves can be dragged. A native group inside a custom one would be a
-// third level the sidebar does not render, so those are left alone entirely.
-const isLeaf = entry =>
-  !(Array.isArray(entry.children) && entry.children.length);
-
 // Generated, never borrowed from an item's `name`, so deleting a group can
 // never take an item down with it.
 const newGroupId = () => `g_${Date.now()}_${Math.floor(Math.random() * 1e4)}`;
@@ -32,10 +27,13 @@ const newGroupId = () => `g_${Date.now()}_${Math.floor(Math.random() * 1e4)}`;
 const hydrate = () => {
   const saved = savedLayout.value || {};
   const rules = saved.items || {};
-  const leaves = (menu.value || []).filter(isLeaf).map(entry => ({
+  // Every top-level entry, groups included: the sidebar renders three levels,
+  // so a native group can live inside a custom one like anything else.
+  const leaves = (menu.value || []).map(entry => ({
     name: entry.name,
     icon: entry.icon,
     original: entry.label,
+    childCount: entry.children?.length || 0,
     label: rules[entry.name]?.label || '',
     hidden: Boolean(rules[entry.name]?.hidden),
   }));
@@ -184,6 +182,13 @@ const resetAll = () => {
                   :placeholder="element.original"
                   class="flex-1 min-w-0 px-2 h-7 rounded outline-none text-[13px] bg-transparent text-n-slate-12 hover:bg-n-alpha-1 focus:bg-n-alpha-1"
                 />
+                <span
+                  v-if="element.childCount"
+                  class="flex-shrink-0 px-1.5 text-[11px] rounded-full text-n-slate-11 bg-n-alpha-1"
+                  :title="t('SIDEBAR_ORGANISER.CARRIES_TABS')"
+                >
+                  {{ element.childCount }}
+                </span>
                 <Button
                   size="xs"
                   variant="ghost"
@@ -262,6 +267,13 @@ const resetAll = () => {
                     :placeholder="element.original"
                     class="flex-1 min-w-0 px-2 h-7 rounded outline-none text-[13px] bg-transparent text-n-slate-12 hover:bg-n-alpha-1 focus:bg-n-alpha-1"
                   />
+                  <span
+                    v-if="element.childCount"
+                    class="flex-shrink-0 px-1.5 text-[11px] rounded-full text-n-slate-11 bg-n-alpha-1"
+                    :title="t('SIDEBAR_ORGANISER.CARRIES_TABS')"
+                  >
+                    {{ element.childCount }}
+                  </span>
                   <Button
                     size="xs"
                     variant="ghost"

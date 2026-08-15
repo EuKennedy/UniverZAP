@@ -33,14 +33,6 @@ function usable(layout) {
   );
 }
 
-/**
- * Native groups (Conversations, Reports) cannot be nested inside a custom one —
- * that would be a third level, which the sidebar does not render. They stay at
- * the top, reordered but never adopted.
- */
-const isNativeGroup = entry =>
-  Array.isArray(entry.children) && entry.children.length > 0;
-
 const byOrder = (a, b) => a.order - b.order;
 
 /**
@@ -75,7 +67,11 @@ export function applyLayout(menu, layout) {
   const top = [];
   visible.forEach(entry => {
     const target = rules[entry.name]?.group;
-    if (target && !isNativeGroup(entry)) {
+    // A native group (Conversations, Reports) may be adopted like anything
+    // else: SidebarGroup renders a SidebarSubGroup per child, which renders its
+    // own leaves, so custom group → native group → leaves is three levels the
+    // sidebar already draws.
+    if (target) {
       const siblings = adoptable.get(target) ?? [];
       siblings.push(entry);
       adoptable.set(target, siblings);
