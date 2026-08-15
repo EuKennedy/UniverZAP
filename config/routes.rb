@@ -492,6 +492,11 @@ Rails.application.routes.draw do
           end
 
           namespace :ai do
+            # Every agent of the account at once, for the Relatórios screen.
+            # The per-agent `analytics` action below answers for one agent and
+            # cannot answer the question an account with several of them has:
+            # which one is worth the money.
+            resource :report, only: [:show], controller: 'reports'
             # Ready-made agents per vertical: the answer to the blank system
             # prompt that stops a new operator from ever finishing setup.
             resources :assistant_templates, only: [:index, :show]

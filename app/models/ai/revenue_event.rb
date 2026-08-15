@@ -31,13 +31,21 @@ class Ai::RevenueEvent < ApplicationRecord
   # argument for the module: they would not exist, because nobody was there.
   AFTER_HOURS = ((19..23).to_a + (0..8).to_a).freeze
 
-  # Evaluated in Ruby, in the application timezone, NOT in SQL. `EXTRACT(HOUR
+  # Evaluated in Ruby, in the BUSINESS's timezone, NOT in SQL. `EXTRACT(HOUR
   # FROM occurred_at)` reads the stored UTC value, so a sale at 21h in São Paulo
   # is midnight to Postgres and 8h is 5h: the whole point of the number is the
   # local clock of the business, and getting it wrong shifts every row by three
   # hours in the one metric the operator quotes to justify the module.
-  def after_hours?
-    local = occurred_at.in_time_zone(Time.zone)
+  #
+  # The zone has to be passed in, and this used to read `Time.zone` instead.
+  # `Time.zone` is UTC on this installation — nothing sets config.time_zone — so
+  # the reading was doing precisely what the paragraph above forbids: a booking
+  # taken at 21h in São Paulo counted as midnight, and one at 6h counted as 3h.
+  # Ai::Reports::AccountClock works out what local means for an account, from
+  # what the operator already told us. The default is kept so a caller with no
+  # account in hand still gets an answer rather than an exception.
+  def after_hours?(zone = Time.zone)
+    local = occurred_at.in_time_zone(zone)
     local.sunday? || AFTER_HOURS.include?(local.hour)
   end
 

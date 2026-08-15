@@ -89,8 +89,14 @@ class Ai::RoiService
 
   # Summed in Ruby so the hour is read in the business's own timezone. The row
   # count here is sales, not calls, so loading them is cheap.
+  #
+  # The zone is now asked for explicitly. It used to fall back to Time.zone,
+  # which is UTC here, so every reading was three hours off the local clock the
+  # number is supposed to describe.
   def after_hours_revenue
-    revenue_scope.select(&:after_hours?).sum { |event| event.amount_brl.to_f }.round(2)
+    zone = Ai::Reports::AccountClock.new(@assistant.account).zone
+    revenue_scope.select { |event| event.after_hours?(zone) }
+                 .sum { |event| event.amount_brl.to_f }.round(2)
   end
 
   def by_source

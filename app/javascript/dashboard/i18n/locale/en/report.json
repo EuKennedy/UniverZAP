@@ -1,4 +1,95 @@
 {
+  "ATHENAS_REPORT": {
+    "TITLE": "Athenas",
+    "SUBTITLE": "What this account's AI agents did in the period, what they cost and what they brought back. Every figure is measured from the call log and the credit ledger; nothing is estimated except hours saved, which carries its assumption with it.",
+    "DAYS": "{n} days",
+    "LOADING": "Gathering the agents' numbers...",
+    "FAILED": "Could not load the agents' numbers right now.",
+    "RETRY": "Try again",
+    "NO_AGENTS": "This account has no AI agents yet, so there is nothing to measure here.",
+    "SUMMARY": {
+      "OPERATION": {
+        "TITLE": "Operation",
+        "REPLIES": "Replies delivered",
+        "CONVERSATIONS": "Conversations handled",
+        "P95": "p95 latency",
+        "RELIABILITY": "Successful calls"
+      },
+      "QUALITY": {
+        "TITLE": "Quality",
+        "FLAGGED": "Flagged for review",
+        "APPROVAL": "Human approval",
+        "PENDING": "Corrections not applied",
+        "UNDELIVERED": "Generated, never delivered"
+      },
+      "MONEY": {
+        "TITLE": "Money",
+        "SPENT": "Spent in the period",
+        "PER_CONVERSATION": "Cost per conversation",
+        "CACHE": "Input served from cache",
+        "BALANCE": "Current balance"
+      },
+      "COMMERCIAL": {
+        "TITLE": "Commercial",
+        "REVENUE": "Attributed revenue",
+        "ROI": "Return on spend",
+        "BOOKINGS": "Bookings",
+        "HOT_LEADS": "Hot leads"
+      }
+    },
+    "CHART": {
+      "REPLIES": "Replies per day",
+      "SPEND": "Spend per day",
+      "HOURLY": "Replies by hour of day",
+      "DAY": "Day",
+      "HOUR": "Hour",
+      "SHOW_TABLE": "View as table",
+      "SHOW_CHART": "View as chart",
+      "EMPTY": "Nothing happened in this period.",
+      "TIMEZONE": "Hours shown in {zone}, which is what the account's agenda or inbox reports."
+    },
+    "FLAGS": {
+      "TITLE": "Automatic review",
+      "EMPTY": "No reply was flagged in the period.",
+      "PRECO_INVENTADO": "Invented a price",
+      "HORARIO_DIVERGENTE": "Conflicting time",
+      "CLIENTE_INSATISFEITO": "Unhappy customer",
+      "PROMESSA_SOLTA": "Promise never kept",
+      "SEM_FONTE": "Answer without a source",
+      "BAIXA_CONFIANCA": "Low confidence"
+    },
+    "FEEDBACK": {
+      "TITLE": "Human verdict",
+      "EMPTY": "Nobody reviewed a reply in the period.",
+      "IDEAL": "Marked as exemplar",
+      "UP": "Approved",
+      "DOWN": "Corrected",
+      "PENDING": "Corrections awaiting application"
+    },
+    "LEADS": {
+      "TITLE": "Leads by temperature",
+      "EMPTY": "No opportunity moved in the period.",
+      "HOT": "Hot",
+      "WARM": "Warm",
+      "COLD": "Cold"
+    },
+    "TABLE": {
+      "TITLE": "Agent by agent",
+      "EMPTY": "No agents to compare.",
+      "AGENT": "Agent",
+      "PAUSED": "paused",
+      "REPLIES": "Replies",
+      "COST": "Spend",
+      "COST_PER_REPLY": "Per reply",
+      "P95": "p95",
+      "RELIABILITY": "Success",
+      "FLAGGED": "Review",
+      "REVENUE": "Revenue",
+      "BOOKINGS": "Bookings",
+      "BOOKINGS_ELSEWHERE": "This agent books on the salon's own system, so the record does not live here.",
+      "ROI": "Return"
+    }
+  },
   "REPORT": {
     "HEADER": "Conversations",
     "LOADING_CHART": "Loading chart data...",

@@ -1,4 +1,95 @@
 {
+  "ATHENAS_REPORT": {
+    "TITLE": "Athenas",
+    "SUBTITLE": "O que os agentes de IA da conta fizeram no período, quanto custaram e o que trouxeram de volta. Todo número aqui é medido no log de chamadas e nos lançamentos de crédito, nada é estimado, com a única exceção das horas poupadas, que carrega a premissa dela junto.",
+    "DAYS": "{n} dias",
+    "LOADING": "Levantando os números dos agentes...",
+    "FAILED": "Não consegui carregar os números dos agentes agora.",
+    "RETRY": "Tentar de novo",
+    "NO_AGENTS": "Esta conta ainda não tem nenhum agente de IA, então não há o que medir por aqui.",
+    "SUMMARY": {
+      "OPERATION": {
+        "TITLE": "Operação",
+        "REPLIES": "Respostas entregues",
+        "CONVERSATIONS": "Conversas atendidas",
+        "P95": "Latência p95",
+        "RELIABILITY": "Chamadas com sucesso"
+      },
+      "QUALITY": {
+        "TITLE": "Qualidade",
+        "FLAGGED": "Marcadas para revisão",
+        "APPROVAL": "Aprovação humana",
+        "PENDING": "Correções não aplicadas",
+        "UNDELIVERED": "Geradas e não entregues"
+      },
+      "MONEY": {
+        "TITLE": "Dinheiro",
+        "SPENT": "Consumido no período",
+        "PER_CONVERSATION": "Custo por conversa",
+        "CACHE": "Entrada servida por cache",
+        "BALANCE": "Saldo atual"
+      },
+      "COMMERCIAL": {
+        "TITLE": "Comercial",
+        "REVENUE": "Receita atribuída",
+        "ROI": "Retorno sobre o gasto",
+        "BOOKINGS": "Agendamentos",
+        "HOT_LEADS": "Leads quentes"
+      }
+    },
+    "CHART": {
+      "REPLIES": "Respostas por dia",
+      "SPEND": "Consumo por dia",
+      "HOURLY": "Respostas por hora do dia",
+      "DAY": "Dia",
+      "HOUR": "Hora",
+      "SHOW_TABLE": "Ver como tabela",
+      "SHOW_CHART": "Ver como gráfico",
+      "EMPTY": "Nenhum movimento neste período.",
+      "TIMEZONE": "Horários no fuso {zone}, que é o que a agenda ou a caixa de entrada da conta informa."
+    },
+    "FLAGS": {
+      "TITLE": "Revisão automática",
+      "EMPTY": "Nenhuma resposta foi marcada no período.",
+      "PRECO_INVENTADO": "Preço inventado",
+      "HORARIO_DIVERGENTE": "Horário divergente",
+      "CLIENTE_INSATISFEITO": "Cliente insatisfeito",
+      "PROMESSA_SOLTA": "Promessa sem cumprimento",
+      "SEM_FONTE": "Resposta sem fonte",
+      "BAIXA_CONFIANCA": "Baixa confiança"
+    },
+    "FEEDBACK": {
+      "TITLE": "Veredito humano",
+      "EMPTY": "Ninguém revisou nenhuma resposta no período.",
+      "IDEAL": "Marcadas como exemplo",
+      "UP": "Aprovadas",
+      "DOWN": "Corrigidas",
+      "PENDING": "Correções esperando aplicação"
+    },
+    "LEADS": {
+      "TITLE": "Leads por temperatura",
+      "EMPTY": "Nenhuma oportunidade se moveu no período.",
+      "HOT": "Quentes",
+      "WARM": "Mornos",
+      "COLD": "Frios"
+    },
+    "TABLE": {
+      "TITLE": "Agente por agente",
+      "EMPTY": "Nenhum agente para comparar.",
+      "AGENT": "Agente",
+      "PAUSED": "pausado",
+      "REPLIES": "Respostas",
+      "COST": "Consumo",
+      "COST_PER_REPLY": "Por resposta",
+      "P95": "p95",
+      "RELIABILITY": "Sucesso",
+      "FLAGGED": "Revisão",
+      "REVENUE": "Receita",
+      "BOOKINGS": "Agendamentos",
+      "BOOKINGS_ELSEWHERE": "Este agente marca na agenda do próprio salão, então o registro não fica aqui.",
+      "ROI": "Retorno"
+    }
+  },
   "REPORT": {
     "HEADER": "Conversas",
     "LOADING_CHART": "Carregando dados do gráfico...",

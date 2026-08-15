@@ -208,6 +208,13 @@ class AthenasAssistantsAPI extends ApiClient {
     );
   }
 
+  // Every agent of the account at once, for the Relatórios screen. The action
+  // below answers for one agent and cannot answer what an account with several
+  // of them asks: which one is worth the money.
+  accountReport({ days = 30 } = {}) {
+    return axios.get(`${this.baseUrl()}/ai/report`, { params: { days } });
+  }
+
   // Measured performance for one agent, plus the last replies it sent.
   analytics(assistantId, { days = 30 } = {}) {
     return axios.get(`${this.url}/${assistantId}/analytics`, {

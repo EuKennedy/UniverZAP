@@ -5,6 +5,7 @@ import ResolutionHeatmapContainer from './components/heatmaps/ResolutionHeatmapC
 import AgentLiveReportContainer from './components/AgentLiveReportContainer.vue';
 import TeamLiveReportContainer from './components/TeamLiveReportContainer.vue';
 import StatsLiveReportsContainer from './components/StatsLiveReportsContainer.vue';
+import AthenasReportContainer from './components/athenas/AthenasReportContainer.vue';
 </script>
 
 <template>
@@ -15,5 +16,8 @@ import StatsLiveReportsContainer from './components/StatsLiveReportsContainer.vu
     <ResolutionHeatmapContainer />
     <AgentLiveReportContainer />
     <TeamLiveReportContainer />
+    <!-- Last, and period-scoped rather than live: everything above it is what
+      is happening now, and this answers what the agents have been doing. -->
+    <AthenasReportContainer />
   </div>
 </template>
