@@ -35,12 +35,14 @@ puts 'Cobertura do codigo UniverZAP (o fork nao entra na conta):'
 gate.report.each do |name, row|
   measured = row.percent ? format('%6.2f%%', row.percent) : '     --'
   target = floors[name] ? format('piso %.2f%%', floors[name]) : 'sem piso'
-  puts format('  %-20s %<pct>s  (%<lines>5d linhas em %<files>3d arquivos)  %<target>s',
-              name, pct: measured, lines: row.relevant, files: row.files, target: target)
+  # Tudo posicional. Misturar `%-20s` com `%<pct>s` no mesmo format levanta
+  # "named after unnumbered", que foi como este script morreu na estreia.
+  puts format('  %-20s %s  (%5d linhas em %3d arquivos)  %s',
+              name, measured, row.relevant, row.files, target)
 end
 
 total = gate.total
-puts format('  %-20s %<pct>6.2f%%  (%<lines>5d linhas)', 'TOTAL', pct: total.percent || 0, lines: total.relevant)
+puts format('  %-20s %6.2f%%  (%5d linhas)', 'TOTAL', total.percent || 0, total.relevant)
 
 untested = gate.report.values.flat_map(&:uncovered).sort
 if untested.any?

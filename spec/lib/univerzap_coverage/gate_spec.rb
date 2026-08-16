@@ -2,6 +2,7 @@
 
 require 'rails_helper'
 require 'tmpdir'
+require 'open3'
 
 RSpec.describe UniverzapCoverage::Gate do
   # Um caminho que o portão reconhece como nosso e outro que ele tem que
@@ -149,6 +150,23 @@ RSpec.describe UniverzapCoverage::Gate do
       File.write(File.join(dir, 'backend-coverage-1', '.resultset.json'), '{ nao e json')
 
       expect(described_class.from_dir(dir).report['Athenas (IA)'].covered).to eq(1)
+    end
+
+    # O executável, rodado do mesmo jeito que a CI roda.
+    #
+    # Os 14 exemplos acima cobrem a classe inteira e mesmo assim o portão
+    # morreu na estreia, com ArgumentError na PRIMEIRA linha impressa: o
+    # `format` do Ruby não aceita `%-20s` posicional junto de `%<pct>s`
+    # nomeado. Nenhum teste da classe podia pegar aquilo, porque o defeito
+    # estava na casca e não no miolo. Um script que decide se o deploy sai
+    # precisa ser executado por algum teste, e não só lido.
+    it 'roda de ponta a ponta e imprime o relatorio' do
+      write_resultset('backend-coverage-0', { ours => { 'lines' => [1, 0] } })
+
+      out, err, status = Open3.capture3('ruby', Rails.root.join('bin/coverage_gate.rb').to_s, dir)
+
+      expect(status).to be_success, err
+      expect(out).to include('Athenas (IA)', 'TOTAL', '50.00%')
     end
   end
 end
