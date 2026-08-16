@@ -48,6 +48,7 @@ import tasks from './tasks.json';
 import teamChat from './teamChat.json';
 import teamsSettings from './teamsSettings.json';
 import webhooks from './webhooks.json';
+import whatsappProfile from './whatsappProfile.json';
 import whatsappTemplates from './whatsappTemplates.json';
 import yearInReview from './yearInReview.json';
 
@@ -102,6 +103,7 @@ export default {
   ...teamChat,
   ...teamsSettings,
   ...webhooks,
+  ...whatsappProfile,
   ...whatsappTemplates,
   ...yearInReview,
 };

@@ -175,9 +175,12 @@ const options = computed(() => ({
           </tr>
         </thead>
         <tbody>
+          <!-- Chaveada pela data e não pelo rótulo: em uma janela de um ano
+            "15/08" aparece duas vezes, e chave repetida faz o Vue reaproveitar
+            a linha errada. -->
           <tr
             v-for="point in points"
-            :key="point.label"
+            :key="point.key ?? point.label"
             class="border-t border-n-weak"
           >
             <td class="py-1 pr-3 text-n-slate-11">{{ point.label }}</td>

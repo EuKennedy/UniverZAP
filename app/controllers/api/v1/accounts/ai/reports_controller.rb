@@ -8,10 +8,20 @@ class Api::V1::Accounts::Ai::ReportsController < Api::V1::Accounts::BaseControll
   before_action :ensure_report_access
 
   def show
-    render json: Ai::Reports::AccountOverview.new(account: Current.account, days: params[:days].to_i).perform
+    render json: Ai::Reports::AccountOverview.new(account: Current.account, period: period).perform
   end
 
   private
+
+  # `since` e `until` são epoch em segundos, do mesmo jeito que o resto de
+  # Relatórios já fala com o backend, então o seletor de data da casa serve sem
+  # tradução. `days` continua aceito para não quebrar chamada antiga, e vira o
+  # fallback quando o par de datas não dá para usar.
+  def period
+    Ai::Reports::Period.from_params(
+      since: params[:since], until_at: params[:until], days: params[:days]
+    )
+  end
 
   # The policy is named, not inferred. The inherited `check_authorization`
   # derives a model from the controller name — "reports" becomes `Report` — and

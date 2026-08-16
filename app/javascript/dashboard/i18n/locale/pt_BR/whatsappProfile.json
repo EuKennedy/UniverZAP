@@ -1,0 +1,62 @@
+{
+  "WHATSAPP_PROFILE": {
+    "TITLE": "Meu WhatsApp",
+    "SUBTITLE": "Publique status e ajuste o perfil do número da empresa sem precisar do celular na mão.",
+    "CONNECTION": "Conexão",
+    "EMPTY": {
+      "TITLE": "Nenhuma conexão de WhatsApp por aqui",
+      "DESCRIPTION": "Para publicar status e editar o perfil, você precisa primeiro conectar um número de WhatsApp em caixas de entrada.",
+      "ACTION": "Conectar um número"
+    },
+    "PROFILE": {
+      "TITLE": "Perfil",
+      "DESCRIPTION": "É o que o cliente vê quando abre a conversa com você.",
+      "PICTURE": "Foto do perfil",
+      "CHANGE_PICTURE": "Trocar foto",
+      "REMOVE_PICTURE": "Remover",
+      "NAME": "Nome",
+      "NAME_PLACEHOLDER": "Como a sua empresa aparece na conversa",
+      "ABOUT": "Recado",
+      "ABOUT_PLACEHOLDER": "Ex: atendimento de segunda a sexta, das 9h às 18h",
+      "ABOUT_HINT": "O WhatsApp não devolve o recado atual para o painel, então este campo começa vazio e serve para escrever um novo.",
+      "SAVE": "Salvar",
+      "NAME_SAVED": "Nome atualizado.",
+      "ABOUT_SAVED": "Recado atualizado.",
+      "PICTURE_SAVED": "Foto atualizada.",
+      "PICTURE_REMOVED": "Foto removida."
+    },
+    "STATUS": {
+      "TITLE": "Status",
+      "DESCRIPTION": "O status vai para todos os contatos deste número e desaparece depois de 24 horas.",
+      "KIND": {
+        "TEXT": "Texto",
+        "IMAGE": "Imagem",
+        "VIDEO": "Vídeo"
+      },
+      "TEXT_PLACEHOLDER": "O que você quer contar hoje",
+      "BACKGROUND": "Cor de fundo",
+      "CAPTION": "Legenda",
+      "CAPTION_PLACEHOLDER": "Opcional",
+      "CHOOSE_IMAGE": "Escolher imagem",
+      "CHOOSE_VIDEO": "Escolher vídeo",
+      "REMOVE_FILE": "Remover arquivo",
+      "VIDEO_HINT": "O WhatsApp só aceita status em mp4, então convertemos o arquivo antes de publicar quando ele vem em outro formato.",
+      "PUBLISH": "Publicar status",
+      "PUBLISHED": "Status publicado.",
+      "CONFIRM": {
+        "TITLE": "Publicar este status?",
+        "DESCRIPTION": "Ele vai para todos os contatos deste número e fica visível por 24 horas, e não dá para apagar pelo painel depois.",
+        "PREVIEW": "O que será publicado",
+        "NO_CAPTION": "Sem legenda",
+        "CONFIRM": "Publicar agora",
+        "CANCEL": "Voltar"
+      }
+    },
+    "ERRORS": {
+      "GENERIC": "Não foi possível falar com o WhatsApp agora.",
+      "UPLOAD": "Não foi possível enviar o arquivo.",
+      "TEXT_REQUIRED": "Escreva o texto do status antes de publicar.",
+      "FILE_REQUIRED": "Escolha um arquivo antes de publicar."
+    }
+  }
+}

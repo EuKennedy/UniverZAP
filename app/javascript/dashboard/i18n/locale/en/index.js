@@ -43,6 +43,7 @@ import snooze from './snooze.json';
 import tasks from './tasks.json';
 import teamChat from './teamChat.json';
 import teamsSettings from './teamsSettings.json';
+import whatsappProfile from './whatsappProfile.json';
 import whatsappTemplates from './whatsappTemplates.json';
 import contentTemplates from './contentTemplates.json';
 import mfa from './mfa.json';
@@ -96,6 +97,7 @@ export default {
   ...tasks,
   ...teamChat,
   ...teamsSettings,
+  ...whatsappProfile,
   ...whatsappTemplates,
   ...contentTemplates,
   ...mfa,

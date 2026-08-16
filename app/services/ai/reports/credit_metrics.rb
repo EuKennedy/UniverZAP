@@ -8,9 +8,9 @@
 # Debits are stored as negative cents, so every figure here is absolute and the
 # sign is carried by the name.
 class Ai::Reports::CreditMetrics
-  def initialize(account:, days:, zone: Time.zone)
+  def initialize(account:, period:, zone: Time.zone)
     @account = account
-    @days = days
+    @period = period
     @zone = zone
   end
 
@@ -57,7 +57,7 @@ class Ai::Reports::CreditMetrics
   # spend still counts for the account and can no longer be attributed.
   def build_by_agent
     Ai::CreditLedgerEntry.consumptions
-                         .where(account_id: @account.id, created_at: @days.days.ago..)
+                         .where(account_id: @account.id, created_at: @period.range)
                          .joins('INNER JOIN ai_invocations ON ai_invocations.id = ai_credit_ledger_entries.ai_invocation_id')
                          .group('ai_invocations.ai_assistant_id')
                          .sum(:amount_cents_brl)
@@ -70,12 +70,12 @@ class Ai::Reports::CreditMetrics
   end
 
   def entries
-    @entries ||= Ai::CreditLedgerEntry.where(account_id: @account.id, created_at: @days.days.ago..)
+    @entries ||= Ai::CreditLedgerEntry.where(account_id: @account.id, created_at: @period.range)
   end
 
   def runway(consumed)
     return nil if consumed.zero?
 
-    (@account.token_credit_balance_cents_brl.to_i / (consumed.to_f / @days)).floor
+    (@account.token_credit_balance_cents_brl.to_i / (consumed.to_f / @period.days)).floor
   end
 end

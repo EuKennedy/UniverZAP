@@ -211,8 +211,12 @@ class AthenasAssistantsAPI extends ApiClient {
   // Every agent of the account at once, for the Relatórios screen. The action
   // below answers for one agent and cannot answer what an account with several
   // of them asks: which one is worth the money.
-  accountReport({ days = 30 } = {}) {
-    return axios.get(`${this.baseUrl()}/ai/report`, { params: { days } });
+  // `since`/`until` são epoch em segundos, do mesmo jeito que o resto de
+  // Relatórios já fala com o backend. `days` continua aceito porque o servidor
+  // ainda entende, e é o que sobra se alguém chamar isto sem intervalo.
+  accountReport({ days = 30, since = null, until: untilAt = null } = {}) {
+    const params = since && untilAt ? { since, until: untilAt } : { days };
+    return axios.get(`${this.baseUrl()}/ai/report`, { params });
   }
 
   // Measured performance for one agent, plus the last replies it sent.

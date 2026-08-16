@@ -577,6 +577,19 @@ Rails.application.routes.draw do
               post 'sessions/:session_name/logout', to: 'waha#logout_session'
               post 'sessions/:session_name/install_app', to: 'waha#install_app'
             end
+
+            # "Meu WhatsApp": perfil e status do número conectado. A sessão WAHA
+            # é sempre derivada de uma inbox da conta, nunca de um session_name
+            # vindo do request, por isso estas rotas não carregam a sessão.
+            get 'profile/inboxes', to: 'profile#inboxes'
+            get 'profile', to: 'profile#show'
+            put 'profile/name', to: 'profile#update_name'
+            put 'profile/about', to: 'profile#update_about'
+            put 'profile/picture', to: 'profile#update_picture'
+            delete 'profile/picture', to: 'profile#delete_picture'
+            post 'profile/status/text', to: 'profile#publish_text_status'
+            post 'profile/status/image', to: 'profile#publish_image_status'
+            post 'profile/status/video', to: 'profile#publish_video_status'
           end
 
           resources :webhooks, only: [:index, :create, :update, :destroy]

@@ -51,9 +51,9 @@ class Ai::Reports::InvocationMetrics
     cost_usd avg_latency_ms p95_latency_ms avg_confidence
   ].freeze
 
-  def initialize(account:, days:, zone:)
+  def initialize(account:, period:, zone:)
     @account = account
-    @days = days
+    @period = period
     @zone = zone
   end
 
@@ -74,7 +74,7 @@ class Ai::Reports::InvocationMetrics
     found = scope.group(Arel.sql(local_date))
                  .pluck(Arel.sql("#{local_date}, #{DAILY_SQL}"))
                  .index_by { |row| row.first.to_s }
-    (0...@days).map { |offset| daily_row(found, (@days - 1 - offset).days.ago.in_time_zone(@zone).to_date.to_s) }
+    @period.local_days.map { |date| daily_row(found, date) }
   end
 
   # All 24 hours, always. A gap in this one is information: it is when the
@@ -123,7 +123,7 @@ class Ai::Reports::InvocationMetrics
   end
 
   def scope
-    @scope ||= Ai::Invocation.where(account_id: @account.id, created_at: @days.days.ago..)
+    @scope ||= Ai::Invocation.where(account_id: @account.id, created_at: @period.range)
   end
 
   def flagged_scope

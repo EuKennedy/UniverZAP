@@ -14,8 +14,10 @@ vi.mock('vue-i18n', () => ({
 
 const report = (overrides = {}) => ({
   period_days: 30,
+  period: { since: 1_754_000_000, until: 1_756_592_000 },
   timezone: 'America/Sao_Paulo',
   totals: { replies: 12, conversations: 8, cost_cents_brl: 900 },
+  comparison: {},
   quality: {},
   credits: {},
   leads: {},
@@ -31,6 +33,23 @@ const report = (overrides = {}) => ({
 // The children are covered by their own specs. What matters here is the
 // fetching, the period and which state the card is in.
 const stubs = {
+  // O picker de verdade tem calendário, presets e teclado próprios, e nada
+  // disso é responsabilidade deste card: o que este card promete é traduzir o
+  // intervalo escolhido em uma requisição.
+  WootDatePicker: {
+    emits: ['dateRangeChanged'],
+    setup(props, { emit }) {
+      return {
+        pick: () =>
+          emit('dateRangeChanged', [
+            new Date(2026, 6, 1),
+            new Date(2026, 6, 7),
+            'custom',
+          ]),
+      };
+    },
+    template: '<button class="picker" @click="pick" />',
+  },
   AthenasSummary: { props: ['report'], template: '<div class="summary" />' },
   AthenasTrendChart: {
     props: ['points', 'title', 'color'],
@@ -45,10 +64,12 @@ const stubs = {
 };
 
 const mountCard = () => mount(AthenasReportContainer, { global: { stubs } });
-const periodButton = (wrapper, days) =>
-  wrapper
-    .findAll('button')
-    .find(button => button.text() === `ATHENAS_REPORT.DAYS:${days}`);
+
+const lastCall = () => accountReport.mock.calls.at(-1)[0];
+const daysAsked = () => {
+  const { since, until } = lastCall();
+  return Math.round((until - since) / 86400);
+};
 
 describe('AthenasReportContainer', () => {
   beforeEach(() => {
@@ -60,7 +81,7 @@ describe('AthenasReportContainer', () => {
     mountCard();
     await flushPromises();
 
-    expect(accountReport).toHaveBeenCalledWith({ days: 30 });
+    expect(daysAsked()).toBe(30);
   });
 
   it('renders the panel once the numbers arrive', async () => {
@@ -71,14 +92,17 @@ describe('AthenasReportContainer', () => {
     expect(wrapper.find('.agents').text()).toBe('1');
   });
 
-  it('refetches when the period changes', async () => {
+  // Um intervalo escolhido no calendário, e não um dos três presets que a
+  // primeira versão oferecia: "como foi a semana da promoção" é a pergunta que
+  // 7/30/90 dias não conseguia responder.
+  it('asks for whatever range the calendar returns', async () => {
     const wrapper = mountCard();
     await flushPromises();
 
-    await periodButton(wrapper, 7).trigger('click');
+    await wrapper.find('.picker').trigger('click');
     await flushPromises();
 
-    expect(accountReport).toHaveBeenLastCalledWith({ days: 7 });
+    expect(daysAsked()).toBe(7);
   });
 
   // A skeleton here would collapse the card and jump the whole page every time
@@ -93,7 +117,7 @@ describe('AthenasReportContainer', () => {
       })
     );
 
-    await periodButton(wrapper, 90).trigger('click');
+    await wrapper.find('.picker').trigger('click');
     await flushPromises();
 
     expect(wrapper.find('.summary').exists()).toBe(true);

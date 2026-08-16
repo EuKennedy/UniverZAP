@@ -374,6 +374,14 @@ const builtMenu = computed(() => {
       activeOn: ['tasks'],
     },
     {
+      name: 'WhatsAppProfile',
+      label: t('SIDEBAR.WHATSAPP_PROFILE'),
+      icon: 'i-ri-whatsapp-line',
+      to: accountScopedRoute('whatsapp_profile'),
+      dataOnboarding: 'whatsapp-profile-nav',
+      activeOn: ['whatsapp_profile'],
+    },
+    {
       name: 'AthenasAI',
       label: t('SIDEBAR.ATHENAS_AI'),
       icon: 'i-lucide-brain-circuit',
@@ -552,6 +560,15 @@ const builtMenu = computed(() => {
           label: t('SIDEBAR.REPORTS_OVERVIEW'),
           to: accountScopedRoute('account_overview_reports'),
         },
+        // Logo abaixo de Visão geral, e não no fim da lista onde ficava o
+        // relatório do bot nativo. A ordem de um menu é uma declaração de
+        // importância, e o agente responde mais mensagem que qualquer outra
+        // coisa medida aqui.
+        {
+          name: 'Reports Athenas',
+          label: t('SIDEBAR.REPORTS_ATHENAS'),
+          to: accountScopedRoute('athenas_reports'),
+        },
         {
           name: 'Report Conversation',
           label: t('SIDEBAR.REPORTS_CONVERSATION'),
@@ -567,13 +584,6 @@ const builtMenu = computed(() => {
           name: 'Reports SLA',
           label: t('SIDEBAR.REPORTS_SLA'),
           to: accountScopedRoute('sla_reports'),
-        },
-        // Onde ficava o relatório do bot nativo, que está desligado nesta
-        // instalação: quem atende cliente aqui é o Athenas.
-        {
-          name: 'Reports Athenas',
-          label: t('SIDEBAR.REPORTS_ATHENAS'),
-          to: accountScopedRoute('athenas_reports'),
         },
       ],
     },

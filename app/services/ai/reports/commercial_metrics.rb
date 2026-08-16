@@ -7,9 +7,9 @@
 # sale, a revenue event is money a human or an integration explicitly credited,
 # and an appointment is a row we wrote when we booked it.
 class Ai::Reports::CommercialMetrics
-  def initialize(account:, days:, zone:)
+  def initialize(account:, period:, zone:)
     @account = account
-    @days = days
+    @period = period
     @zone = zone
   end
 
@@ -86,15 +86,15 @@ class Ai::Reports::CommercialMetrics
   # `last_seen_at`, not `created_at`: a lead is a live thing that warms and
   # cools, and the question the panel answers is which ones moved in the period.
   def leads_scope
-    @leads_scope ||= Ai::LeadOpportunity.where(account_id: @account.id, last_seen_at: @days.days.ago..)
+    @leads_scope ||= Ai::LeadOpportunity.where(account_id: @account.id, last_seen_at: @period.range)
   end
 
   def revenue_scope
-    @revenue_scope ||= Ai::RevenueEvent.where(account_id: @account.id, occurred_at: @days.days.ago..)
+    @revenue_scope ||= Ai::RevenueEvent.where(account_id: @account.id, occurred_at: @period.range)
   end
 
   def appointments_scope
-    @appointments_scope ||= Ai::Calendar::Appointment.where(account_id: @account.id, created_at: @days.days.ago..)
+    @appointments_scope ||= Ai::Calendar::Appointment.where(account_id: @account.id, created_at: @period.range)
   end
 
   def bands

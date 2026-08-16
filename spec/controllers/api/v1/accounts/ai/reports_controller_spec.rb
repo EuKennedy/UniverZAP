@@ -56,18 +56,35 @@ RSpec.describe 'Api::V1::Accounts::Ai::ReportsController', type: :request do
   end
 
   describe 'the period' do
-    it 'accepts the ranges the screen offers' do
+    it 'accepts a preset number of days' do
       fetch(administrator, { days: 7 })
 
       expect(response.parsed_body['period_days']).to eq(7)
     end
 
-    # Snapped rather than clamped, so nobody can quote a window the screen
-    # cannot reproduce.
-    it 'snaps anything else back to the default' do
-      fetch(administrator, { days: 400 })
+    # O par de datas do calendário, em epoch, que é como o resto de Relatórios
+    # já fala com o backend.
+    it 'accepts a range picked on the calendar' do
+      fetch(administrator, { since: 9.days.ago.to_i, until: 3.days.ago.to_i })
 
+      expect(response.parsed_body['period_days']).to eq(7)
+    end
+
+    # Uma data digitada errada não pode derrubar o relatório inteiro: cai no
+    # padrão e a tela continua respondendo.
+    it 'falls back to the default when the dates are unusable' do
+      fetch(administrator, { since: 'ontem', until: '' })
+
+      expect(response).to have_http_status(:success)
       expect(response.parsed_body['period_days']).to eq(30)
+    end
+
+    # Cada requisição varre o log duas vezes, a janela pedida e a anterior, e
+    # ninguém digitando 2015 no calendário deveria varrer a instalação inteira.
+    it 'caps a window nobody should be able to ask for' do
+      fetch(administrator, { days: 4000 })
+
+      expect(response.parsed_body['period_days']).to eq(Ai::Reports::Period::MAX_DAYS)
     end
   end
 end

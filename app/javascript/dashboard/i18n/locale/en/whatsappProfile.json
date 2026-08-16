@@ -1,0 +1,62 @@
+{
+  "WHATSAPP_PROFILE": {
+    "TITLE": "My WhatsApp",
+    "SUBTITLE": "Publish status updates and edit the profile of your business number without reaching for the phone.",
+    "CONNECTION": "Connection",
+    "EMPTY": {
+      "TITLE": "No WhatsApp connection here yet",
+      "DESCRIPTION": "To publish a status or edit the profile you first need to connect a WhatsApp number under inboxes.",
+      "ACTION": "Connect a number"
+    },
+    "PROFILE": {
+      "TITLE": "Profile",
+      "DESCRIPTION": "This is what a customer sees when they open the conversation with you.",
+      "PICTURE": "Profile picture",
+      "CHANGE_PICTURE": "Change picture",
+      "REMOVE_PICTURE": "Remove",
+      "NAME": "Name",
+      "NAME_PLACEHOLDER": "How your business shows up in the chat",
+      "ABOUT": "About",
+      "ABOUT_PLACEHOLDER": "e.g. open Monday to Friday, 9am to 6pm",
+      "ABOUT_HINT": "WhatsApp does not return the current about text to the dashboard, so this field starts empty and is used to write a new one.",
+      "SAVE": "Save",
+      "NAME_SAVED": "Name updated.",
+      "ABOUT_SAVED": "About updated.",
+      "PICTURE_SAVED": "Picture updated.",
+      "PICTURE_REMOVED": "Picture removed."
+    },
+    "STATUS": {
+      "TITLE": "Status",
+      "DESCRIPTION": "A status goes out to every contact of this number and disappears after 24 hours.",
+      "KIND": {
+        "TEXT": "Text",
+        "IMAGE": "Image",
+        "VIDEO": "Video"
+      },
+      "TEXT_PLACEHOLDER": "What do you want to share today",
+      "BACKGROUND": "Background colour",
+      "CAPTION": "Caption",
+      "CAPTION_PLACEHOLDER": "Optional",
+      "CHOOSE_IMAGE": "Choose image",
+      "CHOOSE_VIDEO": "Choose video",
+      "REMOVE_FILE": "Remove file",
+      "VIDEO_HINT": "WhatsApp only accepts mp4 for a status, so we convert the file before publishing when it comes in another format.",
+      "PUBLISH": "Publish status",
+      "PUBLISHED": "Status published.",
+      "CONFIRM": {
+        "TITLE": "Publish this status?",
+        "DESCRIPTION": "It goes out to every contact of this number and stays visible for 24 hours, and it cannot be deleted from the dashboard afterwards.",
+        "PREVIEW": "What will be published",
+        "NO_CAPTION": "No caption",
+        "CONFIRM": "Publish now",
+        "CANCEL": "Go back"
+      }
+    },
+    "ERRORS": {
+      "GENERIC": "We could not reach WhatsApp right now.",
+      "UPLOAD": "The file could not be uploaded.",
+      "TEXT_REQUIRED": "Write the status text before publishing.",
+      "FILE_REQUIRED": "Choose a file before publishing."
+    }
+  }
+}

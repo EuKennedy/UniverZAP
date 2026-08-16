@@ -10,9 +10,19 @@
  * The period selector sits above everything it scopes and nowhere else: a
  * filter inside a chart card scopes one card and leaves the reader comparing a
  * week against a quarter without being told.
+ *
+ * É o mesmo WootDatePicker do resto de Relatórios, e não um seletor próprio.
+ * Três botões de 7/30/90 dias não respondem "como foi o mês passado" nem "e a
+ * semana da promoção", e um segundo controle de data com aparência e presets
+ * diferentes na mesma tela ensina o operador duas gramáticas para a mesma
+ * pergunta.
  */
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import subDays from 'date-fns/subDays';
+import { getUnixStartOfDay, getUnixEndOfDay } from 'helpers/DateHelper';
+import WootDatePicker from 'dashboard/components/ui/DatePicker/DatePicker.vue';
+import { DATE_RANGE_TYPES } from 'dashboard/components/ui/DatePicker/helpers/DatePickerHelper';
 import AthenasAPI from 'dashboard/api/athenas';
 import Spinner from 'shared/components/Spinner.vue';
 import AthenasSummary from './AthenasSummary.vue';
@@ -22,12 +32,12 @@ import AthenasAgentTable from './AthenasAgentTable.vue';
 
 const { t } = useI18n();
 
-const PERIODS = [7, 30, 90];
-
 const report = ref(null);
-const days = ref(30);
 const isLoading = ref(false);
 const failed = ref(false);
+
+const dateRange = ref([subDays(new Date(), 29), new Date()]);
+const rangeType = ref(DATE_RANGE_TYPES.LAST_30_DAYS);
 
 const money = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -39,7 +49,10 @@ const fetchReport = async () => {
   isLoading.value = true;
   failed.value = false;
   try {
-    const { data } = await AthenasAPI.accountReport({ days: days.value });
+    const { data } = await AthenasAPI.accountReport({
+      since: getUnixStartOfDay(dateRange.value[0]),
+      until: getUnixEndOfDay(dateRange.value[1]),
+    });
     report.value = data;
   } catch (error) {
     failed.value = true;
@@ -48,8 +61,17 @@ const fetchReport = async () => {
   }
 };
 
+// Sem watch no intervalo: o picker atualiza o v-model enquanto o operador ainda
+// está escolhendo o segundo dia, e reagir a isso dispara uma requisição para uma
+// janela de um dia só que ninguém pediu. O evento de fechamento é o único
+// momento em que a escolha está inteira.
+const onDateRangeChange = ([start, end, picked]) => {
+  dateRange.value = [start, end];
+  rangeType.value = picked || DATE_RANGE_TYPES.CUSTOM_RANGE;
+  fetchReport();
+};
+
 onMounted(fetchReport);
-watch(days, fetchReport);
 
 // An account that has never created an agent gets nothing rather than a wall of
 // zeroes: a panel full of R$ 0,00 reads like a broken product, not an unused
@@ -105,21 +127,12 @@ const hourSeries = computed(() =>
           {{ t('ATHENAS_REPORT.SUBTITLE') }}
         </p>
       </div>
-      <div class="flex flex-shrink-0 gap-1 items-center">
-        <button
-          v-for="period in PERIODS"
-          :key="period"
-          type="button"
-          class="px-2.5 h-7 text-[13px] rounded-md transition-colors"
-          :class="
-            days === period
-              ? 'bg-n-alpha-2 text-n-slate-12 font-medium'
-              : 'text-n-slate-11 hover:bg-n-alpha-1'
-          "
-          @click="days = period"
-        >
-          {{ t('ATHENAS_REPORT.DAYS', { n: period }) }}
-        </button>
+      <div class="flex flex-shrink-0 items-center">
+        <WootDatePicker
+          v-model:date-range="dateRange"
+          v-model:range-type="rangeType"
+          @date-range-changed="onDateRangeChange"
+        />
       </div>
     </header>
 

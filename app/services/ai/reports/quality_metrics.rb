@@ -9,9 +9,9 @@
 # already done that the agent has not learned from yet, and it silently decays
 # into a screen full of the same complaint.
 class Ai::Reports::QualityMetrics
-  def initialize(account:, days:)
+  def initialize(account:, period:)
     @account = account
-    @days = days
+    @period = period
   end
 
   def totals
@@ -48,7 +48,7 @@ class Ai::Reports::QualityMetrics
   end
 
   def scope
-    @scope ||= Ai::ResponseFeedback.where(account_id: @account.id, created_at: @days.days.ago..)
+    @scope ||= Ai::ResponseFeedback.where(account_id: @account.id, created_at: @period.range)
   end
 
   # NULL rather than 100% when nobody reviewed anything. A fresh account showing

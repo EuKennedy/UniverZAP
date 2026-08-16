@@ -7,7 +7,21 @@
     "FAILED": "Não consegui carregar os números dos agentes agora.",
     "RETRY": "Tentar de novo",
     "NO_AGENTS": "Esta conta ainda não tem nenhum agente de IA, então não há o que medir por aqui.",
+    "OVERVIEW": {
+      "TITLE": "Agentes de IA",
+      "PERIOD": "últimos 30 dias",
+      "OPEN": "Ver relatório completo",
+      "LOADING": "Levantando os números dos agentes...",
+      "COMPARISON": "Variação contra os 30 dias anteriores",
+      "REPLIES": "Respostas entregues",
+      "CONVERSATIONS": "Conversas atendidas",
+      "BOOKINGS": "Agendamentos",
+      "REVENUE": "Receita atribuída",
+      "SPENT": "Consumido",
+      "ROI": "Retorno sobre o gasto"
+    },
     "SUMMARY": {
+      "COMPARISON": "Variação contra o período anterior de mesmo tamanho",
       "OPERATION": {
         "TITLE": "Operação",
         "REPLIES": "Respostas entregues",
@@ -27,7 +41,8 @@
         "SPENT": "Consumido no período",
         "PER_CONVERSATION": "Custo por conversa",
         "CACHE": "Entrada servida por cache",
-        "BALANCE": "Saldo atual"
+        "BALANCE": "Saldo atual",
+        "RUNWAY": "Dura cerca de {n} dias no ritmo do período"
       },
       "COMMERCIAL": {
         "TITLE": "Comercial",

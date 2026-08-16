@@ -5,7 +5,11 @@ require 'rails_helper'
 RSpec.describe Ai::Reports::AccountOverview do
   let(:account) { create(:account) }
   let(:assistant) { create(:ai_assistant, account: account, name: 'Marina') }
-  let(:report) { described_class.new(account: account, days: 30).perform }
+  let(:report) { overview(30) }
+
+  def overview(days)
+    described_class.new(account: account, period: Ai::Reports::Period.from_days(days)).perform
+  end
 
   # Every account is seeded with an agent called Sofia the moment it is created,
   # so "the agents of this account" is never an empty list and these tests must
@@ -224,22 +228,55 @@ RSpec.describe Ai::Reports::AccountOverview do
   end
 
   describe 'the period' do
-    # Snapped rather than clamped, so one person cannot quote 43 days and
-    # another 30 and both call it "the month".
-    it 'snaps anything the screen does not offer back to the default' do
-      expect(described_class.new(account: account, days: 43).perform[:period_days]).to eq(30)
-      expect(described_class.new(account: account, days: 0).perform[:period_days]).to eq(30)
+    # Any window, not the three the first version hard-coded: a report that only
+    # answers for 7, 30 or 90 days cannot answer "how was last month".
+    it 'honours whatever window it was handed' do
+      expect(overview(43)[:period_days]).to eq(43)
+      expect(overview(7)[:period_days]).to eq(7)
     end
 
-    it 'accepts the periods the screen offers' do
-      expect(described_class.new(account: account, days: 7).perform[:period_days]).to eq(7)
-      expect(described_class.new(account: account, days: 90).perform[:period_days]).to eq(90)
+    it 'reports the boundaries it actually used' do
+      expect(report[:period][:since]).to be < report[:period][:until]
+      expect(report[:period][:until]).to be_within(60).of(Time.current.to_i)
     end
 
     it 'ignores what happened before the window' do
       travel_to(40.days.ago) { reply(message_id: 1) }
 
       expect(report[:totals][:replies]).to be_zero
+    end
+
+    # Trinta dias é hoje mais os 29 anteriores. Contar 30 para trás a partir
+    # deste instante atravessa 31 datas e a série sai com uma coluna a mais.
+    it 'draws one column per local day and not one extra' do
+      expect(overview(30)[:daily].length).to eq(30)
+      expect(overview(7)[:daily].length).to eq(7)
+    end
+  end
+
+  describe 'comparison with the window before' do
+    # 1.240 respostas é muito ou pouco? Sem a janela anterior o painel mostra um
+    # número que não significa nada sozinho e o operador volta pra planilha.
+    it 'says how the period moved against the one before it' do
+      travel_to(20.days.ago) { reply(message_id: 1) }
+      travel_to(50.days.ago) { reply(message_id: 2) }
+      travel_to(55.days.ago) { reply(message_id: 3) }
+
+      expect(report[:comparison][:replies][:previous]).to eq(2)
+      expect(report[:comparison][:replies][:change]).to eq(-50.0)
+    end
+
+    # Sair de zero não é aumento de 100%, é a primeira vez, e a tela precisa
+    # poder dizer isso em vez de inventar um número.
+    it 'leaves the change empty when there is no base to compare against' do
+      reply(message_id: 1)
+
+      expect(report[:comparison][:replies][:previous]).to be_zero
+      expect(report[:comparison][:replies][:change]).to be_nil
+    end
+
+    it 'compares the money as well as the work' do
+      expect(report[:comparison].keys).to include(:cost_cents_brl, :revenue_brl, :bookings)
     end
   end
 end

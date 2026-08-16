@@ -51,6 +51,10 @@ en:
       waha:
         not_configured: 'WAHA integration is not configured on this server.'
         session_exists: 'A session with this name already exists.'
+        not_a_waha_inbox: 'This inbox is not connected to a WAHA WhatsApp session.'
+        media_not_found: 'The uploaded file could not be found. Upload it again and retry.'
+        media_wrong_type: 'The uploaded file is not of the expected type for this action.'
+        invalid_background_color: 'The background colour must be a hex value such as #38B42F.'
   auth:
     saml:
       invalid_email: 'Please enter a valid email address'

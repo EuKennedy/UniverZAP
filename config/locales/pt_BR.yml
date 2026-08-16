@@ -34,6 +34,14 @@ pt_BR:
       success: 'Canal reautenticado com sucesso'
       not_required: 'Reautenticação não é necessária para esta caixa de entrada'
       invalid_channel: 'Tipo de canal inválido para reautenticar'
+    whatsapp:
+      waha:
+        not_configured: 'A integração com a WAHA não está configurada neste servidor.'
+        session_exists: 'Já existe uma sessão com esse nome.'
+        not_a_waha_inbox: 'Esta caixa de entrada não está ligada a uma sessão de WhatsApp da WAHA.'
+        media_not_found: 'O arquivo enviado não foi encontrado. Envie de novo e tente outra vez.'
+        media_wrong_type: 'O arquivo enviado não é do tipo esperado para esta ação.'
+        invalid_background_color: 'A cor de fundo precisa ser um valor hexadecimal, como #38B42F.'
   auth:
     saml:
       invalid_email: 'Por favor, insira um endereço de e-mail válido'

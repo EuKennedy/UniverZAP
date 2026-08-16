@@ -11,8 +11,6 @@
 # its own table and hands back the same two shapes, totals and by-agent, so this
 # class only has to merge and derive.
 class Ai::Reports::AccountOverview
-  DEFAULT_DAYS = 30
-  ALLOWED_DAYS = [7, 30, 90].freeze
   # Average time a human takes to read and answer one message. The single
   # assumption in this payload, returned beside the number it produces so
   # nobody quotes the hours without it. Same figure Ai::RoiService uses; they
@@ -20,21 +18,36 @@ class Ai::Reports::AccountOverview
   # about the same month.
   SECONDS_PER_HUMAN_REPLY = Ai::RoiService::SECONDS_PER_HUMAN_REPLY
 
-  def initialize(account:, days: DEFAULT_DAYS)
+  # O que ganha seta de tendência. Deliberadamente curto: com tudo comparado a
+  # tela vira um mar de setinhas e nenhuma é lida. São as seis perguntas que um
+  # dono de operação faz olhando o mês.
+  COMPARED = %i[replies conversations flagged cost_cents_brl revenue_brl bookings].freeze
+
+  def initialize(account:, period:)
     @account = account
-    # Snapped to the periods the screen offers rather than clamped to a range.
-    # A free-form `days` would let one person quote 43 days and another 30 and
-    # call both "the month".
-    @days = ALLOWED_DAYS.include?(days.to_i) ? days.to_i : DEFAULT_DAYS
+    @requested_period = period
   end
 
   def perform
     {
-      period_days: @days,
+      period_days: period.days,
+      period: { since: period.starts_at.to_i, until: period.ends_at.to_i },
       timezone: clock.tz_name,
       generated_at: Time.current.to_i,
       totals: totals,
+      comparison: comparison,
       daily: daily,
+      agents: agents
+    }.merge(breakdowns)
+  end
+
+  private
+
+  # Os cortes que respondem "de onde veio", cada um vindo direto de uma classe
+  # de métrica e sem nada derivado no caminho. Separados de `perform` porque
+  # nada aqui precisa ser lido para entender o formato do payload.
+  def breakdowns
+    {
       hourly: invocations.hourly,
       models: invocations.models,
       phases: invocations.phases,
@@ -43,31 +56,36 @@ class Ai::Reports::AccountOverview
       leads: commercial.leads,
       revenue: commercial.revenue,
       bookings: commercial.bookings,
-      credits: credits.totals,
-      agents: agents
+      credits: credits.totals
     }
   end
-
-  private
 
   def clock
     @clock ||= Ai::Reports::AccountClock.new(@account)
   end
 
+  # The window is only knowable once the business clock is, which is why this
+  # class realigns what it was handed instead of the caller doing it: the
+  # controller reads a request and has no idea what time it is where the salon
+  # is.
+  def period
+    @period ||= @requested_period.align_to(clock.zone)
+  end
+
   def invocations
-    @invocations ||= Ai::Reports::InvocationMetrics.new(account: @account, days: @days, zone: clock.zone)
+    @invocations ||= Ai::Reports::InvocationMetrics.new(account: @account, period: period, zone: clock.zone)
   end
 
   def quality
-    @quality ||= Ai::Reports::QualityMetrics.new(account: @account, days: @days)
+    @quality ||= Ai::Reports::QualityMetrics.new(account: @account, period: period)
   end
 
   def commercial
-    @commercial ||= Ai::Reports::CommercialMetrics.new(account: @account, days: @days, zone: clock.zone)
+    @commercial ||= Ai::Reports::CommercialMetrics.new(account: @account, period: period, zone: clock.zone)
   end
 
   def credits
-    @credits ||= Ai::Reports::CreditMetrics.new(account: @account, days: @days, zone: clock.zone)
+    @credits ||= Ai::Reports::CreditMetrics.new(account: @account, period: period, zone: clock.zone)
   end
 
   # The call log owns the shape of the series, including which days are silent;
@@ -79,7 +97,13 @@ class Ai::Reports::AccountOverview
     invocations.daily.map { |row| row.merge(cost_cents_brl: spend[row[:date]].to_i) }
   end
 
+  # Memoizado porque `comparison` lê seis chaves daqui, uma por métrica
+  # comparada, e sem isto o hash inteiro seria remontado seis vezes.
   def totals
+    @totals ||= build_totals
+  end
+
+  def build_totals
     spent = credits.totals[:consumed_cents_brl]
     invocations.totals.merge(
       cost_cents_brl: spent,
@@ -87,6 +111,43 @@ class Ai::Reports::AccountOverview
       hours_saved_assumption_seconds: SECONDS_PER_HUMAN_REPLY,
       cache_savings_ratio: cache_ratio(invocations.totals)
     ).merge(unit_economics(spent, invocations.totals))
+  end
+
+  # A mesma janela imediatamente antes, para cada número virar uma direção.
+  #
+  # Custa uma segunda varredura do log, e é o preço de responder a pergunta que
+  # o painel não respondia: 1.240 respostas é muito ou pouco? Sem isso o
+  # operador olha um número que não significa nada sozinho e volta pra planilha.
+  #
+  # Só as seis de COMPARED, e só o que o período anterior consegue responder:
+  # as três classes baratas são instanciadas de novo, o resto não.
+  def comparison
+    before = previous_totals
+    COMPARED.index_with do |key|
+      { previous: before[key], change: change(totals[key], before[key]) }
+    end
+  end
+
+  def previous_totals
+    @previous_totals ||= begin
+      window = period.previous
+      log = Ai::Reports::InvocationMetrics.new(account: @account, period: window, zone: clock.zone).totals
+      money = Ai::Reports::CreditMetrics.new(account: @account, period: window, zone: clock.zone).totals
+      trade = Ai::Reports::CommercialMetrics.new(account: @account, period: window, zone: clock.zone)
+      log.slice(:replies, :conversations, :flagged)
+         .merge(cost_cents_brl: money[:consumed_cents_brl],
+                revenue_brl: trade.revenue[:total_brl],
+                bookings: trade.bookings[:booked])
+    end
+  end
+
+  # Variação percentual, ou nil quando não existe base para comparar. Sair de
+  # zero não é "aumento de 100%", é a primeira vez, e a tela precisa poder
+  # dizer isso em vez de inventar um número.
+  def change(now, before)
+    return nil if before.nil? || before.to_f.zero?
+
+    (((now.to_f - before.to_f) / before.to_f) * 100).round(1)
   end
 
   # The numbers an operator repeats to somebody else. Each one is NULL rather
@@ -99,6 +160,7 @@ class Ai::Reports::AccountOverview
       cost_per_conversation_brl: per(spent, stats[:conversations]),
       cost_per_booking_brl: per(spent, commercial.bookings[:booked]),
       revenue_brl: revenue_brl,
+      bookings: commercial.bookings[:booked],
       roi: roi(spent, revenue_brl)
     }
   end
