@@ -163,12 +163,20 @@ jobs:
           path: tmp/rspec_results.json
           if-no-files-found: ignore
 
+      # include-hidden-files é obrigatório aqui e não é preferência.
+      #
+      # A partir da v4.4 o upload-artifact ignora arquivo que começa com ponto,
+      # e o SimpleCov grava justamente em coverage/.resultset.json. Sem esta
+      # linha o artefato sobe com o HTML bonitinho e SEM o único arquivo que
+      # permite somar os 8 shards, então ninguém nunca viu o número real de
+      # cobertura deste repositório e nada avisou.
       - name: Upload backend coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-${{ matrix.ci_node_index }}
           path: coverage/
+          include-hidden-files: true
           if-no-files-found: ignore
 
       - name: Upload rails log on failure
@@ -177,6 +185,43 @@ jobs:
         with:
           name: rails-log-${{ matrix.ci_node_index }}
           path: log
+
+  # Cobertura do código que é NOSSO, somando os 8 shards.
+  #
+  # Precisa ser um job separado porque cada shard roda um oitavo dos specs e
+  # portanto enxerga um oitavo do código exercitado: um mínimo aplicado dentro
+  # do shard reprovaria por arquivo que outro shard cobriu inteiro.
+  #
+  # E mede só os módulos que este projeto criou. Um percentual único deste
+  # repositório mede sobretudo o Chatwoot, que a gente não escreveu, e sobe ou
+  # desce por decisão de outra gente.
+  coverage-gate:
+    name: Coverage gate (código UniverZAP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [backend-tests]
+    steps:
+      - uses: actions/checkout@v4
+      # Sem bundler-cache: o portão usa só json e yaml da stdlib, então
+      # instalar o Gemfile inteiro aqui seriam minutos gastos para nada.
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: false
+      - name: Download shard coverage
+        uses: actions/download-artifact@v4
+        with:
+          pattern: backend-coverage-*
+          path: coverage_shards
+      - name: Measure and gate
+        run: ruby bin/coverage_gate.rb coverage_shards
+      - name: Upload collated coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-collated
+          path: coverage_shards
+          include-hidden-files: true
+          if-no-files-found: ignore
 
   # Aggregator job — gives branch protection one stable required-check
   # name regardless of how many matrix shards backend-tests fans into.
@@ -187,6 +232,18 @@ jobs:
     needs: [lint-ruby, lint-frontend, frontend-tests, backend-tests]
     if: always()
     steps:
+      # coverage-gate ainda NÃO entra nesta lista, de propósito.
+      #
+      # A lógica dele tem spec própria rodando dentro de backend-tests, então
+      # um erro de cálculo já reprova aqui. O que ainda não rodou nenhuma vez é
+      # o encanamento: baixar oito artefatos e achar os resultsets dentro
+      # deles. Segurar o deploy de três features na estreia de um encanamento
+      # que ninguém viu funcionar seria trocar um risco real por um risco
+      # inventado.
+      #
+      # Promover assim que a primeira execução sair verde: acrescentar
+      # coverage-gate ao `needs` e ao `if` abaixo, e declarar os pisos medidos
+      # em config/coverage_floors.yml.
       - name: Ensure all required jobs succeeded
         run: |
           if [ "${{ needs.lint-ruby.result }}" != "success" ] || \

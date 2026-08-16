@@ -1,0 +1,18 @@
+# Piso de cobertura por módulo nosso, lido por bin/coverage_gate.rb.
+#
+# Grupo sem piso declarado é só reportado. Isso é deliberado: exigir um número
+# de algo que nunca foi medido é escolher no chute e depois conviver com a
+# escolha, seja ela frouxa demais para pegar regressão ou apertada demais e
+# reprovando gente que não quebrou nada.
+#
+# O procedimento é: a primeira CI verde imprime o percentual real de cada
+# grupo no job "Coverage gate", e aí a gente declara aqui um ou dois pontos
+# abaixo do medido. A partir daí o piso trava regressão, e sobe quando o
+# número sobe. Nunca desça um piso para fazer a build passar: ou o teste que
+# faltou é escrito, ou a queda é explicada no PR.
+#
+# Os nomes dos grupos têm que bater exatamente com lib/univerzap_coverage.rb.
+#
+# Exemplo, depois de medir:
+#   'Athenas (IA)': 82.5
+#   'WhatsApp & WAHA': 74.0
