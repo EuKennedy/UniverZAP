@@ -95,20 +95,34 @@ header.stuck .hd-bg{opacity:1}header.stuck .hd{height:60px}
 .nav a:hover{color:var(--ink)}.nav a:hover::after{transform:scaleX(1)}
 .hd-cta{display:flex;align-items:center;gap:9px}
 .hd-cta .li{display:none;color:var(--ink);text-decoration:none;font-weight:500;font-size:14.5px;padding:8px 6px}
+.hd-cta .btn-p{padding:11px 18px;font-size:14px}
 .iconbtn{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-bd);cursor:pointer;color:var(--ink);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:transform .2s}
 .iconbtn:hover{transform:translateY(-1px)}.iconbtn i{width:19px;height:19px}
 .theme-tg .sun{display:none}.theme-tg .moon{display:block}
 :root[data-theme="light"] .theme-tg .sun{display:block}:root[data-theme="light"] .theme-tg .moon{display:none}
+/* Marca, botão e menu já enchem 375px. O terceiro ícone empurrava o de menu
+   para fora da tela, então no celular o tema mora dentro do menu. */
+.hd-cta .theme-tg{display:none}
 .burger{display:grid}
-.sheet{position:fixed;inset:0;z-index:59;background:var(--nav-bg-solid);backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%);display:flex;flex-direction:column;justify-content:center;padding:0 30px;opacity:0;pointer-events:none;transition:opacity .4s}
-.sheet.open{opacity:1;pointer-events:auto}
-.sheet a{font-family:var(--disp);font-weight:600;font-size:clamp(2rem,9vw,3rem);color:var(--ink);text-decoration:none;padding:9px 0;letter-spacing:-.03em;opacity:0;transform:translateY(14px);transition:opacity .5s var(--ease),transform .5s var(--ease),color .2s}
-.sheet.open a{opacity:1;transform:none}
-.sheet a:nth-child(2){transition-delay:.05s}.sheet a:nth-child(3){transition-delay:.1s}.sheet a:nth-child(4){transition-delay:.15s}.sheet a:nth-child(5){transition-delay:.2s}.sheet a:nth-child(6){transition-delay:.25s}.sheet a:nth-child(7){transition-delay:.3s}
-.sheet a:hover{color:var(--green)}
-.sheet .cls{position:absolute;top:20px;right:24px}
-.sheet .m-cta{margin-top:26px;display:flex;gap:12px;opacity:0;transition:opacity .5s .35s}
+/* z-index acima do header (60). Embaixo dele, o X do menu caía justamente
+   sob o botão de abrir, e o clique de fechar ia parar no botão errado. */
+.sheet{position:fixed;inset:0;z-index:90;background:var(--nav-bg-solid);backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%);display:flex;flex-direction:column;justify-content:center;justify-content:safe center;padding:82px 28px 34px;overflow-y:auto;overscroll-behavior:contain;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .4s,visibility 0s .4s}
+.sheet.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .4s,visibility 0s}
+/* Só os links diretos. Antes isso pegava também os botões dentro de .m-cta e
+   sobrescrevia tamanho, padding e cor deles, que é o que os deixava ilegíveis. */
+.sheet>a{font-family:var(--disp);font-weight:600;font-size:clamp(1.9rem,8.5vw,2.8rem);line-height:1.1;color:var(--ink);text-decoration:none;padding:8px 0;letter-spacing:-.03em;opacity:0;transform:translateY(14px);transition:opacity .5s var(--ease),transform .5s var(--ease),color .2s}
+.sheet.open>a{opacity:1;transform:none}
+/* Por tipo, e não por posição: os botões do topo entram e saem da folha sem
+   desmontar a entrada escalonada dos links. */
+.sheet>a:nth-of-type(1){transition-delay:.05s}.sheet>a:nth-of-type(2){transition-delay:.1s}.sheet>a:nth-of-type(3){transition-delay:.15s}.sheet>a:nth-of-type(4){transition-delay:.2s}.sheet>a:nth-of-type(5){transition-delay:.25s}.sheet>a:nth-of-type(6){transition-delay:.3s}.sheet>a:nth-of-type(7){transition-delay:.35s}
+.sheet>a:hover{color:var(--green)}
+/* 13px alinha o X exatamente onde estava o botão de menu, na altura de 70px do
+   header, para o ícone trocar de forma sem sair do lugar. */
+.sheet .cls{position:absolute;top:13px;right:24px}
+.sheet .theme-tg{display:grid;position:absolute;top:13px;left:24px}
+.sheet .m-cta{margin-top:26px;padding-top:24px;border-top:1px solid var(--line-2);display:grid;gap:10px;opacity:0;transition:opacity .5s .35s}
 .sheet.open .m-cta{opacity:1}
+.sheet .m-cta .btn{width:100%;min-height:52px;font-size:16px;padding:15px 22px}
 
 section{position:relative;padding:clamp(64px,9vw,120px) 0;content-visibility:auto;contain-intrinsic-size:auto 700px}
 .eyeline{max-width:720px}
@@ -350,7 +364,7 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
   .ft{grid-template-columns:1.5fr 1fr 1fr 1fr}
 }
 @media(min-width:960px){
-  .nav{display:flex}.hd-cta .li{display:inline-block}.burger{display:none}
+  .nav{display:flex}.hd-cta .li{display:inline-block}.hd-cta .theme-tg{display:grid}.burger{display:none}
   .hero-grid{grid-template-columns:1.06fr .94fr}
   .split{grid-template-columns:1.04fr .96fr}.split.rev .txt{order:2}
   .persona{grid-template-columns:repeat(4,1fr)}.sec4{grid-template-columns:repeat(4,1fr)}
@@ -358,6 +372,10 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
   .feature-grid{grid-template-columns:repeat(3,1fr)}
 }
 @media(max-width:640px){.rcard{flex-basis:76vw}.rnav{display:none}.rtrack{padding:28px 12vw}}
+/* Aperta a linha do topo nos telefones estreitos para o botão de menu caber
+   inteiro dentro da tela, com folga da borda. */
+@media(max-width:479px){.hd{gap:10px}.hd-cta{gap:7px}.hd-cta .btn-p{padding:10px 14px;font-size:13.5px}}
+@media(max-width:359px){.xs-hide{display:none}}
 @media(max-width:959px){
   .lg,.btn-g,.h-badge,.mono,.iconbtn,.faq details,.rnav,.qr{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   .lg::after{display:none}.chip{animation:none}
@@ -382,18 +400,19 @@ fbq('init','2274850053326427');fbq('track','PageView');
       <a href="#recursos">Recursos</a><a href="#clientes">Clientes</a><a href="#planos">Planos</a><a href="#faq">Dúvidas</a>
     </nav>
     <div class="hd-cta">
-      <a href="#" class="li">Entrar</a>
+      <a href="https://app.univerzap.cloud" class="li">Entrar</a>
       <button class="iconbtn theme-tg" id="themeTg" aria-label="Alternar tema"><i class="moon" data-lucide="moon"></i><i class="sun" data-lucide="sun"></i></button>
-      <a href="#planos" class="btn btn-p" style="padding:11px 18px;font-size:14px">Assinar agora</a>
-      <button class="iconbtn burger" id="burger" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+      <a href="#planos" class="btn btn-p"><span>Assinar<span class="xs-hide"> agora</span></span></a>
+      <button class="iconbtn burger" id="burger" type="button" aria-label="Abrir menu" aria-controls="sheet" aria-expanded="false"><i data-lucide="menu"></i></button>
     </div>
   </div></div>
 </header>
-<div class="sheet" id="sheet">
-  <button class="iconbtn cls" id="cls" aria-label="Fechar"><i data-lucide="x"></i></button>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Menu" aria-hidden="true">
+  <button class="iconbtn theme-tg" type="button" aria-label="Alternar tema"><i class="moon" data-lucide="moon"></i><i class="sun" data-lucide="sun"></i></button>
+  <button class="iconbtn cls" id="cls" type="button" aria-label="Fechar menu"><i data-lucide="x"></i></button>
   <a href="#como">Como funciona</a><a href="#conexao">Conexão</a><a href="#athenas">Athenas IA</a>
   <a href="#recursos">Recursos</a><a href="#clientes">Clientes</a><a href="#planos">Planos</a><a href="#faq">Dúvidas</a>
-  <div class="m-cta"><a href="#" class="btn btn-g btn-lg">Entrar</a><a href="#planos" class="btn btn-p btn-lg">Assinar agora</a></div>
+  <div class="m-cta"><a href="https://app.univerzap.cloud" class="btn btn-g btn-lg">Entrar</a><a href="#planos" class="btn btn-p btn-lg">Assinar agora</a></div>
 </div>
 
 <header class="hero hero-vsl" id="top" style="position:static">
@@ -717,7 +736,7 @@ fbq('init','2274850053326427');fbq('track','PageView');
         <p>Seu WhatsApp, no controle total. Atendimento, automação e vendas numa só plataforma.</p>
       </div>
       <div class="ft-c"><h4>Produto</h4><a href="#recursos">Recursos</a><a href="#athenas">Athenas IA</a><a href="#chatflow">Chatflow</a><a href="#conexao">Conexão</a><a href="#casos">Casos de uso</a></div>
-      <div class="ft-c"><h4>Empresa</h4><a href="#clientes">Clientes</a><a href="#">Suporte</a><a href="#">Documentação</a><a href="#">Entrar</a></div>
+      <div class="ft-c"><h4>Empresa</h4><a href="#clientes">Clientes</a><a href="#">Suporte</a><a href="#">Documentação</a><a href="https://app.univerzap.cloud">Entrar</a></div>
       <div class="ft-c"><h4>Legal</h4><a href="#seguranca">Segurança</a><a href="#">Privacidade / DPO</a><a href="#">Termos de uso</a><a href="#">LGPD</a></div>
     </div>
     <div class="ft-bot"><span>© 2026 UniverZAP · Construído para escalar.</span><span>Parceiro oficial Meta · Não afiliado à Chatwoot Inc.</span></div>
@@ -741,12 +760,14 @@ window.TESTIMONIALS = [
 (function(){
   var root=document.documentElement;
   if(localStorage.getItem('uz-theme')==='light')root.setAttribute('data-theme','light');
-  var tg=document.getElementById('themeTg');
-  if(tg)tg.addEventListener('click',function(){
+  // São dois botões, um no header e outro dentro do menu, porque no celular o
+  // do header não cabe. Os dois mexem no mesmo lugar.
+  function flip(){
     var light=root.getAttribute('data-theme')==='light';
     if(light){root.removeAttribute('data-theme');localStorage.setItem('uz-theme','dark');}
     else{root.setAttribute('data-theme','light');localStorage.setItem('uz-theme','light');}
-  });
+  }
+  document.querySelectorAll('.theme-tg').forEach(function(tg){tg.addEventListener('click',flip)});
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
@@ -762,10 +783,36 @@ window.TESTIMONIALS = [
   addEventListener('scroll',function(){var y=window.scrollY;hd.classList.toggle('stuck',y>28);if(y>last&&y>420)hd.classList.add('hide');else hd.classList.remove('hide');last=y},{passive:true});
 
   var burger=document.getElementById('burger'),sheet=document.getElementById('sheet'),cls=document.getElementById('cls');
-  function closeSheet(){sheet.classList.remove('open');document.body.style.overflow=''}
-  burger.addEventListener('click',function(){sheet.classList.add('open');document.body.style.overflow='hidden';icons()});
+  // Um estado só, lido da classe, para o botão de menu poder abrir e fechar sem
+  // que abrir duas vezes deixe o corpo travado.
+  function setSheet(open){
+    sheet.classList.toggle('open',open);
+    sheet.setAttribute('aria-hidden',open?'false':'true');
+    burger.setAttribute('aria-expanded',open?'true':'false');
+    document.body.style.overflow=open?'hidden':'';
+    if(open){icons();requestAnimationFrame(function(){cls.focus()})}
+    else if(sheet.contains(document.activeElement))burger.focus();
+  }
+  function isSheetOpen(){return sheet.classList.contains('open')}
+  function closeSheet(){setSheet(false)}
+  burger.addEventListener('click',function(){setSheet(!isSheetOpen())});
   cls.addEventListener('click',closeSheet);
+  // Clique no fundo, e não em cima de um link, também fecha.
+  sheet.addEventListener('click',function(e){if(e.target===sheet)closeSheet()});
   sheet.querySelectorAll('a').forEach(function(a){a.addEventListener('click',closeSheet)});
+  addEventListener('keydown',function(e){if(e.key==='Escape'&&isSheetOpen())closeSheet()});
+  // O menu cobre a tela inteira, então o Tab não pode escapar para o header que
+  // ficou atrás dele.
+  sheet.addEventListener('keydown',function(e){
+    if(e.key!=='Tab')return;
+    var f=sheet.querySelectorAll('a[href],button'),firstEl=f[0],lastEl=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===firstEl){e.preventDefault();lastEl.focus()}
+    else if(!e.shiftKey&&document.activeElement===lastEl){e.preventDefault();firstEl.focus()}
+  });
+  // No desktop o botão de menu some. Se a janela crescer com o menu aberto,
+  // sobra um corpo travado sem nada na tela para destravá-lo.
+  var wide=matchMedia('(min-width:960px)');
+  addEventListener('resize',function(){if(wide.matches&&isSheetOpen())closeSheet()},{passive:true});
 
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12,rootMargin:'0px 0px -7% 0px'});
   document.querySelectorAll('.rv').forEach(function(el){io.observe(el)});
@@ -778,7 +825,9 @@ window.TESTIMONIALS = [
   var lb=document.getElementById('lb'),inner=document.getElementById('lbInner');
   function open(guid){inner.innerHTML='<iframe src="https://iframe.mediadelivery.net/embed/'+LIB+'/'+guid+'?autoplay=true&preload=true" loading="lazy" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>';lb.classList.add('open');document.body.style.overflow='hidden'}
   function closeLb(){lb.classList.remove('open');document.body.style.overflow='';setTimeout(function(){inner.innerHTML=''},320)}
-  if(lb){document.getElementById('lbX').addEventListener('click',closeLb);lb.addEventListener('click',function(e){if(e.target===lb)closeLb()});addEventListener('keydown',function(e){if(e.key==='Escape')closeLb()});}
+  // Só fecha se estiver aberto: senão um Esc com o menu na tela zerava o
+  // overflow do corpo por conta de um lightbox que ninguém abriu.
+  if(lb){document.getElementById('lbX').addEventListener('click',closeLb);lb.addEventListener('click',function(e){if(e.target===lb)closeLb()});addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.classList.contains('open'))closeLb()});}
 
   var VID=window.VSL_GUID,vslP=document.getElementById('vslPlayer');
   if(vslP&&VID){vslP.addEventListener('click',function(){
