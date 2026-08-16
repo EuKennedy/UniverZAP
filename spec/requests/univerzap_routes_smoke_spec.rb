@@ -51,7 +51,7 @@ RSpec.describe 'UniverZAP routes smoke', type: :request do
       next unless owned_controllers.any? { |prefix| controller.start_with?(prefix) }
       next unless route.verb.to_s.include?('GET')
 
-      route.path.spec.to_s.sub(/\(\.:format\)\z/, '')
+      route.path.spec.to_s.delete_suffix('(.:format)')
     end.uniq
   end
 

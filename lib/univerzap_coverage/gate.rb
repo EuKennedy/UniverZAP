@@ -119,7 +119,14 @@ class UniverzapCoverage::Gate
   private
 
   def build_report
+    # rubocop:disable Rails/IndexWith
+    # `index_with` é ActiveSupport, e este arquivo precisa rodar sem ele: o
+    # job de cobertura chama bin/coverage_gate.rb com `bundler-cache: false`,
+    # sem Rails e sem gem nenhuma instalada, justamente para não gastar
+    # minutos montando o Gemfile inteiro só para somar oito JSON. Trocar por
+    # index_with aqui deixa o portão verde no RuboCop e morto na execução.
     blank = UniverzapCoverage::GROUPS.keys.to_h { |name| [name, Row.new(0, 0, 0, [])] }
+    # rubocop:enable Rails/IndexWith
     coverage.each_with_object(blank) do |(path, lines), out|
       group = UniverzapCoverage.group_for(path)
       next unless group

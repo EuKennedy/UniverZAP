@@ -10,8 +10,16 @@ RSpec.describe UniverzapCoverage::Gate do
   let(:ours) { '/home/runner/work/app/services/ai/reports/period.rb' }
   let(:upstream) { '/home/runner/work/app/services/filter_service.rb' }
 
-  def gate(coverage, floors: {})
-    described_class.new(coverage, floors: floors)
+  # A cobertura de um arquivo só, que é do que cada exemplo daqui precisa.
+  #
+  # O caminho vem separado do array de propósito. Escrito como
+  # `gate(ours => [1, 1, 0])`, o Ruby 3 lê o hash pelado como argumento
+  # NOMEADO, porque este método tem um, e o exemplo morre com "wrong number of
+  # arguments" sem ter testado coisa alguma. Dois parâmetros posicionais tiram
+  # a armadilha do caminho em vez de exigir que a próxima pessoa lembre das
+  # chaves.
+  def gate(path, lines, floors: {})
+    described_class.new({ path => lines }, floors: floors)
   end
 
   describe 'somar os shards' do
@@ -49,7 +57,7 @@ RSpec.describe UniverzapCoverage::Gate do
 
   describe 'o que conta como codigo nosso' do
     it 'atribui o arquivo ao grupo dele' do
-      report = gate(ours => [1, 1, 0]).report
+      report = gate(ours, [1, 1, 0]).report
 
       expect(report['Athenas (IA)'].files).to eq(1)
       expect(report['Athenas (IA)'].relevant).to eq(3)
@@ -59,22 +67,22 @@ RSpec.describe UniverzapCoverage::Gate do
     # por decisão que não é nossa. Exigir piso dele seria travar nosso deploy
     # por causa do Chatwoot.
     it 'ignora arquivo do fork' do
-      expect(gate(upstream => [0, 0, 0])).to be_measured_nothing
+      expect(gate(upstream, [0, 0, 0])).to be_measured_nothing
     end
   end
 
   describe 'o percentual' do
     it 'conta apenas linhas executaveis' do
       # 4 relevantes, 3 rodadas: os dois nil não entram no denominador.
-      expect(gate(ours => [1, 0, nil, 2, nil, 5]).report['Athenas (IA)'].percent).to eq(75.0)
+      expect(gate(ours, [1, 0, nil, 2, nil, 5]).report['Athenas (IA)'].percent).to eq(75.0)
     end
 
     it 'fica vazio em vez de zero quando nao ha linha relevante' do
-      expect(gate(ours => [nil, nil]).report['Athenas (IA)'].percent).to be_nil
+      expect(gate(ours, [nil, nil]).report['Athenas (IA)'].percent).to be_nil
     end
 
     it 'soma os grupos no total' do
-      total = gate(ours => [1, 0]).total
+      total = gate(ours, [1, 0]).total
 
       expect(total.relevant).to eq(2)
       expect(total.percent).to eq(50.0)
@@ -83,13 +91,13 @@ RSpec.describe UniverzapCoverage::Gate do
 
   describe 'o veredito' do
     it 'reprova o grupo abaixo do piso declarado' do
-      failing = gate({ ours => [1, 0, 0, 0] }, floors: { 'Athenas (IA)' => 80.0 })
+      failing = gate(ours, [1, 0, 0, 0], floors: { 'Athenas (IA)' => 80.0 })
 
       expect(failing.failures.first).to include('Athenas (IA)', '25.0%', '80.0%')
     end
 
     it 'aprova o grupo acima do piso' do
-      passing = gate({ ours => [1, 1, 1, 0] }, floors: { 'Athenas (IA)' => 70.0 })
+      passing = gate(ours, [1, 1, 1, 0], floors: { 'Athenas (IA)' => 70.0 })
 
       expect(passing.failures).to be_empty
     end
@@ -97,7 +105,7 @@ RSpec.describe UniverzapCoverage::Gate do
     # Exigir número de algo que nunca foi medido é escolher no chute e depois
     # conviver com a escolha.
     it 'nunca reprova grupo sem piso declarado' do
-      expect(gate(ours => [0, 0, 0]).failures).to be_empty
+      expect(gate(ours, [0, 0, 0]).failures).to be_empty
     end
   end
 

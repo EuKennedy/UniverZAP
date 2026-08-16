@@ -103,7 +103,7 @@ RSpec.describe Whatsapp::WahaSessionService do
       service.send_status_text(text: 'Promoção hoje')
 
       expect(a_request(:post, 'https://waha.test/api/default/status/text')
-        .with { |req| (JSON.parse(req.body).keys & %w[contacts backgroundColor]).empty? }).to have_been_made
+        .with { |req| !JSON.parse(req.body).keys.intersect?(%w[contacts backgroundColor]) }).to have_been_made
     end
 
     it 'publishes an image status with caption and mimetype' do
