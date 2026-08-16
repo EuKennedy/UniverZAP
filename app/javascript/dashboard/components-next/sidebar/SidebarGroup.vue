@@ -23,6 +23,10 @@ const props = defineProps({
   children: { type: Array, default: undefined },
   getterKeys: { type: Object, default: () => ({}) },
   dataOnboarding: { type: String, default: null },
+  // True when a section a super admin created is holding this group. The group
+  // renders itself the same either way; only the tree rail it wears changes,
+  // because at that point it is somebody's child and has to read as one.
+  nested: { type: Boolean, default: false },
 });
 
 const {
@@ -43,6 +47,19 @@ const {
   scheduleClose,
   cancelClose,
 } = usePopoverState();
+
+// What a sub-item looks like: the indent, and the colours the tree rail paints
+// itself with. Copied off SidebarGroupLeaf on purpose — a section's items and a
+// group's leaves are the same idea at two depths, so they read from the same
+// token and land on the same vertical line.
+const SUB_ITEM_CLASS =
+  'sidebar-section-item relative ltr:ml-3 rtl:mr-3 ltr:pl-2 rtl:pr-2 before:bg-n-slate-4 after:bg-transparent after:border-n-slate-4 before:left-0 rtl:before:right-0';
+
+// The rail is 56px of icons with no section heading on screen: there is nothing
+// left to be a child OF, and an indent would only shove the icons off centre.
+const subItemClass = computed(() =>
+  props.nested && !isCollapsed.value ? SUB_ITEM_CLASS : ''
+);
 
 const navigableChildren = computed(() => {
   return props.children?.flatMap(child => child.children || child) || [];
@@ -227,6 +244,7 @@ watch(
     :feature-flag="resolveFeatureFlag(to)"
     as="li"
     class="grid gap-1 text-sm cursor-pointer select-none min-w-0"
+    :class="subItemClass"
   >
     <!-- Collapsed State -->
     <template v-if="isCollapsed">
@@ -312,7 +330,18 @@ watch(
 </template>
 
 <style>
-.sidebar-group-children .child-item::before {
+/*
+ * The tree rail. A nested row draws a hairline down its left edge and the last
+ * one stops short and turns right, so a block of children reads as a branch of
+ * the row above it instead of a flat list stuck to the margin.
+ *
+ * Two things wear it: the leaves of a native group, and the items of a section
+ * a super admin created. Same weight, same radius, same colour — the colour
+ * itself never appears here, it comes from the before:/after: utilities on the
+ * element, so the token stays stated in exactly one place.
+ */
+.sidebar-group-children .child-item::before,
+.sidebar-section-children > .sidebar-section-item::before {
   content: '';
   position: absolute;
   width: 0.125rem;
@@ -320,7 +349,8 @@ watch(
   height: 100%;
 }
 
-.sidebar-group-children .child-item:first-child::before {
+.sidebar-group-children .child-item:first-child::before,
+.sidebar-section-children > .sidebar-section-item:first-child::before {
   border-radius: 4px 4px 0 0;
 }
 
@@ -338,7 +368,8 @@ watch(
 .sidebar-group-children
   > *:last-child
   > *:last-child
-  > .child-item:last-child::after {
+  > .child-item:last-child::after,
+.sidebar-section-children > .sidebar-section-item:last-child::after {
   content: '';
   position: absolute;
   width: 10px;
@@ -357,12 +388,41 @@ watch(
   .sidebar-group-children
   > *:last-child
   > *:last-child
-  > .child-item:last-child::after {
+  > .child-item:last-child::after,
+#app[dir='rtl']
+  .sidebar-section-children
+  > .sidebar-section-item:last-child::after {
   right: 0;
   border-bottom-width: 0.125rem;
   border-right-width: 0.125rem;
   border-left-width: 0px;
   border-top-width: 0px;
   border-radius: 0 0 4px 0px;
+}
+
+/*
+ * A leaf is one row, so its rail can just be 100% of itself. An item of a
+ * section is a whole group — a header row plus, once it is open, its own
+ * children carrying their own rail one level deeper — so the rail has to be
+ * measured off the HEADER instead. Left at 100% the elbow would slide to the
+ * foot of the subtree and point at a grandchild rather than at the item.
+ *
+ * The 0.25rem is the gap the section's list puts between items; the rail
+ * crosses it so it reads as one line and not a dashed one.
+ */
+.sidebar-section-children > .sidebar-section-item::before {
+  top: 0;
+  height: calc(100% + 0.25rem);
+}
+
+.sidebar-section-children > .sidebar-section-item:last-child::before {
+  height: 0.5rem;
+}
+
+/* The header row is 2rem, so 0.25rem down lands the elbow's floor on its
+   middle, wherever the item's own children end up. */
+.sidebar-section-children > .sidebar-section-item:last-child::after {
+  top: 0.25rem;
+  bottom: auto;
 }
 </style>

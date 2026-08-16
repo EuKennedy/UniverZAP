@@ -68,12 +68,19 @@ const toggle = () => {
         :class="{ '-rotate-90 rtl:rotate-90': !isOpen }"
       />
     </button>
+    <!-- The rail drops the tree entirely: there is no heading up there to
+      branch from, so the items go back to being plain icons in a column. -->
     <ul
       v-show="isCollapsed || isOpen"
       class="flex flex-col gap-1 m-0 list-none min-w-0"
-      :class="{ 'items-center': isCollapsed }"
+      :class="isCollapsed ? 'items-center' : 'sidebar-section-children'"
     >
-      <SidebarGroup v-for="item in items" :key="item.name" v-bind="item" />
+      <SidebarGroup
+        v-for="item in items"
+        :key="item.name"
+        v-bind="item"
+        nested
+      />
     </ul>
   </li>
 </template>
