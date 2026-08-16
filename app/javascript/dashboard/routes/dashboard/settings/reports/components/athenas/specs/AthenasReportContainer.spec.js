@@ -32,8 +32,8 @@ const report = (overrides = {}) => ({
 // fetching, the period and which state the card is in.
 const stubs = {
   AthenasSummary: { props: ['report'], template: '<div class="summary" />' },
-  AthenasBarChart: {
-    props: ['points', 'title'],
+  AthenasTrendChart: {
+    props: ['points', 'title', 'color'],
     template: '<div class="chart" />',
   },
   AthenasQualityPanel: { template: '<div class="quality" />' },

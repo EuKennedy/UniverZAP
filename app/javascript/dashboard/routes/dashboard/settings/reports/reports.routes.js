@@ -20,7 +20,7 @@ import LabelReports from './LabelReports.vue';
 import TeamReports from './TeamReports.vue';
 
 import CsatResponses from './CsatResponses.vue';
-import BotReports from './BotReports.vue';
+import AthenasReports from './AthenasReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
 
@@ -162,11 +162,21 @@ export default {
           meta,
           component: CsatResponses,
         },
+        // Ocupa o lugar do relatório de bot. O bot nativo está desligado nesta
+        // instalação, então aquela aba media uma coisa que não acontece, e
+        // quem responde cliente de verdade aqui é o Athenas.
+        {
+          path: 'athenas',
+          name: 'athenas_reports',
+          meta,
+          component: AthenasReports,
+        },
+        // A rota antiga continua respondendo para não quebrar link salvo nem
+        // aba deixada aberta: leva para o mesmo lugar.
         {
           path: 'bot',
           name: 'bot_reports',
-          meta,
-          component: BotReports,
+          redirect: to => ({ name: 'athenas_reports', params: to.params }),
         },
       ],
     },

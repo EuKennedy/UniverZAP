@@ -568,10 +568,12 @@ const builtMenu = computed(() => {
           label: t('SIDEBAR.REPORTS_SLA'),
           to: accountScopedRoute('sla_reports'),
         },
+        // Onde ficava o relatório do bot nativo, que está desligado nesta
+        // instalação: quem atende cliente aqui é o Athenas.
         {
-          name: 'Reports Bot',
-          label: t('SIDEBAR.REPORTS_BOT'),
-          to: accountScopedRoute('bot_reports'),
+          name: 'Reports Athenas',
+          label: t('SIDEBAR.REPORTS_ATHENAS'),
+          to: accountScopedRoute('athenas_reports'),
         },
       ],
     },

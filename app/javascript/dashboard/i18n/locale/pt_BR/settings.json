@@ -362,6 +362,7 @@
     "ONE_OFF": "Única",
     "REPORTS_SLA": "SLA",
     "REPORTS_BOT": "Robôs",
+    "REPORTS_ATHENAS": "Agente de IA",
     "REPORTS_AGENT": "Atendentes",
     "REPORTS_LABEL": "Etiquetas",
     "REPORTS_INBOX": "Caixa de Entrada",

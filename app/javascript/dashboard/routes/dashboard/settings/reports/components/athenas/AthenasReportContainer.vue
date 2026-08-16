@@ -16,7 +16,7 @@ import { useI18n } from 'vue-i18n';
 import AthenasAPI from 'dashboard/api/athenas';
 import Spinner from 'shared/components/Spinner.vue';
 import AthenasSummary from './AthenasSummary.vue';
-import AthenasBarChart from './AthenasBarChart.vue';
+import AthenasTrendChart from './AthenasTrendChart.vue';
 import AthenasQualityPanel from './AthenasQualityPanel.vue';
 import AthenasAgentTable from './AthenasAgentTable.vue';
 
@@ -162,27 +162,27 @@ const hourSeries = computed(() =>
         different units, and aligning them on a shared axis would invent a
         relationship the numbers never claimed. -->
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <AthenasBarChart
+        <AthenasTrendChart
           :title="t('ATHENAS_REPORT.CHART.REPLIES')"
           :points="repliesSeries"
-          bar-class="bg-n-blue-9"
+          color="#3b82f6"
           :axis-header="t('ATHENAS_REPORT.CHART.DAY')"
           :value-header="t('ATHENAS_REPORT.CHART.REPLIES')"
         />
-        <AthenasBarChart
+        <AthenasTrendChart
           :title="t('ATHENAS_REPORT.CHART.SPEND')"
           :points="spendSeries"
-          bar-class="bg-n-teal-9"
+          color="#14b8a6"
           :axis-header="t('ATHENAS_REPORT.CHART.DAY')"
           :value-header="t('ATHENAS_REPORT.CHART.SPEND')"
         />
       </div>
 
       <div class="flex flex-col gap-2">
-        <AthenasBarChart
+        <AthenasTrendChart
           :title="t('ATHENAS_REPORT.CHART.HOURLY')"
           :points="hourSeries"
-          bar-class="bg-n-iris-9"
+          color="#8b5cf6"
           :axis-header="t('ATHENAS_REPORT.CHART.HOUR')"
           :value-header="t('ATHENAS_REPORT.CHART.REPLIES')"
         />
