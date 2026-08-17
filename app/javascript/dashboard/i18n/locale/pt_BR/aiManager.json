@@ -62,7 +62,7 @@
         "TRAINING": "Memória do agente",
         "TRAINING_EFFECT": "Aprovar grava isso na memória do agente e passa a valer já na próxima conversa.",
         "PROMPT": "Versão de prompt",
-        "PROMPT_EFFECT": "Aprovar cria uma versão nova e coloca ela em disputa contra a atual, e ela só vira oficial se ganhar."
+        "PROMPT_EFFECT": "Aprovar cria uma versão nova e coloca ela em disputa contra a atual, e ela só vira oficial se ganhar. A disputa consome créditos de IA: cada resposta antiga é rejulgada numa comparação paga."
       },
       "APPROVE_TRAINING": "Aprovar e aplicar agora",
       "APPROVE_PROMPT": "Aprovar e começar a disputa",

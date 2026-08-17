@@ -15,10 +15,17 @@ class Ai::Manager::Applier
   class UnknownTarget < StandardError; end
   class CrossAccountSuggestion < StandardError; end
 
-  # Quantas respostas antigas entram na disputa quando a candidata nasce. Igual
-  # ao lote padrão da tela do laboratório: cada duelo é uma chamada paga, e 20
-  # é o que a política de promoção pede, não 200.
-  REPLAY_BATCH = 10
+  # Quantas respostas antigas entram na disputa quando a candidata nasce. Cada
+  # duelo é uma chamada paga, então o lote é o mínimo que serve para alguma
+  # coisa — e o mínimo que serve é exatamente o que a política de promoção
+  # exige.
+  #
+  # Derivado, e não um segundo literal, porque já divergiu: o comentário dizia
+  # 20 e a constante dizia 10, então toda candidata aprovada parava em 10
+  # comparações julgadas e `promotable?` era falsa para sempre. O operador
+  # aprovava, lia "a disputa começou", e nada acontecia — sem erro, sem log,
+  # sem promoção. A alavanca inteira morria no rascunho.
+  REPLAY_BATCH = Ai::PromotionPolicy::MIN_COMPARISONS
 
   def initialize(suggestion:, user: nil)
     @suggestion = suggestion

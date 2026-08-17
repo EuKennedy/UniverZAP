@@ -151,6 +151,39 @@ RSpec.describe Ai::Manager::Checks::PromisedTimeMismatch do
       expect(described_class.run(scope)).to be_empty
     end
 
+    # O horário de funcionamento escrito como INTERVALO era o buraco: o Ruby casa
+    # a alternativa mais à esquerda, o verbo vem antes do intervalo, e sobrava a
+    # segunda hora solta para ser lida como promessa. A frase é de salão, o check
+    # nasce ligado e o cron roda toda segunda — sem isto, o Gerente acusaria
+    # agente saudável em quase toda conta, sozinho, na primeira semana.
+    it 'fica calado quando a resposta fecha com o horário de funcionamento' do
+      confirm('Agendado! O horário de funcionamento é das 9h às 18h.', book(13))
+
+      expect(described_class.run(scope)).to be_empty
+    end
+
+    it 'fica calado quando o intervalo vem depois de atendimento' do
+      confirm('Prontinho! Fica marcado, e nosso atendimento vai das 10h às 19h.', book(13))
+
+      expect(described_class.run(scope)).to be_empty
+    end
+
+    # `atende` faltava na lista de verbos, e sem `das` a primeira alternativa
+    # também não pegava: a frase passava inteira.
+    it 'fica calado com atende e um intervalo sem das' do
+      confirm('Marquei sim! Te espero lá, a gente atende de 8h às 20h.', book(13))
+
+      expect(described_class.run(scope)).to be_empty
+    end
+
+    # O outro lado do mesmo conserto: calar o funcionamento não pode calar a
+    # promessa que está na mesma frase, senão a verificação vira decorativa.
+    it 'ainda acusa quando a promessa divide a frase com o funcionamento' do
+      confirm('Agendado para as 15h, e a gente fecha às 19h.', book(13))
+
+      expect(described_class.run(scope).size).to eq(1)
+    end
+
     it 'não compara com uma resposta de outra conversa' do
       confirm('Agendei pra você às 14h.', book(13), conversation_id: other_conversation.id)
 

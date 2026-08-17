@@ -62,7 +62,7 @@
         "TRAINING": "Agent memory",
         "TRAINING_EFFECT": "Approving writes this into the agent's memory and applies from the next conversation on.",
         "PROMPT": "Prompt version",
-        "PROMPT_EFFECT": "Approving creates a new version and puts it up against the current one, and it only becomes official if it wins."
+        "PROMPT_EFFECT": "Approving creates a new version and puts it up against the current one, and it only becomes official if it wins. The contest uses AI credits: each past reply is judged again in a paid comparison."
       },
       "APPROVE_TRAINING": "Approve and apply now",
       "APPROVE_PROMPT": "Approve and start the contest",

@@ -139,4 +139,13 @@ RSpec.describe Ai::Manager::Applier do
 
     expect { apply(record) }.to raise_error(described_class::UnknownTarget)
   end
+
+  # O comentário dizia 20 e a constante dizia 10, então toda candidata aprovada
+  # parava em 10 comparações julgadas e `promotable?` era falsa para sempre: o
+  # operador aprovava, lia que a disputa tinha começado, e nada acontecia — sem
+  # erro e sem log. Derivar da política é o que impede os dois números de
+  # divergirem de novo.
+  it 'enfileira o número de duelos que a promoção exige para ser possível' do
+    expect(described_class::REPLAY_BATCH).to eq(Ai::PromotionPolicy::MIN_COMPARISONS)
+  end
 end

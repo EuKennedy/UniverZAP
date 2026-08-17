@@ -54,8 +54,19 @@ class Ai::Manager::Checks::PromisedTimeMismatch < Ai::Manager::Checks::Base
   NOT_A_PROMISE = /
     \bd[ao]s\s+\d{1,2}\s*(?:h(?:oras?)?|:)\s*\d{0,2}\s*(?:[àa]s|at[ée]|a)\s+\d{1,2}\s*(?:h(?:oras?)?|:)\s*\d{0,2}|
     \b(?:at[ée]|antes|depois|a\s+partir)\s+(?:d[ao]s?\s+)?[àa]?s?\s*\d{1,2}\s*(?:h(?:oras?)?|:)\s*\d{0,2}|
-    \b(?:abre|abrimos|abertos?|fecha|fechamos|funcionamos|funcionamento|atendemos|atendimento)\b
+    \b(?:abre|abrem|abrimos|abertos?|fecha|fechamos|funcionamos|funcionamento|
+        atende|atendem|atendemos|atendimento)\b
     [^.!?\n]{0,30}?\d{1,2}\s*(?:h(?:oras?)?|:)\s*\d{0,2}
+    # A cauda do intervalo, e ela é o conserto de um buraco que o resto da
+    # constante não fechava. Ruby casa a alternativa mais à ESQUERDA, e o verbo
+    # sempre vem antes do intervalo: em "o horário de funcionamento é das 9h às
+    # 18h" a alternativa do verbo ganhava da alternativa do intervalo, comia só
+    # até a primeira hora e deixava " às 18h" para trás — que PROMISED_TIME lia
+    # como horário prometido e a verificação acusava como divergência crítica,
+    # numa ocorrência só. A frase é de salão, os checks nascem ligados e o cron
+    # roda toda segunda: sem esta linha, o Gerente acusaria agente saudável em
+    # quase toda conta, sozinho, na primeira semana.
+    (?:\s*(?:[àa]s|at[ée]|a)\s*\d{1,2}\s*(?:h(?:oras?)?|:)\s*\d{0,2})?
   /xi
 
   # A frase que fala DESTE agendamento, e a única que pode acusar. O preço de
