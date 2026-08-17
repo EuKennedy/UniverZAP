@@ -26,9 +26,14 @@ class Ai::Belezaki::SchedulingTools
     # Namespace for booking idempotency keys — keeps this conversation's
     # bookings from ever colliding with another conversation's on belezaki.
     @scope = scope
-    # Contact record (name/phone) is the source of truth for who is booking;
-    # the LLM-extracted fields are only a fallback.
+    # Contact record (name/phone) is the source of truth for who is booking.
+    #
+    # For the NAME the LLM-extracted field is still a fallback: a wrong name on
+    # the agenda is a cosmetic problem. For the PHONE it is not, and there is no
+    # fallback any more — see Ai::Belezaki::CustomerPhone for the double booking
+    # and the silent confirmation that the old fallback produced.
     @contact = contact || {}
+    @phone = Ai::Belezaki::CustomerPhone.new(conversation: conversation, fallback: @contact[:phone])
     @performed_write = false
   end
 
@@ -90,16 +95,46 @@ class Ai::Belezaki::SchedulingTools
   READS = %w[listar_servicos listar_profissionais consultar_horarios sugerir_dias meus_agendamentos].freeze
   WRITES = %w[agendar abrir_comanda remarcar desmarcar].freeze
 
+  # Tudo que fala do cliente com o salão precisa do WhatsApp DELE: a agenda
+  # grava por telefone, o salão escopa `meus_agendamentos` por telefone, e a
+  # confirmação automática do belezaki resolve o número no WhatsApp antes de
+  # enviar. Sem número certo, os três falham, e dois deles falham em silêncio.
+  PHONE_REQUIRED = (WRITES + %w[meus_agendamentos]).freeze
+
+  UUID_FORMAT = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
+
+  ID_FIELDS = {
+    'consultar_horarios' => %w[service_id professional_id],
+    'sugerir_dias' => %w[service_id professional_id],
+    'agendar' => %w[service_id professional_id],
+    'remarcar' => %w[appointment_id professional_id],
+    'desmarcar' => %w[appointment_id],
+    'abrir_comanda' => %w[appointment_id]
+  }.freeze
+
   # Split in two rather than one long case: reads and writes are different
   # risks, and the branch count of a single table crosses the complexity limit
   # the moment a ninth tool appears.
   def dispatch(name, input)
+    # Antes da validação: é justamente a ferramenta que RESOLVE a falta do
+    # telefone, e exigir telefone para ela seria pedir a chave que está dentro
+    # da caixa trancada. Também não é escrita no salão, então uma repetição é
+    # inofensiva e `performed_write?` continua falso.
+    return register_phone(input) if name == 'registrar_telefone'
+
     invalid = invalid_input(name, input)
     return invalid if invalid
     return read(name, input) if READS.include?(name)
     return write(name, input) if WRITES.include?(name)
 
     { error: 'unknown_tool', message: "Ferramenta #{name} não existe." }
+  end
+
+  def register_phone(input)
+    status, detail = @phone.register(input['numero'])
+    return refuse(detail) unless status == :ok
+
+    { telefone_registrado: detail }
   end
 
   def read(name, input)
@@ -132,6 +167,10 @@ class Ai::Belezaki::SchedulingTools
   # Deliberately NOT validating id formats: the ids come from the salon's own
   # tool results, and a hallucinated one would be shaped like a real one anyway.
   def invalid_input(name, input)
+    time_problem(name, input) || id_problem(name, input) || phone_problem(name)
+  end
+
+  def time_problem(name, input)
     case name
     when 'consultar_horarios'
       refuse('Data inválida. Use AAAA-MM-DD com um dia que exista.') unless real_date?(input['date'])
@@ -140,6 +179,36 @@ class Ai::Belezaki::SchedulingTools
     when 'agendar', 'remarcar'
       refuse('Horário inválido. Copie o campo start do slot escolhido.') unless parsable_time?(input['start'])
     end
+  end
+
+  # O comentário que estava aqui dizia para NÃO validar formato de id, porque
+  # "um id alucinado teria o formato de um id real". Os dados derrubaram a
+  # premissa: numa única conversa o modelo mandou `manicure_pedicure`,
+  # `manicure,pedicure` e `manicure` quatro vezes, e o belezaki, que agora exige
+  # @IsUUID(), devolveu validation_failed em todas.
+  #
+  # Pegar aqui vale por dois motivos. Poupa a ida e volta, e sobretudo nomeia a
+  # correção: o conselho genérico de validation_failed manda oferecer outro
+  # horário, o que para este erro não conserta absolutamente nada e faz o agente
+  # girar em falso oferecendo horários que ele não vai conseguir marcar.
+  def id_problem(name, input)
+    bad = Array(ID_FIELDS[name]).find do |field|
+      input[field].present? && !input[field].to_s.match?(UUID_FORMAT)
+    end
+    return nil if bad.nil?
+
+    refuse("O campo #{bad} precisa ser o id exato devolvido pela ferramenta, e não o nome do serviço ou da " \
+           'pessoa. Chame listar_servicos ou consultar_horarios e copie o id de lá.')
+  end
+
+  # Sem telefone do cliente a ferramenta recusa e manda perguntar, em vez de
+  # deixar o modelo preencher o campo. Ver Ai::Belezaki::CustomerPhone.
+  def phone_problem(name)
+    return nil unless PHONE_REQUIRED.include?(name)
+    return nil if @phone.present?
+
+    refuse('Ainda não tenho o WhatsApp deste cliente. Peça o número com DDD, e quando ele responder chame ' \
+           'registrar_telefone com o que ele digitou. Só depois disso dá para mexer na agenda.')
   end
 
   def refuse(message)
@@ -170,7 +239,7 @@ class Ai::Belezaki::SchedulingTools
                    service_id: input['service_id'],
                    start: input['start'],
                    professional_id: input['professional_id'],
-                   client: { name: booking_name(input), phone: booking_phone(input) },
+                   client: { name: booking_name(input), phone: @phone.value },
                    source: 'whatsapp_agent',
                    idempotency_key: booking_idempotency_key(input)
                  ))
@@ -211,14 +280,12 @@ class Ai::Belezaki::SchedulingTools
 
   # The phone is the scope: the salon answers 404 for an appointment belonging to
   # anyone else, so this is also what keeps the agent off other people's agendas.
+  # A ausência de telefone já foi recusada em `phone_problem`, que vale para
+  # esta e para as quatro escritas. Uma conversa sem número no contato não pode
+  # ser escopada, e perguntar ao salão sem ele daria erro ou, pior, seria
+  # respondido com a agenda de outra pessoa.
   def mine
-    phone = booking_phone({})
-    # A conversation with no number on the contact (web widget, for instance)
-    # cannot be scoped, and asking the salon without one would either error or,
-    # worse, be answered for somebody else.
-    return refuse('Não tenho o WhatsApp deste cliente. Peça o número com DDD antes de consultar.') if phone.blank?
-
-    @client.appointments(phone: phone)
+    @client.appointments(phone: @phone.value)
   end
 
   # `changed: false` means the appointment was ALREADY at that time. That is the
@@ -228,7 +295,7 @@ class Ai::Belezaki::SchedulingTools
     @performed_write = true
     response = @client.reschedule_appointment(
       input['appointment_id'],
-      client_phone: booking_phone(input), start: input['start'], professional_id: input['professional_id']
+      client_phone: @phone.value, start: input['start'], professional_id: input['professional_id']
     )
     { remarcado: true, quando: appointment_of(response)&.dig('start') }
   end
@@ -243,7 +310,7 @@ class Ai::Belezaki::SchedulingTools
     @performed_write = true
     response = @client.open_comanda(
       input['appointment_id'],
-      client_phone: booking_phone(input), payment_method: input['forma_pagamento']
+      client_phone: @phone.value, payment_method: input['forma_pagamento']
     )
     comanda = response.is_a?(Hash) ? response['comanda'] : nil
     # The till is what actually happened; the price quoted at booking was a
@@ -260,7 +327,7 @@ class Ai::Belezaki::SchedulingTools
   def cancel(input)
     @performed_write = true
     @client.cancel_appointment(
-      input['appointment_id'], client_phone: booking_phone(input), reason: input['reason']
+      input['appointment_id'], client_phone: @phone.value, reason: input['reason']
     )
     # A cancelled appointment was never money, and leaving it behind inflates
     # the one figure an operator repeats to somebody else.
@@ -284,17 +351,14 @@ class Ai::Belezaki::SchedulingTools
   #     get DIFFERENT keys, so both go through.
   # The old "conv-<id>-<maxmsgid>" key did the opposite on both counts.
   def booking_idempotency_key(input)
-    action = [input['service_id'], input['start'], input['professional_id'], booking_phone(input)].join('|')
+    action = [input['service_id'], input['start'], input['professional_id'], @phone.value].join('|')
     "#{@scope}:#{Digest::SHA256.hexdigest(action)[0, 24]}"
   end
 
   # Contact record wins over whatever the model extracted from the chat text, so
-  # a hallucinated / mistyped name or number never lands in the salon's agenda.
+  # a hallucinated / mistyped name never lands in the salon's agenda. Only the
+  # name has a fallback: for the phone see Ai::Belezaki::CustomerPhone.
   def booking_name(input)
     @contact[:name].presence || input['client_name']
-  end
-
-  def booking_phone(input)
-    @contact[:phone].presence || input['client_phone']
   end
 end

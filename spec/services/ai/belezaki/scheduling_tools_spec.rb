@@ -15,13 +15,13 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
   describe '#call' do
     let(:client) { instance_double(Ai::Belezaki::AgentClient) }
 
-    def tools
-      described_class.new(client, scope: 'conv-1')
+    def tools(contact = { name: 'Ana', phone: '+5531999999999' })
+      described_class.new(client, scope: 'conv-1', contact: contact)
     end
 
     def booking_input(overrides = {})
       {
-        'service_id' => 's1', 'start' => '2026-06-20T16:00:00-03:00',
+        'service_id' => '11111111-1111-4111-8111-111111111111', 'start' => '2026-06-20T16:00:00-03:00',
         'client_name' => 'Ana', 'client_phone' => '+5531999999999'
       }.merge(overrides)
     end
@@ -33,19 +33,19 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
     end
 
     it 'maps agendar to create_appointment with an action-scoped idempotency key' do
-      allow(client).to receive(:create_appointment).and_return({ 'appointment' => { 'id' => 'a1' } })
+      allow(client).to receive(:create_appointment).and_return({ 'appointment' => { 'id' => '22222222-2222-4222-8222-222222222222' } })
 
       tools.call('agendar', booking_input)
 
       expect(client).to have_received(:create_appointment)
-        .with(hash_including(service_id: 's1', idempotency_key: a_string_starting_with('conv-1:')))
+        .with(hash_including(service_id: '11111111-1111-4111-8111-111111111111', idempotency_key: a_string_starting_with('conv-1:')))
     end
 
     it 'reuses the SAME idempotency key when the same slot is re-booked (dedups duplicates)' do
       keys = []
       allow(client).to receive(:create_appointment) do |**kwargs|
         keys << kwargs[:idempotency_key]
-        { 'appointment' => { 'id' => 'a1' } }
+        { 'appointment' => { 'id' => '22222222-2222-4222-8222-222222222222' } }
       end
 
       tools.call('agendar', booking_input)
@@ -58,7 +58,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       keys = []
       allow(client).to receive(:create_appointment) do |**kwargs|
         keys << kwargs[:idempotency_key]
-        { 'appointment' => { 'id' => 'a1' } }
+        { 'appointment' => { 'id' => '22222222-2222-4222-8222-222222222222' } }
       end
 
       tools.call('agendar', booking_input('start' => '2026-06-20T16:00:00-03:00'))
@@ -71,7 +71,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       captured = nil
       allow(client).to receive(:create_appointment) do |**kwargs|
         captured = kwargs
-        { 'appointment' => { 'id' => 'a1' } }
+        { 'appointment' => { 'id' => '22222222-2222-4222-8222-222222222222' } }
       end
       contact_tools = described_class.new(client, scope: 'conv-1', contact: { name: 'Ana Real', phone: '+5531988887777' })
 
@@ -80,16 +80,21 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       expect(captured[:client]).to eq({ name: 'Ana Real', phone: '+5531988887777' })
     end
 
-    it 'falls back to the LLM input when the contact has no name/phone on file' do
+    # O nome ainda tem fallback e o telefone NÃO tem, e a assimetria é
+    # deliberada. Um nome errado na agenda é um problema cosmético; um telefone
+    # errado quebra a idempotência, órfã o agendamento e mata a confirmação
+    # automática do salão, tudo em silêncio. Ver Ai::Belezaki::CustomerPhone.
+    it 'falls back to the LLM name, but never to the LLM phone' do
       captured = nil
       allow(client).to receive(:create_appointment) do |**kwargs|
         captured = kwargs
-        { 'appointment' => { 'id' => 'a1' } }
+        { 'appointment' => { 'id' => '22222222-2222-4222-8222-222222222222' } }
       end
+      nameless = described_class.new(client, scope: 'conv-1', contact: { phone: '+5531999999999' })
 
-      tools.call('agendar', booking_input('client_name' => 'Bia', 'client_phone' => '+5531977776666'))
+      nameless.call('agendar', booking_input('client_name' => 'Bia', 'client_phone' => '+5531977776666'))
 
-      expect(captured[:client]).to eq({ name: 'Bia', phone: '+5531977776666' })
+      expect(captured[:client]).to eq({ name: 'Bia', phone: '+5531999999999' })
     end
 
     it 'reports no external write before any booking is attempted' do
@@ -119,7 +124,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
     describe 'what the model is told when the salon refuses' do
       def raising(error)
         allow(client).to receive(:availability).and_raise(error)
-        JSON.parse(tools.call('consultar_horarios', { 'service_id' => 's1', 'date' => '2026-06-20' }))
+        JSON.parse(tools.call('consultar_horarios', { 'service_id' => '11111111-1111-4111-8111-111111111111', 'date' => '2026-06-20' }))
       end
 
       # A taken slot is a normal turn in a booking conversation, not a failure —
@@ -168,7 +173,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       it 'asks for the number instead of querying without one' do
         expect(client).not_to receive(:appointments)
 
-        expect(tools.call('meus_agendamentos', {})).to include('invalid_input')
+        expect(tools({ name: 'Ana' }).call('meus_agendamentos', {})).to include('invalid_input')
       end
 
       # The turn guard reads a move off "remarcado". belezaki answers
@@ -178,7 +183,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
           'appointment' => { 'start' => '2027-03-16T14:00:00-03:00' }, 'changed' => true
         )
 
-        body = JSON.parse(with_contact.call('remarcar', { 'appointment_id' => 'a1',
+        body = JSON.parse(with_contact.call('remarcar', { 'appointment_id' => '22222222-2222-4222-8222-222222222222',
                                                           'start' => '2027-03-16T14:00:00-03:00' }))
 
         expect(body['remarcado']).to be(true)
@@ -192,7 +197,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
           'appointment' => { 'start' => '2027-03-16T14:00:00-03:00' }, 'changed' => false
         )
 
-        body = JSON.parse(with_contact.call('remarcar', { 'appointment_id' => 'a1',
+        body = JSON.parse(with_contact.call('remarcar', { 'appointment_id' => '22222222-2222-4222-8222-222222222222',
                                                           'start' => '2027-03-16T14:00:00-03:00' }))
 
         expect(body['remarcado']).to be(true)
@@ -201,7 +206,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       it 'says desmarcado when the salon cancelled it' do
         allow(client).to receive(:cancel_appointment).and_return('changed' => true)
 
-        body = JSON.parse(with_contact.call('desmarcar', { 'appointment_id' => 'a1' }))
+        body = JSON.parse(with_contact.call('desmarcar', { 'appointment_id' => '22222222-2222-4222-8222-222222222222' }))
 
         expect(body['desmarcado']).to be(true)
       end
@@ -209,10 +214,10 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       it 'sends the contact phone and the reason on a cancellation' do
         allow(client).to receive(:cancel_appointment).and_return('changed' => true)
 
-        with_contact.call('desmarcar', { 'appointment_id' => 'a1', 'reason' => 'imprevisto' })
+        with_contact.call('desmarcar', { 'appointment_id' => '22222222-2222-4222-8222-222222222222', 'reason' => 'imprevisto' })
 
         expect(client).to have_received(:cancel_appointment)
-          .with('a1', hash_including(client_phone: '+5531999999999', reason: 'imprevisto'))
+          .with('22222222-2222-4222-8222-222222222222', hash_including(client_phone: '+5531999999999', reason: 'imprevisto'))
       end
 
       # Too close to the appointment is the salon's rule, and the agent has to
@@ -221,7 +226,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
         allow(client).to receive(:cancel_appointment)
           .and_raise(Ai::Belezaki::AgentClient::Error.new('x', code: 'notice_window_closed'))
 
-        body = JSON.parse(with_contact.call('desmarcar', { 'appointment_id' => 'a1' }))
+        body = JSON.parse(with_contact.call('desmarcar', { 'appointment_id' => '22222222-2222-4222-8222-222222222222' }))
 
         expect(body['error']).to eq('notice_window_closed')
         expect(body['message']).to include('equipe vai confirmar')
@@ -232,7 +237,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
         allow(client).to receive(:reschedule_appointment).and_raise(Ai::Belezaki::AgentClient::Error, 'timeout')
         executor = with_contact
 
-        executor.call('remarcar', { 'appointment_id' => 'a1', 'start' => '2027-03-16T14:00:00-03:00' })
+        executor.call('remarcar', { 'appointment_id' => '22222222-2222-4222-8222-222222222222', 'start' => '2027-03-16T14:00:00-03:00' })
 
         expect(executor.performed_write?).to be(true)
       end
@@ -249,7 +254,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
           .and_return('comanda' => { 'total_cents' => 15_000, 'intended_payment_method' => 'PIX' })
 
         body = JSON.parse(with_contact.call('abrir_comanda',
-                                            { 'appointment_id' => 'a1', 'forma_pagamento' => 'PIX' }))
+                                            { 'appointment_id' => '22222222-2222-4222-8222-222222222222', 'forma_pagamento' => 'PIX' }))
 
         expect(body['comanda_aberta']).to be(true)
         expect(body['valor_centavos']).to eq(15_000)
@@ -260,10 +265,10 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
         allow(client).to receive(:open_comanda).and_return('comanda' => {})
 
         with_contact.call('abrir_comanda',
-                          { 'appointment_id' => 'a1', 'forma_pagamento' => 'PIX', 'client_phone' => '+5531000000000' })
+                          { 'appointment_id' => '22222222-2222-4222-8222-222222222222', 'forma_pagamento' => 'PIX', 'client_phone' => '+5531000000000' })
 
         expect(client).to have_received(:open_comanda)
-          .with('a1', hash_including(client_phone: '+5531999999999'))
+          .with('22222222-2222-4222-8222-222222222222', hash_including(client_phone: '+5531999999999'))
       end
 
       # Money moved, or may have. The turn must not replay either way.
@@ -271,7 +276,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
         allow(client).to receive(:open_comanda).and_raise(Ai::Belezaki::AgentClient::Error, 'timeout')
         executor = with_contact
 
-        executor.call('abrir_comanda', { 'appointment_id' => 'a1', 'forma_pagamento' => 'PIX' })
+        executor.call('abrir_comanda', { 'appointment_id' => '22222222-2222-4222-8222-222222222222', 'forma_pagamento' => 'PIX' })
 
         expect(executor.performed_write?).to be(true)
       end
@@ -353,7 +358,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       # thrown away as a confirmation of something that never happened.
       it 'says agendado when the salon confirmed' do
         allow(client).to receive(:create_appointment).and_return(
-          'appointment' => { 'id' => 'a1', 'status' => 'confirmed', 'start' => '2026-06-20T16:00:00-03:00' }
+          'appointment' => { 'id' => '22222222-2222-4222-8222-222222222222', 'status' => 'confirmed', 'start' => '2026-06-20T16:00:00-03:00' }
         )
 
         body = JSON.parse(tools.call('agendar', booking_input))
@@ -366,7 +371,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       # `"status": "canceled"`. HTTP success is not the same as an appointment.
       it 'does not claim a booking when the status is not confirmed' do
         allow(client).to receive(:create_appointment).and_return(
-          'appointment' => { 'id' => 'a1', 'status' => 'canceled' }
+          'appointment' => { 'id' => '22222222-2222-4222-8222-222222222222', 'status' => 'canceled' }
         )
 
         body = JSON.parse(tools.call('agendar', booking_input))
@@ -389,7 +394,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       it 'refuses a date that is not a real day, without calling the salon' do
         expect(client).not_to receive(:availability)
 
-        body = JSON.parse(tools.call('consultar_horarios', { 'service_id' => 's1', 'date' => '2026-02-30' }))
+        body = JSON.parse(tools.call('consultar_horarios', { 'service_id' => '11111111-1111-4111-8111-111111111111', 'date' => '2026-02-30' }))
 
         expect(body['error']).to eq('invalid_input')
       end
@@ -399,7 +404,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       it 'refuses a missing date' do
         expect(client).not_to receive(:availability)
 
-        expect(tools.call('consultar_horarios', { 'service_id' => 's1' })).to include('invalid_input')
+        expect(tools.call('consultar_horarios', { 'service_id' => '11111111-1111-4111-8111-111111111111' })).to include('invalid_input')
       end
 
       it 'refuses a start it cannot parse, so nothing is written' do
@@ -414,7 +419,7 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
       it 'lets a real date through' do
         allow(client).to receive(:availability).and_return({ 'slots' => [] })
 
-        tools.call('consultar_horarios', { 'service_id' => 's1', 'date' => '2026-06-20' })
+        tools.call('consultar_horarios', { 'service_id' => '11111111-1111-4111-8111-111111111111', 'date' => '2026-06-20' })
 
         expect(client).to have_received(:availability)
       end
@@ -468,6 +473,109 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
         bound_tools.call('agendar', booking_input)
 
         expect(Ai::RevenueEvent.count).to be_zero
+      end
+    end
+
+    # O telefone é a chave de tudo do lado do salão: a agenda grava por ele,
+    # `meus_agendamentos` escopa por ele, e a confirmação automática do belezaki
+    # resolve o número no WhatsApp antes de enviar. Numa conversa real, com o
+    # contato sem telefone, o modelo preencheu o campo sozinho com TRÊS números
+    # inventados diferentes, agendou duas vezes o mesmo horário, colidiu com o
+    # próprio agendamento e a confirmação morreu em silêncio.
+    describe 'sem telefone do cliente' do
+      def orphan
+        described_class.new(client, scope: 'conv-1', contact: { name: 'Ana' })
+      end
+
+      it 'recusa toda escrita e manda perguntar o numero' do
+        body = JSON.parse(orphan.call('agendar', booking_input))
+
+        expect(body['error']).to eq('invalid_input')
+        expect(body['message']).to include('registrar_telefone')
+      end
+
+      it 'nao chega a tocar na agenda do salao' do
+        allow(client).to receive(:create_appointment)
+
+        orphan.call('agendar', booking_input)
+
+        expect(client).not_to have_received(:create_appointment)
+      end
+
+      it 'vale para comanda, remarcar e desmarcar tambem' do
+        recusas = %w[abrir_comanda remarcar desmarcar].map do |ferramenta|
+          JSON.parse(orphan.call(ferramenta, { 'appointment_id' => '22222222-2222-4222-8222-222222222222',
+                                               'start' => '2026-06-20T16:00:00-03:00', 'forma_pagamento' => 'PIX' }))['error']
+        end
+
+        expect(recusas).to all(eq('invalid_input'))
+      end
+    end
+
+    # A premissa antiga era que "um id alucinado teria o formato de um id real".
+    # Os dados derrubaram: numa conversa só o modelo mandou `manicure_pedicure`,
+    # `manicure,pedicure` e `manicure` quatro vezes, e o salão, que passou a
+    # exigir UUID, devolveu erro de validação em todas.
+    describe 'id que nao e UUID' do
+      it 'recusa antes de gastar uma ida ao salao' do
+        allow(client).to receive(:availability)
+
+        body = JSON.parse(tools.call('consultar_horarios',
+                                     { 'service_id' => 'manicure_pedicure', 'date' => '2026-06-20' }))
+
+        expect(body['message']).to include('listar_servicos')
+        expect(client).not_to have_received(:availability)
+      end
+
+      # O conselho genérico de validation_failed manda oferecer outro horário,
+      # o que para este erro não conserta nada e faz o agente girar em falso.
+      it 'nomeia o campo errado em vez de falar de horario' do
+        body = JSON.parse(tools.call('agendar', booking_input('professional_id' => 'marcela')))
+
+        expect(body['message']).to include('professional_id')
+      end
+
+      it 'deixa passar o id vazio, que e opcional' do
+        allow(client).to receive(:availability).and_return({ 'slots' => [] })
+
+        tools.call('consultar_horarios', { 'service_id' => '11111111-1111-4111-8111-111111111111',
+                                           'date' => '2026-06-20', 'professional_id' => nil })
+
+        expect(client).to have_received(:availability)
+      end
+    end
+
+    describe 'registrar_telefone' do
+      let(:conversation) { create(:conversation) }
+
+      def with_conversation
+        described_class.new(client, scope: 'conv-1', contact: { name: 'Ana' }, conversation: conversation)
+      end
+
+      before do
+        create(:message, conversation: conversation, account: conversation.account,
+                         inbox: conversation.inbox, message_type: :incoming, content: 'meu zap é 31 98765-4321')
+      end
+
+      it 'grava o numero que o cliente digitou e libera a agenda' do
+        body = JSON.parse(with_conversation.call('registrar_telefone', { 'numero' => '31 98765-4321' }))
+
+        expect(body['telefone_registrado']).to eq('+5531987654321')
+      end
+
+      # Não é escrita no salão: uma repetição é inofensiva, e marcar o turno
+      # como não repetível custaria a resposta do cliente por nada.
+      it 'nao marca o turno como escrita' do
+        executor = with_conversation
+        executor.call('registrar_telefone', { 'numero' => '31 98765-4321' })
+
+        expect(executor).not_to be_performed_write
+      end
+
+      it 'recusa numero que o cliente nunca digitou' do
+        body = JSON.parse(with_conversation.call('registrar_telefone', { 'numero' => '+5511999999999' }))
+
+        expect(body['error']).to eq('invalid_input')
       end
     end
   end

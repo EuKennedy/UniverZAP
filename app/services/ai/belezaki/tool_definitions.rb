@@ -6,9 +6,30 @@
 # reaching for `check_availability`.
 class Ai::Belezaki::ToolDefinitions
   def self.all(include_booking:)
-    defs = [services_tool, professionals_tool, availability_tool, month_tool, appointments_tool]
+    defs = [services_tool, professionals_tool, availability_tool, month_tool, appointments_tool, phone_tool]
     defs += [booking_tool, comanda_tool, reschedule_tool, cancel_tool] if include_booking
     defs
+  end
+
+  # O passo que faltava no treinamento: pedir o WhatsApp e REGISTRAR.
+  #
+  # No WhatsApp o contato já chega com número, então isto quase nunca aparece.
+  # Ele existe para o resto: widget do site, contato importado, e o playground,
+  # onde a falta do número fez o modelo preencher o campo sozinho com três
+  # números inventados na mesma conversa. Ver Ai::Belezaki::CustomerPhone.
+  #
+  # A ferramenta recusa número que não apareceu numa mensagem do cliente, então
+  # não adianta o modelo chutar: ele precisa ter perguntado de verdade.
+  def self.phone_tool
+    tool(
+      'registrar_telefone',
+      'Registra o WhatsApp do cliente na ficha dele. Chame assim que ele DIGITAR o número na conversa. ' \
+      'Sem isso não dá para consultar agenda, agendar, remarcar, desmarcar nem abrir comanda. ' \
+      'Se você ainda não tem o número, PERGUNTE primeiro: peça o WhatsApp com DDD e espere a resposta. ' \
+      'Nunca invente, nunca complete e nunca reaproveite um número de outra conversa.',
+      { numero: str('exatamente como o cliente digitou, ex 31 98765-4321') },
+      %w[numero]
+    )
   end
 
   def self.services_tool
@@ -22,8 +43,14 @@ class Ai::Belezaki::ToolDefinitions
   def self.availability_tool
     tool(
       'consultar_horarios',
-      'Horários livres de um serviço num dia específico. Use antes de agendar.',
-      { service_id: str('id do serviço'), date: str('dia YYYY-MM-DD'), professional_id: str('opcional') },
+      'Horários livres de um serviço num dia específico. Use antes de agendar. ' \
+      'A resposta já traz SÓ o que está livre: se vier vazio, não existe vaga nesse dia.',
+      # O modelo mandou "manicure_pedicure", "manicure,pedicure" e "manicure"
+      # quatro vezes numa conversa só, e cada uma voltou como erro de validação.
+      # A descrição agora diz o que o campo é, e não só o que ele significa.
+      { service_id: str('o UUID do serviço, copiado de listar_servicos, nunca o nome'),
+        date: str('dia YYYY-MM-DD'),
+        professional_id: str('opcional, o UUID vindo de listar_profissionais, nunca o nome') },
       %w[service_id date]
     )
   end
@@ -31,8 +58,11 @@ class Ai::Belezaki::ToolDefinitions
   def self.month_tool
     tool(
       'sugerir_dias',
-      'Dias com vaga de um serviço num mês (quando o cliente não deu uma data).',
-      { service_id: str('id do serviço'), month: str('mês YYYY-MM'), professional_id: str('opcional') },
+      'Dias com vaga de um serviço num mês (quando o cliente não deu uma data). ' \
+      'Devolve days_with_slots, a lista dos dias que têm alguma vaga.',
+      { service_id: str('o UUID do serviço, copiado de listar_servicos, nunca o nome'),
+        month: str('mês YYYY-MM'),
+        professional_id: str('opcional, o UUID vindo de listar_profissionais, nunca o nome') },
       %w[service_id month]
     )
   end
@@ -58,15 +88,16 @@ class Ai::Belezaki::ToolDefinitions
     tool(
       'agendar',
       'Cria o agendamento na agenda do salão. SÓ chame depois de confirmar nome e horário com o cliente. ' \
-      'Copie start e professional_id EXATAMENTE do slot escolhido em consultar_horarios, sem reformatar.',
+      'Copie start e professional_id EXATAMENTE do slot escolhido em consultar_horarios, sem reformatar. ' \
+      'Depois de agendar, diga ao cliente o horário que VOLTOU no campo inicio, não o que você tinha em mente. ' \
+      'O salão manda a confirmação por WhatsApp sozinho, então não prometa mandar nada você.',
       {
-        service_id: str('id do serviço'),
+        service_id: str('id do serviço, o UUID vindo de listar_servicos'),
         start: str('cópia literal do campo start do slot escolhido'),
         professional_id: str('id do profissional do MESMO slot'),
-        client_name: str('nome do cliente'),
-        client_phone: str('telefone E.164, ex +5531999999999')
+        client_name: str('nome do cliente')
       },
-      %w[service_id start professional_id client_name client_phone]
+      %w[service_id start professional_id client_name]
     )
   end
 
