@@ -52,6 +52,25 @@ RSpec.describe Ai::Manager::Checks::PromisedTimeMismatch do
                            created_at: appointment.created_at + after)
   end
 
+  # Um agendamento do belezaki, escrito exatamente como
+  # Ai::Belezaki::BookingRecorder#booked escreve: nenhuma linha em
+  # `ai_calendar_appointments`, tudo em Ai::RevenueEvent, com o horário como
+  # string ISO dentro do metadata. Devolve algo que responde a `created_at` e a
+  # `conversation_id`, que é o que `confirm` precisa.
+  def book_at_belezaki(hour, minute = 0)
+    create(
+      :ai_revenue_event,
+      account: account, ai_assistant: assistant, conversation_id: conversation.id,
+      source: Ai::Belezaki::BookingRecorder::SOURCE,
+      recorded_by: Ai::Belezaki::BookingRecorder::RECORDER,
+      external_ref: "#{Ai::Belezaki::BookingRecorder::REF_PREFIX}#{SecureRandom.uuid}",
+      occurred_at: booked_at, amount_brl: 120.0,
+      created_at: booked_at, updated_at: booked_at,
+      metadata: { 'state' => 'booked', 'service' => 'Escova',
+                  'starts_at' => zone.local(2026, 9, 3, hour, minute).iso8601 }
+    )
+  end
+
   # A agenda de um segundo agente do mesmo salão. Montada à mão porque não
   # existe factory para conexão nem para profissional nesta base.
   def rival_agenda(rival)
@@ -86,6 +105,68 @@ RSpec.describe Ai::Manager::Checks::PromisedTimeMismatch do
 
     it 'mostra a frase onde o horário errado está, e não a resposta inteira' do
       expect(described_class.run(scope).first[:evidence]['excerpt']).to include('14h')
+    end
+  end
+
+  # O teste que faltava, e cuja falta deixou esta verificação muda em produção
+  # desde o primeiro minuto.
+  #
+  # A falha real que fez esta classe existir foi do BELEZAKI, e agendamento de
+  # belezaki não escreve linha nenhuma em `ai_calendar_appointments`: o salão
+  # guarda o livro e nos deixa só a confirmação, que vira Ai::RevenueEvent. A
+  # verificação lia a tabela do Google, então ela nasceu incapaz de enxergar o
+  # caso que a justificou, sem dar erro, para todo cliente de salão.
+  describe 'a mesma divergência num agendamento do belezaki' do
+    it 'aponta a confirmação com o horário que o salão nunca marcou' do
+      confirm('Prontinho, Kennedy! Agendei sua escova pra quinta às 14h.', book_at_belezaki(13))
+
+      findings = described_class.run(scope)
+
+      expect(findings.length).to eq(1)
+      expect(findings.first[:severity]).to eq('critical')
+      expect(findings.first[:evidence]['conversation_id']).to eq(conversation.id)
+      expect(findings.first[:evidence]['excerpt']).to include('14h')
+    end
+
+    # O horário do belezaki chega como string escrita pelo salão, e o cartão
+    # mostra esse horário para o operador. Lido em UTC em vez do fuso do
+    # negócio, ele apareceria três horas para o lado e a divergência apontada
+    # seria outra.
+    it 'lê o horário do salão no fuso do negócio' do
+      confirm('Prontinho! Agendei sua escova pra quinta às 14h.', book_at_belezaki(13))
+
+      expect(described_class.run(scope).first[:rationale]).to include('13:00')
+    end
+
+    it 'fica calado quando a confirmação repete o horário que o salão marcou' do
+      confirm('Prontinho! Agendei sua escova pra quinta às 13h.', book_at_belezaki(13))
+
+      expect(described_class.run(scope)).to be_empty
+    end
+
+    # Venda avulsa não é agendamento. Sem este caso, alargar o critério das
+    # linhas do belezaki passaria despercebido e o Gerente cobraria horário de
+    # quem nunca marcou nada.
+    it 'não trata venda avulsa como agendamento' do
+      sale = create(:ai_revenue_event, account: account, ai_assistant: assistant,
+                                       conversation_id: conversation.id, source: 'pedido',
+                                       recorded_by: 'operator', occurred_at: booked_at,
+                                       external_ref: 'woo:order:77',
+                                       created_at: booked_at, updated_at: booked_at,
+                                       metadata: { 'starts_at' => zone.local(2026, 9, 3, 13, 0).iso8601 })
+      confirm('Agendei pra você às 14h.', sale)
+
+      expect(described_class.run(scope)).to be_empty
+    end
+
+    # As duas agendas na mesma conta, que é o salão que migrou de uma para a
+    # outra no meio do mês. Nenhuma das duas pode calar a outra. Separadas no
+    # tempo para que cada confirmação caia na janela de um agendamento só.
+    it 'enxerga as duas agendas na mesma rodada' do
+      confirm('Agendei pra você às 14h.', book_at_belezaki(13))
+      confirm('Marquei sim, te espero às 16h.', book(15, created_at: 5.days.ago))
+
+      expect(described_class.run(scope).first[:evidence]['value']).to eq(2)
     end
   end
 

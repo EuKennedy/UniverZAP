@@ -12,6 +12,26 @@
 # painel mede. As verificações sempre recebem um escopo com agente: elas auditam
 # um agente por vez, porque a régua é a história dele contra o período anterior.
 class Ai::Manager::Scope
+  # Um agendamento, venha ele da agenda do Google ou do livro do salão.
+  #
+  # Struct e não Hash porque quem lê isto compara horário: um `[:starts_at]`
+  # digitado `[:start_at]` devolveria nil calado, e uma verificação crítica que
+  # falha calada é exatamente o defeito que este leitor existe para consertar.
+  Booking = Struct.new(:id, :conversation_id, :starts_at, :created_at, :source, keyword_init: true)
+
+  # Teto de agendamentos lidos por agenda numa rodada. Uma auditoria semanal não
+  # é relatório histórico, e o teto é o que garante que a varredura de uma conta
+  # grande custe o mesmo que a de uma pequena. Lido de cada agenda e de novo do
+  # resultado: os 500 mais recentes das duas juntas estão sempre dentro dos 500
+  # mais recentes de cada uma.
+  MAX_BOOKINGS = 500
+
+  # Só o que tem cara de data e hora ISO entra no parse. O horário do belezaki é
+  # string escrita pelo salão e não coluna de tempo, e `TimeZone#parse` é
+  # generoso demais para esta porta: ele aceita "14h" e devolve hoje às 14:00.
+  # Horário inventado é pior que agendamento nenhum numa verificação crítica.
+  ISO_TIME = /\A\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/
+
   attr_reader :account, :assistant, :period, :zone
 
   # O relógio do negócio, não o do servidor. Um horário prometido só pode ser
@@ -64,12 +84,65 @@ class Ai::Manager::Scope
     @conversations_count ||= replies.where.not(conversation_id: nil).distinct.count(:conversation_id)
   end
 
+  # Quantas conversas cada agente da conta atendeu na janela. É daqui que a
+  # varredura descobre quem TRABALHOU, que é diferente de quem está ligado: um
+  # agente desligado ontem depois de trinta atendimentos tem lição válida, e um
+  # agente ligado sem inbox nenhuma não tem nada a ensinar.
+  def conversations_by_assistant
+    @conversations_by_assistant ||= replies.where.not(conversation_id: nil)
+                                           .group(:ai_assistant_id).distinct.count(:conversation_id)
+  end
+
+  # As conversas de um subconjunto de agentes, que é o que a régua de amostra
+  # precisa medir: contar a conta inteira e auditar um subconjunto é como o
+  # resumo passou a afirmar "analisei 36 conversas e não achei nada" sobre
+  # agentes que não tiveram conversa nenhuma.
+  #
+  # Em DISTINTO e não somando as linhas por agente: dois agentes do mesmo salão
+  # atendem a mesma conversa, e somar contaria essa conversa duas vezes
+  # justamente na régua que decide se existe material para concluir.
+  def conversations_count_for(assistant_ids)
+    return 0 if assistant_ids.blank?
+
+    replies.where(ai_assistant_id: assistant_ids).where.not(conversation_id: nil)
+           .distinct.count(:conversation_id)
+  end
+
+  # O número que a conversa tem na URL do Chatwoot, que é `display_id` e não a
+  # chave primária: os dois quase nunca coincidem, porque o display_id é uma
+  # sequência por conta. Uma consulta para todos os ids pedidos, e filtrada por
+  # conta como todo o resto daqui.
+  def display_ids_for(conversation_ids)
+    return {} if conversation_ids.blank?
+
+    Conversation.where(account_id: @account.id, id: conversation_ids).pluck(:id, :display_id).to_h
+  end
+
   def appointments
     @appointments ||= narrow(Ai::Calendar::Appointment.where(account_id: @account.id, created_at: @period.range))
   end
 
   def revenue_events
     @revenue_events ||= narrow(Ai::RevenueEvent.where(account_id: @account.id, occurred_at: @period.range))
+  end
+
+  # As DUAS agendas numa lista só, e é a única forma honesta de auditar
+  # agendamento nesta base.
+  #
+  # `ai_calendar_appointments` é escrita SÓ pelo caminho do Google
+  # (Ai::Calendar::BookService e Ai::Calendar::SchedulingTools). O salão que usa
+  # belezaki guarda o livro dele e nos deixa apenas a confirmação, que
+  # Ai::Belezaki::BookingRecorder grava no ledger de receita. Quem lesse só a
+  # primeira tabela ficaria mudo para todo cliente de salão sem dar erro nenhum,
+  # que é o jeito mais silencioso de uma feature falhar, e foi o que aconteceu
+  # com promised_time_mismatch: ela nasceu de uma falha do belezaki e era
+  # estruturalmente incapaz de enxergar aquele caso.
+  #
+  # Mais recente primeiro, porque o cartão mostra o pior caso como evidência e o
+  # caso que o operador consegue conferir é o de ontem, não o de vinte dias.
+  def bookings
+    @bookings ||= (google_bookings + belezaki_bookings).sort_by { |booking| -booking.created_at.to_f }
+                                                       .first(MAX_BOOKINGS)
   end
 
   # `last_seen_at` e não `created_at`, igual ao radar comercial: um lead esquenta
@@ -104,7 +177,73 @@ class Ai::Manager::Scope
     @cost_cents_brl ||= (served.sum(:cost_brl).to_f * 100).round
   end
 
+  # As conversas em que ALGO foi agendado, das duas agendas, e só os ids.
+  #
+  # Existe separado de `bookings` por causa do teto. Lá o teto protege uma
+  # varredura de conta grande, e cortar em 500 só significa auditar os 500 mais
+  # recentes. Aqui a lista serve para ABSOLVER, e um teto viraria acusação: a
+  # conversa que ficou de fora do corte passa a parecer que nunca agendou, e o
+  # agente que trabalhou certo leva um cartão dizendo que prometeu e não
+  # cumpriu. Lista de exclusão precisa ser completa ou não serve.
+  #
+  # Só os ids porque é disso que o cruzamento precisa, e assim as duas consultas
+  # não carregam linha nenhuma para a memória.
+  def booked_conversation_ids
+    @booked_conversation_ids ||= (
+      appointments.booked.where.not(conversation_id: nil).distinct.pluck(:conversation_id) +
+      revenue_events.belezaki_bookings.where.not(conversation_id: nil).distinct.pluck(:conversation_id)
+    ).to_set
+  end
+
   private
+
+  # `conversation_id` não nulo nas duas agendas: um agendamento sem conversa não
+  # tem confirmação para comparar, e carregá-lo só engordaria o teto.
+  def google_bookings
+    appointments.booked.where.not(conversation_id: nil)
+                .order(created_at: :desc).limit(MAX_BOOKINGS)
+                .map do |row|
+      Booking.new(id: row.id, conversation_id: row.conversation_id, starts_at: row.starts_at,
+                  created_at: row.created_at, source: 'google')
+    end
+  end
+
+  def belezaki_bookings
+    revenue_events.belezaki_bookings.where.not(conversation_id: nil)
+                  .order(occurred_at: :desc).limit(MAX_BOOKINGS)
+                  .filter_map { |row| belezaki_booking(row) }
+  end
+
+  # `occurred_at` como o instante do agendamento, e não `created_at`: é por ele
+  # que a janela filtra, e o recorder o escreve uma vez só, na entrada
+  # (`occurred_at ||= Time.current`), justamente para que a comanda aberta na
+  # manhã seguinte não mova a venda de noite. As duas colunas nascem iguais aqui,
+  # e escolher a que a janela usa é o que impede uma linha de entrar no período
+  # e ser comparada contra outro instante.
+  #
+  # Linha que não parseia é DESCARTADA, nunca vira agendamento com horário nulo:
+  # um nil aqui estouraria dentro da verificação, o `safely` do AnalysisService
+  # engoliria a rodada inteira daquele agente, e a auditoria voltaria a falhar
+  # calada.
+  def belezaki_booking(row)
+    starts_at = local_time(row.metadata.to_h['starts_at'])
+    return nil if starts_at.nil?
+
+    Booking.new(id: row.id, conversation_id: row.conversation_id, starts_at: starts_at,
+                created_at: row.occurred_at, source: 'belezaki')
+  end
+
+  # Parseado no fuso do NEGÓCIO para os dois formatos que o salão pode devolver:
+  # com deslocamento, ele manda; sem deslocamento, a string é hora local do
+  # salão e lê-la como UTC jogaria o agendamento três horas para o lado, que
+  # numa verificação de horário é a diferença entre acusar e absolver.
+  def local_time(value)
+    return nil unless value.to_s.match?(ISO_TIME)
+
+    @zone.parse(value.to_s)
+  rescue ArgumentError, TypeError
+    nil
+  end
 
   # Todas as chamadas que serviram cliente de verdade, e não só as que viraram
   # mensagem: um turno que consulta a agenda cobra várias chamadas e todas são

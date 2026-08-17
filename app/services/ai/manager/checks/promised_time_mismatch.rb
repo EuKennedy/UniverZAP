@@ -6,20 +6,22 @@
 # consegue fazer depois de confirmar um agendamento que não existe, e por isso é
 # crítica: não existe amostra mínima aqui, uma ocorrência já é o bastante.
 #
-# A comparação é contra `ai_calendar_appointments`, que é o nosso índice do que
-# NÓS agendamos. O resultado da ferramenta não é persistido em lugar nenhum
+# A comparação é contra `scope.bookings`, que é o horário que de fato ficou
+# escrito. O resultado da ferramenta não é persistido em lugar nenhum
 # (Ai::Agent::ToolLoopService o carrega em memória e o descarta no fim do turno),
-# e a linha da agenda é exatamente o mesmo fato tornado durável: o horário que
-# de fato ficou escrito.
+# e a linha do agendamento é exatamente o mesmo fato tornado durável.
+#
+# `scope.bookings` e não `scope.appointments`, e isso é o conserto de um defeito
+# que viveu em produção desde o primeiro minuto: `ai_calendar_appointments` é
+# escrita SÓ pelo caminho do Google, e todo agendamento de salão que usa belezaki
+# mora em Ai::RevenueEvent. Esta verificação nasceu de uma falha do BELEZAKI (a
+# ferramenta devolveu inicio=13:00 e a mensagem saiu "às 14h") e era
+# estruturalmente incapaz de enxergar aquele caso. Ficava muda, sem erro, para
+# exatamente o cliente que ela existe para proteger.
 class Ai::Manager::Checks::PromisedTimeMismatch < Ai::Manager::Checks::Base
   # Quanto tempo depois da linha da agenda a confirmação ainda é do mesmo turno.
   # Passou disso, a resposta é sobre outra coisa e comparar seria inventar.
   CONFIRMATION_WINDOW = 10.minutes
-
-  # Teto de agendamentos lidos numa rodada. Uma auditoria semanal não é um
-  # relatório histórico, e um teto é o que garante que a varredura de uma conta
-  # grande continue custando o mesmo que a de uma pequena.
-  MAX_APPOINTMENTS = 500
 
   # "14h", "14 horas", "14:30", "14h30", sempre com a preposição na frente: o
   # horário APRESENTADO como horário. O minuto é opcional de propósito, porque é
@@ -108,48 +110,43 @@ class Ai::Manager::Checks::PromisedTimeMismatch < Ai::Manager::Checks::Base
   private
 
   def collect_mismatches
-    appointments = booked_appointments
-    return [] if appointments.empty?
+    bookings = scope.bookings
+    return [] if bookings.empty?
 
-    confirmations = confirmations_for(appointments)
-    appointments.filter_map { |appointment| mismatch_for(appointment, confirmations[appointment.conversation_id]) }
-  end
-
-  def booked_appointments
-    @booked_appointments ||= scope.appointments.booked.where.not(conversation_id: nil)
-                                  .order(created_at: :desc).limit(MAX_APPOINTMENTS).to_a
+    confirmations = confirmations_for(bookings)
+    bookings.filter_map { |booking| mismatch_for(booking, confirmations[booking.conversation_id]) }
   end
 
   # Uma consulta para todas as conversas envolvidas, e não uma por agendamento:
   # a diferença entre duas consultas por rodada e quinhentas.
-  def confirmations_for(appointments)
-    scope.replies.where(conversation_id: appointments.map(&:conversation_id))
+  def confirmations_for(bookings)
+    scope.replies.where(conversation_id: bookings.map(&:conversation_id))
          .where.not(ai_response: [nil, ''])
          .order(:created_at)
          .pluck(:conversation_id, :ai_response, :created_at)
          .group_by(&:first)
   end
 
-  def mismatch_for(appointment, candidates)
-    reply = confirmation_after(appointment, candidates)
+  def mismatch_for(booking, candidates)
+    reply = confirmation_after(booking, candidates)
     return nil if reply.blank?
 
     text = reply[1]
     # Absolver é generoso: um horário apresentado que bate com a agenda diz que o
     # cliente foi informado direito, esteja ele em que frase estiver. Silêncio
     # também não é divergência.
-    return nil if absolved?(text, appointment)
+    return nil if absolved?(text, booking)
 
     # Acusar é estrito: só o horário dito numa frase que fala DESTE agendamento.
     claimed = claimed_times(text)
     return nil if claimed.empty?
 
-    { appointment: appointment, text: text, stated: claimed }
+    { booking: booking, text: text, stated: claimed }
   end
 
-  def absolved?(text, appointment)
+  def absolved?(text, booking)
     promised = promised_times(text)
-    promised.empty? || promised.any? { |time| matches?(time, appointment) }
+    promised.empty? || promised.any? { |time| matches?(time, booking) }
   end
 
   # Frase a frase, e não a mensagem inteira, para que o funcionamento da casa
@@ -188,9 +185,9 @@ class Ai::Manager::Checks::PromisedTimeMismatch < Ai::Manager::Checks::Base
     sentences(text).find { |line| line.match?(BOOKING_SENTENCE) && stated_times(spoken(line)).any? } || text
   end
 
-  def confirmation_after(appointment, candidates)
+  def confirmation_after(booking, candidates)
     Array(candidates).find do |_conversation_id, _text, created_at|
-      created_at.between?(appointment.created_at, appointment.created_at + CONFIRMATION_WINDOW)
+      created_at.between?(booking.created_at, booking.created_at + CONFIRMATION_WINDOW)
     end
   end
 
@@ -207,22 +204,22 @@ class Ai::Manager::Checks::PromisedTimeMismatch < Ai::Manager::Checks::Base
   # é 14:00 e recusar isso encheria a fila de divergência que não existe. O
   # preço é deixar passar um "1h" que realmente queria dizer 01:00, e esse é o
   # lado certo para errar numa verificação crítica.
-  def matches?(stated, appointment)
+  def matches?(stated, booking)
     hour, minute = stated
-    local = appointment.starts_at.in_time_zone(scope.zone)
+    local = booking.starts_at.in_time_zone(scope.zone)
     candidates = hour <= 12 ? [hour, hour + 12] : [hour]
     candidates.include?(local.hour) && (minute.zero? || minute == local.min)
   end
 
   def build_finding(mismatches)
     worst = mismatches.first
-    booked_at = worst[:appointment].starts_at.in_time_zone(scope.zone).strftime('%d/%m às %H:%M')
+    booked_at = worst[:booking].starts_at.in_time_zone(scope.zone).strftime('%d/%m às %H:%M')
     said = format_stated(worst[:stated].first)
     finding(
       title: 'O agente confirmou um horário diferente do que ficou agendado',
       rationale: rationale_for(mismatches.length, booked_at, said),
       evidence: evidence(
-        conversation_id: worst[:appointment].conversation_id,
+        conversation_id: worst[:booking].conversation_id,
         excerpt: promise_sentence(worst[:text]),
         metric: 'agendamentos_com_hora_errada', value: mismatches.length
       ),
