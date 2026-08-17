@@ -59,7 +59,7 @@ class Ai::Manager::Overview
   # automática não existe de onde contar a próxima, e devolver "daqui a sete
   # dias" seria a tela prometendo uma data que o agendador não conhece.
   def next_run_at
-    last_scheduled_at && last_scheduled_at + Ai::Manager::AnalysisService::CADENCE
+    last_scheduled_at && (last_scheduled_at + Ai::Manager::AnalysisService::CADENCE)
   end
 
   def last_scheduled_at

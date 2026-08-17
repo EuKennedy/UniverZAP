@@ -147,7 +147,6 @@ class Ai::Manager::AnalysisService
   # que ninguém abre.
   def already_open?(assistant, check_key)
     Ai::Manager::Suggestion.open_items
-                           .where(account_id: @account.id, ai_assistant_id: assistant.id, check_key: check_key)
-                           .exists?
+                           .exists?(account_id: @account.id, ai_assistant_id: assistant.id, check_key: check_key)
   end
 end

@@ -84,7 +84,12 @@ class Ai::Manager::Checks::LoosePromise < Ai::Manager::Checks::Base
   def unbacked_messages
     @unbacked_messages ||= flagged.order(created_at: :desc).limit(MAX_ROWS)
                                   .pluck(:conversation_id, :message_id)
+                                  # rubocop:disable Style/HashExcept
+                                  # O cop enxerga um Hash aqui e sugere `except`, mas `pluck` com
+                                  # duas colunas devolve array de pares: aceitar o autocorrect
+                                  # troca este reject por um NoMethodError em produção.
                                   .reject { |conversation_id, _| booked_conversations.include?(conversation_id) }
+                                  # rubocop:enable Style/HashExcept
                                   .map(&:last).uniq
   end
 

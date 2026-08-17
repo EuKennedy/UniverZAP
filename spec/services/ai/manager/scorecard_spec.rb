@@ -69,7 +69,7 @@ RSpec.describe Ai::Manager::Scorecard do
 
     it 'nunca colapsa as três num número só' do
       expect(scores).not_to have_key(:score)
-      expect(scores.values.map { |note| note.keys }.uniq).to eq([%i[value previous change]])
+      expect(scores.values.map(&:keys).uniq).to eq([%i[value previous change]])
     end
   end
 

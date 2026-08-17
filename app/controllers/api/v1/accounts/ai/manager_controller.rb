@@ -66,7 +66,7 @@ class Api::V1::Accounts::Ai::ManagerController < Api::V1::Accounts::BaseControll
   def checks
     disabled = Ai::Manager::CheckSetting.disabled_keys_for(Current.account)
     payload = Ai::Manager::Checks.all.map do |check|
-      check.descriptor.merge(enabled: !disabled.include?(check.key))
+      check.descriptor.merge(enabled: disabled.exclude?(check.key))
     end
     render json: { payload: payload }
   end

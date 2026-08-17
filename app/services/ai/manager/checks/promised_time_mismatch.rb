@@ -158,7 +158,7 @@ class Ai::Manager::Checks::PromisedTimeMismatch < Ai::Manager::Checks::Base
   # este filtro, uma frase dessas ao lado de uma confirmação correta viraria
   # divergência crítica, e crítica aqui dispara com uma ocorrência só.
   def claimed_times(text)
-    times_in(sentences(text).select { |sentence| sentence.match?(BOOKING_SENTENCE) })
+    times_in(sentences(text).grep(BOOKING_SENTENCE))
   end
 
   def times_in(list)
@@ -179,7 +179,7 @@ class Ai::Manager::Checks::PromisedTimeMismatch < Ai::Manager::Checks::Base
 
   def confirmation_after(appointment, candidates)
     Array(candidates).find do |_conversation_id, _text, created_at|
-      created_at >= appointment.created_at && created_at <= appointment.created_at + CONFIRMATION_WINDOW
+      created_at.between?(appointment.created_at, appointment.created_at + CONFIRMATION_WINDOW)
     end
   end
 
