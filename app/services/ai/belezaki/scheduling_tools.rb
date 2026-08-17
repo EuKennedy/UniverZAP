@@ -95,23 +95,6 @@ class Ai::Belezaki::SchedulingTools
   READS = %w[listar_servicos listar_profissionais consultar_horarios sugerir_dias meus_agendamentos].freeze
   WRITES = %w[agendar abrir_comanda remarcar desmarcar].freeze
 
-  # Tudo que fala do cliente com o salão precisa do WhatsApp DELE: a agenda
-  # grava por telefone, o salão escopa `meus_agendamentos` por telefone, e a
-  # confirmação automática do belezaki resolve o número no WhatsApp antes de
-  # enviar. Sem número certo, os três falham, e dois deles falham em silêncio.
-  PHONE_REQUIRED = (WRITES + %w[meus_agendamentos]).freeze
-
-  UUID_FORMAT = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
-
-  ID_FIELDS = {
-    'consultar_horarios' => %w[service_id professional_id],
-    'sugerir_dias' => %w[service_id professional_id],
-    'agendar' => %w[service_id professional_id],
-    'remarcar' => %w[appointment_id professional_id],
-    'desmarcar' => %w[appointment_id],
-    'abrir_comanda' => %w[appointment_id]
-  }.freeze
-
   # Split in two rather than one long case: reads and writes are different
   # risks, and the branch count of a single table crosses the complexity limit
   # the moment a ninth tool appears.
@@ -132,7 +115,7 @@ class Ai::Belezaki::SchedulingTools
 
   def register_phone(input)
     status, detail = @phone.register(input['numero'])
-    return refuse(detail) unless status == :ok
+    return Ai::Belezaki::InputGuard.refuse(detail) unless status == :ok
 
     { telefone_registrado: detail }
   end
@@ -158,79 +141,15 @@ class Ai::Belezaki::SchedulingTools
     end
   end
 
-  # Checked here because the salon does NOT check it, and the failure is silent
-  # rather than loud: `date=2026-02-30` answers 200 with the real slots of March
-  # 2nd under an envelope that says February 30th, so the agent would offer a day
-  # that does not exist. A missing date is worse still — it reaches Prisma as NaN
-  # and comes back 500.
-  #
-  # Deliberately NOT validating id formats: the ids come from the salon's own
-  # tool results, and a hallucinated one would be shaped like a real one anyway.
+  # A conferência das entradas mora em Ai::Belezaki::InputGuard. Cada regra de
+  # lá nasceu de um erro observado num rastro de conversa real, e juntas elas
+  # não cabiam mais nesta classe sem estourar o ClassLength.
   def invalid_input(name, input)
-    time_problem(name, input) || id_problem(name, input) || phone_problem(name)
+    guard.problem(name, input)
   end
 
-  def time_problem(name, input)
-    case name
-    when 'consultar_horarios'
-      refuse('Data inválida. Use AAAA-MM-DD com um dia que exista.') unless real_date?(input['date'])
-    when 'sugerir_dias'
-      refuse('Mês inválido. Use AAAA-MM.') unless real_month?(input['month'])
-    when 'agendar', 'remarcar'
-      refuse('Horário inválido. Copie o campo start do slot escolhido.') unless parsable_time?(input['start'])
-    end
-  end
-
-  # O comentário que estava aqui dizia para NÃO validar formato de id, porque
-  # "um id alucinado teria o formato de um id real". Os dados derrubaram a
-  # premissa: numa única conversa o modelo mandou `manicure_pedicure`,
-  # `manicure,pedicure` e `manicure` quatro vezes, e o belezaki, que agora exige
-  # @IsUUID(), devolveu validation_failed em todas.
-  #
-  # Pegar aqui vale por dois motivos. Poupa a ida e volta, e sobretudo nomeia a
-  # correção: o conselho genérico de validation_failed manda oferecer outro
-  # horário, o que para este erro não conserta absolutamente nada e faz o agente
-  # girar em falso oferecendo horários que ele não vai conseguir marcar.
-  def id_problem(name, input)
-    bad = Array(ID_FIELDS[name]).find do |field|
-      input[field].present? && !input[field].to_s.match?(UUID_FORMAT)
-    end
-    return nil if bad.nil?
-
-    refuse("O campo #{bad} precisa ser o id exato devolvido pela ferramenta, e não o nome do serviço ou da " \
-           'pessoa. Chame listar_servicos ou consultar_horarios e copie o id de lá.')
-  end
-
-  # Sem telefone do cliente a ferramenta recusa e manda perguntar, em vez de
-  # deixar o modelo preencher o campo. Ver Ai::Belezaki::CustomerPhone.
-  def phone_problem(name)
-    return nil unless PHONE_REQUIRED.include?(name)
-    return nil if @phone.present?
-
-    refuse('Ainda não tenho o WhatsApp deste cliente. Peça o número com DDD, e quando ele responder chame ' \
-           'registrar_telefone com o que ele digitou. Só depois disso dá para mexer na agenda.')
-  end
-
-  def refuse(message)
-    { error: 'invalid_input', message: message }
-  end
-
-  def real_date?(value)
-    Date.strptime(value.to_s, '%Y-%m-%d').present?
-  rescue Date::Error, TypeError
-    false
-  end
-
-  def real_month?(value)
-    Date.strptime(value.to_s, '%Y-%m').present?
-  rescue Date::Error, TypeError
-    false
-  end
-
-  def parsable_time?(value)
-    Time.iso8601(value.to_s).present?
-  rescue ArgumentError, TypeError
-    false
+  def guard
+    @guard ||= Ai::Belezaki::InputGuard.new(@phone)
   end
 
   def book(input)
@@ -280,7 +199,7 @@ class Ai::Belezaki::SchedulingTools
 
   # The phone is the scope: the salon answers 404 for an appointment belonging to
   # anyone else, so this is also what keeps the agent off other people's agendas.
-  # A ausência de telefone já foi recusada em `phone_problem`, que vale para
+  # A ausência de telefone já foi recusada no InputGuard, que vale para
   # esta e para as quatro escritas. Uma conversa sem número no contato não pode
   # ser escopada, e perguntar ao salão sem ele daria erro ou, pior, seria
   # respondido com a agenda de outra pessoa.

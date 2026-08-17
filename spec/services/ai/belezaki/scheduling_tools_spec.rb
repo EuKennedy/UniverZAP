@@ -265,7 +265,8 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
         allow(client).to receive(:open_comanda).and_return('comanda' => {})
 
         with_contact.call('abrir_comanda',
-                          { 'appointment_id' => '22222222-2222-4222-8222-222222222222', 'forma_pagamento' => 'PIX', 'client_phone' => '+5531000000000' })
+                          { 'appointment_id' => '22222222-2222-4222-8222-222222222222',
+                            'forma_pagamento' => 'PIX', 'client_phone' => '+5531000000000' })
 
         expect(client).to have_received(:open_comanda)
           .with('22222222-2222-4222-8222-222222222222', hash_including(client_phone: '+5531999999999'))
@@ -448,6 +449,11 @@ RSpec.describe Ai::Belezaki::SchedulingTools do
           ai_assistant: assistant, account: account, external_id: 'salon-1', status: 'active'
         )
       end
+
+      # O contato precisa ter telefone, que é o estado real de toda conversa de
+      # WhatsApp: sem ele a escrita é recusada antes de chegar no gravador, e o
+      # que este bloco testa é justamente o gravador sendo chamado.
+      before { conversation.contact.update!(phone_number: '+5531988887777') }
 
       def bound_tools
         described_class.new(client, scope: 'conv-1', connection: connection, conversation: conversation)
