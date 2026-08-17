@@ -564,6 +564,28 @@ Rails.application.routes.draw do
             resources :chat_threads, only: [:index, :show, :create, :update, :destroy] do
               resources :chat_messages, only: [:index, :create]
             end
+            # O Gerente: audita os agentes DA CONTA, aponta o que quebrou com
+            # evidência e propõe mudança que só entra em produção depois de um
+            # humano aprovar. Uma controller só, e não `namespace`, porque o
+            # `check_authorization` herdado deriva o model do nome da controller
+            # e a política aqui precisa ser nomeada num lugar só.
+            #
+            # Cada rota nomeada à mão (`as:`) em vez de deixar o Rails derivar do
+            # caminho: derivadas, "overview" e "checks" virariam nomes genéricos
+            # dentro do namespace :ai, e o próximo módulo que precisar de um
+            # `overview` colidiria com este no boot.
+            scope :manager, controller: 'manager' do
+              get 'overview', action: :overview, as: :manager_overview
+              get 'suggestions', action: :suggestions, as: :manager_suggestions
+              post 'suggestions/:id/approve', action: :approve, as: :manager_suggestion_approve
+              post 'suggestions/:id/dismiss', action: :dismiss, as: :manager_suggestion_dismiss
+              # Antes de POST runs, porque a tela mostra o preço da varredura
+              # antes de alguém clicar em rodar.
+              get 'runs/estimate', action: :estimate, as: :manager_run_estimate
+              post 'runs', action: :create_run, as: :manager_runs
+              get 'checks', action: :checks, as: :manager_checks
+              patch 'checks/:key', action: :update_check, as: :manager_check
+            end
             resource :credits, only: [:show]
           end
 

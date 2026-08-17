@@ -118,3 +118,13 @@ remove_orphan_conversations_job:
   cron: '0 */12 * * *'
   class: 'Internal::RemoveOrphanConversationsJob'
   queue: housekeeping
+
+# Gerente: uma varredura por conta, toda segunda de madrugada. Semanal e não
+# diária porque a janela analisada é de 30 dias (Ai::Manager::AnalysisService::
+# WINDOW_DAYS), e uma auditoria diária repetiria a mesma conclusão seis vezes.
+# Este cron precisa continuar batendo com CADENCE no mesmo serviço: é dela que a
+# tela tira a data da próxima varredura.
+ai_manager_weekly_scheduler_job:
+  cron: '0 4 * * 1'
+  class: 'Ai::Manager::WeeklySchedulerJob'
+  queue: scheduled_jobs

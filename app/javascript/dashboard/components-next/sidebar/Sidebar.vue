@@ -393,6 +393,14 @@ const builtMenu = computed(() => {
         'athenas_assistant_edit',
       ],
     },
+    {
+      name: 'Manager',
+      label: t('SIDEBAR.MANAGER'),
+      icon: 'i-lucide-clipboard-check',
+      to: accountScopedRoute('ai_manager'),
+      dataOnboarding: 'manager-nav',
+      activeOn: ['ai_manager'],
+    },
     ...(captainVisible
       ? [
           {

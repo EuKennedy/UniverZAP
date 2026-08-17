@@ -104,6 +104,13 @@ class Account < ApplicationRecord
   has_many :ai_chat_threads, dependent: :destroy, class_name: 'Ai::ChatThread'
   has_many :ai_chat_messages, dependent: :destroy, class_name: 'Ai::ChatMessage'
   has_many :ai_credit_ledger_entries, dependent: :destroy, class_name: 'Ai::CreditLedgerEntry'
+  # Gerente. `:destroy` e não `:destroy_async`, como o resto do módulo de IA:
+  # as três tabelas têm chave estrangeira para accounts, e uma remoção assíncrona
+  # deixaria a linha de pé o tempo suficiente para a exclusão da conta estourar
+  # na constraint — o mesmo erro que já derrubou a remoção de agente duas vezes.
+  has_many :ai_manager_runs, dependent: :destroy, class_name: 'Ai::Manager::Run'
+  has_many :ai_manager_suggestions, dependent: :destroy, class_name: 'Ai::Manager::Suggestion'
+  has_many :ai_manager_check_settings, dependent: :destroy, class_name: 'Ai::Manager::CheckSetting'
   has_many :inboxes, dependent: :destroy_async
   has_many :labels, dependent: :destroy_async
   has_many :line_channels, dependent: :destroy_async, class_name: '::Channel::Line'

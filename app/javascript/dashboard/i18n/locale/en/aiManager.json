@@ -1,0 +1,101 @@
+{
+  "AI_MANAGER": {
+    "TITLE": "Manager",
+    "SUBTITLE": "The Manager reads your agent's conversations, finds what went wrong and brings the fix ready with the evidence attached, for you to approve or dismiss.",
+    "RETRY": "Try again",
+    "LOAD_ERROR": "We could not load the Manager queue right now.",
+    "APPROVE_ERROR": "We could not approve this suggestion right now.",
+    "DISMISS_ERROR": "We could not dismiss this suggestion right now.",
+    "LAST_RUN": "Last analysis on {when}",
+    "NEXT_RUN": "Next analysis on {when}",
+    "SCHEDULE_BOTH": "Last analysis on {last}, next on {next}",
+    "NEVER_RAN": "The Manager has not run on this account yet.",
+    "TABS": {
+      "QUEUE": "Queue",
+      "CHECKS": "Checks"
+    },
+    "SCORES": {
+      "COMPARISON": "Against the previous period",
+      "RELIABILITY": {
+        "TITLE": "Reliability",
+        "HINT": "How much of what the agent promised actually held up."
+      },
+      "CONVERSION": {
+        "TITLE": "Conversion",
+        "HINT": "How many handled conversations ended in a booking."
+      },
+      "COST": {
+        "TITLE": "Cost",
+        "HINT": "How much credit the agent used in the period."
+      }
+    },
+    "GAP": {
+      "TITLE": "Not enough to conclude yet",
+      "BODY": "The Manager analysed {analysed} of the {needed} conversations it needs before a conclusion means anything. With less than that any trend would be a guess, so it waits instead of inventing a score.",
+      "REMAINING": "{n} conversations to go"
+    },
+    "QUEUE": {
+      "EMPTY_TITLE": "Nothing waiting on you",
+      "EMPTY_BODY": "The Manager went through the conversations and found nothing that needs your decision right now."
+    },
+    "RUN": {
+      "ACTION": "Run now",
+      "CHECKING": "Working out the cost",
+      "CONFIRM": "This will analyse {conversations} conversations and use {credits} in credits.",
+      "CONFIRM_ACTION": "Confirm and run",
+      "CANCEL": "Not now",
+      "CLOSE": "Close",
+      "NOTHING_TO_ANALYSE": "There is no new conversation to analyse, so running now would only burn credit.",
+      "STARTED": "The analysis has started and suggestions show up here as soon as it finishes.",
+      "ESTIMATE_ERROR": "We could not work out the cost right now, and nothing was spent.",
+      "RUN_ERROR": "We could not start the analysis right now."
+    },
+    "CARD": {
+      "EVIDENCE": "The evidence",
+      "OPEN_CONVERSATION": "Open the conversation",
+      "CHANGE": "What changes",
+      "SEVERITY": {
+        "CRITICAL": "Critical",
+        "NORMAL": "Worth a look"
+      },
+      "TARGET": {
+        "TRAINING": "Agent memory",
+        "TRAINING_EFFECT": "Approving writes this into the agent's memory and applies from the next conversation on.",
+        "PROMPT": "Prompt version",
+        "PROMPT_EFFECT": "Approving creates a new version and puts it up against the current one, and it only becomes official if it wins."
+      },
+      "APPROVE_TRAINING": "Approve and apply now",
+      "APPROVE_PROMPT": "Approve and start the contest",
+      "DISMISS": "Dismiss",
+      "DISMISS_REASON_LABEL": "Why not?",
+      "DISMISS_PLACEHOLDER": "In one line, what the Manager missed",
+      "DISMISS_CONFIRM": "Dismiss",
+      "DISMISS_CANCEL": "Back"
+    },
+    "CHECKS": {
+      "TITLE": "What the Manager checks",
+      "SUBTITLE": "Each check is a question it asks of every analysed conversation, and turning one off takes that subject out of the queue.",
+      "EMPTY": "No checks available on this account.",
+      "LOAD_ERROR": "We could not load the checks right now.",
+      "SAVE_ERROR": "We could not save that change, so it was rolled back."
+    },
+    "CHECK": {
+      "PROMISED_TIME_MISMATCH": {
+        "TITLE": "The agent promised one time and the calendar saved another",
+        "WHAT": "Compares the time the agent said in the conversation with what ended up in the calendar."
+      },
+      "LOOSE_PROMISE": {
+        "TITLE": "The agent promised to get back with no way to keep it",
+        "WHAT": "Looks for promises to follow up that never became a task, reminder or booking."
+      },
+      "DIED_ON_PRICE": {
+        "TITLE": "The conversation reached the price and died without booking",
+        "WHAT": "Looks at conversations that stopped right after the price came up."
+      },
+      "UNGROUNDED_NUMBER": {
+        "TITLE": "The agent quoted a figure that did not come from a tool",
+        "WHAT": "Checks that every number told to the customer came from a real lookup."
+      }
+    }
+  }
+}

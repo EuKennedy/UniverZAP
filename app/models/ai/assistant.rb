@@ -49,6 +49,11 @@ class Ai::Assistant < ApplicationRecord
   # whole window in one statement.
   has_many :response_histories, class_name: 'Ai::ResponseHistory', foreign_key: :ai_assistant_id,
                                 inverse_of: :ai_assistant, dependent: :delete_all
+  # As sugestões que o Gerente escreveu sobre este agente. `:destroy` pela mesma
+  # razão que todo o resto acima: a coluna é NOT NULL com chave estrangeira, e
+  # sem isto remover um agente auditado volta a dar 500.
+  has_many :manager_suggestions, class_name: 'Ai::Manager::Suggestion', foreign_key: :ai_assistant_id,
+                                 inverse_of: :ai_assistant, dependent: :destroy
 
   # The instructions the agent actually runs on. Falls back to the mutable
   # column so an agent that was never versioned keeps behaving identically.

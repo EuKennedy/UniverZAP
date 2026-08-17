@@ -25,6 +25,7 @@ import helpCenter from './helpCenter.json';
 import inbox from './inbox.json';
 import inboxMgmt from './inboxMgmt.json';
 import athenas from './athenas.json';
+import aiManager from './aiManager.json';
 import integrationApps from './integrationApps.json';
 import kanban from './kanban.json';
 import integrations from './integrations.json';
@@ -79,6 +80,7 @@ export default {
   ...inbox,
   ...inboxMgmt,
   ...athenas,
+  ...aiManager,
   ...integrationApps,
   ...kanban,
   ...integrations,

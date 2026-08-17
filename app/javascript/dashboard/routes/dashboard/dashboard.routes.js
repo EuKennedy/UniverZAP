@@ -14,6 +14,7 @@ import chatflowRoutes from './chatflow/chatflow.routes';
 import broadcastsRoutes from './broadcasts/broadcasts.routes';
 import metasRoutes from './metas/metas.routes';
 import athenasRoutes from './athenas/athenas.routes';
+import managerRoutes from './manager/manager.routes';
 import tasksRoutes from './tasks/tasks.routes';
 import whatsappProfileRoutes from './whatsappProfile/whatsappProfile.routes';
 import AppContainer from './Dashboard.vue';
@@ -42,6 +43,7 @@ export default {
         ...broadcastsRoutes.routes,
         ...metasRoutes.routes,
         ...athenasRoutes.routes,
+        ...managerRoutes.routes,
         ...tasksRoutes.routes,
         ...whatsappProfileRoutes.routes,
       ],

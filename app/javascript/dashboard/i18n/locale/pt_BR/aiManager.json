@@ -1,0 +1,101 @@
+{
+  "AI_MANAGER": {
+    "TITLE": "Gerente",
+    "SUBTITLE": "O Gerente lê as conversas do seu agente, encontra o que saiu errado e traz a correção pronta com a evidência junto, para você aprovar ou dispensar.",
+    "RETRY": "Tentar de novo",
+    "LOAD_ERROR": "Não deu para carregar a fila do Gerente agora.",
+    "APPROVE_ERROR": "Não deu para aprovar essa sugestão agora.",
+    "DISMISS_ERROR": "Não deu para dispensar essa sugestão agora.",
+    "LAST_RUN": "Última análise em {when}",
+    "NEXT_RUN": "Próxima análise em {when}",
+    "SCHEDULE_BOTH": "Última análise em {last}, próxima em {next}",
+    "NEVER_RAN": "O Gerente ainda não rodou nesta conta.",
+    "TABS": {
+      "QUEUE": "Fila",
+      "CHECKS": "Verificações"
+    },
+    "SCORES": {
+      "COMPARISON": "Contra o período anterior",
+      "RELIABILITY": {
+        "TITLE": "Confiabilidade",
+        "HINT": "Quanto do que o agente prometeu ao cliente se confirmou depois."
+      },
+      "CONVERSION": {
+        "TITLE": "Conversão",
+        "HINT": "Quantas das conversas atendidas terminaram em agendamento."
+      },
+      "COST": {
+        "TITLE": "Custo",
+        "HINT": "Quanto o agente consumiu de crédito no período."
+      }
+    },
+    "GAP": {
+      "TITLE": "Ainda não dá para concluir",
+      "BODY": "O Gerente analisou {analysed} de {needed} conversas, que é o mínimo para uma conclusão fazer sentido. Com menos que isso qualquer tendência seria chute, então ele prefere esperar a inventar uma nota.",
+      "REMAINING": "Faltam {n} conversas"
+    },
+    "QUEUE": {
+      "EMPTY_TITLE": "Nada esperando por você",
+      "EMPTY_BODY": "O Gerente passou pelas conversas e não encontrou nada que precise da sua decisão agora."
+    },
+    "RUN": {
+      "ACTION": "Rodar agora",
+      "CHECKING": "Calculando o custo",
+      "CONFIRM": "Vou analisar {conversations} conversas e isso consome {credits} em créditos.",
+      "CONFIRM_ACTION": "Confirmar e rodar",
+      "CANCEL": "Agora não",
+      "CLOSE": "Fechar",
+      "NOTHING_TO_ANALYSE": "Não há conversa nova para analisar, então rodar agora só gastaria crédito à toa.",
+      "STARTED": "A análise começou e as sugestões aparecem aqui assim que ela terminar.",
+      "ESTIMATE_ERROR": "Não deu para calcular o custo agora, e nada foi gasto.",
+      "RUN_ERROR": "Não deu para começar a análise agora."
+    },
+    "CARD": {
+      "EVIDENCE": "A evidência",
+      "OPEN_CONVERSATION": "Abrir a conversa",
+      "CHANGE": "O que muda",
+      "SEVERITY": {
+        "CRITICAL": "Crítico",
+        "NORMAL": "Atenção"
+      },
+      "TARGET": {
+        "TRAINING": "Memória do agente",
+        "TRAINING_EFFECT": "Aprovar grava isso na memória do agente e passa a valer já na próxima conversa.",
+        "PROMPT": "Versão de prompt",
+        "PROMPT_EFFECT": "Aprovar cria uma versão nova e coloca ela em disputa contra a atual, e ela só vira oficial se ganhar."
+      },
+      "APPROVE_TRAINING": "Aprovar e aplicar agora",
+      "APPROVE_PROMPT": "Aprovar e começar a disputa",
+      "DISMISS": "Dispensar",
+      "DISMISS_REASON_LABEL": "Por que não?",
+      "DISMISS_PLACEHOLDER": "Em uma linha, o que o Gerente não viu",
+      "DISMISS_CONFIRM": "Dispensar",
+      "DISMISS_CANCEL": "Voltar"
+    },
+    "CHECKS": {
+      "TITLE": "O que o Gerente verifica",
+      "SUBTITLE": "Cada verificação é uma pergunta que ele faz em toda conversa analisada, e desligar uma tira o assunto da fila.",
+      "EMPTY": "Nenhuma verificação disponível nesta conta.",
+      "LOAD_ERROR": "Não deu para carregar as verificações agora.",
+      "SAVE_ERROR": "Não deu para salvar essa mudança, então ela foi desfeita."
+    },
+    "CHECK": {
+      "PROMISED_TIME_MISMATCH": {
+        "TITLE": "O agente prometeu um horário e a agenda gravou outro",
+        "WHAT": "Compara o horário que o agente falou na conversa com o que ficou salvo na agenda."
+      },
+      "LOOSE_PROMISE": {
+        "TITLE": "O agente prometeu voltar depois sem ter como cumprir",
+        "WHAT": "Procura promessas de retorno que não viraram tarefa, lembrete nem agendamento."
+      },
+      "DIED_ON_PRICE": {
+        "TITLE": "A conversa chegou no preço e morreu sem agendar",
+        "WHAT": "Olha as conversas que pararam logo depois de o valor aparecer."
+      },
+      "UNGROUNDED_NUMBER": {
+        "TITLE": "O agente citou um valor que não veio da ferramenta",
+        "WHAT": "Confere se cada número dito ao cliente saiu de uma consulta real."
+      }
+    }
+  }
+}
