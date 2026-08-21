@@ -70,12 +70,17 @@ RSpec.describe Ai::Manager::AnalysisService do
     # conversas faltam em vez de não dizer nada.
     it 'cai para os ativos quando ninguém trabalhou na janela' do
       empty = create(:account)
+      # A conta já nasce com um agente: Account tem after_create_commit
+      # :seed_default_athenas_assistant. Esperar só o que o teste criou seria
+      # descrever uma conta que não existe.
       active = create(:ai_assistant, account: empty, active: true)
+      expected = empty.ai_assistants.active.order(:id).pluck(:id)
 
       summary = described_class.new(account: empty).perform.summary
 
       expect(summary['insufficient_data']).to be(true)
-      expect(summary['agents'].map { |row| row['id'] }).to eq([active.id])
+      expect(summary['agents'].map { |row| row['id'] }).to eq(expected)
+      expect(expected).to include(active.id)
     end
   end
 

@@ -238,11 +238,25 @@ class Ai::Manager::Scope
   # salão e lê-la como UTC jogaria o agendamento três horas para o lado, que
   # numa verificação de horário é a diferença entre acusar e absolver.
   def local_time(value)
-    return nil unless value.to_s.match?(ISO_TIME)
+    text = value.to_s
+    return nil unless text.match?(ISO_TIME)
+    return nil unless real_date?(text)
 
-    @zone.parse(value.to_s)
+    @zone.parse(text)
   rescue ArgumentError, TypeError
     nil
+  end
+
+  # O regex prova a FORMA e não a existência do dia, e `parse` é leniente: ele
+  # não levanta erro para `2026-02-30`, devolve 2 de março. A linha passava
+  # inteira pelo rescue e virava agendamento num dia que o salão nunca teve, com
+  # a data errada indo para dentro da verificação de horário.
+  #
+  # É a mesma leniência que o InputGuard do belezaki fecha do outro lado, onde
+  # `date=2026-02-30` respondia 200 com os horários reais de 2 de março.
+  def real_date?(text)
+    year, month, day = text[0, 10].split('-').map(&:to_i)
+    Date.valid_date?(year, month, day)
   end
 
   # Todas as chamadas que serviram cliente de verdade, e não só as que viraram

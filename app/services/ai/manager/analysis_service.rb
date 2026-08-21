@@ -170,7 +170,7 @@ class Ai::Manager::AnalysisService
     # `grep(Hash)` e não acesso direto: uma verificação que devolva evidência
     # malformada não pode derrubar a rodada inteira aqui fora, onde o `safely`
     # já não alcança.
-    evidences = findings.map { |finding| finding[:evidence] }.grep(Hash)
+    evidences = findings.pluck(:evidence).grep(Hash)
     ids = evidences.filter_map { |evidence| evidence['conversation_id'] }
     return findings if ids.empty?
 
