@@ -32,6 +32,7 @@ const aSuggestion = (extra = {}) => ({
   severity: 'critical',
   evidence: {
     conversation_id: 907,
+    conversation_display_id: 12,
     excerpt: 'Fechado, te espero quinta às 14h.',
     metric: 'minutes_off',
     value: 120,
@@ -63,7 +64,38 @@ describe('ManagerSuggestionCard.vue', () => {
     );
     expect(
       wrapper.find('[data-testid="evidence-link"]').attributes('data-to')
-    ).toContain('907');
+    ).toContain('12');
+  });
+
+  // A rota de conversa do Chatwoot recebe o `display_id`, a sequência por conta,
+  // e não a chave primária. Com a chave o botão abria a conversa de OUTRO
+  // cliente, e a evidência é justamente o que sustenta o cartão.
+  it('opens the conversation by its display id, never by the primary key', () => {
+    const link = mountCard().find('[data-testid="evidence-link"]');
+
+    expect(JSON.parse(link.attributes('data-to'))).toEqual({
+      name: 'inbox_conversation',
+      params: { conversation_id: 12 },
+    });
+  });
+
+  // Conversa apagada depois da rodada: sem link é melhor que link quebrado.
+  it('hides the link when there is no display id to open', () => {
+    const wrapper = mountCard(
+      aSuggestion({
+        evidence: {
+          conversation_id: 907,
+          excerpt: 'Fechado, te espero quinta às 14h.',
+          metric: 'minutes_off',
+          value: 120,
+        },
+      })
+    );
+
+    expect(wrapper.find('[data-testid="evidence-link"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="evidence-excerpt"]').exists()).toBe(
+      true
+    );
   });
 
   it('shows what exactly would change', () => {

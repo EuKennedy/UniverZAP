@@ -76,6 +76,7 @@ const aSuggestion = (extra = {}) => ({
   severity: 'critical',
   evidence: {
     conversation_id: 907,
+    conversation_display_id: 12,
     excerpt: 'Fechado, te espero quinta às 14h.',
     metric: 'minutes_off',
     value: 120,

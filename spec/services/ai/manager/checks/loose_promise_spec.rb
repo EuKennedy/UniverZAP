@@ -89,6 +89,32 @@ RSpec.describe Ai::Manager::Checks::LoosePromise do
       expect(described_class.run(scope)).to be_empty
     end
 
+    # A absolvição por agendamento não tinha UM teste sequer, e foi assim que
+    # ela pôde ficar quebrada para metade dos clientes sem ninguém notar: o
+    # cruzamento lia só a agenda do Google, então em salão de belezaki o agente
+    # agendava de verdade e a verificação o acusava de prometer sem cumprir.
+    # Falso positivo é o que faz o operador nunca mais abrir a aba.
+    it 'cala quando o agendamento existe na agenda do belezaki' do
+      conversas = Array.new(3) do
+        id = ids.next
+        create(:ai_invocation, account: account, ai_assistant: assistant, conversation_id: id,
+                               message_id: id, ai_response: promise_text, auto_flags: %w[promessa_solta],
+                               auto_flag: 'promessa_solta', created_at: 2.days.ago)
+        id
+      end
+
+      conversas.each do |id|
+        create(:ai_revenue_event, account: account, ai_assistant: assistant, conversation_id: id,
+                                  source: Ai::Belezaki::BookingRecorder::SOURCE,
+                                  recorded_by: Ai::Belezaki::BookingRecorder::RECORDER,
+                                  external_ref: "#{Ai::Belezaki::BookingRecorder::REF_PREFIX}#{SecureRandom.uuid}",
+                                  occurred_at: 2.days.ago,
+                                  metadata: { 'state' => 'booked', 'starts_at' => 2.days.from_now.iso8601 })
+      end
+
+      expect(described_class.run(scope)).to be_empty
+    end
+
     # A bandeira lida é uma só. Sem este caso, um `@>` trocado por um LIKE
     # solto passaria: toda resposta com qualquer bandeira viraria promessa
     # solta, e o cartão apontaria o problema errado.

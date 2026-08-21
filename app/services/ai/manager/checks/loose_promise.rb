@@ -93,9 +93,16 @@ class Ai::Manager::Checks::LoosePromise < Ai::Manager::Checks::Base
                                   .map(&:last).uniq
   end
 
+  # As duas agendas, e não só a do Google.
+  #
+  # Lia `scope.appointments`, que só o caminho do Google escreve, então em salão
+  # de belezaki a absolvição NUNCA acontecia: o agente agendava de verdade, o
+  # cruzamento não enxergava a linha, e a verificação acusava justamente quem
+  # tinha feito o trabalho certo. Falso positivo é o que mata a confiança nesta
+  # feature, porque basta um cartão errado para o operador não abrir a aba de
+  # novo.
   def booked_conversations
-    @booked_conversations ||= scope.appointments.booked.where.not(conversation_id: nil)
-                                   .distinct.pluck(:conversation_id).to_set
+    @booked_conversations ||= scope.booked_conversation_ids
   end
 
   def build_finding(occurrences, total, percentage)

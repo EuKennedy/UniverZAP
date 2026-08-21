@@ -61,9 +61,11 @@ class Ai::Reports::CommercialMetrics
   # The Google agenda has our own index of what we booked. belezaki holds the
   # book itself and leaves us only the confirmation, which
   # Ai::Belezaki::BookingRecorder writes into the attribution ledger keyed by the
-  # salon's appointment id. Matching on that prefix is exact: the only rows it
-  # can ever reach are the ones that recorder wrote, so the day something starts
-  # posting Google bookings to the ledger too, this cannot double count them.
+  # salon's appointment id. The criterion for those rows is
+  # Ai::RevenueEvent.belezaki_bookings, written once on the model because the
+  # manager's time check reads the same rows: matching on that prefix is exact,
+  # so the day something starts posting Google bookings to the ledger too, this
+  # cannot double count them.
   def build_bookings
     {
       booked: appointments_scope.booked.count + belezaki_bookings.count,
@@ -137,7 +139,6 @@ class Ai::Reports::CommercialMetrics
   end
 
   def belezaki_bookings
-    @belezaki_bookings ||= revenue_scope.where(recorded_by: Ai::Belezaki::BookingRecorder::RECORDER)
-                                        .where('external_ref LIKE ?', "#{Ai::Belezaki::BookingRecorder::REF_PREFIX}%")
+    @belezaki_bookings ||= revenue_scope.belezaki_bookings
   end
 end

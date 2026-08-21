@@ -57,29 +57,63 @@ class Ai::Manager::AnalysisService
     )
   end
 
+  # A amostra é medida no MESMO conjunto que a auditoria varre, e não na conta
+  # inteira. Contar 36 conversas da conta e varrer um agente que teve zero é
+  # como o resumo passou a afirmar "analisei 36 conversas e não achei nada" sem
+  # ter olhado uma linha sequer.
   def analyse(run)
-    analysed = scope.conversations_count
-    return refuse(run, analysed) if analysed < MIN_CONVERSATIONS
+    audited = audited_assistants
+    analysed = scope.conversations_count_for(audited.map(&:id))
+    return refuse(run, analysed, audited) if analysed < MIN_CONVERSATIONS
 
     checks = Ai::Manager::Checks.enabled_for(@account)
-    # Só os agentes ligados, a mesma régua que Ai::Manager::WeeklySchedulerJob usa
-    # para escolher a conta. Um agente desligado não fala com ninguém, e propor
-    # mudança de instrução para ele é encher a fila com cartas sobre um agente que
-    # o operador já tirou do ar. A tela continua mostrando as notas dele: histórico
-    # é histórico, e é a fila que precisa ser curta.
-    created = @account.ai_assistants.active.order(:id).to_a.sum { |assistant| audit(run, assistant, checks) }
-    finish(run, analysed, created)
+    breakdown = audited.map { |assistant| agent_row(assistant, audit(run, assistant, checks)) }
+    finish(run, analysed, breakdown)
+  end
+
+  # Quem TRABALHOU na janela, e não quem está ligado.
+  #
+  # Furo visto em produção: a conta auditada tinha um único agente ativo, sem
+  # inbox nenhuma e portanto sem uma conversa sequer, enquanto os dois que
+  # atendiam de verdade estavam desligados. A varredura pulava os dois, não
+  # olhava nada, e gravava um resumo dizendo que estava tudo bem.
+  #
+  # Um agente que atendeu trinta clientes e foi desligado ontem tem lição
+  # válida, porque a instrução dele segue escrita e volta ao ar no dia em que o
+  # operador religar. Um agente ligado que nunca falou não tem nada a ensinar.
+  #
+  # A queda para os ativos é para conta nova: sem ninguém com tráfego, a rodada
+  # ainda precisa dizer quantas conversas faltam em vez de não dizer nada.
+  def audited_assistants
+    @audited_assistants ||= begin
+      worked = scope.conversations_by_assistant.keys
+      relation = worked.empty? ? @account.ai_assistants.active : @account.ai_assistants.where(id: worked)
+      relation.order(:id).to_a
+    end
+  end
+
+  # "Zero sugestões porque não havia o que analisar" e "zero sugestões porque
+  # está tudo bem" são coisas opostas, e escreviam o mesmo texto. Uma linha por
+  # agente auditado é o que separa as duas: quem não teve conversa aparece com
+  # zero conversas ao lado do zero sugestões.
+  def agent_row(assistant, suggestions)
+    {
+      'id' => assistant.id, 'name' => assistant.name,
+      'conversations' => scope.conversations_by_assistant[assistant.id].to_i,
+      'suggestions' => suggestions
+    }
   end
 
   # Terminou certa e não concluiu nada. Fica `done` e não `failed` porque nada
   # quebrou: uma conta nova precisa ler "faltam 14 conversas" e não uma tela
   # vermelha dizendo que a auditoria falhou.
-  def refuse(run, analysed)
+  def refuse(run, analysed, audited)
     run.update!(
       status: 'done', finished_at: Time.current, conversations_analysed: analysed, cost_cents_brl: 0,
       summary: {
         'insufficient_data' => true, 'analysed' => analysed,
-        'needed' => MIN_CONVERSATIONS, 'missing' => MIN_CONVERSATIONS - analysed
+        'needed' => MIN_CONVERSATIONS, 'missing' => MIN_CONVERSATIONS - analysed,
+        'agents' => audited.map { |assistant| agent_row(assistant, 0) }
       }
     )
   end
@@ -89,11 +123,15 @@ class Ai::Manager::AnalysisService
   # uma chamar, este campo tem que passar a ler o consumido de verdade: uma
   # estimativa gravada como fato é exatamente o tipo de número que ninguém
   # confere depois.
-  def finish(run, analysed, created)
+  def finish(run, analysed, breakdown)
     run.update!(
       status: 'done', finished_at: Time.current, conversations_analysed: analysed,
       cost_cents_brl: Ai::Manager::CostEstimator.new(account: @account, scope: scope).cents,
-      summary: { 'insufficient_data' => false, 'analysed' => analysed, 'suggestions_created' => created }
+      summary: {
+        'insufficient_data' => false, 'analysed' => analysed,
+        'suggestions_created' => breakdown.sum { |row| row['suggestions'] },
+        'agents' => breakdown
+      }
     )
   end
 
@@ -110,8 +148,35 @@ class Ai::Manager::AnalysisService
     # Uma sugestão por verificação, por agente, por rodada. A verificação já
     # promete no máximo um achado, e isto é o que garante que a promessa valha
     # mesmo quando alguém escrever a quinta classe sem reler o contrato.
-    findings.uniq { |finding| finding[:check_key] }
-            .count { |finding| persist(run, assistant, finding) }
+    unique = findings.uniq { |finding| finding[:check_key] }
+    with_display_ids(unique, agent_scope).count { |finding| persist(run, assistant, finding) }
+  end
+
+  # O botão "abrir conversa" do cartão, que é a peça em que o cartão inteiro se
+  # apoia: sem conferir a conversa, aprovar é confiar no parecer de um robô
+  # sobre o trabalho de outro robô.
+  #
+  # A URL do Chatwoot é /accounts/:id/conversations/:display_id, e `display_id` é
+  # a sequência POR CONTA, não a chave primária que a evidência carrega. Os dois
+  # quase nunca coincidem, então o botão abria a conversa de outro cliente ou
+  # uma tela de erro. Traduzido aqui e não no front porque o front não tem como
+  # fazer isso sem uma chamada a mais, e uma consulta para todos os achados do
+  # agente, não uma por sugestão.
+  #
+  # `conversation_id` fica onde está: é a chave que qualquer leitura de banco
+  # sobre a evidência precisa. Nulo quando a conversa já foi apagada, e o cartão
+  # esconde o botão em vez de mostrar um link quebrado.
+  def with_display_ids(findings, agent_scope)
+    # `grep(Hash)` e não acesso direto: uma verificação que devolva evidência
+    # malformada não pode derrubar a rodada inteira aqui fora, onde o `safely`
+    # já não alcança.
+    evidences = findings.map { |finding| finding[:evidence] }.grep(Hash)
+    ids = evidences.filter_map { |evidence| evidence['conversation_id'] }
+    return findings if ids.empty?
+
+    display_ids = agent_scope.display_ids_for(ids)
+    evidences.each { |evidence| evidence['conversation_display_id'] = display_ids[evidence['conversation_id']] }
+    findings
   end
 
   # Uma verificação que estoura não pode levar as outras três junto. O log fica

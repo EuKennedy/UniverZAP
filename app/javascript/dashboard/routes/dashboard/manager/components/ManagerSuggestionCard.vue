@@ -70,9 +70,22 @@ const metricLine = computed(() => {
   return `${humanizeMetric(metric)}: ${value}`;
 });
 
+// A rota de conversa do Chatwoot é /accounts/:accountId/conversations/:id, e
+// esse segmento é o `display_id`, o número sequencial por conta, e NÃO a chave
+// primária. A evidência carrega as duas: `conversation_id` é a chave, que outras
+// leituras usam, e `conversation_display_id` é o que abre a tela certa. Usar a
+// chave aqui levava para a conversa de OUTRO cliente, e a evidência é justamente
+// o que sustenta o cartão.
+//
+// Sem display_id (conversa apagada depois da rodada) o botão não aparece, porque
+// um link quebrado na evidência custa mais que evidência sem link.
+const conversationDisplayId = computed(
+  () => evidence.value.conversation_display_id
+);
+
 const conversationRoute = computed(() =>
   accountScopedRoute('inbox_conversation', {
-    conversation_id: evidence.value.conversation_id,
+    conversation_id: conversationDisplayId.value,
   })
 );
 
@@ -188,7 +201,7 @@ const confirmDismiss = () => {
           {{ metricLine }}
         </span>
         <router-link
-          v-if="evidence.conversation_id"
+          v-if="conversationDisplayId"
           :to="conversationRoute"
           class="text-[12px] font-medium text-n-slate-11 hover:text-n-slate-12"
           data-testid="evidence-link"

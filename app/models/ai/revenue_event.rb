@@ -27,6 +27,23 @@ class Ai::RevenueEvent < ApplicationRecord
 
   scope :in_period, ->(days) { where(occurred_at: days.days.ago..) }
 
+  # The rows Ai::Belezaki::BookingRecorder wrote, and only those.
+  #
+  # The salon holds the book, so a belezaki appointment leaves no row in
+  # ai_calendar_appointments at all: this ledger is where it lands, keyed by the
+  # salon's own appointment id. Matching on that prefix is exact, so the day
+  # something else starts posting bookings here this cannot reach its rows.
+  #
+  # It lives on the model rather than inside a reader because TWO different
+  # readers need it now — the commercial panel counts these bookings and the
+  # manager's time check compares their hour against what the agent said — and
+  # two hand-written copies of the same criterion is how one of them silently
+  # stops matching the day the prefix changes.
+  scope :belezaki_bookings, lambda {
+    where(recorded_by: Ai::Belezaki::BookingRecorder::RECORDER)
+      .where('external_ref LIKE ?', "#{Ai::Belezaki::BookingRecorder::REF_PREFIX}%")
+  }
+
   # Bookings the agent made outside business hours are the single strongest
   # argument for the module: they would not exist, because nobody was there.
   AFTER_HOURS = ((19..23).to_a + (0..8).to_a).freeze
