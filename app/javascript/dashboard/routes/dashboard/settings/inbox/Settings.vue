@@ -27,6 +27,7 @@ import CustomerSatisfactionPage from './settingsPage/CustomerSatisfactionPage.vu
 import CollaboratorsPage from './settingsPage/CollaboratorsPage.vue';
 import BotConfiguration from './components/BotConfiguration.vue';
 import AccountHealth from './components/AccountHealth.vue';
+import WhatsappTemplates from './components/WhatsappTemplates.vue';
 import { FEATURE_FLAGS } from '../../../../featureFlags';
 import SenderNameExamplePreview from './components/SenderNameExamplePreview.vue';
 import LockToSingleConversationPreview from './components/LockToSingleConversationPreview.vue';
@@ -45,6 +46,7 @@ import { copyTextToClipboard } from 'shared/helpers/clipboard';
 
 export default {
   components: {
+    WhatsappTemplates,
     AthenasInboxSettings,
     BotConfiguration,
     CollaboratorsPage,
@@ -229,6 +231,12 @@ export default {
           {
             key: 'whatsapp-health',
             name: this.$t('INBOX_MGMT.TABS.ACCOUNT_HEALTH'),
+          },
+          // Só para provider cloud: template é conceito da API oficial, e uma
+          // caixa WAHA não tem o que mostrar aqui.
+          {
+            key: 'whatsapp-templates',
+            name: this.$t('INBOX_MGMT.TABS.WHATSAPP_TEMPLATES'),
           },
         ];
       }
@@ -1283,6 +1291,9 @@ export default {
         </div>
         <div v-if="selectedTabKey === 'bot-configuration'">
           <BotConfiguration :inbox="inbox" />
+        </div>
+        <div v-if="selectedTabKey === 'whatsapp-templates'">
+          <WhatsappTemplates :inbox-id="inbox.id" />
         </div>
         <div v-if="selectedTabKey === 'whatsapp-health'">
           <AccountHealth

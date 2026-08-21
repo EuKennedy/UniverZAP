@@ -274,6 +274,9 @@ Rails.application.routes.draw do
             post :set_agent_bot, on: :member
             delete :avatar, on: :member
             post :sync_templates, on: :member
+            # Criar e acompanhar template sem sair do produto. Aninhado na caixa
+            # porque template pertence ao WABA daquela caixa, não à conta.
+            resources :whatsapp_templates, only: [:index, :create, :destroy], param: :id
             get :health, on: :member
             post :register_webhook, on: :member
             post :reset_secret, on: :member

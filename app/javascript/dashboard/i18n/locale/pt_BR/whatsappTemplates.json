@@ -42,6 +42,26 @@
       "MEDIA_URL_LABEL": "Digite a URL {type}",
       "DOCUMENT_NAME_PLACEHOLDER": "Informe o nome do arquivo do documento (ex.: Comprovante_2025.pdf)",
       "BUTTON_PARAMETER": "Insira o parâmetro do botão"
+    },
+    "MANAGE": {
+      "NEW": "Novo template",
+      "NEW_HINT": "Sem template aprovado a campanha não sai — mensagem iniciada pela empresa exige um. Quem aprova é a Meta, e leva de minutos a alguns dias. Utilidade aprova mais rápido e custa menos por conversa; Marketing é o que promoção exige.",
+      "NAME": "Nome",
+      "NAME_PLACEHOLDER": "so_minuscula_numero_e_underscore",
+      "CATEGORY": "Categoria",
+      "CATEGORIES": {
+        "UTILITY": "Utilidade",
+        "MARKETING": "Marketing"
+      },
+      "LANGUAGE": "Idioma",
+      "BODY": "Mensagem",
+      "SUBMIT": "Enviar para aprovação",
+      "SUBMITTED": "Template enviado. A Meta responde o status aqui mesmo.",
+      "SUBMIT_FAILED": "Não consegui enviar o template.",
+      "LIST": "Seus templates",
+      "EMPTY": "Nenhum template ainda. Crie o primeiro acima.",
+      "LOAD_FAILED": "Não consegui carregar os templates.",
+      "META": "{category} · {language}"
     }
   }
 }

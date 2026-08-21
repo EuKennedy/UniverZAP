@@ -662,7 +662,8 @@
       "ACCOUNT_HEALTH": "Account Health",
       "CSAT": "CSAT",
       "VOICE": "Voice",
-      "ATHENAS_AI": "AI Agent"
+      "ATHENAS_AI": "AI Agent",
+      "WHATSAPP_TEMPLATES": "Templates"
     },
     "ATHENAS_AI": {
       "TITLE": "AI Agent",

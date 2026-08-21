@@ -42,6 +42,26 @@
       "MEDIA_URL_LABEL": "Enter {type} URL",
       "DOCUMENT_NAME_PLACEHOLDER": "Enter document filename (e.g., Invoice_2025.pdf)",
       "BUTTON_PARAMETER": "Enter button parameter"
+    },
+    "MANAGE": {
+      "NEW": "New template",
+      "NEW_HINT": "Without an approved template a campaign cannot go out — a business-initiated message requires one. Meta does the approving, and it takes minutes to a few days. Utility approves faster and costs less per conversation; Marketing is what promotions require.",
+      "NAME": "Name",
+      "NAME_PLACEHOLDER": "lowercase_numbers_and_underscore_only",
+      "CATEGORY": "Category",
+      "CATEGORIES": {
+        "UTILITY": "Utility",
+        "MARKETING": "Marketing"
+      },
+      "LANGUAGE": "Language",
+      "BODY": "Message",
+      "SUBMIT": "Send for approval",
+      "SUBMITTED": "Template sent. Meta reports the status right here.",
+      "SUBMIT_FAILED": "Could not send the template.",
+      "LIST": "Your templates",
+      "EMPTY": "No templates yet. Create the first one above.",
+      "LOAD_FAILED": "Could not load the templates.",
+      "META": "{category} · {language}"
     }
   }
 }
