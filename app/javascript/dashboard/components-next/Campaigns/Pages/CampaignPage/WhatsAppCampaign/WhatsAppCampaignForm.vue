@@ -6,6 +6,7 @@ import { required, minLength } from '@vuelidate/validators';
 import { useMapGetter } from 'dashboard/composables/store';
 
 import Input from 'dashboard/components-next/input/Input.vue';
+import WhatsappTemplates from 'dashboard/routes/dashboard/settings/inbox/components/WhatsappTemplates.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
 import TagMultiSelectComboBox from 'dashboard/components-next/combobox/TagMultiSelectComboBox.vue';
@@ -84,6 +85,18 @@ const templateOptions = computed(() => {
     };
   });
 });
+
+// Só para caixa cloud: template é conceito da API oficial, e a caixa WAHA da
+// campanha não tem o que gerenciar.
+const canManageTemplates = computed(() => {
+  if (!state.inboxId) return false;
+  const inbox = formState.inboxes.value.find(
+    row => Number(row.id) === Number(state.inboxId)
+  );
+  return inbox?.provider === 'whatsapp_cloud';
+});
+
+const isManagingTemplates = ref(false);
 
 const selectedTemplate = computed(() => {
   if (!state.templateId) return null;
@@ -211,6 +224,33 @@ watch(
       <p class="mt-1 text-xs text-n-slate-11">
         {{ t('CAMPAIGN.WHATSAPP.CREATE.FORM.TEMPLATE.INFO') }}
       </p>
+
+      <!-- A falta de template só é sentida aqui, montando a campanha e não
+           tendo o que escolher. Mandar o operador para outra tela nesse exato
+           momento é o que fazia ele desistir. Mesmo componente da aba da caixa,
+           montado num segundo lugar — nunca uma segunda tela. -->
+      <div v-if="canManageTemplates" class="flex flex-col gap-2 mt-2">
+        <p v-if="!templateOptions.length" class="m-0 text-xs text-n-amber-11">
+          {{ t('CAMPAIGN.WHATSAPP.CREATE.FORM.TEMPLATE.NONE_APPROVED') }}
+        </p>
+        <button
+          type="button"
+          class="text-xs text-left underline text-n-blue-11 w-fit"
+          @click="isManagingTemplates = !isManagingTemplates"
+        >
+          {{
+            isManagingTemplates
+              ? t('CAMPAIGN.WHATSAPP.CREATE.FORM.TEMPLATE.HIDE_MANAGER')
+              : t('CAMPAIGN.WHATSAPP.CREATE.FORM.TEMPLATE.OPEN_MANAGER')
+          }}
+        </button>
+        <div
+          v-if="isManagingTemplates"
+          class="rounded-lg border border-n-weak bg-n-solid-1"
+        >
+          <WhatsappTemplates :inbox-id="state.inboxId" />
+        </div>
+      </div>
     </div>
 
     <!-- Template Parser -->

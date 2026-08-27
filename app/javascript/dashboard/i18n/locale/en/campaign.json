@@ -178,7 +178,10 @@
             "LANGUAGE": "Language",
             "CATEGORY": "Category",
             "VARIABLES_LABEL": "Variables",
-            "VARIABLE_PLACEHOLDER": "Enter value for {variable}"
+            "VARIABLE_PLACEHOLDER": "Enter value for {variable}",
+            "NONE_APPROVED": "No approved template on this inbox yet — and without one the campaign cannot go out.",
+            "OPEN_MANAGER": "Create a template now",
+            "HIDE_MANAGER": "Close"
           },
           "AUDIENCE": {
             "LABEL": "Audience",

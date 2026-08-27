@@ -178,7 +178,10 @@
             "LANGUAGE": "Idioma",
             "CATEGORY": "Categorias",
             "VARIABLES_LABEL": "Variáveis",
-            "VARIABLE_PLACEHOLDER": "Digite um valor para {variable}"
+            "VARIABLE_PLACEHOLDER": "Digite um valor para {variable}",
+            "NONE_APPROVED": "Nenhum template aprovado nesta caixa ainda — e sem um deles a campanha não sai.",
+            "OPEN_MANAGER": "Criar um template agora",
+            "HIDE_MANAGER": "Fechar"
           },
           "AUDIENCE": {
             "LABEL": "Público",
