@@ -79,13 +79,22 @@ class Ai::Manager::Conversations::ScanService
     valid.length
   end
 
-  # O que uma releitura pode reescrever. `created_at` fica de fora de propósito:
-  # é quando aquele problema apareceu PELA PRIMEIRA vez, e deixar o upsert
-  # atualizá-lo faria todo achado parecer que nasceu hoje, apagando justamente a
-  # informação de que a mesma cliente está pendurada há três leituras.
+  # O que uma releitura pode reescrever.
+  #
+  # `created_at` fica de fora de propósito: é quando aquele problema apareceu
+  # PELA PRIMEIRA vez, e deixar o upsert atualizá-lo faria todo achado parecer
+  # que nasceu hoje, apagando justamente a informação de que a mesma cliente
+  # está pendurada há três leituras. O Rails já preserva o created_at no
+  # conflito, então basta não pedir para reescrevê-lo.
+  #
+  # `updated_at` fica de fora por outro motivo, e este custou uma rodada de CI:
+  # o Rails ANEXA a cláusula de updated_at ao `DO UPDATE SET` por conta própria
+  # quando o modelo tem timestamps. Listá-lo aqui gera a coluna atribuída duas
+  # vezes no mesmo comando, e o Postgres recusa com
+  # "multiple assignments to same column".
   REFRESHED = %i[
     scan_id conversation_display_id contact_id ai_assistant_id severity title detail excerpt
-    author source value_cents_brl metadata occurred_at waiting_since last_seen_at updated_at
+    author source value_cents_brl metadata occurred_at waiting_since last_seen_at
   ].freeze
 
   def acceptable?(row)
