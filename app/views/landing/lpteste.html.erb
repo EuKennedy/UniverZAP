@@ -91,7 +91,19 @@ i[data-lucide]{width:1em;height:1em;stroke-width:1.75;vertical-align:-.12em}
 header{position:fixed;top:0;left:0;right:0;z-index:60;transition:transform .45s var(--ease)}
 header.hide{transform:translateY(-108%)}
 .hd{display:flex;align-items:center;justify-content:space-between;gap:18px;height:70px;transition:height .35s var(--ease)}
-.hd-bg{position:absolute;inset:0;opacity:0;transition:opacity .4s;background:var(--nav-bg-solid);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid var(--line-2)}
+/* pointer-events:none e a linha inteira do conserto, e ela vale mais que
+   parece. O .hd-bg e um fundo decorativo, position:absolute e inset:0, que
+   cobre o header inteiro e fica invisivel (opacity:0) enquanto a pagina esta
+   no topo. Invisivel, mas clicavel.
+   Elemento posicionado pinta acima de elemento estatico, independente da ordem
+   no DOM. Os links do menu escapavam por acaso, porque .nav a tem
+   position:relative para desenhar o sublinhado. Ja o logo, o Entrar e o
+   Assinar agora sao estaticos, e o fundo comia o clique dos tres.
+   Medido na pagina publicada com elementFromPoint: 3 alvos mortos antes,
+   0 depois. O Assinar agora e o botao de compra do site.
+   Foi tambem o que matou o X do menu mobile, e la a correcao tratou so o
+   sintoma (z-index da folha) em vez desta causa. */
+.hd-bg{pointer-events:none;position:absolute;inset:0;opacity:0;transition:opacity .4s;background:var(--nav-bg-solid);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid var(--line-2)}
 header.stuck .hd-bg{opacity:1}header.stuck .hd{height:60px}
 .brand{display:inline-flex;align-items:center;text-decoration:none}
 .brand .logo{height:clamp(26px,5.5vw,30px);width:auto;display:block}
