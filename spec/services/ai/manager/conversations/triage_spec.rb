@@ -15,10 +15,14 @@ RSpec.describe Ai::Manager::Conversations::Triage do
     sandbox = extra[:sandbox]
     contact = create(:contact, account: target, name: name)
     conversation = create(:conversation, account: target, inbox: inbox_for(target), contact: contact,
-                                         status: status,
                                          additional_attributes: sandbox ? { 'athenas_sandbox' => true } : {})
     say(conversation, :incoming, 'Oi, quanto fica a mechinha?', now - incoming_ago)
     say(conversation, :outgoing, 'Já te respondo!', now - outgoing_ago) if outgoing_ago
+    # O estado vai DEPOIS das mensagens: Message#reopen_conversation reabre a
+    # conversa resolvida ou adiada quando chega mensagem nova, então criá-la já
+    # resolvida e escrever em seguida devolvia uma conversa aberta. Era o teste
+    # montado errado, não o filtro de estado.
+    conversation.update!(status: status) unless status == 'open'
     conversation
   end
 

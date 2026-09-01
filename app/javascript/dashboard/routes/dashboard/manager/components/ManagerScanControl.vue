@@ -36,7 +36,10 @@ const WINDOWS = [
   { hours: 720, key: 'D30' },
 ];
 
-const hours = ref(24);
+// Igual a Ai::Manager::ConversationScan::DEFAULT_WINDOW. Sete dias porque a
+// janela de 24h não alcança a mensagem de quem está esperando há mais de um
+// dia, que é o caso mais importante desta tela.
+const hours = ref(168);
 const isEstimating = ref(false);
 const isStarting = ref(false);
 const estimate = ref(null);

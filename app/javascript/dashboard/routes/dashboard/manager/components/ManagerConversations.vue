@@ -56,7 +56,10 @@ const AUTHOR_FILTERS = [
 const isLoading = ref(true);
 const loadError = ref('');
 const data = ref(null);
-const days = ref(1);
+// Sete dias, igual à janela padrão da varredura. Abrir filtrando em 24h
+// esconderia justamente os achados de quem espera há mais de um dia, que a
+// varredura acabou de gravar.
+const days = ref(7);
 const author = ref('');
 const caseKey = ref('');
 const scan = ref(null);

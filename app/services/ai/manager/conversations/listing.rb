@@ -76,16 +76,17 @@ class Ai::Manager::Conversations::Listing
   # "já responderam?" por cartão, que é como um painel de duzentas linhas vira
   # duzentas consultas e o operador culpa a internet.
   def last_outgoing
-    @last_outgoing ||= begin
-      ids = records.map(&:conversation_id).uniq
-      return {} if ids.empty?
+    @last_outgoing ||= replies_after(records.map(&:conversation_id).uniq)
+  end
 
-      # `reorder(nil)` antes de agrupar: o default_scope de Message ordena por
-      # created_at, e um MAX agrupado com essa ordenação herdada é GroupingError.
-      Message.where(conversation_id: ids, private: false,
-                    message_type: Message.message_types[:outgoing])
-             .reorder(nil).group(:conversation_id).maximum(:created_at)
-    end
+  # `reorder(nil)` antes de agrupar: o default_scope de Message ordena por
+  # created_at, e um MAX agrupado com essa ordenação herdada é GroupingError.
+  def replies_after(ids)
+    return {} if ids.empty?
+
+    Message.where(conversation_id: ids, private: false,
+                  message_type: Message.message_types[:outgoing])
+           .reorder(nil).group(:conversation_id).maximum(:created_at)
   end
 
   def contact_names

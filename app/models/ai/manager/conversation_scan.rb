@@ -19,7 +19,20 @@ class Ai::Manager::ConversationScan < ApplicationRecord
   # deixaria alguém pedir um ano e derrubar a varredura no timeout, e as quatro
   # cobrem o que uma operação de verdade pergunta (hoje, esta semana, este mês).
   WINDOWS = [24, 72, 168, 720].freeze
-  DEFAULT_WINDOW = 24
+
+  # Sete dias e não vinte e quatro horas, e isto foi aprendido quebrando.
+  #
+  # A janela decide até onde a varredura enxerga mensagem. O caso mais
+  # importante desta tela é "cliente sem resposta há mais de um dia", e a
+  # mensagem dessa cliente tem, por definição, MAIS de um dia. Com janela de
+  # 24h ela cai fora, e a varredura devolve vazio exatamente na situação que
+  # ela existe para pegar.
+  #
+  # O custo não muda: quem cobra é a leitura por modelo, e ela para no teto de
+  # Ai::Manager::Conversations::Reader::MAX_READ em qualquer janela. Alargar a
+  # janela traz mais achados de graça e no máximo troca QUAIS conversas entram
+  # no mesmo teto pago.
+  DEFAULT_WINDOW = 168
 
   validates :status, inclusion: { in: STATUSES }
   validates :window_hours, inclusion: { in: WINDOWS }

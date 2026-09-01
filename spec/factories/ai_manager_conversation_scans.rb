@@ -4,7 +4,9 @@ FactoryBot.define do
     # `running` é o padrão de propósito: é o estado em que a varredura nasce, e
     # um teste que precise dela terminada tem que dizer isso em voz alta.
     status { 'running' }
-    window_hours { 24 }
+    # A janela padrão do produto, de sete dias: com 24h a varredura não alcança
+    # a mensagem de quem já está esperando há mais de um dia.
+    window_hours { 168 }
     started_at { Time.current }
     conversations_scanned { 0 }
     conversations_read { 0 }

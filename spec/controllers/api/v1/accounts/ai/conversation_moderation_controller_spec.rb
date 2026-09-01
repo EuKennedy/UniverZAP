@@ -33,12 +33,16 @@ RSpec.describe 'Api::V1::Accounts::Ai::ConversationModerationController', type: 
       expect(body['windows']).to eq([1, 3, 7, 30])
     end
 
-    # Ler não é privilégio de administrador: quem atende precisa ver quem está
-    # esperando. O que exige administrador é GASTAR.
-    it 'deixa quem atende ver a lista' do
+    # Administrador só, pela mesma porta de Relatórios (ReportPolicy#view?).
+    #
+    # Cheguei aqui achando que quem atende deveria ver, já que é quem responde.
+    # Está errado: um atendente pode estar restrito a uma caixa de entrada, e
+    # esta lista é da conta inteira, com trecho de mensagem de cliente junto.
+    # Liberá-la daria a ele o conteúdo de conversas que ele não pode abrir.
+    it 'recusa quem atende, porque a lista é da conta inteira e carrega trecho de conversa' do
       get base, headers: as(agent), as: :json
 
-      expect(response).to have_http_status(:success)
+      expect(response).to have_http_status(:unauthorized)
     end
 
     it 'recusa quem não está autenticado' do
@@ -77,10 +81,10 @@ RSpec.describe 'Api::V1::Accounts::Ai::ConversationModerationController', type: 
 
     # Uma janela livre deixaria alguém pedir um ano e derrubar a varredura no
     # timeout. Fora da lista, cai no padrão em vez de obedecer.
-    it 'ignora janela que não existe e cai no padrão de 24 horas' do
+    it 'ignora janela que não existe e cai no padrão de sete dias' do
       get "#{base}/estimate", params: { hours: 9999 }, headers: as(administrator), as: :json
 
-      expect(response.parsed_body['window_hours']).to eq(24)
+      expect(response.parsed_body['window_hours']).to eq(168)
     end
   end
 

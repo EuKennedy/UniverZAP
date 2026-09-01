@@ -5,7 +5,9 @@ require 'rails_helper'
 RSpec.describe Ai::Manager::Conversations::ScanService do
   let(:account) { create(:account) }
   let(:inbox) { create(:inbox, account: account) }
-  let(:scan) { create(:ai_manager_conversation_scan, account: account, window_hours: 24) }
+  # A janela padrão, que é de sete dias: com 24h a varredura não alcança a
+  # mensagem de quem está esperando há 30, e o teste passaria a medir o vazio.
+  let(:scan) { create(:ai_manager_conversation_scan, account: account, window_hours: 168) }
 
   # Sem agente com chave, a leitura por modelo é pulada e sobra a triagem, que é
   # de graça. É o caminho padrão destes testes: o que se mede aqui é a gravação,
@@ -40,10 +42,13 @@ RSpec.describe Ai::Manager::Conversations::ScanService do
 
     # Sem isto, doze cartões parecem a operação inteira quando podem ser o teto
     # de leitura tendo cortado noventa conversas que ninguém olhou.
+    #
+    # A conta nasce com um agente semeado ("Sofia"), então o motivo aqui nunca é
+    # a ausência de agente: é a chave de API que ninguém configurou ainda.
     it 'registra por que a leitura por modelo não aconteceu' do
       described_class.new(scan: scan).perform
 
-      expect(scan.reload.summary['reading_skipped']).to include('Nenhum agente')
+      expect(scan.reload.summary['reading_skipped']).to include('sem chave de API')
     end
   end
 
@@ -77,6 +82,7 @@ RSpec.describe Ai::Manager::Conversations::ScanService do
       # dentro do período, e o relógio adiantado para a espera passar de 7h para
       # 31h sem precisar mexer no banco por baixo do modelo.
       later = create(:ai_manager_conversation_scan, account: account, window_hours: 720)
+      # 24h à frente para a espera passar de 7h para 31h sem mexer no banco.
       described_class.new(scan: later, now: 24.hours.from_now).perform
 
       expect(findings.first.reload.severity).to eq('critical')
