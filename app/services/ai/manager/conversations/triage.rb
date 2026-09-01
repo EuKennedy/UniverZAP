@@ -56,6 +56,10 @@ class Ai::Manager::Conversations::Triage
     activity.rows.size
   end
 
+  def capped?
+    activity.capped?
+  end
+
   # Público porque o leitor reusa o mesmo carregamento. Instanciar Details de
   # novo lá dentro repetiria seis consultas por causa de um objeto pronto.
   def details

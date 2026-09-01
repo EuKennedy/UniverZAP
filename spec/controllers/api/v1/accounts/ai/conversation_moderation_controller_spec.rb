@@ -143,4 +143,38 @@ RSpec.describe 'Api::V1::Accounts::Ai::ConversationModerationController', type: 
       expect(response).to have_http_status(:not_found)
     end
   end
+  describe 'POST scans com uma varredura pendurada' do
+    # Job morto com o worker, ou deploy passando por cima dele: a linha fica
+    # 'running' para sempre, o botão de analisar some da aba e a conta perde a
+    # feature, sem nada na tela que a destrave.
+    it 'destrava a conta e começa uma nova' do
+      velha = create(:ai_manager_conversation_scan, account: account, status: 'running',
+                                                    created_at: 2.hours.ago)
+
+      expect do
+        post "#{base}/scans", headers: as(administrator), as: :json
+      end.to change(Ai::Manager::ConversationScan, :count).by(1)
+
+      expect(velha.reload.status).to eq('failed')
+      expect(response.parsed_body).to include('status' => 'running')
+    end
+
+    it 'conta o que aconteceu com a que ficou pendurada, em vez de apagá-la' do
+      velha = create(:ai_manager_conversation_scan, account: account, status: 'running',
+                                                    created_at: 2.hours.ago)
+
+      post "#{base}/scans", headers: as(administrator), as: :json
+
+      expect(velha.reload.summary['error']).to include('interrompida')
+    end
+
+    # A recém-começada continua protegida: o segundo clique não pode cobrar de novo.
+    it 'ainda protege a que começou agora' do
+      create(:ai_manager_conversation_scan, account: account, status: 'running')
+
+      expect do
+        post "#{base}/scans", headers: as(administrator), as: :json
+      end.not_to change(Ai::Manager::ConversationScan, :count)
+    end
+  end
 end

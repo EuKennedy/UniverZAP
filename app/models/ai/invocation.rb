@@ -21,8 +21,15 @@ class Ai::Invocation < ApplicationRecord
   # `transcription` is a voice note turned into text before the agent can read
   # it. It is billed per minute of audio rather than per token, which is why it
   # carries no token counts.
+  # `phase` é validado por inclusão, e log_success engole a exceção de gravação
+  # para nunca derrubar uma resposta ao cliente por causa do log. A combinação
+  # significa que uma fase FORA desta lista não falha em voz alta: ela apaga a
+  # linha de auditoria e o débito de crédito em silêncio, e o custo aparece como
+  # zero. Quem adicionar uma chamada nova de modelo TEM que adicionar a fase
+  # aqui, e o spec de contrato de cada serviço existe para lembrar disso.
   PHASES = %w[
     main classifier router summary summarize suggest autopilot rewrite chat copilot_chat replay transcription
+    moderation
   ].freeze
   STATUSES = %w[success error].freeze
   # Delivery of the customer-facing reply this call produced. NULL on calls that

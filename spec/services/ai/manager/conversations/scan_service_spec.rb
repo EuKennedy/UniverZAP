@@ -117,4 +117,76 @@ RSpec.describe Ai::Manager::Conversations::ScanService do
       expect(scan.summary['error']).to include('banco caiu')
     end
   end
+  describe 'quando a triagem e a leitura acham o mesmo caso na mesma conversa' do
+    # 'cliente_insatisfeito' é o único caso que os DOIS produtores emitem: a
+    # triagem quando o guardrail levantou a bandeira, a leitura quando o modelo
+    # enxerga a reclamação. Duas linhas com a mesma chave única dentro do MESMO
+    # upsert_all fazem o Postgres recusar o comando inteiro ("ON CONFLICT DO
+    # UPDATE command cannot affect row a second time"). Sendo uma sentença só,
+    # nada era gravado: nem triagem, nem leitura, e a varredura morria depois de
+    # o modelo já ter sido pago.
+    let(:assistant) { create(:ai_assistant, account: account) }
+    let(:conversation) { waiting_conversation(name: 'Marta') }
+    let(:lido) do
+      {
+        conversation_id: conversation.id, conversation_display_id: conversation.display_id,
+        contact_id: conversation.contact_id, ai_assistant_id: assistant.id,
+        case_key: 'cliente_insatisfeito', severity: 'high',
+        title: 'Cliente demonstrou insatisfação',
+        detail: 'A Marta cobrou o retorno duas vezes e ninguém respondeu.',
+        excerpt: 'esqueceram de mim?', author: 'none', source: 'reading',
+        value_cents_brl: 0, occurred_at: 2.hours.ago, metadata: {}
+      }
+    end
+    let(:reader) do
+      instance_double(
+        Ai::Manager::Conversations::Reader,
+        findings: [lido], read_count: 1, cost_cents_brl: 12, candidate_count: 1,
+        skipped_reason: nil, failures: 0, failure_reason: nil
+      )
+    end
+
+    before do
+      create(:ai_invocation, account: account, ai_assistant: assistant,
+                             conversation_id: conversation.id, message_id: 4242,
+                             ai_response: 'Sinto muito pelo ocorrido.',
+                             auto_flags: %w[cliente_insatisfeito], auto_flag: 'cliente_insatisfeito',
+                             created_at: 3.hours.ago)
+      allow(Ai::Manager::Conversations::Reader).to receive(:new).and_return(reader)
+    end
+
+    it 'termina bem em vez de derrubar a varredura inteira' do
+      described_class.new(scan: scan).perform
+
+      expect(scan.reload.status).to eq('done')
+    end
+
+    it 'grava um cartão só para o caso repetido' do
+      described_class.new(scan: scan).perform
+
+      expect(findings.where(case_key: 'cliente_insatisfeito').count).to eq(1)
+    end
+
+    # A da leitura ganha: ela traz motivo escrito sobre AQUELA conversa, e a da
+    # triagem traz uma frase de catálogo.
+    it 'guarda o achado da leitura, e não o da triagem' do
+      described_class.new(scan: scan).perform
+
+      card = findings.find_by(case_key: 'cliente_insatisfeito')
+      expect(card.source).to eq('reading')
+      expect(card.detail).to include('cobrou o retorno')
+    end
+
+    it 'não perde os outros achados da triagem no caminho' do
+      described_class.new(scan: scan).perform
+
+      expect(findings.pluck(:case_key)).to include('cliente_esperando')
+    end
+
+    it 'grava o custo da leitura que já foi paga' do
+      described_class.new(scan: scan).perform
+
+      expect(scan.reload.cost_cents_brl).to eq(12)
+    end
+  end
 end

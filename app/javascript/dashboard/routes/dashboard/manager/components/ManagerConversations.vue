@@ -28,7 +28,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 
 import ManagerConversationCard from './ManagerConversationCard.vue';
 import ManagerScanControl from './ManagerScanControl.vue';
-import { centsToBRL, timeAgo } from '../moderationFormat';
+import { money, timeAgo } from '../moderationFormat';
 
 const { t } = useI18n();
 
@@ -74,6 +74,15 @@ const isScanning = computed(() => lastScan.value?.status === 'running');
 const messageFrom = (caught, fallback) =>
   caught?.response?.data?.error || caught?.message || t(fallback);
 
+const stopPolling = () => {
+  if (poller) clearInterval(poller);
+  poller = null;
+};
+
+// `load` não liga nem desliga o relógio, só carrega. Quem decide acompanhar é
+// `refresh`, logo abaixo: misturar as duas coisas obrigava `load` a conhecer o
+// poller e o poller a conhecer `load`, e as duas se referenciando em círculo é
+// o que o linter estava apontando.
 const load = async () => {
   loadError.value = '';
   try {
@@ -83,28 +92,15 @@ const load = async () => {
       caseKey: caseKey.value || undefined,
     });
     data.value = payload;
-    // A varredura local só sobrevive enquanto está rodando. Depois disso quem
-    // manda é a que veio do servidor, que é a fonte do custo e do que ficou de
-    // fora do teto de leitura.
-    if (payload.last_scan?.status !== 'running') scan.value = null;
+    // Adota a varredura que o SERVIDOR diz estar rodando, mesmo que não tenha
+    // sido esta aba que a disparou.
+    scan.value =
+      payload.last_scan?.status === 'running' ? payload.last_scan : null;
   } catch (caught) {
     loadError.value = messageFrom(caught, 'AI_MANAGER.MODERATION.LOAD_ERROR');
   } finally {
     isLoading.value = false;
   }
-};
-
-const applyFilter = async patch => {
-  if ('days' in patch) days.value = patch.days;
-  if ('author' in patch) author.value = patch.author;
-  if ('caseKey' in patch) caseKey.value = patch.caseKey;
-  isLoading.value = true;
-  await load();
-};
-
-const stopPolling = () => {
-  if (poller) clearInterval(poller);
-  poller = null;
 };
 
 const poll = async () => {
@@ -125,10 +121,35 @@ const poll = async () => {
   }
 };
 
+// Idempotente de propósito: um segundo intervalo em cima do primeiro faria a
+// tela bater no servidor duas vezes por ciclo.
+const ensurePolling = () => {
+  if (!poller) poller = setInterval(poll, POLL_MS);
+};
+
+// Carrega e, se o SERVIDOR disser que há varredura rodando, passa a acompanhar
+// mesmo que não tenha sido esta aba que a disparou.
+//
+// Antes o relógio só era armado pelo clique, então abrir a aba (ou dar F5)
+// durante uma leitura deixava a tela presa em "Lendo as conversas" para sempre,
+// com o botão de analisar escondido: a varredura terminava no servidor e a tela
+// nunca ficava sabendo.
+const refresh = async () => {
+  await load();
+  if (isScanning.value) ensurePolling();
+};
+
+const applyFilter = async patch => {
+  if ('days' in patch) days.value = patch.days;
+  if ('author' in patch) author.value = patch.author;
+  if ('caseKey' in patch) caseKey.value = patch.caseKey;
+  isLoading.value = true;
+  await refresh();
+};
+
 const onScanStarted = started => {
   scan.value = started;
-  stopPolling();
-  poller = setInterval(poll, POLL_MS);
+  ensurePolling();
 };
 
 const scanLine = computed(() => {
@@ -136,15 +157,41 @@ const scanLine = computed(() => {
   if (!done || done.status === 'running') return '';
   if (done.status === 'failed') return t('AI_MANAGER.MODERATION.SCAN_FAILED');
 
+  // `cost_brl` e não `cost_cents_brl`: o servidor já converte em
+  // ConversationScan#push_event_data. Lendo o campo errado, `undefined` virava
+  // zero e a tela anunciava R$ 0,00 para toda varredura, inclusive as que
+  // gastaram de verdade.
   return t('AI_MANAGER.MODERATION.SCAN_SUMMARY', {
     when: timeAgo(done.finished_at),
     scanned: done.conversations_scanned,
     read: done.conversations_read,
-    cost: centsToBRL(done.cost_cents_brl),
+    cost: money(done.cost_brl),
   });
 });
 
-onMounted(load);
+// O que deu errado DENTRO de uma varredura que terminou. Crédito esgotado e
+// chave inválida faziam a tela dizer "nenhum achado", que lê como "está tudo
+// bem" quando nada foi lido.
+const scanWarning = computed(() => {
+  const done = lastScan.value;
+  if (!done || done.status !== 'done') return '';
+  const summary = done.summary || {};
+  if (summary.reading_error) {
+    return t('AI_MANAGER.MODERATION.READ_FAILED', {
+      n: summary.reading_failures || 0,
+      reason: summary.reading_error,
+    });
+  }
+  if (summary.reading_skipped) {
+    return t('AI_MANAGER.MODERATION.READ_SKIPPED', {
+      reason: summary.reading_skipped,
+    });
+  }
+  if (summary.scanned_capped) return t('AI_MANAGER.MODERATION.SCAN_CAPPED');
+  return '';
+});
+
+onMounted(refresh);
 onBeforeUnmount(stopPolling);
 </script>
 
@@ -161,6 +208,13 @@ onBeforeUnmount(stopPolling);
           data-testid="scan-line"
         >
           {{ scanLine }}
+        </p>
+        <p
+          v-if="scanWarning"
+          class="m-0 max-w-xl text-[12px] leading-relaxed text-n-amber-11"
+          data-testid="scan-warning"
+        >
+          {{ scanWarning }}
         </p>
       </div>
       <ManagerScanControl :is-scanning="isScanning" @started="onScanStarted" />

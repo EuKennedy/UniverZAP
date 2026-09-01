@@ -163,7 +163,10 @@
         "CLOSE": "Close",
         "ESTIMATE_ERROR": "We could not estimate the cost right now.",
         "START_ERROR": "We could not start the read right now."
-      }
+      },
+      "READ_FAILED": "The AI read failed on {n} conversations, so cards may be missing here. Reason: {reason}",
+      "READ_SKIPPED": "The AI read did not run in this scan, so only rule-detected cases show up. Reason: {reason}",
+      "SCAN_CAPPED": "The scan hit the conversation cap for this period. People waiting come first, but to see the rest pick a shorter window and run again."
     }
   }
 }

@@ -263,8 +263,14 @@ class Ai::Manager::Scope
   # mensagem: um turno que consulta a agenda cobra várias chamadas e todas são
   # custo de atender.
   def served
-    invocations.live.where.not(phase: 'replay')
+    invocations.live.where.not(phase: OFF_LEDGER_PHASES)
   end
+
+  # Chamadas que a conta pagou mas que não são custo de ATENDER: o duelo do
+  # laboratório A/B e a leitura do moderador. Contá-las aqui faria o Gerente
+  # cobrar do agente o preço de auditá-lo, e o operador veria o agente ficar
+  # mais caro justamente por seguir a recomendação de auditar mais.
+  OFF_LEDGER_PHASES = %w[replay moderation].freeze
 
   # O único lugar onde o agente entra no filtro. Uma verificação não monta
   # consulta sozinha, então não existe caminho para ela esquecer disto.

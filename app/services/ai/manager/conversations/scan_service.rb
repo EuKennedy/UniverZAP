@@ -64,7 +64,7 @@ class Ai::Manager::Conversations::ScanService
   # aqui. Sem ela, uma chave de caso inventada por um modelo entraria no banco e
   # a tela mostraria um cartão sem título que ninguém sabe traduzir.
   def persist(rows)
-    valid = rows.select { |row| acceptable?(row) }.map { |row| stamp(row) }
+    valid = deduped(rows).map { |row| stamp(row) }
     return 0 if valid.empty?
 
     # rubocop:disable Rails/SkipsModelValidations
@@ -96,6 +96,26 @@ class Ai::Manager::Conversations::ScanService
     scan_id conversation_display_id contact_id ai_assistant_id severity title detail excerpt
     author source value_cents_brl metadata occurred_at waiting_since last_seen_at
   ].freeze
+
+  # Uma linha por (conversa, caso) no lote, e a da LEITURA ganha.
+  #
+  # Os dois produtores podem emitir a mesma chave para a mesma conversa:
+  # 'cliente_insatisfeito' sai da triagem quando o guardrail levantou a bandeira
+  # e sai da leitura quando o modelo enxerga a reclamação. Duas linhas com a
+  # mesma chave única no MESMO upsert fazem o Postgres recusar o comando inteiro
+  # ("ON CONFLICT DO UPDATE command cannot affect row a second time"), e como é
+  # uma sentença só, a varredura inteira era perdida depois de o modelo já ter
+  # sido pago.
+  #
+  # A da leitura ganha porque carrega motivo escrito sobre aquela conversa em
+  # vez de uma frase de catálogo. `reverse.uniq.reverse` guarda a ÚLTIMA
+  # ocorrência, e em `perform` a triagem vem primeiro na concatenação.
+  def deduped(rows)
+    rows.select { |row| acceptable?(row) }
+        .reverse
+        .uniq { |row| [row[:conversation_id], row[:case_key]] }
+        .reverse
+  end
 
   def acceptable?(row)
     Ai::Manager::Conversations::Cases.known?(row[:case_key]) &&
@@ -158,6 +178,9 @@ class Ai::Manager::Conversations::ScanService
       'reading_findings' => reader.findings.length,
       'written' => written,
       'reading_skipped' => reader.skipped_reason,
+      'reading_failures' => reader.failures,
+      'reading_error' => reader.failure_reason,
+      'scanned_capped' => triage.capped?,
       'window_start' => since.iso8601,
       'window_end' => @now.iso8601
     }.compact

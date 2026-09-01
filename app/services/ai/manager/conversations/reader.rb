@@ -39,6 +39,12 @@ class Ai::Manager::Conversations::Reader
   TEMPERATURE = 0.0
   MAX_CASES = 2
 
+  # PRECISA estar em Ai::Invocation::PHASES, que valida por inclusão. Uma fase
+  # que não está lá não falha em voz alta: log_success engole a exceção, a
+  # chamada à Anthropic acontece e é paga, e some sem virar linha de log nem
+  # débito de crédito. Existe um spec de contrato afirmando esta ligação.
+  PHASE = 'moderation'.freeze
+
   # Recebe a TRIAGEM e não os três pedaços dela soltos. Além de caber no limite
   # de parâmetros, deixa a dependência explícita: o leitor não existe sem a
   # triagem, ele só olha o que ela levantou, e reusa o mesmo carregamento em vez
@@ -53,6 +59,8 @@ class Ai::Manager::Conversations::Reader
     @now = now
     @cost_brl = 0.0
     @read = 0
+    @failures = 0
+    @failure_reason = nil
   end
 
   def findings
@@ -66,6 +74,18 @@ class Ai::Manager::Conversations::Reader
 
   def candidate_count
     @candidates.size
+  end
+
+  # Quantas leituras estouraram, e por quê. Sem isto, uma varredura que falhou
+  # em todas as conversas se apresenta como uma varredura que não achou nada.
+  def failures
+    findings
+    @failures
+  end
+
+  def failure_reason
+    findings
+    @failure_reason
   end
 
   def cost_cents_brl
@@ -100,14 +120,23 @@ class Ai::Manager::Conversations::Reader
     selected.flat_map { |id| read_one(id) }.compact
   end
 
+  # O contador sobe DEPOIS da resposta, e não antes da chamada.
+  #
+  # Contando tentativa, uma conta sem crédito via a tela anunciar "60 conversas
+  # lidas pela IA, R$ 0,00, nenhum achado", que qualquer pessoa lê como "está
+  # tudo bem". O motivo da primeira falha é guardado e sobe para a tela, porque
+  # "acabou o crédito" e "não havia nada de errado" são conclusões opostas.
   def read_one(conversation_id)
     lines = transcripts[conversation_id]
     detail = @details.for(conversation_id)
     return [] if lines.blank? || detail.nil?
 
+    found = parse(ask(lines, detail), conversation_id, detail, lines)
     @read += 1
-    parse(ask(lines, detail), conversation_id, detail, lines)
+    found
   rescue StandardError => e
+    @failures += 1
+    @failure_reason ||= e.message.to_s.truncate(200)
     Rails.logger.error("[Athenas moderador] leitura falhou account=#{@account.id} conversa=#{conversation_id}: #{e.message}")
     []
   end
@@ -120,8 +149,9 @@ class Ai::Manager::Conversations::Reader
       system: Prompt.system,
       # `phase` próprio para o gasto da moderação não entrar no painel de ROI
       # como se fosse custo de atender cliente. São coisas diferentes e somá-las
-      # faria o agente parecer mais caro do que é.
-      phase: 'moderation',
+      # faria o agente parecer mais caro do que é. Ai::Manager::Scope a exclui
+      # pelo mesmo motivo que exclui 'replay'.
+      phase: PHASE,
       model: MODEL, max_tokens: MAX_TOKENS, temperature: TEMPERATURE
     )
     @cost_brl += response[:invocation]&.cost_brl.to_f

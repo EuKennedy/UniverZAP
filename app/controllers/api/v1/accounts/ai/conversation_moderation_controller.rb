@@ -33,8 +33,13 @@ class Api::V1::Accounts::Ai::ConversationModerationController < Api::V1::Account
   # é uma proteção de dinheiro e não de banco: duas varreduras simultâneas leem
   # as mesmas conversas e cobram duas vezes pelo mesmo resultado, porque o
   # índice único faz a segunda apenas sobrescrever os achados da primeira.
+  # Uma varredura que passou disto não está rodando, está pendurada: o job
+  # morreu com o worker, ou um deploy passou por cima dele. Sessenta leituras
+  # levam minutos, não meia hora.
+  STALE_AFTER = 30.minutes
+
   def create_scan
-    running = Current.account.ai_manager_conversation_scans.find_by(status: 'running')
+    running = live_scan
     return render json: running.push_event_data.merge(already_running: true) if running
 
     scan = Current.account.ai_manager_conversation_scans.create!(
@@ -53,6 +58,25 @@ class Api::V1::Accounts::Ai::ConversationModerationController < Api::V1::Account
   end
 
   private
+
+  # A varredura em andamento, se ainda faz sentido chamá-la assim.
+  #
+  # Sem o corte por idade, uma varredura interrompida ficava 'running' para
+  # sempre: o botão de analisar sumia da aba e a conta perdia a feature, sem
+  # nada na tela que a destravasse. Marcá-la como falha é o que devolve o botão
+  # e conta o que aconteceu, em vez de deixar o operador achando que ainda está
+  # processando.
+  def live_scan
+    running = Current.account.ai_manager_conversation_scans.find_by(status: 'running')
+    return nil if running.nil?
+    return running if running.created_at > STALE_AFTER.ago
+
+    running.update(
+      status: 'failed', finished_at: Time.current,
+      summary: running.summary.merge('error' => 'A leitura anterior foi interrompida antes de terminar.')
+    )
+    nil
+  end
 
   def window_hours
     Ai::Manager::ConversationScan.window_for(params[:hours])

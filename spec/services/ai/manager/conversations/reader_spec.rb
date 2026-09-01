@@ -168,4 +168,51 @@ RSpec.describe Ai::Manager::Conversations::Reader do
       expect(Ai::ClaudeService).not_to have_received(:new)
     end
   end
+  describe 'o contrato da fase' do
+    # ESTE é o teste que teria pego o pior defeito desta feature.
+    #
+    # `phase` é validado por inclusão em Ai::Invocation, e log_success engole a
+    # exceção de gravação para nunca derrubar uma resposta por causa do log. Uma
+    # fase fora da lista não falha em voz alta: a chamada à Anthropic acontece e
+    # é PAGA, e some sem virar linha de auditoria nem débito de crédito. O custo
+    # na tela fica eternamente em R$ 0,00 e ninguém desconfia.
+    it 'usa uma fase que Ai::Invocation aceita' do
+      expect(Ai::Invocation::PHASES).to include(described_class::PHASE)
+    end
+
+    it 'grava de verdade uma invocação com essa fase' do
+      invocation = build(:ai_invocation, account: account, ai_assistant: assistant,
+                                         phase: described_class::PHASE)
+
+      expect(invocation).to be_valid
+    end
+
+    # Auditar o agente não pode encarecer o agente no painel que decide se ele
+    # vale a pena, pelo mesmo motivo que o duelo do laboratório fica de fora.
+    it 'fica fora do custo que o Gerente atribui ao agente' do
+      expect(Ai::Manager::Scope::OFF_LEDGER_PHASES).to include(described_class::PHASE)
+    end
+  end
+
+  describe 'quando a chamada ao modelo falha' do
+    before do
+      talk
+      allow(claude).to receive(:chat).and_raise(Ai::ClaudeService::Error, 'Créditos insuficientes')
+    end
+
+    # Contando TENTATIVA, uma conta sem crédito via a tela anunciar "60 conversas
+    # lidas pela IA, R$ 0,00, nenhum achado", que qualquer pessoa lê como "está
+    # tudo bem". São conclusões opostas.
+    it 'não conta como lida a conversa cuja chamada estourou' do
+      reader = read
+      reader.findings
+
+      expect(reader.read_count).to be_zero
+      expect(reader.failures).to eq(1)
+    end
+
+    it 'guarda o motivo, porque sem ele a varredura vazia parece boa notícia' do
+      expect(read.failure_reason).to include('Créditos insuficientes')
+    end
+  end
 end

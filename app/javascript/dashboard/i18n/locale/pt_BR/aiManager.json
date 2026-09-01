@@ -163,7 +163,10 @@
         "CLOSE": "Fechar",
         "ESTIMATE_ERROR": "Não deu para calcular o custo agora.",
         "START_ERROR": "Não deu para começar a leitura agora."
-      }
+      },
+      "READ_FAILED": "A leitura por IA falhou em {n} conversas e por isso pode faltar cartão aqui. Motivo: {reason}",
+      "READ_SKIPPED": "A leitura por IA não rodou nesta varredura, então só os casos detectados por regra aparecem. Motivo: {reason}",
+      "SCAN_CAPPED": "A varredura bateu no teto de conversas do período. Quem está esperando entra primeiro, mas para ver o resto escolha uma janela menor e rode de novo."
     }
   }
 }

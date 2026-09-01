@@ -15,13 +15,30 @@ class Ai::Manager::Conversations::Activity
   # recente, então o corte descarta o mais frio, nunca o mais urgente. O número
   # que sobrou fica visível na tela: uma varredura que silenciosamente ignora
   # metade da operação é pior que uma que não roda.
-  MAX_CONVERSATIONS = 500
+  MAX_CONVERSATIONS = 1_000
 
   # Só o que uma pessoa mandou ou recebeu. `activity` é registro do sistema
   # ("fulano assumiu a conversa") e `private` é nota interna: contar as duas
   # como resposta faria uma conversa esquecida parecer atendida porque alguém
   # escreveu um bilhete que o cliente nunca viu.
   HUMAN_TYPES = [Message.message_types[:incoming], Message.message_types[:outgoing]].freeze
+
+  # Quem está esperando vem na frente do corte, e só depois vem a atividade
+  # recente.
+  #
+  # Ordenar só por recência parecia natural e estava errado ao contrário: uma
+  # conversa em que a cliente escreveu há cinco dias e ninguém respondeu tem
+  # atividade ANTIGA por definição, então era a primeira a cair fora do teto.
+  # O teto descartava exatamente as pessoas que a tela existe para encontrar.
+  #
+  # O booleano é "a última fala é do cliente": DESC coloca `true` primeiro no
+  # Postgres.
+  WAITING_FIRST = <<~SQL.squish.freeze
+    (MAX(messages.created_at) FILTER (WHERE messages.message_type = 1) IS NULL
+     OR MAX(messages.created_at) FILTER (WHERE messages.message_type = 1)
+        < MAX(messages.created_at) FILTER (WHERE messages.message_type = 0)) DESC,
+    MAX(messages.created_at) DESC
+  SQL
 
   Row = Struct.new(:conversation_id, :last_in, :last_out, :incoming, :outgoing, keyword_init: true) do
     # A definição de "esperando" desta base: existe fala do cliente e não existe
@@ -49,6 +66,12 @@ class Ai::Manager::Conversations::Activity
 
   # Hash de conversation_id para Row. Hash e não array porque todo consumidor
   # daqui pergunta "e a conversa tal?".
+  # O teto mordeu? A tela precisa dizer, porque uma varredura que corta em
+  # silêncio se apresenta como completa.
+  def capped?
+    rows.size >= MAX_CONVERSATIONS
+  end
+
   def rows
     @rows ||= raw.to_h do |record|
       [record.conversation_id,
@@ -83,7 +106,7 @@ class Ai::Manager::Conversations::Activity
            # é colada DEPOIS da minha, referenciando messages.created_at fora de
            # qualquer agregado. O Postgres recusa a consulta inteira com
            # GroupingError. `reorder` substitui em vez de acrescentar.
-           .reorder(Arel.sql('MAX(messages.created_at) DESC'))
+           .reorder(Arel.sql(WAITING_FIRST))
            .limit(MAX_CONVERSATIONS)
   end
 end
