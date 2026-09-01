@@ -34,8 +34,7 @@ RSpec.describe Ai::Manager::Conversations::Reader do
 
   def read(limit: described_class::MAX_READ)
     triage = Ai::Manager::Conversations::Triage.new(account: account, since: now - 30.days, now: now)
-    described_class.new(account: account, assistant: assistant, details: triage.details,
-                        candidates: triage.candidates, waits: triage.waits, limit: limit, now: now)
+    described_class.new(account: account, assistant: assistant, triage: triage, limit: limit, now: now)
   end
 
   describe 'o que vira cartão' do

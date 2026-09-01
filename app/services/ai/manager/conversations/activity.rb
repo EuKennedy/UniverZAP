@@ -78,7 +78,12 @@ class Ai::Manager::Conversations::Activity
            .where(messages: { created_at: @since.. })
            .group('messages.conversation_id')
            .select(Arel.sql(AGGREGATES))
-           .order(Arel.sql('MAX(messages.created_at) DESC'))
+           # `reorder` e não `order`: Message carrega
+           # `default_scope { order(created_at: :asc) }`, e essa ordenação herdada
+           # é colada DEPOIS da minha, referenciando messages.created_at fora de
+           # qualquer agregado. O Postgres recusa a consulta inteira com
+           # GroupingError. `reorder` substitui em vez de acrescentar.
+           .reorder(Arel.sql('MAX(messages.created_at) DESC'))
            .limit(MAX_CONVERSATIONS)
   end
 end

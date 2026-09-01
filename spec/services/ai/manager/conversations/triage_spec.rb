@@ -10,8 +10,9 @@ RSpec.describe Ai::Manager::Conversations::Triage do
 
   # Uma conversa com fala do cliente e, opcionalmente, resposta depois.
   # `outgoing_ago: nil` é o caso mais grave: ninguém respondeu nunca.
-  def talk(incoming_ago:, outgoing_ago: nil, status: 'open', name: 'Fernanda', sandbox: false, on: nil)
-    target = on || account
+  def talk(incoming_ago:, outgoing_ago: nil, status: 'open', name: 'Fernanda', **extra)
+    target = extra[:on] || account
+    sandbox = extra[:sandbox]
     contact = create(:contact, account: target, name: name)
     conversation = create(:conversation, account: target, inbox: inbox_for(target), contact: contact,
                                          status: status,

@@ -78,9 +78,13 @@ class Ai::Manager::Conversations::Listing
   def last_outgoing
     @last_outgoing ||= begin
       ids = records.map(&:conversation_id).uniq
-      ids.empty? ? {} : Message.where(conversation_id: ids, private: false,
-                                      message_type: Message.message_types[:outgoing])
-                               .group(:conversation_id).maximum(:created_at)
+      return {} if ids.empty?
+
+      # `reorder(nil)` antes de agrupar: o default_scope de Message ordena por
+      # created_at, e um MAX agrupado com essa ordenação herdada é GroupingError.
+      Message.where(conversation_id: ids, private: false,
+                    message_type: Message.message_types[:outgoing])
+             .reorder(nil).group(:conversation_id).maximum(:created_at)
     end
   end
 

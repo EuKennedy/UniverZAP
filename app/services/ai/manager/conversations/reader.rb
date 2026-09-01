@@ -39,12 +39,16 @@ class Ai::Manager::Conversations::Reader
   TEMPERATURE = 0.0
   MAX_CASES = 2
 
-  def initialize(account:, assistant:, details:, candidates:, waits: {}, limit: MAX_READ, now: Time.current)
+  # Recebe a TRIAGEM e não os três pedaços dela soltos. Além de caber no limite
+  # de parâmetros, deixa a dependência explícita: o leitor não existe sem a
+  # triagem, ele só olha o que ela levantou, e reusa o mesmo carregamento em vez
+  # de repetir as seis consultas de Details.
+  def initialize(account:, assistant:, triage:, limit: MAX_READ, now: Time.current)
     @account = account
     @assistant = assistant
-    @details = details
-    @candidates = Array(candidates)
-    @waits = waits
+    @details = triage.details
+    @candidates = Array(triage.candidates)
+    @waits = triage.waits
     @limit = limit
     @now = now
     @cost_brl = 0.0
@@ -174,6 +178,6 @@ class Ai::Manager::Conversations::Reader
   end
 
   def occurred_at(lines)
-    lines.select(&:incoming).map(&:at).compact.max || lines.map(&:at).compact.max || @now
+    lines.select(&:incoming).filter_map(&:at).max || lines.filter_map(&:at).max || @now
   end
 end

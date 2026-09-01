@@ -69,12 +69,15 @@ RSpec.describe Ai::Manager::Conversations::ScanService do
     end
 
     it 'recalcula a gravidade, porque o mesmo silêncio piora com o relógio' do
-      conversation = waiting_conversation(hours: 7)
+      waiting_conversation(hours: 7)
       described_class.new(scan: scan).perform
       expect(findings.first.severity).to eq('medium')
 
-      conversation.messages.first.update_column(:created_at, 30.hours.ago)
-      described_class.new(scan: create(:ai_manager_conversation_scan, account: account)).perform
+      # A mesma conversa, um dia depois. Janela de 30 dias para ela continuar
+      # dentro do período, e o relógio adiantado para a espera passar de 7h para
+      # 31h sem precisar mexer no banco por baixo do modelo.
+      later = create(:ai_manager_conversation_scan, account: account, window_hours: 720)
+      described_class.new(scan: later, now: 24.hours.from_now).perform
 
       expect(findings.first.reload.severity).to eq('critical')
     end

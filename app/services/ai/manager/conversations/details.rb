@@ -41,11 +41,20 @@ class Ai::Manager::Conversations::Details
   def build(row)
     Detail.new(
       conversation_id: row.id, display_id: row.display_id, contact_id: row.contact_id,
-      contact_name: contact_names[row.contact_id], status: row.status, assignee_id: row.assignee_id,
+      status: row.status, assignee_id: row.assignee_id, **enrichment(row)
+    )
+  end
+
+  # O que veio dos carregamentos em lote, separado do que já estava na linha da
+  # conversa. Duas metades e não um construtor só porque cada campo daqui é uma
+  # busca num Hash diferente, e juntos eles passavam do teto de complexidade.
+  def enrichment(row)
+    {
+      contact_name: contact_names[row.contact_id],
       excerpt: excerpts[row.id].to_s.strip.truncate(EXCERPT_MAX).presence,
       author: author_for(row), value_cents: lead_values.dig(row.id, :cents).to_i,
       interest: lead_values.dig(row.id, :interest), assistant_id: agent_replies[last_outgoing[row.id]]
-    )
+    }
   end
 
   # Quem falou por último do nosso lado, que é o filtro pedido: às vezes o
@@ -99,7 +108,10 @@ class Ai::Manager::Conversations::Details
 
     Message.where(conversation_id: ids, message_type: message_type, private: false)
            .select(Arel.sql("DISTINCT ON (messages.conversation_id) messages.conversation_id, messages.#{column}"))
-           .order(Arel.sql('messages.conversation_id, messages.created_at DESC'))
+           # `reorder` pelo mesmo motivo: o default_scope de Message acrescentaria
+           # um `created_at ASC` depois do meu `DESC`, e o DISTINCT ON passaria a
+           # depender de o Postgres ignorar a segunda cláusula.
+           .reorder(Arel.sql('messages.conversation_id, messages.created_at DESC'))
            .to_h { |row| [row.conversation_id, row[column]] }
   end
 

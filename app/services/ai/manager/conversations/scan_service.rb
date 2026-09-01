@@ -45,8 +45,7 @@ class Ai::Manager::Conversations::ScanService
 
   def reader
     @reader ||= Ai::Manager::Conversations::Reader.new(
-      account: @account, assistant: assistant, details: triage.details,
-      candidates: triage.candidates, waits: triage.waits, now: @now
+      account: @account, assistant: assistant, triage: triage, now: @now
     )
   end
 

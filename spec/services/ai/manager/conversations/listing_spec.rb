@@ -6,10 +6,11 @@ RSpec.describe Ai::Manager::Conversations::Listing do
   let(:account) { create(:account) }
   let(:inbox) { create(:inbox, account: account) }
 
-  def finding(case_key: 'cliente_esperando', severity: 'high', author: 'none', occurred_ago: 2.hours,
-              value_cents: 0, conversation: nil, on: nil)
-    target = on || account
-    conversation ||= create(:conversation, account: target, inbox: inbox_for(target))
+  def finding(case_key: 'cliente_esperando', severity: 'high', occurred_ago: 2.hours, **extra)
+    target = extra[:on] || account
+    author = extra.fetch(:author, 'none')
+    value_cents = extra.fetch(:value_cents, 0)
+    conversation = extra[:conversation] || create(:conversation, account: target, inbox: inbox_for(target))
     Ai::Manager::ConversationFinding.create!(
       account: target, conversation_id: conversation.id, conversation_display_id: conversation.display_id,
       contact_id: conversation.contact_id, case_key: case_key, severity: severity, author: author,
@@ -22,8 +23,8 @@ RSpec.describe Ai::Manager::Conversations::Listing do
     target == account ? inbox : create(:inbox, account: target)
   end
 
-  def keys(**options)
-    described_class.new(account: account, **options).payload[:findings].pluck(:case_key)
+  def keys(**)
+    described_class.new(account: account, **).payload[:findings].pluck(:case_key)
   end
 
   describe 'o filtro de dias' do
