@@ -27,11 +27,16 @@ import ManagerDataGap from '../components/ManagerDataGap.vue';
 import ManagerSuggestionCard from '../components/ManagerSuggestionCard.vue';
 import ManagerRunNow from '../components/ManagerRunNow.vue';
 import ManagerChecks from '../components/ManagerChecks.vue';
+import ManagerConversations from '../components/ManagerConversations.vue';
 import { formatMoment } from '../managerFormat';
 
 const { t } = useI18n();
 
-const TABS = ['queue', 'checks'];
+// 'conversations' no meio e não no começo: a fila do Gerente é a aba que já
+// existia e continua sendo a primeira coisa que quem chega aqui espera ver.
+// Trocar o padrão de uma tela em produção por causa de uma aba nova é mudar o
+// hábito de quem já usa sem ter pedido.
+const TABS = ['queue', 'conversations', 'checks'];
 
 const isLoading = ref(true);
 const loadError = ref('');
@@ -253,6 +258,8 @@ onMounted(fetchAll);
           />
         </div>
       </template>
+
+      <ManagerConversations v-else-if="activeTab === 'conversations'" />
 
       <ManagerChecks v-else />
     </div>

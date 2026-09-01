@@ -12,7 +12,8 @@
     "NEVER_RAN": "O Gerente ainda não rodou nesta conta.",
     "TABS": {
       "QUEUE": "Fila",
-      "CHECKS": "Verificações"
+      "CHECKS": "Verificações",
+      "CONVERSATIONS": "Conversas"
     },
     "SCORES": {
       "COMPARISON": "Contra o período anterior",
@@ -95,6 +96,73 @@
       "UNGROUNDED_NUMBER": {
         "TITLE": "O agente citou um valor que não veio da ferramenta",
         "WHAT": "Confere se cada número dito ao cliente saiu de uma consulta real."
+      }
+    },
+    "MODERATION": {
+      "INTRO": "O moderador lê as conversas do período que você escolher e traz, uma embaixo da outra, as que precisam de alguém hoje. Clique no cartão para abrir a conversa exata.",
+      "LOAD_ERROR": "Não deu para carregar os achados agora.",
+      "COUNT": "{n} conversas na lista",
+      "REFRESH": "Atualizar",
+      "ANSWERED": "Respondida depois",
+      "OPEN": "Abrir conversa",
+      "SCAN_SUMMARY": "Última leitura {when}: {scanned} conversas varridas, {read} lidas pela IA, {cost}",
+      "SCAN_FAILED": "A última leitura falhou antes de terminar. Os achados abaixo são das leituras anteriores.",
+      "EMPTY_TITLE": "Nada precisando de você",
+      "EMPTY_BODY": "A leitura passou pelas conversas deste período e não encontrou ninguém esperando nem nada que tenha saído errado.",
+      "NEVER_TITLE": "Ainda não rodou por aqui",
+      "NEVER_BODY": "Escolha a janela e clique em analisar. O preço aparece antes de qualquer coisa ser lida, e o resultado fica gravado para você filtrar depois sem gastar de novo.",
+      "SEVERITY": {
+        "CRITICAL": "Grave",
+        "HIGH": "Atenção",
+        "MEDIUM": "Observar",
+        "LOW": "Leve"
+      },
+      "AUTHOR": {
+        "AGENT": "Última resposta do agente",
+        "HUMAN": "Última resposta da equipe",
+        "NONE": "Ninguém respondeu"
+      },
+      "SOURCE": {
+        "TRIAGE": "Detectado por regra",
+        "READING": "Lido pela IA"
+      },
+      "FILTERS": {
+        "PERIOD": "Período",
+        "AUTHOR": "Quem atendeu",
+        "ALL_CASES": "Todos os casos",
+        "DAYS": {
+          "D1": "24 horas",
+          "D3": "3 dias",
+          "D7": "7 dias",
+          "D30": "30 dias",
+          "ALL": "Tudo"
+        },
+        "AUTHORS": {
+          "ALL": "Todos",
+          "AGENT": "Agente",
+          "HUMAN": "Equipe",
+          "NONE": "Sem resposta"
+        }
+      },
+      "RUN": {
+        "WINDOW_LABEL": "Analisar",
+        "WINDOWS": {
+          "H24": "24h",
+          "D3": "3 dias",
+          "D7": "7 dias",
+          "D30": "30 dias"
+        },
+        "ACTION": "Analisar conversas",
+        "CHECKING": "Calculando",
+        "RUNNING": "Lendo as conversas, isso leva alguns minutos",
+        "CONFIRM": "Varremos {scanned} conversas de graça e {read} delas precisam da leitura por IA. Custo aproximado: {cost}.",
+        "CAPPED": "Outras {n} ficam de fora desta leitura por causa do teto. Rode de novo depois para alcançá-las.",
+        "NOTHING": "Nenhuma conversa deste período precisa da leitura por IA. A triagem já encontrou {found} casos, e eles não custam nada.",
+        "CONFIRM_ACTION": "Ler agora",
+        "CANCEL": "Cancelar",
+        "CLOSE": "Fechar",
+        "ESTIMATE_ERROR": "Não deu para calcular o custo agora.",
+        "START_ERROR": "Não deu para começar a leitura agora."
       }
     }
   }

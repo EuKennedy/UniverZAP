@@ -589,6 +589,20 @@ Rails.application.routes.draw do
               get 'checks', action: :checks, as: :manager_checks
               patch 'checks/:key', action: :update_check, as: :manager_check
             end
+
+            # O moderador de conversas: a aba que lê as conversas em vez dos
+            # agentes. Controller separada porque a fronteira é de escrita, não
+            # de tema: listar e estimar só leem, disparar a leitura gasta.
+            #
+            # `scans/:id` antes de qualquer coisa com `:id` solto, e `estimate`
+            # antes de `scans`, pelo mesmo motivo do Gerente: a tela pede o preço
+            # antes de alguém clicar em rodar.
+            get 'manager/conversations', to: 'conversation_moderation#index', as: :manager_conversations
+            scope 'manager/conversations', controller: 'conversation_moderation' do
+              get 'estimate', action: :estimate, as: :manager_conversations_estimate
+              get 'scans/:id', action: :show_scan, as: :manager_conversation_scan
+              post 'scans', action: :create_scan, as: :manager_conversation_scans
+            end
             resource :credits, only: [:show]
           end
 

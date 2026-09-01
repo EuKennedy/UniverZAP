@@ -12,7 +12,8 @@
     "NEVER_RAN": "The Manager has not run on this account yet.",
     "TABS": {
       "QUEUE": "Queue",
-      "CHECKS": "Checks"
+      "CHECKS": "Checks",
+      "CONVERSATIONS": "Conversations"
     },
     "SCORES": {
       "COMPARISON": "Against the previous period",
@@ -95,6 +96,73 @@
       "UNGROUNDED_NUMBER": {
         "TITLE": "The agent quoted a figure that did not come from a tool",
         "WHAT": "Checks that every number told to the customer came from a real lookup."
+      }
+    },
+    "MODERATION": {
+      "INTRO": "The moderator reads the conversations in the window you pick and lists the ones that need someone today. Click a card to open that exact conversation.",
+      "LOAD_ERROR": "We could not load the findings right now.",
+      "COUNT": "{n} conversations listed",
+      "REFRESH": "Refresh",
+      "ANSWERED": "Answered since",
+      "OPEN": "Open conversation",
+      "SCAN_SUMMARY": "Last read {when}: {scanned} conversations scanned, {read} read by AI, {cost}",
+      "SCAN_FAILED": "The last read failed before finishing. The findings below come from earlier reads.",
+      "EMPTY_TITLE": "Nothing needs you",
+      "EMPTY_BODY": "The read went through this period and found nobody waiting and nothing that went wrong.",
+      "NEVER_TITLE": "No read yet",
+      "NEVER_BODY": "Pick a window and hit analyse. The price is shown before anything is read, and the result is saved so you can filter later without paying again.",
+      "SEVERITY": {
+        "CRITICAL": "Critical",
+        "HIGH": "Attention",
+        "MEDIUM": "Watch",
+        "LOW": "Minor"
+      },
+      "AUTHOR": {
+        "AGENT": "Agent replied last",
+        "HUMAN": "Team replied last",
+        "NONE": "Nobody replied"
+      },
+      "SOURCE": {
+        "TRIAGE": "Rule detected",
+        "READING": "Read by AI"
+      },
+      "FILTERS": {
+        "PERIOD": "Period",
+        "AUTHOR": "Handled by",
+        "ALL_CASES": "All cases",
+        "DAYS": {
+          "D1": "24 hours",
+          "D3": "3 days",
+          "D7": "7 days",
+          "D30": "30 days",
+          "ALL": "All"
+        },
+        "AUTHORS": {
+          "ALL": "All",
+          "AGENT": "Agent",
+          "HUMAN": "Team",
+          "NONE": "Unanswered"
+        }
+      },
+      "RUN": {
+        "WINDOW_LABEL": "Analyse",
+        "WINDOWS": {
+          "H24": "24h",
+          "D3": "3 days",
+          "D7": "7 days",
+          "D30": "30 days"
+        },
+        "ACTION": "Analyse conversations",
+        "CHECKING": "Estimating",
+        "RUNNING": "Reading the conversations, this takes a few minutes",
+        "CONFIRM": "We scanned {scanned} conversations for free and {read} of them need the AI read. Approximate cost: {cost}.",
+        "CAPPED": "Another {n} are left out of this read because of the cap. Run again later to reach them.",
+        "NOTHING": "No conversation in this period needs the AI read. Triage already found {found} cases, and those cost nothing.",
+        "CONFIRM_ACTION": "Read now",
+        "CANCEL": "Cancel",
+        "CLOSE": "Close",
+        "ESTIMATE_ERROR": "We could not estimate the cost right now.",
+        "START_ERROR": "We could not start the read right now."
       }
     }
   }

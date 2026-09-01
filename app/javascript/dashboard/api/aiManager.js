@@ -48,6 +48,32 @@ class AiManagerAPI extends ApiClient {
   updateCheck(key, enabled) {
     return axios.patch(`${this.url}/checks/${key}`, { enabled });
   }
+
+  // O moderador de conversas. Chamadas separadas de propósito: `listFindings`
+  // é de graça e roda a cada mudança de filtro, `createScan` gasta e roda
+  // quando alguém clica. Misturá-las num método só seria a maneira mais fácil
+  // de um filtro passar a custar dinheiro sem ninguém perceber.
+  listFindings({ days, author, caseKey } = {}) {
+    return axios.get(`${this.url}/conversations`, {
+      params: { days, author, case_key: caseKey },
+    });
+  }
+
+  estimateScan(hours) {
+    return axios.get(`${this.url}/conversations/estimate`, {
+      params: { hours },
+    });
+  }
+
+  createScan(hours) {
+    return axios.post(`${this.url}/conversations/scans`, { hours });
+  }
+
+  // Consultada enquanto a leitura roda. A varredura é assíncrona porque chama
+  // modelo uma vez por conversa e leva minutos.
+  getScan(id) {
+    return axios.get(`${this.url}/conversations/scans/${id}`);
+  }
 }
 
 export default new AiManagerAPI();

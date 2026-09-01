@@ -111,6 +111,8 @@ class Account < ApplicationRecord
   has_many :ai_manager_runs, dependent: :destroy, class_name: 'Ai::Manager::Run'
   has_many :ai_manager_suggestions, dependent: :destroy, class_name: 'Ai::Manager::Suggestion'
   has_many :ai_manager_check_settings, dependent: :destroy, class_name: 'Ai::Manager::CheckSetting'
+  has_many :ai_manager_conversation_scans, dependent: :destroy, class_name: 'Ai::Manager::ConversationScan'
+  has_many :ai_manager_conversation_findings, dependent: :destroy, class_name: 'Ai::Manager::ConversationFinding'
   has_many :inboxes, dependent: :destroy_async
   has_many :labels, dependent: :destroy_async
   has_many :line_channels, dependent: :destroy_async, class_name: '::Channel::Line'
