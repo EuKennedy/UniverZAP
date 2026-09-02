@@ -313,7 +313,6 @@ class Ai::AutopilotReplyService
     @own_tools ||= Ai::Agent::Toolset.new(assistant: @assistant, conversation: @conversation).executor
   end
 
-
   # Nil when the agent has no agenda or no services, so the tools are simply not
   # offered: a model holding a booking tool it cannot fulfil promises a time
   # anyway.
@@ -322,7 +321,6 @@ class Ai::AutopilotReplyService
 
     @calendar_definitions = Ai::Calendar::ToolDefinitions.for(@assistant)
   end
-
 
   # Per AGENT, and only once connected. Resolving this from the ACCOUNT is what
   # used to put five tool schemas into every turn of every agent of a linked
@@ -334,15 +332,6 @@ class Ai::AutopilotReplyService
     connection = @assistant.belezaki_connection
     @belezaki_connection = connection&.active? ? connection : nil
   end
-
-  # Ai::Assistant#agenda_provider is the single answer to "which agenda does this
-  # agent book on". belezaki wins a tie because it is the one the operator most
-  # recently chose on purpose.
-  def agenda
-    @agenda ||= @assistant.agenda_provider
-  end
-
-
 
   def run_own_tool_loop(messages, executor)
     loop_service = Ai::Agent::ToolLoopService.new(

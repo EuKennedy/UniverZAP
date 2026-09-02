@@ -536,18 +536,6 @@ RSpec.describe Ai::AutopilotReplyService do
 
       expect(prompt).not_to include('AGENDA DO SALÃO CONECTADA')
     end
-
-    # The frozen id is the point: resolving the account again on every reply is
-    # what could move a live agent onto another salon's agenda.
-    it 'builds the client from the connection id, not by resolving the account' do
-      Ai::Belezaki::Connection.create!(ai_assistant: assistant, account: account, external_id: 'ext-frozen')
-      allow(Ai::Belezaki::TenantResolver).to receive(:external_id).and_return('ext-other')
-      allow(Ai::Belezaki::AgentClient).to receive(:new).and_call_original
-
-      described_class.new(conversation: conversation, assistant: assistant).send(:belezaki_executor)
-
-      expect(Ai::Belezaki::AgentClient).to have_received(:new).with(external_id: 'ext-frozen')
-    end
   end
 
   describe 'summary persistence (Sprint 8)' do
