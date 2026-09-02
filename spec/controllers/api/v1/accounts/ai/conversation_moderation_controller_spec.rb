@@ -143,6 +143,7 @@ RSpec.describe 'Api::V1::Accounts::Ai::ConversationModerationController', type: 
       expect(response).to have_http_status(:not_found)
     end
   end
+
   describe 'POST scans com uma varredura pendurada' do
     # Job morto com o worker, ou deploy passando por cima dele: a linha fica
     # 'running' para sempre, o botão de analisar some da aba e a conta perde a

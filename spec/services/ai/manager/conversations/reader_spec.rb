@@ -168,6 +168,7 @@ RSpec.describe Ai::Manager::Conversations::Reader do
       expect(Ai::ClaudeService).not_to have_received(:new)
     end
   end
+
   describe 'o contrato da fase' do
     # ESTE é o teste que teria pego o pior defeito desta feature.
     #

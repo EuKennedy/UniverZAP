@@ -117,6 +117,7 @@ RSpec.describe Ai::Manager::Conversations::ScanService do
       expect(scan.summary['error']).to include('banco caiu')
     end
   end
+
   describe 'quando a triagem e a leitura acham o mesmo caso na mesma conversa' do
     # 'cliente_insatisfeito' é o único caso que os DOIS produtores emitem: a
     # triagem quando o guardrail levantou a bandeira, a leitura quando o modelo

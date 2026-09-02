@@ -1,9 +1,28 @@
+# O copiloto interno: o agente que o ATENDENTE abre no widget para pedir ajuda.
+#
+# Ele usa exatamente as mesmas ferramentas que o agente usa falando com o
+# cliente. Antes chamava Ai::ClaudeService#chat direto, sem `tools:` e sem loop,
+# e o resultado era o mesmo agente que monta carrinho e consulta rastreio na
+# conversa ficar cego assim que o atendente abria o widget — perguntava o código
+# de rastreio em vez de consultar, porque não tinha com o quê.
+#
+# O que ele NÃO compartilha com o autopiloto é a persona: ver `role_lock`.
 class Ai::ChatService
+  # Retrieval ranqueado por relevância, o mesmo do autopiloto. Antes eram os 8
+  # primeiros documentos truncados em 280 caracteres cada, sem ordem nenhuma:
+  # uma tabela de preço grande entrava pelo começo e o preço perguntado ficava
+  # de fora.
+  include Ai::KnowledgeGrounding
+
   CHARACTER_BUDGET = 32_000
 
   def initialize(thread:, user_message:)
     @thread = thread
     @assistant = thread.ai_assistant
+    # Ai::KnowledgeGrounding lê @conversation direto. É a conversa do CLIENTE
+    # que o atendente está atendendo, e ela pode não existir: uma thread do
+    # widget aberta fora de uma conversa é legítima.
+    @conversation = thread.conversation
     @user_message = user_message.to_s.strip
   end
 
@@ -12,12 +31,7 @@ class Ai::ChatService
     raise Ai::ClaudeService::Error, 'Empty message' if @user_message.blank?
 
     persisted_user = persist_user_message
-    response = Ai::ClaudeService.new(assistant: @assistant).chat(
-      messages: build_messages,
-      system: build_system_prompt,
-      conversation: @thread.conversation,
-      phase: 'copilot_chat'
-    )
+    response = generate_response
     assistant_msg = persist_assistant_message(response)
     @thread.touch_activity!
 
@@ -92,16 +106,46 @@ class Ai::ChatService
     "#{message.incoming? ? 'Cliente' : 'Atendente'}: #{content}"
   end
 
-  def knowledge_snippets
-    chunks = @assistant.trainings.ready.limit(8).pluck(:title, :content)
-    return nil if chunks.empty?
-
-    bullets = chunks.map { |title, content| "- #{title}: #{content.to_s.truncate(280)}" }.join("\n")
-    "Base de conhecimento (consulte SÓ se o atendente pedir algo específico; NÃO é o assunto da conversa):\n#{bullets}"
-  end
-
   def build_messages
     history = @thread.recent_messages_for_llm
     history.map { |m| { role: m.role, content: m.content.to_s } }
+  end
+
+  # Com ferramenta, a resposta passa pelo loop; sem, é uma chamada só. A
+  # diferença importa porque o loop cobra por iteração, e um agente sem
+  # ferramenta nenhuma não deve pagar a máquina de nada.
+  def generate_response
+    executor = toolset.executor
+    return plain_chat unless executor.any?
+
+    Ai::Agent::ToolLoopService.new(
+      assistant: @assistant, conversation: @conversation,
+      messages: build_messages, system: build_system_prompt,
+      tools: executor.definitions, tool_executor: executor, phase: 'copilot_chat'
+    ).perform
+  end
+
+  def plain_chat
+    Ai::ClaudeService.new(assistant: @assistant).chat(
+      messages: build_messages, system: build_system_prompt,
+      conversation: @conversation, phase: 'copilot_chat'
+    )
+  end
+
+  # A thread do widget pode não ter conversa. O Toolset trata isso: entrega as
+  # ferramentas customizadas assim mesmo e deixa a agenda de fora, porque
+  # agendar sem contato é o agendamento órfão que CustomerPhone documenta.
+  def toolset
+    @toolset ||= Ai::Agent::Toolset.new(assistant: @assistant, conversation: @conversation)
+  end
+
+  # A pergunta que importa é a que o ATENDENTE acabou de fazer, não a última
+  # mensagem do cliente: ele abre o widget justamente para perguntar outra coisa.
+  def knowledge_query
+    @user_message
+  end
+
+  def latest_user_message
+    @user_message
   end
 end

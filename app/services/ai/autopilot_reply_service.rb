@@ -306,26 +306,13 @@ class Ai::AutopilotReplyService
   # The agent's own tools: the workspace's HTTP integrations plus its agenda,
   # in that order. Memoized because the routing decision and the loop must see
   # the same set.
+  # A composição vive em Ai::Agent::Toolset, compartilhada com o copiloto do
+  # widget. Duas composições divergiriam, e a divergência apareceria como o
+  # mesmo agente sabendo montar carrinho numa tela e não na outra.
   def own_tools
-    @own_tools ||= begin
-      parts = []
-      parts << [custom_tool_executor.definitions, custom_tool_executor] if custom_tools.any?
-      # Exactly ONE agenda, decided by the model rather than by both branches
-      # answering yes. The two providers declare five tool names in common
-      # (consultar_horarios, agendar, meus_agendamentos, remarcar, desmarcar),
-      # and Anthropic rejects the whole request with a 400 when a name repeats —
-      # so an agent holding both stops replying at all, to everyone, instantly.
-      # Guarding only at connect time was not enough: it left the reverse order
-      # open, and any row that predates the guard reaches this line anyway.
-      parts << [calendar_definitions, calendar_executor] if agenda == :google && calendar_definitions.present?
-      parts << [belezaki_definitions, belezaki_executor] if agenda == :belezaki
-      Ai::Agent::CompositeExecutor.new(parts)
-    end
+    @own_tools ||= Ai::Agent::Toolset.new(assistant: @assistant, conversation: @conversation).executor
   end
 
-  def custom_tool_executor
-    @custom_tool_executor ||= Ai::CustomToolExecutor.new(custom_tools)
-  end
 
   # Nil when the agent has no agenda or no services, so the tools are simply not
   # offered: a model holding a booking tool it cannot fulfil promises a time
@@ -336,11 +323,6 @@ class Ai::AutopilotReplyService
     @calendar_definitions = Ai::Calendar::ToolDefinitions.for(@assistant)
   end
 
-  def calendar_executor
-    @calendar_executor ||= Ai::Calendar::SchedulingTools.new(
-      assistant: @assistant, contact: @conversation.contact, conversation: @conversation
-    )
-  end
 
   # Per AGENT, and only once connected. Resolving this from the ACCOUNT is what
   # used to put five tool schemas into every turn of every agent of a linked
@@ -360,24 +342,7 @@ class Ai::AutopilotReplyService
     @agenda ||= @assistant.agenda_provider
   end
 
-  def belezaki_definitions
-    Ai::Belezaki::SchedulingTools.definitions(include_booking: true)
-  end
 
-  # The salon id comes from the CONNECTION, not from resolving the account again:
-  # the whole point of freezing it is that a re-link can never move a live agent
-  # onto somebody else's agenda mid-conversation.
-  def belezaki_executor
-    @belezaki_executor ||= Ai::Belezaki::SchedulingTools.new(
-      Ai::Belezaki::AgentClient.new(external_id: belezaki_connection.external_id),
-      scope: "conv-#{@conversation.id}",
-      contact: { name: @conversation.contact&.name, phone: @conversation.contact&.phone_number },
-      connection: belezaki_connection,
-      # So a booking the salon confirms can be attributed to the conversation
-      # that produced it, instead of leaving no trace on our side at all.
-      conversation: @conversation
-    )
-  end
 
   def run_own_tool_loop(messages, executor)
     loop_service = Ai::Agent::ToolLoopService.new(
