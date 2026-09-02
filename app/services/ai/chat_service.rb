@@ -14,7 +14,7 @@ class Ai::ChatService
   # de fora.
   include Ai::KnowledgeGrounding
 
-  CHARACTER_BUDGET = 32_000
+  STYLE_RULE = 'Responda em português brasileiro com frases curtas e claras. Não use markdown excessivo.'.freeze
 
   def initialize(thread:, user_message:)
     @thread = thread
@@ -52,13 +52,18 @@ class Ai::ChatService
     )
   end
 
+  # Segmentos, e não uma string: Ai::ClaudeService manda string crua SEM cache
+  # nenhum, e o loop reenvia o prompt inteiro a cada iteração. O prefixo estável
+  # (papel + estilo) vai primeiro para ganhar o breakpoint de cache; o que muda
+  # a cada pergunta — o retrato da conversa do cliente e o conhecimento
+  # recuperado, juntos milhares de caracteres — fica no fim, onde o loop também
+  # o cacheia por alguns segundos em vez de recomprá-lo em cada volta.
   def build_system_prompt
-    [
-      role_lock,
-      'Responda em português brasileiro com frases curtas e claras. Não use markdown excessivo.',
-      conversation_snapshot,
-      knowledge_snippets
-    ].compact.join("\n\n")
+    [role_lock, STYLE_RULE, dynamic_context].compact
+  end
+
+  def dynamic_context
+    [conversation_snapshot, knowledge_snippets].compact.join("\n\n").presence
   end
 
   # Hard role-lock. Without this the copilot inherits the customer-facing

@@ -11,18 +11,38 @@ RSpec.describe Ai::ChatService do
 
   before { allow(Ai::ClaudeService).to receive(:new).and_return(claude) }
 
-  it 'locks the copilot role and drops the customer sales tone' do
+  def capture_system(message: 'olá consegue me ajudar?')
     captured = nil
     allow(claude).to receive(:chat) do |**kwargs|
       captured = kwargs[:system]
       { content: 'No que posso ajudar?', model: 'claude' }
     end
+    described_class.new(thread: thread, user_message: message).perform
+    captured
+  end
 
-    described_class.new(thread: thread, user_message: 'olá consegue me ajudar?').perform
+  it 'locks the copilot role and drops the customer sales tone' do
+    prompt = capture_system.join("\n\n")
 
-    expect(captured).to include('COPILOTO INTERNO')
-    expect(captured).to include('NUNCA com o cliente')
-    expect(captured).not_to include('foco em conversão')
+    expect(prompt).to include('COPILOTO INTERNO')
+    expect(prompt).to include('NUNCA com o cliente')
+    expect(prompt).not_to include('foco em conversão')
+  end
+
+  # Segmentos e não string: Ai::ClaudeService manda string crua sem cache
+  # nenhum, e o loop reenvia o prompt inteiro a cada iteração. O papel é igual
+  # todo turno e tem que ficar ANTES do que muda, senão o breakpoint de cache
+  # cai no lugar errado e o prefixo é recomprado inteiro a cada volta.
+  it 'manda o prompt em segmentos, com o papel estável na frente' do
+    Ai::Training.create!(account: account, ai_assistant: assistant, title: 'Tabela',
+                         content: 'Progressiva Premium: R$ 189,90.', source_type: 'text',
+                         category: 'catalog', status: 'ready')
+
+    segments = capture_system(message: 'quanto custa a progressiva premium?')
+
+    expect(segments).to be_an(Array)
+    expect(segments.first).to include('COPILOTO INTERNO')
+    expect(segments.last).to include('R$ 189,90')
   end
 
   it 'persists the user and assistant messages' do
