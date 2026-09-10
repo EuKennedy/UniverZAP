@@ -77,7 +77,7 @@ export const validateAuthenticateRoutePermission = async (to, next, from) => {
   // home IS the route being visited, which would otherwise redirect a
   // navigation to itself, forever.
   if (!needsOnboarding && isEnteringTheProduct(to, from)) {
-    const home = sidebarHomeRoute(router, routeAccountId);
+    const home = sidebarHomeRoute(router, routeAccountId, user);
     if (home && home.name !== to.name) return next(home);
   }
 

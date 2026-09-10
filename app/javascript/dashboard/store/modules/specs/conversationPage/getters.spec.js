@@ -27,6 +27,17 @@ describe('#getters', () => {
     expect(getters.getCurrentPageFilter(state)('all')).toEqual(3);
   });
 
+  // The fork's attendance tabs (Aguardando, Em atendimento, Grupos) are not
+  // keys of this state. Undefined here became `undefined + 1` = NaN at the call
+  // site, every request asked for page NaN, the server answered page 1 for
+  // ever, and loadMore never stopped firing.
+  it('getCurrentPageFilter starts a tab it never heard of at zero', () => {
+    const state = { currentPage: { me: 1 } };
+
+    expect(getters.getCurrentPageFilter(state)('waiting')).toEqual(0);
+    expect(getters.getCurrentPageFilter(state)('waiting') + 1).toEqual(1);
+  });
+
   it('getHasEndReached', () => {
     const state = {
       hasEndReached: {

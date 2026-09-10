@@ -47,6 +47,18 @@ RSpec.describe Ai::Agent::Toolset do
       expect(names(described_class.new(assistant: assistant))).not_to include('agendar')
     end
 
+    # A extração para cá perdeu o `conversation:` que o AutopilotReplyService
+    # passava, e um agendamento gravado sem ele não deixa rastro nenhum do nosso
+    # lado: o salão confirma a venda e não há como dizer de qual conversa ela veio.
+    it 'atribui o agendamento à conversa que o produziu' do
+      allow(Ai::Belezaki::SchedulingTools).to receive(:new).and_call_original
+
+      described_class.new(assistant: assistant, conversation: conversation).executor.definitions
+
+      expect(Ai::Belezaki::SchedulingTools).to have_received(:new)
+        .with(anything, hash_including(conversation: conversation))
+    end
+
     # O id congelado é o ponto: resolver a conta de novo a cada resposta é o que
     # poderia mover um agente vivo para a agenda de outro salão.
     it 'monta o cliente pelo id da conexão, e não resolvendo a conta' do

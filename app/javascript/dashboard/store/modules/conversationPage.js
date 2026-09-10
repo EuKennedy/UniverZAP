@@ -18,8 +18,17 @@ export const getters = {
   getHasEndReached: $state => filter => {
     return $state.hasEndReached[filter];
   },
+  // Zero for a tab this state was never told about. The fork added the
+  // attendance tabs (Aguardando, Em atendimento, Grupos) as assignee tabs but
+  // not as keys here, so the page came back undefined, `currentPage + 1` was
+  // NaN, and every request asked the server for page NaN — which answers with
+  // page 1, for ever. The list never grew past the first page, so neither
+  // hasLoadedAllForTab nor the empty-page end marker could ever fire, and the
+  // IntersectionObserver refired loadMore without end: one open tab hammering
+  // the backend in a loop. A default here covers every tab, including the next
+  // one somebody adds without finding this file.
   getCurrentPageFilter: $state => filter => {
-    return $state.currentPage[filter];
+    return $state.currentPage[filter] ?? 0;
   },
   getCurrentPage: $state => {
     return $state.currentPage;
