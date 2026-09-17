@@ -500,6 +500,10 @@ Rails.application.routes.draw do
             # cannot answer the question an account with several of them has:
             # which one is worth the money.
             resource :report, only: [:show], controller: 'reports'
+            # O Guia: o agente que responde dúvidas sobre o próprio produto. Fica
+            # fora de `assistants` de propósito — ninguém edita o prompt dele — e
+            # nasce na primeira vez que alguém abre a ajuda.
+            resource :wiki, only: [:show], controller: 'wiki'
             # Ready-made agents per vertical: the answer to the blank system
             # prompt that stops a new operator from ever finishing setup.
             resources :assistant_templates, only: [:index, :show]
