@@ -209,7 +209,7 @@ class Account < ApplicationRecord
   end
 
   def seed_default_athenas_assistant
-    return if ai_assistants.exists?
+    return if ai_assistants.attendance.exists?
 
     ai_assistants.create!(
       name: 'Sofia',

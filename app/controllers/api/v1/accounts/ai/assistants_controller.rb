@@ -10,6 +10,7 @@ class Api::V1::Accounts::Ai::AssistantsController < Api::V1::Accounts::BaseContr
     # (trainings/intents/invocations) don't fire N+3 queries per assistant
     # when the index returns dozens of rows.
     @assistants = Current.account.ai_assistants
+                         .attendance
                          .order(:name)
                          .left_joins(:trainings, :intents, :invocations)
                          .select(

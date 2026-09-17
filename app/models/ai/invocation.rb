@@ -29,7 +29,7 @@ class Ai::Invocation < ApplicationRecord
   # aqui, e o spec de contrato de cada serviço existe para lembrar disso.
   PHASES = %w[
     main classifier router summary summarize suggest autopilot rewrite chat copilot_chat replay transcription
-    moderation
+    moderation wiki_chat
   ].freeze
   STATUSES = %w[success error].freeze
   # Delivery of the customer-facing reply this call produced. NULL on calls that

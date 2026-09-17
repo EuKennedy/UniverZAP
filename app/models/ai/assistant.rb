@@ -98,6 +98,12 @@ class Ai::Assistant < ApplicationRecord
   validates :tone, inclusion: { in: TONES }, allow_blank: true
 
   scope :active, -> { where(active: true) }
+  # Os agentes que a operação gerencia. O Guia do wiki mora na mesma tabela mas
+  # não é um deles: ninguém edita o prompt dele, ele não entra em inbox nenhuma,
+  # e listá-lo junto o faria virar o padrão do copiloto só por vir primeiro na
+  # ordenação por nome.
+  scope :attendance, -> { where(purpose: 'attendance') }
+  scope :wiki, -> { where(purpose: 'wiki') }
 
   def resolved_anthropic_key
     encrypted_anthropic_key.presence || ENV.fetch('ANTHROPIC_API_KEY', nil)

@@ -5,6 +5,26 @@ require 'rails_helper'
 RSpec.describe Ai::ClaudeService do
   let(:service) { described_class.new(assistant: nil, account: nil) }
 
+  # Perguntar como usar o produto é suporte nosso, não uso de IA do cliente:
+  # cobrar por isso faria o cliente pensar duas vezes antes de pedir ajuda.
+  describe 'fases que não consomem o saldo do tenant' do
+    it 'não cobra a conversa com o Guia do wiki' do
+      expect(service.send(:billable?, 'wiki_chat')).to be(false)
+    end
+
+    it 'cobra tudo o mais, inclusive o copiloto do atendente' do
+      expect(service.send(:billable?, 'copilot_chat')).to be(true)
+      expect(service.send(:billable?, 'autopilot')).to be(true)
+    end
+
+    # A fase precisa estar na lista de Ai::Invocation, senão a gravação falha por
+    # validação e o log_success engole a exceção: o custo, que é NOSSO, apareceria
+    # como zero e ninguém confere um custo que não existe.
+    it 'grava a invocação mesmo sem cobrar' do
+      expect(Ai::Invocation::PHASES).to include('wiki_chat')
+    end
+  end
+
   # Anthropic charges a cached prefix at a tenth of the input price, but only
   # when it arrives as system BLOCKS carrying a cache breakpoint.
   describe 'prompt caching' do

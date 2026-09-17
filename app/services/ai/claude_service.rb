@@ -8,6 +8,13 @@ class Ai::ClaudeService
   # the whole turn later instead of dropping the customer's message.
   class TransientError < Error; end
 
+  # Fases que NÃO consomem o saldo do tenant. Perguntar como usar o produto é
+  # suporte nosso, não uso de IA do cliente: cobrar por isso faria o cliente
+  # pensar duas vezes antes de pedir ajuda, que é o oposto do motivo de existir.
+  # A invocação continua sendo GRAVADA — o custo é real e é nosso, e uma linha de
+  # auditoria que some é um custo que ninguém confere depois.
+  UNBILLED_PHASES = %w[wiki_chat].freeze
+
   API_BASE = 'https://api.anthropic.com'.freeze
   API_VERSION = '2023-06-01'.freeze
 
@@ -24,7 +31,7 @@ class Ai::ClaudeService
     raise Error, 'Anthropic API key not configured' if api_key.blank?
 
     payload = build_payload(messages, system, overrides)
-    check_quota!(payload)
+    check_quota!(payload) if billable?(phase)
     context = { conversation: conversation, phase: phase, log: log_context }
     started_at = Time.zone.now
     response = perform_request(api_key, payload)
@@ -278,8 +285,13 @@ class Ai::ClaudeService
     )
   end
 
+  def billable?(phase)
+    UNBILLED_PHASES.exclude?(phase.to_s)
+  end
+
   def debit_credits(invocation, model, tokens, cents_brl)
     return if @account.blank? || cents_brl.zero?
+    return unless billable?(invocation&.phase)
 
     Ai::CreditLedger.new(@account).debit!(
       invocation: invocation,
