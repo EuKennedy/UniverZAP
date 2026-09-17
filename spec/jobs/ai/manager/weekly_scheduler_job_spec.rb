@@ -5,7 +5,7 @@ RSpec.describe Ai::Manager::WeeklySchedulerJob do
   # desligar TODOS é o que monta o caso do salão visto em produção.
   def account_with_all_agents_off
     account = create(:account)
-    account.ai_assistants.update_all(active: false)
+    account.ai_assistants.find_each { |assistant| assistant.update!(active: false) }
     account
   end
 
