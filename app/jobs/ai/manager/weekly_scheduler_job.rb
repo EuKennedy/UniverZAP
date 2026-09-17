@@ -15,8 +15,15 @@
 class Ai::Manager::WeeklySchedulerJob < ApplicationJob
   queue_as :scheduled_jobs
 
+  # TODA conta que tem agente, ligado ou não — a mesma regra que
+  # Ai::Manager::AnalysisService#audited_assistants aplica lá dentro, e pelo mesmo
+  # motivo documentado nela: o furo de produção foi uma conta cujo único agente
+  # ATIVO não tinha inbox nenhuma, enquanto os dois que atendiam de verdade
+  # estavam desligados. Filtrar por `active` aqui em cima refazia exatamente esse
+  # furo um nível antes — a conta nem chegava a ter rodada, e o operador abria a
+  # tela sem saber se o Gerente não achou nada ou nunca foi chamado.
   def perform
-    Ai::Assistant.active.distinct.pluck(:account_id).uniq.each do |account_id|
+    Ai::Assistant.distinct.pluck(:account_id).uniq.each do |account_id|
       Ai::Manager::AnalysisJob.perform_later(account_id, 'schedule')
     end
   end
