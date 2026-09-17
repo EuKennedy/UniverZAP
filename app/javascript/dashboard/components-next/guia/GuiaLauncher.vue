@@ -20,6 +20,8 @@ import { useUISettings } from 'dashboard/composables/useUISettings';
 import { emitter } from 'shared/helpers/mitt';
 import AthenasAPI from 'dashboard/api/athenas';
 import Icon from 'next/icon/Icon.vue';
+import { toRichParts } from './richText';
+import { useDraggableCorner } from './useDraggableCorner';
 import { useOnboardingState } from 'dashboard/composables/useOnboardingState';
 import { ONBOARDING_TOUR_EVENTS } from 'dashboard/components-next/onboarding/onboardingSteps';
 
@@ -35,6 +37,11 @@ const threadId = ref(null);
 const assistantId = ref(null);
 const isSending = ref(false);
 const scrollerRef = useTemplateRef('scrollerRef');
+
+// Arrastar para sair da frente. A estrela mora no canto onde muita tela põe
+// botão, e uma ajuda que impede o clique de quem estava trabalhando é estorvo,
+// não ajuda.
+const { offsetStyle, isDragging, onPointerDown } = useDraggableCorner();
 
 // Some nas telas onde ninguém está usando o produto ainda.
 const isHidden = computed(() =>
@@ -57,6 +64,9 @@ const scrollToBottom = async () => {
 };
 
 const toggle = () => {
+  // Soltar o botão depois de arrastar dispara um clique. Sem esta guarda, tirar
+  // a estrela da frente abre o painel bem em cima do que ela estava tapando.
+  if (isDragging.value) return;
   isOpen.value = !isOpen.value;
 };
 
@@ -136,7 +146,11 @@ const openCopilot = () => {
 </script>
 
 <template>
-  <div v-if="!isHidden" class="fixed bottom-4 z-50 ltr:right-4 rtl:left-4">
+  <div
+    v-if="!isHidden"
+    class="fixed bottom-4 z-50 ltr:right-4 rtl:left-4"
+    :style="offsetStyle"
+  >
     <Transition
       enter-active-class="motion-safe:transition-all motion-safe:duration-200"
       enter-from-class="opacity-0 translate-y-2 scale-95"
@@ -206,7 +220,13 @@ const openCopilot = () => {
                   : 'bg-n-alpha-2 text-n-slate-12'
               "
             >
-              {{ message.content }}
+              <template
+                v-for="(part, index) in toRichParts(message.content)"
+                :key="index"
+              >
+                <strong v-if="part.bold">{{ part.text }}</strong>
+                <template v-else>{{ part.text }}</template>
+              </template>
             </p>
           </div>
 
@@ -264,9 +284,11 @@ const openCopilot = () => {
 
     <button
       type="button"
-      class="grid rounded-full shadow-lg ring-1 transition-all size-12 place-content-center bg-gradient-to-br from-n-teal-9 to-n-teal-10 text-white ring-white/10 hover:brightness-110"
+      class="grid text-white rounded-full ring-1 shadow-lg transition-all size-12 place-content-center bg-gradient-to-br from-n-teal-9 to-n-teal-10 ring-white/10 hover:brightness-110 touch-none"
+      :class="isDragging ? 'cursor-grabbing scale-105' : 'cursor-grab'"
       :aria-label="t('GUIA.OPEN')"
       data-testid="guia-launcher"
+      @pointerdown="onPointerDown"
       @click="toggle"
     >
       <Icon icon="i-lucide-sparkles" class="size-5" />
