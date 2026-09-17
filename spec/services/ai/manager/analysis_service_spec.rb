@@ -181,8 +181,11 @@ RSpec.describe Ai::Manager::AnalysisService do
     end
   end
 
-  # Amostra pequena não vira conclusão fraca, vira recusa com o número que falta.
-  describe 'a recusa por amostra pequena' do
+  # Amostra pequena não vira conclusão fraca: a NOTA fica retida com o número que
+  # falta, e a auditoria acontece do mesmo jeito. Prender as duas coisas no mesmo
+  # `if` foi o que deixou o operador olhando uma fila vazia enquanto havia
+  # promessa solta em quatro das cinco conversas que ele teve.
+  describe 'a amostra pequena demais para a nota' do
     before { traffic(conversations: 5, promises: 4) }
 
     it 'recusa concluir e diz quantas conversas faltam' do
@@ -198,8 +201,11 @@ RSpec.describe Ai::Manager::AnalysisService do
       expect(service.perform.status).to eq('done')
     end
 
-    it 'não escreve sugestão nenhuma' do
-      expect { service.perform }.not_to change(Ai::Manager::Suggestion, :count)
+    # Esta regra era o defeito, e estava escrita aqui como se fosse garantia. A
+    # amostra pequena desqualifica a NOTA, não o achado: o operador precisa ver
+    # a promessa solta que aconteceu nas cinco conversas que ele teve.
+    it 'escreve a sugestão assim mesmo, porque o achado não depende da nota' do
+      expect { service.perform }.to change(Ai::Manager::Suggestion, :count).by(1)
     end
   end
 
