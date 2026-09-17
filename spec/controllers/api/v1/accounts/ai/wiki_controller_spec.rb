@@ -52,6 +52,6 @@ RSpec.describe 'Api::V1::Accounts::Ai::WikiController', type: :request do
   it 'não semeia o Guia da conta alheia ao ser sondado por quem é de fora' do
     stranger = create(:user, account: create(:account), role: :administrator)
 
-    expect { fetch(stranger) }.not_to change { account.ai_assistants.wiki.count }
+    expect { fetch(stranger) }.not_to(change { account.ai_assistants.wiki.count })
   end
 end
