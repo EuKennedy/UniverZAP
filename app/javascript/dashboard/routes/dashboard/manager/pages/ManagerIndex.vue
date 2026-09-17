@@ -61,6 +61,32 @@ const nextRunAt = computed(() => formatMoment(overview.value?.next_run_at));
 
 const pendingCount = computed(() => suggestions.value.length);
 
+// Zero conversa auditada não é "passei e não achei nada": é não ter passado por
+// nada. A tela dizia a primeira frase nas duas situações, e o operador lia isso
+// como um atestado de que estava tudo certo.
+const analysedNone = computed(() => (sufficiency.value.analysed || 0) === 0);
+
+const emptyTitle = computed(() =>
+  analysedNone.value
+    ? t('AI_MANAGER.QUEUE.EMPTY_TITLE_NONE')
+    : t('AI_MANAGER.QUEUE.EMPTY_TITLE')
+);
+const emptyBody = computed(() =>
+  analysedNone.value
+    ? t('AI_MANAGER.QUEUE.EMPTY_BODY_NONE')
+    : t('AI_MANAGER.QUEUE.EMPTY_BODY')
+);
+
+// O agendador parado é informação, não detalhe. Enquanto a data da próxima era
+// calculada como "última + 7 dias", uma semana perdida congelava a tela numa
+// data já vencida e nada denunciava que a varredura automática tinha morrido.
+const overdueLine = computed(() => {
+  if (!overview.value?.schedule_overdue) return null;
+  return lastRunAt.value
+    ? t('AI_MANAGER.SCHEDULE_OVERDUE', { last: lastRunAt.value })
+    : t('AI_MANAGER.SCHEDULE_OVERDUE_NEVER');
+});
+
 // Uma frase montada aqui e não dois pedaços colados no template com um ponto
 // no meio: em português a segunda metade só funciona depois de vírgula, e
 // separador solto no meio de duas datas é lixo para quem usa leitor de tela.
@@ -156,6 +182,13 @@ onMounted(fetchAll);
         >
           {{ scheduleLine }}
         </p>
+        <p
+          v-if="overdueLine"
+          class="m-0 text-[12px] text-n-amber-11 sm:text-right"
+          data-testid="run-overdue"
+        >
+          {{ overdueLine }}
+        </p>
       </div>
     </header>
 
@@ -230,10 +263,10 @@ onMounted(fetchAll);
             <span class="i-lucide-check-check size-6 text-n-teal-11" />
           </span>
           <h2 class="m-0 text-[15px] font-medium text-n-slate-12">
-            {{ t('AI_MANAGER.QUEUE.EMPTY_TITLE') }}
+            {{ emptyTitle }}
           </h2>
           <p class="m-0 max-w-sm text-[13px] leading-relaxed text-n-slate-11">
-            {{ t('AI_MANAGER.QUEUE.EMPTY_BODY') }}
+            {{ emptyBody }}
           </p>
           <p
             class="m-0 text-[12px] tabular-nums text-n-slate-11"

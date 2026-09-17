@@ -99,13 +99,17 @@ RSpec.describe Ai::Manager::AnalysisService do
       )
     end
 
-    it 'mostra de quem era o material quando recusa por amostra pequena' do
+    # O piso governa a NOTA, e nada além dela. Ele chegou a abortar a rodada antes
+    # de qualquer verificação: cinco conversas com quatro promessas soltas é um
+    # problema real, e escondê-lo até a conta chegar a vinte transformou a tela
+    # num aviso de espera em vez de uma lista do que saiu errado.
+    it 'audita e entrega o achado mesmo com amostra pequena demais para a nota' do
       traffic(conversations: 5, promises: 4)
 
       summary = service.perform.summary
 
       expect(summary['insufficient_data']).to be(true)
-      expect(summary['agents'].first).to include('conversations' => 5, 'suggestions' => 0)
+      expect(summary['agents'].first).to include('conversations' => 5, 'suggestions' => 1)
     end
 
     it 'conta as sugestões por agente, e não só o total' do

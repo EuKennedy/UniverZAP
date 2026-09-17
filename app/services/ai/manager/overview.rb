@@ -7,6 +7,10 @@
 # completamente diferentes na vida, e a tela precisa poder dizer qual das duas
 # está mostrando sem uma segunda requisição que pode não chegar.
 class Ai::Manager::Overview
+  # A hora do cron em config/schedule.yml ('0 4 * * 1'). Os dois têm que andar
+  # juntos: é daqui que a tela tira a data que promete ao operador.
+  SCHEDULE_HOUR = 4
+
   def initialize(account:, period: nil)
     @account = account
     @requested_period = period || Ai::Reports::Period.from_days(Ai::Manager::AnalysisService::WINDOW_DAYS)
@@ -18,6 +22,7 @@ class Ai::Manager::Overview
       agents: agents,
       last_run_at: last_run_at&.to_i,
       next_run_at: next_run_at&.to_i,
+      schedule_overdue: schedule_overdue?,
       pending_count: pending_count,
       data_sufficiency: data_sufficiency
     }
@@ -50,16 +55,22 @@ class Ai::Manager::Overview
     last_run&.finished_at
   end
 
-  # Contada da última varredura AUTOMÁTICA, e não da última qualquer. A cadência
-  # que esta data promete é a do cron semanal, e um "rodar agora" numa quarta não
-  # move o agendador: somar sete dias em cima dele faria o painel prometer quarta
-  # que vem para uma varredura que vai acontecer na segunda.
-  #
-  # Nulo enquanto nunca rodou sozinho, de propósito. Antes da primeira varredura
-  # automática não existe de onde contar a próxima, e devolver "daqui a sete
-  # dias" seria a tela prometendo uma data que o agendador não conhece.
+  # Vem do CRON, e não da última rodada. Somar sete dias sobre a última varredura
+  # automática congela a tela no passado assim que UMA semana é perdida: o painel
+  # anunciou "próxima em 31 de agosto" no dia 17 de setembro, que é a tela
+  # contando ao operador uma data que já passou e escondendo que o agendador
+  # tinha parado. O cron é a única fonte que sabe quando a próxima acontece.
   def next_run_at
-    last_scheduled_at && (last_scheduled_at + Ai::Manager::AnalysisService::CADENCE)
+    now = Time.current
+    monday = now.beginning_of_week(:monday).change(hour: SCHEDULE_HOUR)
+    monday > now ? monday : monday + Ai::Manager::AnalysisService::CADENCE
+  end
+
+  # O agendador parou, e a tela tem que dizer isso em vez de mostrar uma data
+  # bonita. Verdadeiro quando nenhuma varredura automática terminou dentro de uma
+  # cadência inteira — inclusive quando nunca houve uma.
+  def schedule_overdue?
+    last_scheduled_at.nil? || last_scheduled_at < Time.current - Ai::Manager::AnalysisService::CADENCE
   end
 
   def last_scheduled_at

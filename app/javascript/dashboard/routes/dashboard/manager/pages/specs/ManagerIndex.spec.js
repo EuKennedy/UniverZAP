@@ -239,4 +239,34 @@ describe('ManagerIndex.vue', () => {
     expect(wrapper.find('[data-testid="checks-stub"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="empty-queue"]').exists()).toBe(false);
   });
+
+  // A tela dizia "o Gerente passou pelas conversas e não encontrou nada" numa
+  // rodada que não olhou conversa nenhuma. O operador lia isso como atestado de
+  // que estava tudo certo, e era só ausência de material.
+  it('does not claim it read the conversations when it read none', async () => {
+    overview.mockResolvedValue({
+      data: anOverview({
+        data_sufficiency: { enough: false, analysed: 0, needed: 20 },
+      }),
+    });
+
+    const wrapper = mountPage();
+    await flushPromises();
+
+    const empty = wrapper.find('[data-testid="empty-queue"]').text();
+    expect(empty).toContain('AI_MANAGER.QUEUE.EMPTY_BODY_NONE');
+  });
+
+  // Uma data futura correta sozinha esconderia o que importa: o agendador está
+  // parado e só o "Rodar agora" vem funcionando.
+  it('says out loud when the automatic analysis stopped running', async () => {
+    overview.mockResolvedValue({
+      data: anOverview({ schedule_overdue: true }),
+    });
+
+    const wrapper = mountPage();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="run-overdue"]').exists()).toBe(true);
+  });
 });

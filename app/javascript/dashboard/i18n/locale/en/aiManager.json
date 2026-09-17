@@ -37,7 +37,9 @@
     },
     "QUEUE": {
       "EMPTY_TITLE": "Nothing waiting on you",
-      "EMPTY_BODY": "The Manager went through the conversations and found nothing that needs your decision right now."
+      "EMPTY_BODY": "The Manager went through the conversations and found nothing that needs your decision right now.",
+      "EMPTY_TITLE_NONE": "No conversation to audit yet",
+      "EMPTY_BODY_NONE": "The Manager audits the conversations the AI agent replied to, and there were none in this window. Attendance handled only by people does not appear here."
     },
     "RUN": {
       "ACTION": "Run now",
@@ -167,6 +169,8 @@
       "READ_FAILED": "The AI read failed on {n} conversations, so cards may be missing here. Reason: {reason}",
       "READ_SKIPPED": "The AI read did not run in this scan, so only rule-detected cases show up. Reason: {reason}",
       "SCAN_CAPPED": "The scan hit the conversation cap for this period. People waiting come first, but to see the rest pick a shorter window and run again."
-    }
+    },
+    "SCHEDULE_OVERDUE": "The automatic analysis has not run since {last}. Use \"Run now\" in the meantime.",
+    "SCHEDULE_OVERDUE_NEVER": "The automatic analysis has never run. Use \"Run now\" in the meantime."
   }
 }

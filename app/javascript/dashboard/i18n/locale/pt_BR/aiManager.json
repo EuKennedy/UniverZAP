@@ -37,7 +37,9 @@
     },
     "QUEUE": {
       "EMPTY_TITLE": "Nada esperando por você",
-      "EMPTY_BODY": "O Gerente passou pelas conversas e não encontrou nada que precise da sua decisão agora."
+      "EMPTY_BODY": "O Gerente passou pelas conversas e não encontrou nada que precise da sua decisão agora.",
+      "EMPTY_TITLE_NONE": "Nenhuma conversa para auditar ainda",
+      "EMPTY_BODY_NONE": "O Gerente audita as conversas que o agente de IA respondeu, e não houve nenhuma nesta janela. Atendimento feito só por pessoas não entra aqui."
     },
     "RUN": {
       "ACTION": "Rodar agora",
@@ -167,6 +169,8 @@
       "READ_FAILED": "A leitura por IA falhou em {n} conversas e por isso pode faltar cartão aqui. Motivo: {reason}",
       "READ_SKIPPED": "A leitura por IA não rodou nesta varredura, então só os casos detectados por regra aparecem. Motivo: {reason}",
       "SCAN_CAPPED": "A varredura bateu no teto de conversas do período. Quem está esperando entra primeiro, mas para ver o resto escolha uma janela menor e rode de novo."
-    }
+    },
+    "SCHEDULE_OVERDUE": "A análise automática não roda desde {last}. Use \"Rodar agora\" enquanto isso.",
+    "SCHEDULE_OVERDUE_NEVER": "A análise automática ainda não rodou nenhuma vez. Use \"Rodar agora\" enquanto isso."
   }
 }

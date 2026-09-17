@@ -61,14 +61,19 @@ class Ai::Manager::AnalysisService
   # inteira. Contar 36 conversas da conta e varrer um agente que teve zero é
   # como o resumo passou a afirmar "analisei 36 conversas e não achei nada" sem
   # ter olhado uma linha sequer.
+  # As verificações rodam SEMPRE. O piso governa a NOTA e nada além dela: ele
+  # chegou a abortar a rodada antes de qualquer verificação, e o resultado foi
+  # uma tela que dizia "passei pelas conversas e não achei nada" tendo se
+  # recusado a olhar uma linha. Pior: UngroundedNumber e PromisedTimeMismatch
+  # são críticas justamente por dispararem com UMA ocorrência — um preço
+  # inventado no WhatsApp é promessa comercial — e eram as que o piso mais
+  # escondia, porque bastava a conta não ter chegado a vinte conversas.
   def analyse(run)
     audited = audited_assistants
     analysed = scope.conversations_count_for(audited.map(&:id))
-    return refuse(run, analysed, audited) if analysed < MIN_CONVERSATIONS
-
     checks = Ai::Manager::Checks.enabled_for(@account)
     breakdown = audited.map { |assistant| agent_row(assistant, audit(run, assistant, checks)) }
-    finish(run, analysed, breakdown)
+    finish(run, analysed, breakdown, insufficient: analysed < MIN_CONVERSATIONS)
   end
 
   # Quem TRABALHOU na janela, e não quem está ligado.
@@ -104,34 +109,29 @@ class Ai::Manager::AnalysisService
     }
   end
 
-  # Terminou certa e não concluiu nada. Fica `done` e não `failed` porque nada
-  # quebrou: uma conta nova precisa ler "faltam 14 conversas" e não uma tela
-  # vermelha dizendo que a auditoria falhou.
-  def refuse(run, analysed, audited)
-    run.update!(
-      status: 'done', finished_at: Time.current, conversations_analysed: analysed, cost_cents_brl: 0,
-      summary: {
-        'insufficient_data' => true, 'analysed' => analysed,
-        'needed' => MIN_CONVERSATIONS, 'missing' => MIN_CONVERSATIONS - analysed,
-        'agents' => audited.map { |assistant| agent_row(assistant, 0) }
-      }
-    )
-  end
-
   # O custo gravado é o mesmo número que a tela mostrou antes de rodar, e hoje
   # os dois são zero porque nenhuma verificação da v1 chama modelo. No dia em que
   # uma chamar, este campo tem que passar a ler o consumido de verdade: uma
   # estimativa gravada como fato é exatamente o tipo de número que ninguém
   # confere depois.
-  def finish(run, analysed, breakdown)
+  # `insufficient` fica no resumo como RÓTULO da nota, e não como desfecho da
+  # rodada: a varredura aconteceu, os achados existem, e o que a amostra pequena
+  # não sustenta é a porcentagem — não o preço inventado que a verificação achou.
+  def finish(run, analysed, breakdown, insufficient: false)
+    summary = {
+      'insufficient_data' => insufficient, 'analysed' => analysed,
+      'suggestions_created' => breakdown.sum { |row| row['suggestions'] },
+      'agents' => breakdown
+    }
+    if insufficient
+      summary['needed'] = MIN_CONVERSATIONS
+      summary['missing'] = MIN_CONVERSATIONS - analysed
+    end
+
     run.update!(
       status: 'done', finished_at: Time.current, conversations_analysed: analysed,
       cost_cents_brl: Ai::Manager::CostEstimator.new(account: @account, scope: scope).cents,
-      summary: {
-        'insufficient_data' => false, 'analysed' => analysed,
-        'suggestions_created' => breakdown.sum { |row| row['suggestions'] },
-        'agents' => breakdown
-      }
+      summary: summary
     )
   end
 
