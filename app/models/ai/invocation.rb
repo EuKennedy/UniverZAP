@@ -31,6 +31,17 @@ class Ai::Invocation < ApplicationRecord
     main classifier router summary summarize suggest autopilot rewrite chat copilot_chat replay transcription
     moderation wiki_chat
   ].freeze
+  # Fases que NÃO consomem o saldo do tenant. Perguntar como usar o produto é
+  # suporte nosso, não uso de IA do cliente: cobrar por isso faria o cliente
+  # pensar duas vezes antes de pedir ajuda, que é o oposto do motivo de existir.
+  # A linha continua sendo gravada — o custo é real e é NOSSO, e custo sem
+  # auditoria é custo que ninguém confere depois.
+  UNBILLED_PHASES = %w[wiki_chat].freeze
+
+  def self.billable?(phase)
+    UNBILLED_PHASES.exclude?(phase.to_s)
+  end
+
   STATUSES = %w[success error].freeze
   # Delivery of the customer-facing reply this call produced. NULL on calls that
   # never had a delivery of their own (tool-loop iterations, summaries).
