@@ -26,6 +26,7 @@ import inbox from './inbox.json';
 import inboxMgmt from './inboxMgmt.json';
 import athenas from './athenas.json';
 import aiManager from './aiManager.json';
+import guia from './guia.json';
 import integrationApps from './integrationApps.json';
 import kanban from './kanban.json';
 import integrations from './integrations.json';
@@ -81,6 +82,7 @@ export default {
   ...inboxMgmt,
   ...athenas,
   ...aiManager,
+  ...guia,
   ...integrationApps,
   ...kanban,
   ...integrations,

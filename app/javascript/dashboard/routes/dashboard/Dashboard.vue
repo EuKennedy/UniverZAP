@@ -20,10 +20,9 @@ const FloatingCallWidget = defineAsyncComponent(
   () => import('dashboard/components/widgets/FloatingCallWidget.vue')
 );
 
-import CopilotLauncher from 'dashboard/components-next/copilot/CopilotLauncher.vue';
 import CopilotContainer from 'dashboard/components/copilot/AthenasCopilotContainer.vue';
 import OnboardingLauncher from 'dashboard/components-next/onboarding/OnboardingLauncher.vue';
-import OnboardingHelpLauncher from 'dashboard/components-next/onboarding/OnboardingHelpLauncher.vue';
+import GuiaLauncher from 'dashboard/components-next/guia/GuiaLauncher.vue';
 import TaskNotificationToast from 'dashboard/components-next/tasksNotifications/TaskNotificationToast.vue';
 import OnboardingTour from 'dashboard/components-next/onboarding/OnboardingTour.vue';
 import OnboardingContextualOrchestrator from 'dashboard/components-next/onboarding/OnboardingContextualOrchestrator.vue';
@@ -47,12 +46,11 @@ export default {
     WootKeyShortcutModal,
     AddAccountModal,
     UpgradePage,
-    CopilotLauncher,
     CopilotContainer,
     FloatingCallWidget,
     MobileSidebarLauncher,
     OnboardingLauncher,
-    OnboardingHelpLauncher,
+    GuiaLauncher,
     TaskNotificationToast,
     OnboardingTour,
     OnboardingContextualOrchestrator,
@@ -184,14 +182,13 @@ export default {
       <template v-if="!showUpgradePage">
         <router-view />
         <CommandBar />
-        <CopilotLauncher />
         <MobileSidebarLauncher
           :is-mobile-sidebar-open="isMobileSidebarOpen"
           @toggle="toggleMobileSidebar"
         />
         <CopilotContainer />
         <OnboardingLauncher />
-        <OnboardingHelpLauncher />
+        <GuiaLauncher />
         <TaskNotificationToast />
         <OnboardingTour />
         <OnboardingContextualOrchestrator />

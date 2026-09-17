@@ -48,6 +48,12 @@ class AthenasAssistantsAPI extends ApiClient {
     });
   }
 
+  // O Guia da conta. Ele fica fora da listagem de agentes de propósito — a
+  // operação não gerencia ele — e nasce na primeira vez que alguém pede ajuda.
+  getWikiAssistant() {
+    return axios.get(`${this.baseUrl()}/ai/wiki`);
+  }
+
   getThread(threadId) {
     return axios.get(`${this.baseUrl()}/ai/chat_threads/${threadId}`);
   }

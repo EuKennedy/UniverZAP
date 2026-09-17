@@ -1,0 +1,23 @@
+{
+  "GUIA": {
+    "TITLE": "Guide",
+    "SUBTITLE": "Ask how to use UniverZAP",
+    "OPEN": "Open the Guide",
+    "CLOSE": "Close",
+    "SEND": "Send",
+    "PLACEHOLDER": "Ask anything about the system…",
+    "THINKING": "Looking through the documentation…",
+    "THREAD_TITLE": "Help with the system",
+    "EMPTY": "I have read the UniverZAP documentation. Ask where something lives, or start with one of these:",
+    "SUGGESTIONS": {
+      "WHATSAPP": "How do I connect my WhatsApp?",
+      "CAMPAIGN": "How do I send a campaign?",
+      "CHATFLOW": "What is Chatflow for?"
+    },
+    "ACTIONS": {
+      "COPILOT": "Talk to my agents",
+      "TOUR": "Replay the tour",
+      "DOCS": "Documentation"
+    }
+  }
+}
