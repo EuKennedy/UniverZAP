@@ -64,7 +64,7 @@ RSpec.describe Ai::Agent::ToolLoopService do
     # perguntou.
     it 'força a resposta final em vez de entrar na próxima iteração' do
       allow(claude).to receive(:chat).and_return(
-        costing(described_class::MAX_TURN_CENTS_BRL + 1),
+        costing(Ai::Agent::TurnBudget::MAX_CENTS_BRL + 1),
         costing(10, tool_use: false)
       )
 
@@ -196,8 +196,9 @@ RSpec.describe Ai::Agent::ToolLoopService do
 
     before do
       # A negative budget puts the deadline in the past, so the very first tool
-      # result already lands over time.
-      stub_const("#{described_class}::TURN_BUDGET_SECONDS", -1)
+      # result already lands over time. O orçamento mora em Ai::Agent::TurnBudget
+      # desde que tempo e dinheiro viraram a mesma régua.
+      stub_const('Ai::Agent::TurnBudget::SECONDS', -1)
       responses = [
         { content: '', tool_uses: [tool_use], stop_reason: 'tool_use', raw: { 'content' => [] } },
         { content: 'Com o que tenho aqui, temos progressiva.', tool_uses: [], stop_reason: 'end_turn' }

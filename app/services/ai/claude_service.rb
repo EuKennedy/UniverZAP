@@ -78,7 +78,6 @@ class Ai::ClaudeService
     }.compact
   end
 
-
   def pick(*candidates)
     candidates.compact.first
   end

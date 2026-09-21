@@ -118,7 +118,11 @@ RSpec.describe Ai::ChatService do
   # chamava o Claude direto, sem `tools:` e sem loop. Ele perguntava o código de
   # rastreio ao atendente em vez de consultar, por não ter com o quê.
   describe 'as ferramentas do agente' do
-    let(:loop_service) { instance_double(Ai::Agent::ToolLoopService) }
+    # O serviço lê o gasto do turno depois do perform, para gravar tokens e reais
+    # na mensagem — um dublê sem esses dois não representa mais o colaborador.
+    let(:loop_service) do
+      instance_double(Ai::Agent::ToolLoopService, spent_cents: 12.5, spent_tokens: [900, 120])
+    end
 
     before do
       Ai::CustomTool.create!(ai_assistant: assistant, account: account, title: 'Rastreio',
