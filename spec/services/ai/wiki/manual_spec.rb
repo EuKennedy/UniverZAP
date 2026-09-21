@@ -3,6 +3,15 @@ require 'rails_helper'
 RSpec.describe Ai::Wiki::Manual do
   subject(:sections) { described_class.sections }
 
+  # O manual INTEIRO viaja em toda pergunta do Guia, no bloco cacheado — não há
+  # mais recuperação escolhendo pedaços, então o teto que importa é o do
+  # conjunto, e não o de cada seção. Sem ele, alguém cola um tratado no /docs e
+  # toda pergunta sobre o Chatflow passa a carregar isso junto.
+  #
+  # Ai::KnowledgeGrounding::KNOWLEDGE_BUDGET_CHARS é a régua de referência: o
+  # dobro dela ainda é barato num prefixo que o cache cobre.
+  let(:manual_budget_chars) { 12_000 }
+
   it 'lê as seções da mesma página que /docs serve' do
     expect(sections.map(&:slug)).to include('whatsapp', 'campanhas', 'kanban')
   end
@@ -37,15 +46,6 @@ RSpec.describe Ai::Wiki::Manual do
   it 'deixa de fora o changelog e o suporte' do
     expect(sections.map(&:slug)).not_to include('versoes', 'suporte')
   end
-
-  # O manual INTEIRO viaja em toda pergunta do Guia, no bloco cacheado — não há
-  # mais recuperação escolhendo pedaços, então o teto que importa é o do
-  # conjunto, e não o de cada seção. Sem ele, alguém cola um tratado no /docs e
-  # toda pergunta sobre o Chatflow passa a carregar isso junto.
-  #
-  # Ai::KnowledgeGrounding::KNOWLEDGE_BUDGET_CHARS é a régua de referência: o
-  # dobro dela ainda é barato num prefixo que o cache cobre.
-  let(:manual_budget_chars) { 12_000 }
 
   it 'mantém o manual inteiro dentro do orçamento' do
     expect(sections.sum { |section| section.body.length }).to be <= manual_budget_chars
