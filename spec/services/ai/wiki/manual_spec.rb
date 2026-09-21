@@ -45,10 +45,10 @@ RSpec.describe Ai::Wiki::Manual do
   #
   # Ai::KnowledgeGrounding::KNOWLEDGE_BUDGET_CHARS é a régua de referência: o
   # dobro dela ainda é barato num prefixo que o cache cobre.
-  MANUAL_BUDGET_CHARS = 12_000
+  let(:manual_budget_chars) { 12_000 }
 
   it 'mantém o manual inteiro dentro do orçamento' do
-    expect(sections.sum { |section| section.body.length }).to be <= MANUAL_BUDGET_CHARS
+    expect(sections.sum { |section| section.body.length }).to be <= manual_budget_chars
   end
 
   # Uma seção sozinha maior que o manual inteiro de antes é sinal de que alguém
