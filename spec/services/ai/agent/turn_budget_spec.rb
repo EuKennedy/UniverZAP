@@ -2,8 +2,10 @@ require 'rails_helper'
 
 RSpec.describe Ai::Agent::TurnBudget do
   def response(cents, input: 1000, output: 200)
-    { invocation: instance_double(Ai::Invocation, cost_brl: cents / 100.0,
-                                                 input_tokens: input, output_tokens: output) }
+    invocation = instance_double(
+      Ai::Invocation, cost_brl: cents / 100.0, input_tokens: input, output_tokens: output
+    )
+    { invocation: invocation }
   end
 
   it 'nasce com tudo disponível' do
