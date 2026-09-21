@@ -225,6 +225,7 @@
           <p class="nav-eyebrow">Atendimento</p>
           <a href="#inbox">Caixa de entrada</a>
           <a href="#whatsapp">WhatsApp</a>
+          <a href="#whatsapp-waha">Conectar WhatsApp (WAHA)</a>
           <a href="#contatos">Contatos</a>
         </div>
         <div class="nav-group">
@@ -336,6 +337,21 @@
         <div class="callout warn"><span class="ic">⚠️</span><p>Em canais WAHA, menus saem como <strong>texto numerado</strong> — botões e listas interativas só existem na Cloud API oficial.</p></div>
         <h3>Coexistência</h3>
         <p>Desde 2025 o mesmo número pode rodar o app do WhatsApp Business <em>e</em> a Cloud API simultaneamente (coexistência Meta). Útil para migrar de WAHA para oficial sem perder o número.</p>
+      </section>
+
+      <section id="whatsapp-waha">
+        <h2>Conectar WhatsApp não oficial (WAHA)</h2>
+        <ol class="steps">
+          <li>Vá em <code>Configurações → Caixas de entrada → Adicionar</code> e escolha <strong>WhatsApp</strong>.</li>
+          <li>Em provedor, escolha <strong>WhatsApp - API Não Oficial</strong>.</li>
+          <li>Escolha <strong>Criar nova sessão</strong> (número novo) ou <strong>Conectar sessão existente</strong> (a sessão já existe no seu servidor WAHA).</li>
+          <li>Preencha o <strong>Nome da sessão</strong> — este é obrigatório. Use algo curto e sem espaço, como <code>time-vendas</code>.</li>
+          <li>O <strong>Nome da caixa de entrada</strong> é opcional: deixando em branco, ela recebe o nome da sessão. É só o nome que aparece na sua lista, como <code>WhatsApp Vendas</code>.</li>
+          <li>Clique em <strong>Gerar QR code</strong>.</li>
+          <li>No celular, abra o WhatsApp e vá em <code>Configurações → Dispositivos conectados → Conectar dispositivo</code>. Escaneie o código da tela.</li>
+          <li>Espere aparecer <strong>Sessão conectada</strong> e clique em <strong>Concluir configuração</strong>.</li>
+        </ol>
+        <div class="callout tip"><span class="ic">💡</span><p>O QR code expira. Se ele vencer antes de você escanear, volte e gere outro — não adianta insistir no antigo.</p></div>
       </section>
 
       <section id="contatos">
