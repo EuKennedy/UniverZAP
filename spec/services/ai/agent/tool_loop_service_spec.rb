@@ -32,6 +32,62 @@ RSpec.describe Ai::Agent::ToolLoopService do
     expect(result[:content]).to eq('Temos progressiva e botox.')
   end
 
+  # O orçamento de tempo sozinho não segura gasto: seis iterações rápidas custam
+  # mais que uma lenta, e o que cresce a cada volta é o transcript — toda
+  # iteração reenvia tudo que as anteriores mandaram mais o que elas colheram.
+  describe 'o teto de dinheiro do turno' do
+    def costing(cents, tool_use: true)
+      invocation = instance_double(Ai::Invocation, cost_brl: cents / 100.0, input_tokens: 1000, output_tokens: 200)
+      base = { content: '', invocation: invocation, raw: { 'content' => [] } }
+      return base.merge(tool_uses: [], stop_reason: 'end_turn') unless tool_use
+
+      base.merge(tool_uses: [{ 'id' => 'tu', 'name' => 'listar_servicos', 'input' => {} }], stop_reason: 'tool_use')
+    end
+
+    before { allow(executor).to receive(:call).and_return('{"services":[]}') }
+
+    it 'soma o gasto de todas as chamadas do turno' do
+      allow(claude).to receive(:chat).and_return(costing(120), costing(80, tool_use: false))
+
+      service = described_class.new(
+        assistant: assistant, conversation: conversation, messages: messages,
+        system: 'sys', tools: tools, tool_executor: executor
+      )
+      service.perform
+
+      expect(service.spent_cents).to eq(200)
+      expect(service.spent_tokens).to eq([2000, 400])
+    end
+
+    # Estourado, sai pelo mesmo caminho do tempo esgotado: uma última chamada com
+    # tool_choice `none`. Resposta degradada em vez de erro na cara de quem
+    # perguntou.
+    it 'força a resposta final em vez de entrar na próxima iteração' do
+      allow(claude).to receive(:chat).and_return(
+        costing(described_class::MAX_TURN_CENTS_BRL + 1),
+        costing(10, tool_use: false)
+      )
+
+      described_class.new(
+        assistant: assistant, conversation: conversation, messages: messages,
+        system: 'sys', tools: tools, tool_executor: executor
+      ).perform
+
+      expect(claude).to have_received(:chat).with(hash_including(tool_choice: { type: 'none' }))
+    end
+
+    it 'não corta um turno barato' do
+      allow(claude).to receive(:chat).and_return(costing(10), costing(10, tool_use: false))
+
+      described_class.new(
+        assistant: assistant, conversation: conversation, messages: messages,
+        system: 'sys', tools: tools, tool_executor: executor
+      ).perform
+
+      expect(claude).not_to have_received(:chat).with(hash_including(tool_choice: { type: 'none' }))
+    end
+  end
+
   it 'returns immediately when Claude needs no tools' do
     allow(claude).to receive(:chat).and_return({ content: 'Oi!', tool_uses: [], stop_reason: 'end_turn' })
 

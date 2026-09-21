@@ -54,6 +54,17 @@ class Ai::Agent::ToolLoopService
   # WhatsApp will tolerate.
   TURN_BUDGET_SECONDS = 90
 
+  # Teto de dinheiro do TURNO, em centavos de real. O orçamento de tempo sozinho
+  # não segura gasto: seis iterações rápidas custam mais que uma lenta, e o
+  # que cresce a cada volta é o transcript — toda iteração reenvia tudo que as
+  # anteriores mandaram MAIS os resultados que elas colheram.
+  #
+  # Checado ENTRE iterações e não antes da primeira: um turno tem que produzir
+  # resposta. Estourado, sai pelo mesmo caminho do tempo esgotado — uma última
+  # chamada com tool_choice `none`, resposta degradada em vez de erro na cara de
+  # quem perguntou.
+  MAX_TURN_CENTS_BRL = 500
+
   def initialize(assistant:, conversation:, messages:, system:, tools:, tool_executor:, phase: 'autopilot', log_context: nil) # rubocop:disable Metrics/ParameterLists
     @assistant = assistant
     @conversation = conversation
@@ -67,7 +78,17 @@ class Ai::Agent::ToolLoopService
     @log_context = log_context
     @tool_calls = []
     @tool_results = []
+    @spent_cents = 0.0
+    @spent_tokens = [0, 0]
   end
+
+  # Quanto este turno custou, somando TODAS as chamadas — as iterações, a forçada
+  # e a final. Legível depois de #perform, para a tela poder mostrar o preço da
+  # resposta que acabou de chegar.
+  attr_reader :spent_cents
+
+  # [entrada, saída] somados no turno inteiro.
+  attr_reader :spent_tokens
 
   # Readable after #perform, so the caller can show or log what ran.
   attr_reader :tool_calls
@@ -107,7 +128,7 @@ class Ai::Agent::ToolLoopService
       return finish(last) if Array(last[:tool_uses]).empty?
 
       feed_tool_results(last)
-      return finish(final_answer) if out_of_budget?
+      return finish(final_answer) if out_of_budget? || out_of_money?
     end
     log_max_iterations
     finish(last)
@@ -208,11 +229,11 @@ class Ai::Agent::ToolLoopService
   # over-promises still beats no reply at all.
   def force_tool_use(draft)
     log_forced_tool_use
-    claude.chat(
+    charge(claude.chat(
       messages: @messages, system: @system, conversation: @conversation,
       phase: @phase, tools: @tools, tool_choice: { type: 'any' },
       log_context: @log_context, cache_messages: true
-    )
+    ))
   rescue Ai::ClaudeService::Error => e
     Rails.logger.warn("[Athenas agent] forced tool call failed conv=#{@conversation&.display_id}: #{e.message}")
     draft
@@ -233,6 +254,30 @@ class Ai::Agent::ToolLoopService
     monotonic_now >= @deadline
   end
 
+  def out_of_money?
+    return false if @spent_cents < MAX_TURN_CENTS_BRL
+
+    Rails.logger.warn(
+      "[Athenas agent] teto de R$ #{MAX_TURN_CENTS_BRL / 100} estourado no turno " \
+      "conv=#{@conversation&.display_id} assistant=#{@assistant.id} gasto=#{@spent_cents.round}c"
+    )
+    true
+  end
+
+  # Toda chamada passa por aqui, inclusive a forçada e a final: elas acontecem
+  # FORA da contagem das seis iterações e gastam igual.
+  def charge(response)
+    invocation = response&.dig(:invocation)
+    return response if invocation.nil?
+
+    @spent_cents += invocation.cost_brl.to_f * 100
+    @spent_tokens = [
+      @spent_tokens.first + invocation.input_tokens.to_i,
+      @spent_tokens.last + invocation.output_tokens.to_i
+    ]
+    response
+  end
+
   # The budget ran out with tool results already in hand. One last call with
   # tool_choice `none`: Claude cannot ask for another round, so it has to answer
   # with what it has. A degraded answer beats the silence the customer got
@@ -241,11 +286,11 @@ class Ai::Agent::ToolLoopService
   # definitions.
   def final_answer
     log_budget_exhausted
-    claude.chat(
+    charge(claude.chat(
       messages: @messages, system: @system, conversation: @conversation,
       phase: @phase, tools: @tools, tool_choice: { type: 'none' },
       log_context: @log_context, cache_messages: true
-    )
+    ))
   end
 
   def log_budget_exhausted
@@ -256,7 +301,7 @@ class Ai::Agent::ToolLoopService
   end
 
   def run_turn
-    response = claude.chat(
+    response = charge(claude.chat(
       messages: @messages, system: @system, conversation: @conversation,
       phase: @phase, tools: @tools, log_context: @log_context,
       # Each iteration re-sends everything the previous ones did, plus the tool
@@ -264,7 +309,7 @@ class Ai::Agent::ToolLoopService
       # run seconds apart, so caching the prefix turns that re-send into a read
       # at a tenth of the price.
       cache_messages: true
-    )
+    ))
     @log_context = follow_up_context
     response
   end

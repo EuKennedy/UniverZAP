@@ -24,6 +24,8 @@ class Ai::ChatService
     # widget aberta fora de uma conversa é legítima.
     @conversation = thread.conversation
     @user_message = user_message.to_s.strip
+    @turn_cents = 0.0
+    @turn_tokens = [0, 0]
   end
 
   def perform
@@ -44,12 +46,34 @@ class Ai::ChatService
     @thread.chat_messages.create!(role: 'user', content: @user_message)
   end
 
+  # Os números do turno vão junto da resposta. O painel mostra tokens e reais em
+  # letra pequena embaixo do que o Guia respondeu — sem isso, quem paga a conta
+  # só descobre o custo no fim do mês, quando não dá mais para relacionar o
+  # número a nenhuma pergunta.
   def persist_assistant_message(response)
     @thread.chat_messages.create!(
       role: 'assistant',
       content: response[:content].to_s,
-      model: response[:model]
+      model: response[:model],
+      input_tokens: @turn_tokens.first,
+      output_tokens: @turn_tokens.last,
+      cost_brl: (@turn_cents / 100.0).round(4),
+      cost_usd: response[:invocation]&.cost_usd.to_f
     )
+  end
+
+  # Um turno com ferramenta são VÁRIAS chamadas, então o preço é a soma delas —
+  # ler só a última contaria a chamada mais barata e esconderia o loop inteiro.
+  def record_usage(loop_service: nil, response: nil)
+    if loop_service
+      @turn_cents = loop_service.spent_cents
+      @turn_tokens = loop_service.spent_tokens
+    else
+      invocation = response&.dig(:invocation)
+      @turn_cents = invocation&.cost_brl.to_f * 100
+      @turn_tokens = [invocation&.input_tokens.to_i, invocation&.output_tokens.to_i]
+    end
+    response
   end
 
   # Segmentos, e não uma string: Ai::ClaudeService manda string crua SEM cache
@@ -157,25 +181,40 @@ class Ai::ChatService
     executor = toolset.executor
     return plain_chat unless executor.any?
 
-    Ai::Agent::ToolLoopService.new(
+    loop_service = Ai::Agent::ToolLoopService.new(
       assistant: @assistant, conversation: @conversation,
       messages: build_messages, system: build_system_prompt,
-      tools: executor.definitions, tool_executor: executor, phase: 'copilot_chat'
-    ).perform
+      tools: executor.definitions, tool_executor: executor, phase: phase
+    )
+    response = loop_service.perform
+    record_usage(loop_service: loop_service)
+    response
   end
 
   def plain_chat
-    Ai::ClaudeService.new(assistant: @assistant).chat(
-      messages: build_messages, system: build_system_prompt,
-      conversation: @conversation, phase: 'copilot_chat'
+    record_usage(
+      response: Ai::ClaudeService.new(assistant: @assistant).chat(
+        messages: build_messages, system: build_system_prompt,
+        conversation: @conversation, phase: phase
+      )
     )
   end
 
   # A thread do widget pode não ter conversa. O Toolset trata isso: entrega as
   # ferramentas customizadas assim mesmo e deixa a agenda de fora, porque
   # agendar sem contato é o agendamento órfão que CustomerPhone documenta.
+  # O copiloto é uso de IA do cliente e entra na conta dele. O Guia é suporte ao
+  # produto, e Ai::Invocation::UNBILLED_PHASES tira wiki_chat do débito — estava
+  # tudo indo como copilot_chat, então o Guia vinha cobrando do tenant apesar da
+  # fase existir justamente para isso não acontecer.
+  def phase
+    wiki? ? 'wiki_chat' : 'copilot_chat'
+  end
+
   def toolset
-    @toolset ||= Ai::Agent::Toolset.new(assistant: @assistant, conversation: @conversation)
+    @toolset ||= Ai::Agent::Toolset.new(
+      assistant: @assistant, conversation: @conversation, user: @thread.user
+    )
   end
 
   # A pergunta que importa é a que o ATENDENTE acabou de fazer, não a última

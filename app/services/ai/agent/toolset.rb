@@ -21,9 +21,12 @@
 # agendamento sem telefone é exatamente a falha que Ai::Belezaki::CustomerPhone
 # documenta: agenda duplicada, confirmação morrendo em silêncio.
 class Ai::Agent::Toolset
-  def initialize(assistant:, conversation: nil)
+  def initialize(assistant:, conversation: nil, user: nil)
     @assistant = assistant
     @conversation = conversation
+    # Quem está perguntando. Só o Guia usa: rodar uma análise gasta crédito da
+    # conta, e essa é a mesma permissão que o botão da tela exige.
+    @user = user
   end
 
   # Um CompositeExecutor com tudo que este agente pode fazer agora.
@@ -35,9 +38,21 @@ class Ai::Agent::Toolset
 
   def parts
     list = []
+    list << [wiki_executor.definitions, wiki_executor] if wiki?
     list << [custom_tool_executor.definitions, custom_tool_executor] if custom_tools.any?
     list.concat(agenda_parts)
     list
+  end
+
+  # O Guia não tem conversa nenhuma — ele fala do produto, não de um cliente — e
+  # as ferramentas dele são da CONTA. Se dependessem de conversa como a agenda,
+  # ele nunca entraria no loop e continuaria só recitando o manual.
+  def wiki?
+    @assistant.purpose == 'wiki'
+  end
+
+  def wiki_executor
+    @wiki_executor ||= Ai::Wiki::Tools.new(account: @assistant.account, user: @user)
   end
 
   # Exatamente UMA agenda, decidida pelo modelo e não por dois ramos

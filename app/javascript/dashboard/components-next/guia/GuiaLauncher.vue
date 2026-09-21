@@ -57,6 +57,21 @@ const suggestions = computed(() => [
   t('GUIA.SUGGESTIONS.CHATFLOW'),
 ]);
 
+// Só na resposta do Guia, e só quando houve consumo: a mensagem que a pessoa
+// escreveu não tem custo, e um "0 tokens · R$ 0,00" embaixo de tudo seria ruído.
+const usageLabel = message => {
+  if (message.role !== 'assistant') return null;
+  const tokens = (message.input_tokens || 0) + (message.output_tokens || 0);
+  if (!tokens) return null;
+
+  const price = (message.cost_brl || 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 4,
+  });
+  return `${tokens.toLocaleString('pt-BR')} tokens · ${price}`;
+};
+
 const scrollToBottom = async () => {
   await nextTick();
   const el = scrollerRef.value;
@@ -212,22 +227,34 @@ const openCopilot = () => {
             class="flex"
             :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
           >
-            <p
-              class="m-0 px-3 py-2 max-w-[85%] text-sm leading-relaxed whitespace-pre-wrap rounded-2xl"
-              :class="
-                message.role === 'user'
-                  ? 'bg-n-teal-9 text-white'
-                  : 'bg-n-alpha-2 text-n-slate-12'
-              "
-            >
-              <template
-                v-for="(part, index) in toRichParts(message.content)"
-                :key="index"
+            <div class="flex flex-col max-w-[85%]">
+              <p
+                class="m-0 px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap rounded-2xl"
+                :class="
+                  message.role === 'user'
+                    ? 'bg-n-teal-9 text-white'
+                    : 'bg-n-alpha-2 text-n-slate-12'
+                "
               >
-                <strong v-if="part.bold">{{ part.text }}</strong>
-                <template v-else>{{ part.text }}</template>
-              </template>
-            </p>
+                <template
+                  v-for="(part, index) in toRichParts(message.content)"
+                  :key="index"
+                >
+                  <strong v-if="part.bold">{{ part.text }}</strong>
+                  <template v-else>{{ part.text }}</template>
+                </template>
+              </p>
+              <!-- O preço da resposta que acabou de chegar. Sem isto quem paga a
+                conta só descobre o custo no fim do mês, quando não dá mais para
+                ligar o número a nenhuma pergunta. -->
+              <span
+                v-if="usageLabel(message)"
+                class="mt-1 text-[10px] tabular-nums text-n-slate-10"
+                data-testid="guia-usage"
+              >
+                {{ usageLabel(message) }}
+              </span>
+            </div>
           </div>
 
           <p v-if="isSending" class="m-0 text-xs text-n-slate-11">

@@ -24,6 +24,7 @@ class Ai::ChatMessage < ApplicationRecord
       input_tokens: input_tokens,
       output_tokens: output_tokens,
       cost_usd: cost_usd,
+      cost_brl: cost_brl,
       model: model,
       created_at: created_at.to_i
     }

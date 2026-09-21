@@ -29,13 +29,11 @@ class Ai::ClaudeService
     started_at = Time.zone.now
     response = perform_request(api_key, payload)
     track(response: response, payload: payload, started_at: started_at, context: context)
-  rescue Error
-    raise
-  # Saldo estourado tem tela própria — o base_controller responde 402 e o painel
-  # abre o modal de recarga. Sem este resgate a exceção caía no `rescue
-  # StandardError` abaixo, virava um Error genérico, e o cliente recebia 422 com
-  # texto cru em vez da tela de recarga que já existe pronta.
-  rescue Ai::CreditLedger::QuotaExhaustedError
+  # QuotaExhaustedError junto: saldo estourado tem tela própria — o
+  # base_controller responde 402 e o painel abre o modal de recarga. Sem estar
+  # aqui ela caía no `rescue StandardError` abaixo, virava um Error genérico, e o
+  # cliente recebia 422 com texto cru em vez da tela de recarga já pronta.
+  rescue Error, Ai::CreditLedger::QuotaExhaustedError
     raise
   rescue *RETRYABLE_NET_ERRORS => e
     # Retries inside the request are exhausted, but the failure is still a blip:
@@ -52,10 +50,15 @@ class Ai::ClaudeService
   # Cap the worst-case cost pre-flight using `max_tokens` from the payload. The
   # actual invocation is debited post-flight against real usage so customers
   # never pay for tokens Claude didn't emit.
+  #
+  # A entrada é MEDIDA e não chutada. O padrão de 1.500 tokens fixos da
+  # QuotaService cabia num classificador, mas um turno que carrega manual,
+  # conhecimento e resultados de ferramenta passa longe disso — a estimativa
+  # dava sempre o mesmo número baixo, e o teto nunca barrava nada.
   def check_quota!(payload)
     return if @account.blank?
 
-    Ai::QuotaService.check!(account: @account, model: payload[:model], max_output_tokens: payload[:max_tokens])
+    Ai::QuotaService.check!(account: @account, model: payload[:model], max_output_tokens: payload[:max_tokens], payload: payload)
   end
 
   def build_payload(messages, system, overrides)
@@ -74,6 +77,7 @@ class Ai::ClaudeService
       tool_choice: overrides[:tool_choice]
     }.compact
   end
+
 
   def pick(*candidates)
     candidates.compact.first

@@ -15,11 +15,29 @@ class Ai::QuotaService
   EXPECTED_INPUT_TOKENS_DEFAULT = 1_500
   DEFAULT_DAILY_USD_CAP = 50.0
 
-  def self.check!(account:, model: nil, max_output_tokens: 1_024, expected_input_tokens: EXPECTED_INPUT_TOKENS_DEFAULT)
+  # Quatro caracteres por token: a regra de bolso da própria Anthropic, e o
+  # bastante para um teto. Contar de verdade custaria uma ida a mais à API só
+  # para decidir se vale fazer a ida principal.
+  #
+  # Sem isto o teto era cego: EXPECTED_INPUT_TOKENS_DEFAULT cabe num
+  # classificador, mas um turno que carrega manual, conhecimento e resultado de
+  # ferramenta passa muito disso — a estimativa dava sempre o mesmo número baixo
+  # e nenhuma requisição era barrada por tamanho.
+  CHARS_PER_TOKEN = 4
+
+  def self.estimate_input_tokens(payload)
+    text = [payload[:system], payload[:messages], payload[:tools]].compact.to_s
+    (text.length / CHARS_PER_TOKEN).clamp(EXPECTED_INPUT_TOKENS_DEFAULT, 1_000_000)
+  end
+
+  # `payload:` faz a entrada ser MEDIDA em vez de chutada. Quem passa só os
+  # tokens esperados continua funcionando igual.
+  def self.check!(account:, model: nil, max_output_tokens: 1_024,
+                  expected_input_tokens: EXPECTED_INPUT_TOKENS_DEFAULT, payload: nil)
     new(account: account).check!(
       model: model,
       max_output_tokens: max_output_tokens,
-      expected_input_tokens: expected_input_tokens
+      expected_input_tokens: payload ? estimate_input_tokens(payload) : expected_input_tokens
     )
   end
 
