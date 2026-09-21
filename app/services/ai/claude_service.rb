@@ -31,6 +31,12 @@ class Ai::ClaudeService
     track(response: response, payload: payload, started_at: started_at, context: context)
   rescue Error
     raise
+  # Saldo estourado tem tela própria — o base_controller responde 402 e o painel
+  # abre o modal de recarga. Sem este resgate a exceção caía no `rescue
+  # StandardError` abaixo, virava um Error genérico, e o cliente recebia 422 com
+  # texto cru em vez da tela de recarga que já existe pronta.
+  rescue Ai::CreditLedger::QuotaExhaustedError
+    raise
   rescue *RETRYABLE_NET_ERRORS => e
     # Retries inside the request are exhausted, but the failure is still a blip:
     # let a background caller re-run the turn later.

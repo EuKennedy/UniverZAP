@@ -29,6 +29,67 @@ RSpec.describe Ai::ChatService do
     expect(prompt).not_to include('foco em conversão')
   end
 
+  # O Guia é outro agente dentro do mesmo serviço: ele fala do PRODUTO com quem
+  # usa o sistema, não da conversa do cliente com a atendente.
+  describe 'o Guia do wiki' do
+    let(:guia) do
+      create(:ai_assistant, account: account, purpose: 'wiki',
+                            system_prompt: 'Você é o Guia, o assistente do UniverZAP.')
+    end
+    let(:guia_thread) do
+      Ai::ChatThread.create!(account: account, user: user, ai_assistant: guia, title: 'Ajuda')
+    end
+
+    def manual!(title, content)
+      Ai::Training.create!(account: account, ai_assistant: guia, title: title, content: content,
+                           source_type: 'text', category: 'base', status: 'ready')
+    end
+
+    def capture_guia_system(message: 'como conecto o whatsapp?')
+      captured = nil
+      allow(claude).to receive(:chat) do |**kwargs|
+        captured = kwargs[:system]
+        { content: 'Configurações → Caixas de entrada', model: 'claude' }
+      end
+      described_class.new(thread: guia_thread, user_message: message).perform
+      captured
+    end
+
+    # O prompt do Guia mora em Ai::Wiki::Seeder e era descartado: ele recebia o
+    # papel do copiloto e era mandado falar de uma conversa de cliente que não
+    # existe na tela dele.
+    it 'usa o prompt do próprio agente, e não o papel do copiloto' do
+      prompt = capture_guia_system.join("\n\n")
+
+      expect(prompt).to include('Você é o Guia')
+      expect(prompt).not_to include('COPILOTO INTERNO')
+    end
+
+    # O manual inteiro são ~7.400 caracteres e a recuperação entregava ~3.300,
+    # com boa parte de seção irrelevante: o ranking não tem limiar e preenche as
+    # 8 vagas de qualquer jeito.
+    it 'manda o manual inteiro, e não só o que a busca escolheu' do
+      manual!('WhatsApp', 'Para conectar o WAHA, gere o QR code.')
+      manual!('Campanhas', 'Dispare por template aprovado.')
+
+      prompt = capture_guia_system(message: 'qualquer coisa').join("\n\n")
+
+      expect(prompt).to include('gere o QR code').and include('template aprovado')
+    end
+
+    # O manual é igual em toda pergunta, então tem que ficar no bloco cacheado —
+    # que é tudo menos o último segmento. Na cauda sobra a regra de estilo, de
+    # duas linhas.
+    it 'deixa o manual no bloco que o cache cobre' do
+      manual!('WhatsApp', 'Para conectar o WAHA, gere o QR code.')
+
+      segments = capture_guia_system
+
+      expect(segments[0..-2].join("\n\n")).to include('gere o QR code')
+      expect(segments.last).to eq(described_class::STYLE_RULE)
+    end
+  end
+
   # Segmentos e não string: Ai::ClaudeService manda string crua sem cache
   # nenhum, e o loop reenvia o prompt inteiro a cada iteração. O papel é igual
   # todo turno e tem que ficar ANTES do que muda, senão o breakpoint de cache

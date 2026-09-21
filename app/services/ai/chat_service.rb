@@ -53,17 +53,51 @@ class Ai::ChatService
   end
 
   # Segmentos, e não uma string: Ai::ClaudeService manda string crua SEM cache
-  # nenhum, e o loop reenvia o prompt inteiro a cada iteração. O prefixo estável
-  # (papel + estilo) vai primeiro para ganhar o breakpoint de cache; o que muda
-  # a cada pergunta — o retrato da conversa do cliente e o conhecimento
-  # recuperado, juntos milhares de caracteres — fica no fim, onde o loop também
-  # o cacheia por alguns segundos em vez de recomprá-lo em cada volta.
+  # nenhum, e o loop reenvia o prompt inteiro a cada iteração.
+  #
+  # A ordem decide o preço. Ai::ClaudeService cacheia TUDO menos o último
+  # segmento, então o que é igual em toda pergunta tem que vir antes dele.
+  #
+  # Para o copiloto o último é o contexto da conversa, que muda a cada turno e
+  # por isso não poderia ser cacheado mesmo. Para o Guia não existe nada volátil:
+  # o manual é o mesmo sempre, então ele vai para o bloco cacheado e quem sobra
+  # na cauda é a regra de estilo, que tem duas linhas — pagar preço cheio por ela
+  # é irrelevante, e pagar preço cheio pelo manual em toda pergunta não era.
   def build_system_prompt
+    return [role_lock, manual, STYLE_RULE].compact if wiki?
+
     [role_lock, STYLE_RULE, dynamic_context].compact
   end
 
+  # O papel de quem está falando. Dois agentes diferentes moram neste serviço: o
+  # copiloto, que fala da conversa do CLIENTE com a atendente, e o Guia, que fala
+  # do PRODUTO com quem o usa. O prompt do Guia é escrito em Ai::Wiki::Seeder e
+  # era descartado aqui — ele recebia o role_lock do copiloto e era instruído a
+  # falar de uma conversa de cliente que não existe na tela dele.
+  def role_lock
+    wiki? ? @assistant.system_prompt.to_s : copilot_role_lock
+  end
+
+  def wiki?
+    @assistant.purpose == 'wiki'
+  end
+
+  # O manual INTEIRO, e no prefixo estável. São 18 seções que somam ~7.400
+  # caracteres, e a recuperação devolvia ~3.300 deles — dos quais uns 2.700 eram
+  # seções irrelevantes, porque o ranking não tem limiar e preenche as 8 vagas de
+  # qualquer jeito. Mandar tudo custa pouco mais em token cru e MUITO menos na
+  # conta: o manual é igual em toda pergunta, então entra no bloco cacheado a um
+  # décimo do preço, enquanto o recuperado mudava a cada turno e era recomprado
+  # inteiro. De quebra some o motivo de o Guia não saber algo que está escrito.
   def dynamic_context
     [conversation_snapshot, knowledge_snippets].compact.join("\n\n").presence
+  end
+
+  def manual
+    docs = @assistant.trainings.ready.order(:id).map { |doc| "## #{doc.title}\n#{doc.content}" }
+    return nil if docs.empty?
+
+    "DOCUMENTAÇÃO DO UNIVERZAP:\n\n#{docs.join("\n\n")}"
   end
 
   # Hard role-lock. Without this the copilot inherits the customer-facing
@@ -72,7 +106,7 @@ class Ai::ChatService
   # "olá, consegue me ajudar?" with a revenda sales pitch it hallucinated
   # from a random training doc. The copilot talks to the agent, never to
   # the customer, and must not assume a topic.
-  def role_lock
+  def copilot_role_lock
     <<~ROLE.strip
       Você é #{@assistant.name}, o COPILOTO INTERNO do atendente humano. Você conversa COM O ATENDENTE (um colega da equipe), NUNCA com o cliente final.
 

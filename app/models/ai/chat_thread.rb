@@ -29,8 +29,18 @@ class Ai::ChatThread < ApplicationRecord
   scope :for_conversation, ->(conversation_id) { where(conversation_id: conversation_id) }
   scope :recent, -> { order(last_activity_at: :desc) }
 
+  # `reorder`, nunca `order`: a associação acima já carrega `order(created_at:
+  # :asc)`, e um `.order(:desc)` encadeado só ACRESCENTA uma segunda chave — a
+  # ascendente continua decidindo, o LIMIT devolve as mensagens mais ANTIGAS e o
+  # `.reverse` entrega a thread de trás para frente.
+  #
+  # O efeito era o Guia repetindo a resposta: a ÚLTIMA entrada do array, que é a
+  # que o modelo responde, passava a ser a pergunta mais VELHA da conversa. A
+  # pessoa perguntava outra coisa e recebia de novo, palavra por palavra, a
+  # resposta anterior. A mesma armadilha está documentada em
+  # Ai::KnowledgeGrounding#knowledge_query, corrigida do mesmo jeito.
   def recent_messages_for_llm
-    chat_messages.order(created_at: :desc).limit(RECENT_MESSAGE_WINDOW).reverse
+    chat_messages.reorder(created_at: :desc, id: :desc).limit(RECENT_MESSAGE_WINDOW).reverse
   end
 
   def archive!
