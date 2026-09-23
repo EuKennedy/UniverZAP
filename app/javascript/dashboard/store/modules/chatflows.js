@@ -71,26 +71,28 @@ export const actions = {
   activate: async ({ commit }, id) => {
     const { data } = await ChatflowsAPI.activate(id);
     commit('upsertChatflow', data);
+    commit('patchActiveChatflow', data);
     return data;
   },
 
   archive: async ({ commit }, id) => {
     const { data } = await ChatflowsAPI.archive(id);
     commit('upsertChatflow', data);
+    commit('patchActiveChatflow', data);
     return data;
   },
 
   test: async ({ commit }, { id, phone }) => {
     const { data } = await ChatflowsAPI.test(id, phone);
     commit('upsertChatflow', data);
-    commit('setActiveChatflow', data);
+    commit('patchActiveChatflow', data);
     return data;
   },
 
   stopTest: async ({ commit }, id) => {
     const { data } = await ChatflowsAPI.stopTest(id);
     commit('upsertChatflow', data);
-    commit('setActiveChatflow', data);
+    commit('patchActiveChatflow', data);
     return data;
   },
 
@@ -149,6 +151,21 @@ export const mutations = {
       nodes: data.nodes || [],
       edges: data.edges || [],
     };
+  },
+
+  // Troca SÓ o fluxo, preservando o grafo já carregado.
+  //
+  // Ativar, arquivar e entrar em teste devolvem o RESUMO do fluxo, sem nodes nem
+  // edges. Passar esse resumo por setActiveChatflow apagava o canvas inteiro
+  // (`nodes: data.nodes || []` vira lista vazia) — era por isso que entrar em
+  // modo de teste limpava as etapas da tela. E não commitar nada deixava o selo
+  // preso em "Rascunho" depois de ativar, até alguém dar F5.
+  patchActiveChatflow(_state, data) {
+    const chatflow = data.id ? data : data.chatflow;
+    if (!chatflow || Number(_state.active.chatflow?.id) !== Number(chatflow.id))
+      return;
+
+    _state.active = { ..._state.active, chatflow };
   },
   upsertNode(_state, node) {
     const index = _state.active.nodes.findIndex(n => n.id === node.id);

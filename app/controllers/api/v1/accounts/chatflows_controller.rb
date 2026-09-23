@@ -90,7 +90,11 @@ class Api::V1::Accounts::ChatflowsController < Api::V1::Accounts::BaseController
   def permitted_params
     params.require(:chatflow).permit(
       :name, :description, :inbox_id, :start_node_id, :trigger_type, :color,
-      trigger_config: { keywords: [] }
+      # Cada chave do trigger_config citada uma a uma, de propósito: um permit
+      # que só listava `keywords` descartava o resto em SILÊNCIO. A regra de
+      # reinício existia na tela e o motor sabia lê-la — ela só nunca chegava ao
+      # banco. Configuração que não faz nada é pior que configuração que não existe.
+      trigger_config: [:sender_name, :position_x, :position_y, { keywords: [], restart: [:mode, :hours] }]
     )
   end
 

@@ -23,6 +23,7 @@ const KIND_META = {
   send_audio: { icon: 'i-lucide-mic', tone: 'violet' },
   send_media: { icon: 'i-lucide-image', tone: 'blue' },
   menu: { icon: 'i-lucide-list-tree', tone: 'amber' },
+  confirmation: { icon: 'i-lucide-circle-check-big', tone: 'teal' },
   set_label: { icon: 'i-lucide-tag', tone: 'iris' },
   assign_agent: { icon: 'i-lucide-user-check', tone: 'blue' },
   add_to_kanban: { icon: 'i-lucide-kanban-square', tone: 'iris' },
@@ -34,6 +35,23 @@ const kind = computed(() => props.data.kind);
 const meta = computed(() => KIND_META[kind.value] || KIND_META.send_message);
 const isMenu = computed(() => kind.value === 'menu');
 const isEnd = computed(() => kind.value === 'end_flow');
+const isConfirmation = computed(() => kind.value === 'confirmation');
+
+// Duas saídas fixas, nomeadas e coloridas. Fixas porque a etapa tem exatamente
+// dois destinos: deixar o operador renomeá-las quebraria a ligação já desenhada
+// no canvas no dia em que ele trocasse uma letra.
+const CONFIRMATION_BRANCHES = computed(() => [
+  {
+    handle: 'resolved',
+    label: t('CHATFLOW.NODE.CONFIRMATION_RESOLVED'),
+    dot: '!bg-n-teal-9',
+  },
+  {
+    handle: 'unresolved',
+    label: t('CHATFLOW.NODE.CONFIRMATION_UNRESOLVED'),
+    dot: '!bg-n-ruby-9',
+  },
+]);
 
 const options = computed(() =>
   isMenu.value ? props.data.config?.options || [] : []
@@ -46,6 +64,8 @@ const title = computed(
 const summary = computed(() => {
   const config = props.data.config || {};
   if (isMenu.value) return config.text || t('CHATFLOW.NODE.MENU_EMPTY');
+  if (isConfirmation.value)
+    return config.text || t('CHATFLOW.NODE.CONFIRMATION_EMPTY');
   if (kind.value === 'send_message') return config.text || '';
   if (kind.value === 'send_audio') return t('CHATFLOW.NODE.AUDIO_SUMMARY');
   if (kind.value === 'send_media')
@@ -143,6 +163,34 @@ const toneClass = computed(
           type="source"
           :position="Position.Right"
           class="!size-3 !bg-n-amber-8 !border-2 !border-n-solid-1"
+        />
+      </div>
+    </div>
+
+    <!-- Confirmação: uma porta por ramo, com o nome à vista. Sem o rótulo, as
+      duas bolinhas ficam idênticas e ligar a errada é questão de tempo. -->
+    <div
+      v-else-if="isConfirmation"
+      class="flex flex-col border-t border-n-weak"
+    >
+      <div
+        v-for="branch in CONFIRMATION_BRANCHES"
+        :key="branch.handle"
+        class="relative flex items-center gap-2 px-3.5 py-2 text-xs border-b text-n-slate-12 border-n-weak last:border-b-0"
+      >
+        <span
+          class="size-2 rounded-full"
+          :class="branch.dot.replace('!', '')"
+        />
+        <span class="truncate">
+          {{ branch.label }}
+        </span>
+        <Handle
+          :id="branch.handle"
+          type="source"
+          :position="Position.Right"
+          class="!size-3 !border-2 !border-n-solid-1"
+          :class="branch.dot"
         />
       </div>
     </div>

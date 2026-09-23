@@ -46,7 +46,10 @@
           "LABEL": "Webhook",
           "HINT": "Iniciado por um sistema externo chamando a URL do fluxo."
         }
-      }
+      },
+      "SENDER_NAME": "Nome que assina as mensagens",
+      "SENDER_NAME_PLACEHOLDER": "Ex: Elisa",
+      "SENDER_NAME_HINT": "Aparece em negrito antes de cada mensagem do fluxo. Em branco, não assina."
     },
     "LIST": {
       "TITLE": "Chatflow",
@@ -73,7 +76,8 @@
         "ASSIGN_AGENT": "Atribuir agente",
         "ADD_TO_KANBAN": "Adicionar ao Kanban",
         "WEBHOOK": "Webhook",
-        "END_FLOW": "Finalizar"
+        "END_FLOW": "Finalizar",
+        "CONFIRMATION": "Confirmação"
       },
       "MENU_EMPTY": "Menu sem título",
       "AUDIO_SUMMARY": "Mensagem de voz",
@@ -84,7 +88,10 @@
       "WEBHOOK_SUMMARY": "Chamar um webhook externo",
       "END_SUMMARY": "Encerra o fluxo",
       "OPTION_EMPTY": "Opção vazia",
-      "DELETE": "Excluir etapa"
+      "DELETE": "Excluir etapa",
+      "CONFIRMATION_EMPTY": "Pergunta não configurada",
+      "CONFIRMATION_RESOLVED": "Resolvido",
+      "CONFIRMATION_UNRESOLVED": "Não resolvido"
     },
     "EDITOR": {
       "NAME": "Nome da etapa",
@@ -121,7 +128,16 @@
       "WEBHOOK_METHOD": "Método",
       "WEBHOOK_HINT": "Enviamos (POST) os dados da conversa + contato para essa URL.",
       "SET_START": "Iniciar o fluxo nesta etapa",
-      "SAVE": "Salvar"
+      "SAVE": "Salvar",
+      "CONFIRMATION_PROMPT": "Pergunta de confirmação",
+      "CONFIRMATION_RESOLVED": "Palavras de \"resolvido\"",
+      "CONFIRMATION_RESOLVED_PLACEHOLDER": "sim, resolveu, obrigado, valeu",
+      "CONFIRMATION_UNRESOLVED": "Palavras de \"não resolvido\"",
+      "CONFIRMATION_UNRESOLVED_PLACEHOLDER": "não, nao resolveu, quero humano, atendente",
+      "CONFIRMATION_FALLBACK": "Quando não entender a resposta",
+      "CONFIRMATION_FALLBACK_PLACEHOLDER": "Desculpa, não entendi. Responda com Sim ou Não.",
+      "CONFIRMATION_FALLBACK_HINT": "Enviado junto com a pergunta de novo. Depois de 2 tentativas, o fluxo segue por \"não resolvido\".",
+      "INSERT_NAME": "+ nome do cliente"
     },
     "TEST": {
       "BUTTON": "Testar fluxo",
@@ -149,7 +165,8 @@
       "EDGE_ERROR": "Não foi possível conectar as etapas.",
       "EDGE_DELETE_CONFIRM": "Remover esta conexão?",
       "START_SET": "Etapa inicial definida.",
-      "ACTIVATE_HINT": "Defina uma etapa inicial antes de ativar."
+      "ACTIVATE_HINT": "Defina uma etapa inicial antes de ativar.",
+      "SAVED_AT": "salvo às {time}"
     }
   }
 }

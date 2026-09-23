@@ -46,7 +46,10 @@
           "LABEL": "Webhook",
           "HINT": "Started by an external system calling this flow's URL."
         }
-      }
+      },
+      "SENDER_NAME": "Name signing the messages",
+      "SENDER_NAME_PLACEHOLDER": "e.g. Elisa",
+      "SENDER_NAME_HINT": "Shown in bold before each flow message. Leave blank for no signature."
     },
     "LIST": {
       "TITLE": "Chatflow",
@@ -73,7 +76,8 @@
         "ASSIGN_AGENT": "Assign agent",
         "ADD_TO_KANBAN": "Add to Kanban",
         "WEBHOOK": "Webhook",
-        "END_FLOW": "End"
+        "END_FLOW": "End",
+        "CONFIRMATION": "Confirmation"
       },
       "MENU_EMPTY": "Untitled menu",
       "AUDIO_SUMMARY": "Voice message",
@@ -84,7 +88,10 @@
       "WEBHOOK_SUMMARY": "Call an external webhook",
       "END_SUMMARY": "Closes the flow",
       "OPTION_EMPTY": "Empty option",
-      "DELETE": "Delete step"
+      "DELETE": "Delete step",
+      "CONFIRMATION_EMPTY": "Question not set",
+      "CONFIRMATION_RESOLVED": "Resolved",
+      "CONFIRMATION_UNRESOLVED": "Not resolved"
     },
     "EDITOR": {
       "NAME": "Step name",
@@ -121,7 +128,16 @@
       "WEBHOOK_METHOD": "Method",
       "WEBHOOK_HINT": "We POST the conversation + contact data to this URL.",
       "SET_START": "Start the flow at this step",
-      "SAVE": "Save"
+      "SAVE": "Save",
+      "CONFIRMATION_PROMPT": "Confirmation question",
+      "CONFIRMATION_RESOLVED": "Words meaning \"resolved\"",
+      "CONFIRMATION_RESOLVED_PLACEHOLDER": "yes, solved, thanks",
+      "CONFIRMATION_UNRESOLVED": "Words meaning \"not resolved\"",
+      "CONFIRMATION_UNRESOLVED_PLACEHOLDER": "no, not solved, human, agent",
+      "CONFIRMATION_FALLBACK": "When the reply is not understood",
+      "CONFIRMATION_FALLBACK_PLACEHOLDER": "Sorry, I didn't get that. Please answer Yes or No.",
+      "CONFIRMATION_FALLBACK_HINT": "Sent with the question again. After 2 tries the flow leaves through \"not resolved\".",
+      "INSERT_NAME": "+ customer's name"
     },
     "TEST": {
       "BUTTON": "Test flow",
@@ -149,7 +165,8 @@
       "EDGE_ERROR": "Could not connect the steps.",
       "EDGE_DELETE_CONFIRM": "Remove this connection?",
       "START_SET": "Start step set.",
-      "ACTIVATE_HINT": "Set a start step before activating."
+      "ACTIVATE_HINT": "Set a start step before activating.",
+      "SAVED_AT": "saved at {time}"
     }
   }
 }

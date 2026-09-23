@@ -7,11 +7,27 @@ class MessageContentPresenter < SimpleDelegator
     ).render
   end
 
+  # Webhook cru é o certo para quem consome webhook: integração de terceiro quer
+  # o markdown como foi escrito. Mas a caixa que o assistente do WAHA cria é
+  # Channel::Api — genérica — e do outro lado tem WhatsApp, que não entende
+  # markdown. Sem tradutor, `**negrito**` chega com os asteriscos literais na
+  # conversa do cliente, e foi exatamente isso que o operador viu.
+  #
+  # Só a caixa marcada como WAHA entra nessa exceção: formatar todo Channel::Api
+  # como WhatsApp quebraria as integrações que esperam o texto como está.
   def webhook_content
-    Messages::WebhookContentNormalizer.normalize(content_with_survey_link)
+    text = content_with_survey_link
+    return Messages::WebhookContentNormalizer.normalize(text) unless waha_channel?
+
+    Messages::MarkdownRendererService.new(text, 'Channel::Whatsapp', inbox.channel).render
   end
 
   private
+
+  def waha_channel?
+    channel = conversation.inbox.channel
+    channel.is_a?(Channel::Api) && channel.additional_attributes.to_h['source'] == 'waha'
+  end
 
   def content_with_survey_link
     if should_append_survey_link?

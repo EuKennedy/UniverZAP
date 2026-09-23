@@ -41,6 +41,48 @@ const isUploading = ref(false);
 
 const kind = computed(() => props.node.kind);
 const isMenu = computed(() => kind.value === 'menu');
+const isConfirmation = computed(() => kind.value === 'confirmation');
+
+// Listas de palavras-chave editadas como TEXTO separado por vírgula, e não como
+// uma lista de campinhos: quem configura isso está pensando "sim, resolveu,
+// obrigado" de uma vez, e uma linha por palavra transforma quatro sinônimos em
+// quatro cliques.
+const keywordField = key =>
+  computed({
+    get: () => (config.value[key] || []).join(', '),
+    set: value => {
+      config.value[key] = value
+        .split(',')
+        .map(word => word.trim())
+        .filter(Boolean);
+    },
+  });
+
+const resolvedKeywords = keywordField('resolved_keywords');
+const unresolvedKeywords = keywordField('unresolved_keywords');
+
+// A interpolação JÁ funciona hoje: Message inclui Liquidable e o fluxo cria a
+// mensagem como `outgoing`, então `{{ contact.name }}` é substituído antes de
+// sair. Nunca contamos isso a ninguém — a caixa era um textarea cru, sem dica
+// nem atalho, e o recurso existia em produção sem um único usuário.
+const insertName = event => {
+  const field = event.target.closest('label')?.querySelector('textarea');
+  const token = '{{ contact.name }}';
+  if (!field) {
+    config.value.text = `${config.value.text || ''}${token}`;
+    return;
+  }
+  const start = field.selectionStart ?? (config.value.text || '').length;
+  const end = field.selectionEnd ?? start;
+  const current = config.value.text || '';
+  config.value.text = current.slice(0, start) + token + current.slice(end);
+};
+
+const textLabel = computed(() => {
+  if (isConfirmation.value) return t('CHATFLOW.EDITOR.CONFIRMATION_PROMPT');
+  if (isMenu.value) return t('CHATFLOW.EDITOR.MENU_PROMPT');
+  return t('CHATFLOW.EDITOR.MESSAGE_TEXT');
+});
 
 const genId = () =>
   `opt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -181,16 +223,20 @@ const save = () => {
 
       <!-- Message / Menu text -->
       <label
-        v-if="['send_message', 'menu'].includes(kind)"
+        v-if="['send_message', 'menu', 'confirmation'].includes(kind)"
         class="flex flex-col gap-1.5"
       >
         <span class="text-xs font-medium text-n-slate-11">
-          {{
-            isMenu
-              ? t('CHATFLOW.EDITOR.MENU_PROMPT')
-              : t('CHATFLOW.EDITOR.MESSAGE_TEXT')
-          }}
+          {{ textLabel }}
         </span>
+        <button
+          type="button"
+          class="self-start px-2 py-1 text-xs rounded-md text-n-teal-11 bg-n-teal-3 hover:bg-n-teal-4"
+          data-testid="insert-contact-name"
+          @click="insertName"
+        >
+          {{ t('CHATFLOW.EDITOR.INSERT_NAME') }}
+        </button>
         <textarea
           v-model="config.text"
           rows="4"
@@ -267,6 +313,60 @@ const save = () => {
             "
             @change="uploadMedia"
           />
+        </label>
+      </div>
+
+      <!-- Confirmação: as duas listas e a mensagem de quando não entende -->
+      <div v-if="isConfirmation" class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1.5">
+          <span
+            class="flex gap-2 items-center text-xs font-medium text-n-slate-11"
+          >
+            <span class="rounded-full size-2 bg-n-teal-9" />
+            {{ t('CHATFLOW.EDITOR.CONFIRMATION_RESOLVED') }}
+          </span>
+          <input
+            v-model="resolvedKeywords"
+            type="text"
+            :placeholder="
+              t('CHATFLOW.EDITOR.CONFIRMATION_RESOLVED_PLACEHOLDER')
+            "
+            class="px-3 h-9 text-sm rounded-lg border bg-n-alpha-1 border-n-weak text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+        </label>
+
+        <label class="flex flex-col gap-1.5">
+          <span
+            class="flex gap-2 items-center text-xs font-medium text-n-slate-11"
+          >
+            <span class="rounded-full size-2 bg-n-ruby-9" />
+            {{ t('CHATFLOW.EDITOR.CONFIRMATION_UNRESOLVED') }}
+          </span>
+          <input
+            v-model="unresolvedKeywords"
+            type="text"
+            :placeholder="
+              t('CHATFLOW.EDITOR.CONFIRMATION_UNRESOLVED_PLACEHOLDER')
+            "
+            class="px-3 h-9 text-sm rounded-lg border bg-n-alpha-1 border-n-weak text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+        </label>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">
+            {{ t('CHATFLOW.EDITOR.CONFIRMATION_FALLBACK') }}
+          </span>
+          <textarea
+            v-model="config.fallback_text"
+            rows="2"
+            :placeholder="
+              t('CHATFLOW.EDITOR.CONFIRMATION_FALLBACK_PLACEHOLDER')
+            "
+            class="px-3 py-2 text-sm rounded-lg border resize-y bg-n-alpha-1 border-n-weak text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+          <span class="text-xs text-n-slate-10">
+            {{ t('CHATFLOW.EDITOR.CONFIRMATION_FALLBACK_HINT') }}
+          </span>
         </label>
       </div>
 
