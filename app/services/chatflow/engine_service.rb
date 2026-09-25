@@ -138,12 +138,56 @@ class Chatflow::EngineService
   def advance_from_reply(execution)
     node = execution.current_node
     return complete(execution) if node.blank?
+    return advance_from_confirmation(execution, node) if node.kind_confirmation?
 
     option = Chatflow::ReplyMatcher.new(node, @message.content).match
     return reprompt(execution, node) if option.nil?
 
     record_selection(execution, node, option)
-    edge = node.outgoing_edges.find_by(source_handle: option['value'])
+    follow(execution, node, option['value'])
+  end
+
+  # A Confirmação casa por LISTA de palavras-chave e tem uma saída para quando
+  # nada casa — diferente do menu, que repergunta para sempre. Um cliente que
+  # escreveu um desabafo em vez de "sim" ficaria preso recebendo a mesma
+  # pergunta até o fim dos tempos.
+  def advance_from_confirmation(execution, node)
+    handle = Chatflow::ConfirmationMatcher.new(node, @message.content).match
+    return confirmation_retry(execution, node) if handle.nil?
+
+    record_selection(execution, node, 'value' => handle, 'label' => handle)
+    follow(execution, node, handle)
+  end
+
+  # Duas tentativas e sai pela porta de NÃO RESOLVIDO. Errar para o lado de
+  # mandar para um humano é o erro barato; o contrário abandona um cliente que
+  # continua com problema dentro de um robô que não o entende.
+  def confirmation_retry(execution, node)
+    tries = confirmation_tries(execution, node) + 1
+    record_confirmation_tries(execution, node, tries)
+
+    if tries > ChatflowNode::MAX_CONFIRMATION_RETRIES
+      record_selection(execution, node, 'value' => ChatflowNode::UNRESOLVED, 'label' => 'sem resposta')
+      return follow(execution, node, ChatflowNode::UNRESOLVED)
+    end
+
+    Chatflow::NodeRunnerService.new(execution, node).resend_confirmation
+  end
+
+  def confirmation_tries(execution, node)
+    execution.context.dig('confirmation_tries', node.id.to_s).to_i
+  end
+
+  def record_confirmation_tries(execution, node, tries)
+    counters = execution.context['confirmation_tries'].to_h.merge(node.id.to_s => tries)
+    execution.update!(context: execution.context.merge('confirmation_tries' => counters))
+  end
+
+  # Sai do nó pelo handle escolhido. Handle sem ligação desenhada termina a
+  # execução em vez de travar: o operador que não ligou aquela ponta decidiu,
+  # por omissão, que o fluxo acaba ali.
+  def follow(execution, node, handle)
+    edge = node.outgoing_edges.find_by(source_handle: handle)
     return complete(execution) if edge.blank?
 
     execution.update!(status: :active)

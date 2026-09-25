@@ -9,6 +9,7 @@ import '@vue-flow/core/dist/theme-default.css';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
+import { LocalStorage } from 'shared/helpers/localStorage';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import ChatflowNode from '../components/ChatflowNode.vue';
@@ -43,13 +44,52 @@ const {
   removeEdges,
   findNode,
   fitView,
+  setViewport,
+  getViewport,
+  onMoveEnd,
 } = useVueFlow(FLOW_KEY);
 
 const active = useMapGetter('chatflows/getActiveChatflow');
+
+// A vista (zoom + canto) guardada por fluxo, no navegador. É preferência de
+// quem está olhando, não configuração do fluxo: a moldura boa num monitor
+// grande corta metade do desenho num notebook, e sincronizar levaria o problema
+// junto.
+const VIEWPORT_KEY = `chatflow-viewport-${props.chatflowId}`;
+
+const readViewport = () => {
+  const saved = LocalStorage.get(VIEWPORT_KEY);
+  const valid =
+    saved &&
+    Number.isFinite(saved.x) &&
+    Number.isFinite(saved.y) &&
+    Number.isFinite(saved.zoom) &&
+    saved.zoom > 0;
+  return valid ? saved : null;
+};
 const selectedNodeId = ref(null);
 const isSavingNode = ref(false);
 const isTriggerOpen = ref(false);
 const isSavingTrigger = ref(false);
+
+// Tudo neste editor já salva sozinho — criar etapa, ligar, arrastar, mudar o
+// gatilho são todos POST imediatos. O que faltava era CONTAR isso: sem nenhum
+// sinal na tela, quem usa procura um botão de salvar que não existe e sai com
+// medo de ter perdido o trabalho.
+const savedAt = ref(null);
+const markSaved = () => {
+  savedAt.value = new Date();
+};
+
+const savedLabel = computed(() => {
+  if (!savedAt.value) return null;
+  return t('CHATFLOW.BUILDER.SAVED_AT', {
+    time: savedAt.value.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+  });
+});
 
 const flow = computed(() => active.value.chatflow);
 const flowColor = computed(() => flow.value?.color || '#5FB89F');
@@ -70,6 +110,7 @@ const PALETTE = [
   { kind: 'send_audio', icon: 'i-lucide-mic' },
   { kind: 'send_media', icon: 'i-lucide-image' },
   { kind: 'menu', icon: 'i-lucide-list-tree' },
+  { kind: 'confirmation', icon: 'i-lucide-circle-check-big' },
   { kind: 'set_label', icon: 'i-lucide-tag' },
   { kind: 'assign_agent', icon: 'i-lucide-user-check' },
   { kind: 'add_to_kanban', icon: 'i-lucide-kanban-square' },
@@ -82,6 +123,15 @@ const DEFAULT_CONFIG = {
   send_audio: {},
   send_media: { caption: '' },
   menu: { text: '', options: [] },
+  // Já vem pronta para usar: a pergunta e as palavras que a maioria das pessoas
+  // responde. Uma etapa de fechamento que nasce em branco é uma etapa que
+  // ninguém configura direito e que solta o cliente no meio do caminho.
+  confirmation: {
+    text: 'Seu problema foi resolvido?',
+    resolved_keywords: ['sim', 'resolveu', 'obrigado', 'valeu'],
+    unresolved_keywords: ['não', 'nao resolveu', 'quero humano', 'atendente'],
+    fallback_text: 'Desculpa, não entendi. Responda com Sim ou Não.',
+  },
   set_label: { label_ids: [] },
   assign_agent: {},
   add_to_kanban: {},
@@ -115,10 +165,16 @@ const mapEdge = edge => ({
 
 // The trigger is a synthetic, non-deletable entry node carrying the flow's
 // trigger config. Its outgoing edge points at the start step.
+// A posição do gatilho fica no trigger_config, junto do resto da configuração
+// dele. Ele era sintético e vivia travado em (-40, 40): a pessoa arrastava, ele
+// voltava, e o `fitView` ainda esticava a tela para alcançá-lo lá atrás.
 const triggerNode = () => ({
   id: TRIGGER_ID,
   type: 'trigger',
-  position: { x: -40, y: 40 },
+  position: {
+    x: Number(flow.value?.trigger_config?.position_x ?? -40),
+    y: Number(flow.value?.trigger_config?.position_y ?? 40),
+  },
   deletable: false,
   data: { chatflow: flow.value },
 });
@@ -142,8 +198,34 @@ const triggerEdge = () => {
 const hydrateCanvas = () => {
   setNodes([triggerNode(), ...active.value.nodes.map(mapNode)]);
   setEdges([...triggerEdge(), ...active.value.edges.map(mapEdge)]);
-  setTimeout(() => fitView({ padding: 0.2 }), 50);
+
+  // Reabre exatamente na vista em que a pessoa parou. O `fitView` que rodava
+  // sempre era o que fazia o desenho "bugar" ao abrir: as posições estavam
+  // salvas, mas ele reenquadrava a tela para caber TUDO — inclusive o balão do
+  // gatilho, que vivia preso na origem. Quanto mais alguém organizava longe do
+  // canto, mais a tela abria com tudo pequeno e espalhado.
+  //
+  // Só enquadra sozinho quem nunca ajustou a vista, que é o fluxo recém-criado.
+  const saved = readViewport();
+  if (saved) {
+    setViewport(saved);
+    return;
+  }
+  // Um quadro depois, para o Vue Flow já ter medido os balões: enquadrar antes
+  // da medida calcula o zoom com tamanho zero e joga o desenho para fora.
+  requestAnimationFrame(() => fitView({ padding: 0.2 }));
 };
+
+// Guardado no fim do gesto, não durante: gravar a cada pixel de arrasto encheria
+// o armazenamento e não mudaria nada para quem está olhando.
+const rememberViewport = () => {
+  LocalStorage.set(VIEWPORT_KEY, getViewport());
+};
+
+// Arrastar o fundo e dar zoom também é ajustar a vista, e é o gesto mais comum
+// de todos: sem isto a pessoa organizaria a tela e perderia o enquadramento por
+// não ter movido nenhum balão.
+onMoveEnd(() => rememberViewport());
 
 // Refresh just the trigger node's data + start edge after a config change.
 const refreshTrigger = () => {
@@ -178,6 +260,7 @@ const addNode = async kind => {
     });
     addNodes([mapNode(created)]);
     selectedNodeId.value = String(created.id);
+    markSaved();
   } catch (error) {
     useAlert(error?.message || t('CHATFLOW.BUILDER.NODE_ERROR'));
   }
@@ -194,6 +277,7 @@ onConnect(async params => {
         start_node_id: Number(params.target),
       });
       refreshTrigger();
+      markSaved();
       useAlert(t('CHATFLOW.BUILDER.START_SET'));
     } catch (error) {
       useAlert(error?.message || t('CHATFLOW.BUILDER.EDGE_ERROR'));
@@ -210,6 +294,7 @@ onConnect(async params => {
       },
     });
     addEdges([mapEdge(created)]);
+    markSaved();
   } catch (error) {
     useAlert(error?.message || t('CHATFLOW.BUILDER.EDGE_ERROR'));
   }
@@ -226,6 +311,7 @@ onNodesChange(changes => {
         chatflowId: props.chatflowId,
         nodeId: Number(c.id),
       });
+      markSaved();
     });
 });
 
@@ -248,12 +334,25 @@ const deleteNodeFromCanvas = id => {
 // --- persist drag position ----------------------------------------------
 
 onNodeDragStop(({ node }) => {
-  if (node.id === TRIGGER_ID) return; // synthetic, position not persisted
+  rememberViewport();
+  if (node.id === TRIGGER_ID) {
+    store.dispatch('chatflows/update', {
+      id: Number(props.chatflowId),
+      trigger_config: {
+        ...(flow.value?.trigger_config || {}),
+        position_x: node.position.x,
+        position_y: node.position.y,
+      },
+    });
+    markSaved();
+    return;
+  }
   store.dispatch('chatflows/updateNode', {
     chatflowId: props.chatflowId,
     nodeId: Number(node.id),
     node: { position_x: node.position.x, position_y: node.position.y },
   });
+  markSaved();
 });
 
 onNodeClick(({ node }) => {
@@ -278,6 +377,7 @@ const saveNode = async ({ name, config }) => {
     });
     const canvasNode = findNode(String(updated.id));
     if (canvasNode) canvasNode.data = updated;
+    markSaved();
     useAlert(t('CHATFLOW.BUILDER.NODE_SAVED'));
   } catch (error) {
     useAlert(error?.message || t('CHATFLOW.BUILDER.NODE_ERROR'));
@@ -423,6 +523,16 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
             "
           >
             {{ t(`CHATFLOW.STATUS.${(flow.status || 'draft').toUpperCase()}`) }}
+          </span>
+          <!-- Tudo aqui já salva sozinho. Sem este aviso, quem usa procura um
+            botão de salvar que não existe e sai da tela com medo de ter perdido
+            o trabalho. -->
+          <span
+            v-if="savedLabel"
+            class="text-[11px] text-n-slate-10 tabular-nums"
+            data-testid="chatflow-saved-at"
+          >
+            {{ savedLabel }}
           </span>
         </div>
         <div

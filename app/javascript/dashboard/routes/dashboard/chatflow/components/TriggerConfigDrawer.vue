@@ -47,6 +47,7 @@ const keywords = ref([]);
 const keywordDraft = ref('');
 const restartMode = ref('once');
 const restartHours = ref(24);
+const senderName = ref('');
 
 watch(
   () => props.chatflow,
@@ -58,6 +59,7 @@ watch(
       : [];
     restartMode.value = flow.trigger_config?.restart?.mode || 'once';
     restartHours.value = flow.trigger_config?.restart?.hours || 24;
+    senderName.value = flow.trigger_config?.sender_name || '';
   },
   { immediate: true }
 );
@@ -84,8 +86,13 @@ const save = () => {
     inbox_id: inboxId.value,
     trigger_type: triggerType.value,
     trigger_config: {
+      // A posição do balão do gatilho viaja junto: ela mora aqui e um save que
+      // não a reenviasse jogaria o balão de volta para o canto na próxima
+      // abertura.
+      ...(props.chatflow.trigger_config || {}),
       keywords: keywords.value,
       restart: { mode: restartMode.value, hours: Number(restartHours.value) },
+      sender_name: senderName.value.trim(),
     },
   });
 };
@@ -179,6 +186,26 @@ const save = () => {
           </span>
         </button>
       </div>
+
+      <!-- O nome que assina as mensagens deste fluxo. O Chatwoot assina com o
+        nome de QUEM escreveu, e mensagem de fluxo não tem autor humano: a
+        assinatura saía vazia e o cliente recebia os asteriscos do negrito com
+        nada no meio. -->
+      <label class="flex flex-col gap-1.5">
+        <span class="text-xs font-medium text-n-slate-11">
+          {{ t('CHATFLOW.TRIGGER.SENDER_NAME') }}
+        </span>
+        <input
+          v-model="senderName"
+          type="text"
+          :placeholder="t('CHATFLOW.TRIGGER.SENDER_NAME_PLACEHOLDER')"
+          data-testid="trigger-sender-name"
+          class="px-3 h-9 text-sm rounded-lg border bg-n-alpha-1 border-n-weak text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+        />
+        <span class="text-xs text-n-slate-10">
+          {{ t('CHATFLOW.TRIGGER.SENDER_NAME_HINT') }}
+        </span>
+      </label>
 
       <!-- Keywords (only for keyword trigger) -->
       <div v-if="triggerType === 'keyword'" class="flex flex-col gap-2">

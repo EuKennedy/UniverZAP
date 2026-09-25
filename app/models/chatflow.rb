@@ -43,6 +43,16 @@ class Chatflow < ApplicationRecord
 
   scope :live, -> { status_active }
 
+  # O nome que assina as mensagens deste fluxo.
+  #
+  # O Chatwoot assina mensagem com o nome de QUEM escreveu, e uma mensagem de
+  # fluxo não tem autor humano — a assinatura saía vazia e o cliente recebia os
+  # asteriscos do negrito sem nada no meio. Em branco aqui, o fluxo não assina:
+  # melhor sem nome do que com um nome inventado por nós.
+  def sender_name
+    trigger_config['sender_name'].to_s.strip
+  end
+
   def keywords
     Array(trigger_config['keywords']).map { |k| k.to_s.downcase.strip }.reject(&:blank?)
   end

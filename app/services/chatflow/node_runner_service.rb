@@ -20,6 +20,7 @@ class Chatflow::NodeRunnerService
     'send_audio' => :send_media_node,
     'send_media' => :send_media_node,
     'menu' => :send_menu_node,
+    'confirmation' => :send_confirmation_node,
     'set_label' => :apply_labels_node,
     'assign_agent' => :assign_agent_node,
     'add_to_kanban' => :add_to_kanban_node,
@@ -37,6 +38,16 @@ class Chatflow::NodeRunnerService
     send_menu
   end
 
+  # A repergunta da Confirmação: primeiro o que o operador escreveu para o caso
+  # de não entender, depois a pergunta de novo. Duas mensagens e não uma só
+  # porque o cliente precisa ver o pedido de desculpa E a pergunta — colar as
+  # duas num parágrafo faz a pergunta se perder no meio do texto.
+  def resend_confirmation
+    fallback = @node.confirmation_fallback_text
+    send_message(content: fallback) if fallback.present?
+    send_message(content: config_text)
+  end
+
   private
 
   def send_message_node
@@ -51,6 +62,14 @@ class Chatflow::NodeRunnerService
 
   def send_menu_node
     send_menu
+    :wait
+  end
+
+  # Texto puro, sem a listinha numerada que o menu cola no fim: a pergunta é
+  # "Seu problema foi resolvido?" e o cliente responde como fala. Menu interativo
+  # no WAHA já estourou e travou um fluxo uma vez — ver send_menu abaixo.
+  def send_confirmation_node
+    send_message(content: config_text)
     :wait
   end
 
@@ -191,8 +210,18 @@ class Chatflow::NodeRunnerService
     signed_id.present? ? [signed_id] : nil
   end
 
+  # A assinatura do fluxo, em negrito do WhatsApp (UM asterisco — dois é markdown
+  # e chega literal). Só no texto: legenda de mídia assinada empurraria o nome
+  # para dentro da imagem, longe de onde alguém procuraria por ele.
+  def signed(content)
+    name = @execution.chatflow.sender_name
+    return content if name.blank? || content.blank?
+
+    "*#{name}*\n#{content}"
+  end
+
   def send_message(content:, attachments: nil, content_type: nil, content_attributes: nil)
-    params = { content: content, message_type: 'outgoing' }
+    params = { content: signed(content), message_type: 'outgoing' }
     params[:attachments] = attachments if attachments.present?
     params[:content_type] = content_type if content_type.present?
     params[:content_attributes] = content_attributes if content_attributes.present?
