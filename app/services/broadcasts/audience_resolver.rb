@@ -86,12 +86,16 @@ class Broadcasts::AudienceResolver
     @normalized_phone_numbers ||= Array(@filters['phone_numbers']).filter_map { |n| normalize_phone(n) }.uniq
   end
 
+  # Reuses the normalizer the WhatsApp webhook already applies, so a number
+  # typed here ends up in the same shape the provider will send back. Inventing
+  # a second convention is how the reply to a broadcast opens its own separate
+  # conversation instead of landing in the one the dispatch created.
   def normalize_phone(raw)
     digits = raw.to_s.gsub(/\D/, '')
     return if digits.length < 10
 
     digits = "#{DEFAULT_COUNTRY_CODE}#{digits}" if digits.length <= 11
-    "+#{digits}"
+    "+#{Whatsapp::PhoneNormalizers::BrazilPhoneNormalizer.new.normalize(digits)}"
   end
 
   def with_phone(ids)
