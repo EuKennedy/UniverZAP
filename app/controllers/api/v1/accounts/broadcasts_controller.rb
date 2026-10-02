@@ -37,7 +37,10 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
   end
 
   def audience_preview
-    render json: { count: Broadcasts::AudienceResolver.new(@broadcast).contact_ids.length }
+    resolver = Broadcasts::AudienceResolver.new(@broadcast)
+    # Typed numbers with no contact yet are still recipients — the dispatch
+    # creates them. Counting only existing contacts would under-report the list.
+    render json: { count: resolver.contact_ids.length + resolver.missing_phone_numbers.length }
   end
 
   # Approved Meta templates for a Cloud API inbox, for the official-mode picker.

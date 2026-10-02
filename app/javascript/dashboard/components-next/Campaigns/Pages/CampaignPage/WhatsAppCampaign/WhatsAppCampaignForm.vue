@@ -65,8 +65,16 @@ const audienceList = computed(() =>
   mapToOptions(formState.labels.value, 'id', 'title')
 );
 
+// `Whatsapp::OneoffCampaignService` refuses any provider but whatsapp_cloud,
+// and it refuses it inside the job: the campaign stays active and the cron
+// retries every 5 minutes for three days with nothing shown on screen. Keeping
+// WAHA out of the picker is what stops that from being picked at all.
+const cloudInboxes = computed(() =>
+  formState.inboxes.value.filter(row => row.provider === 'whatsapp_cloud')
+);
+
 const inboxOptions = computed(() =>
-  mapToOptions(formState.inboxes.value, 'id', 'name')
+  mapToOptions(cloudInboxes.value, 'id', 'name')
 );
 
 const templateOptions = computed(() => {
@@ -118,7 +126,13 @@ const formErrors = computed(() => ({
 }));
 
 const hasRequiredTemplateParams = computed(() => {
-  return templateParserRef.value?.v$?.$invalid === false || true;
+  const parser = templateParserRef.value;
+  // No parser mounted means the template takes no variables, so there is
+  // nothing to fill in. With one mounted, its own validation decides. The
+  // trailing `|| true` this replaces made the whole expression constant, so a
+  // template with empty variables submitted happily.
+  if (!parser?.v$) return true;
+  return !parser.v$.$invalid;
 });
 
 const isSubmitDisabled = computed(

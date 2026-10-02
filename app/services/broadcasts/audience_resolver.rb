@@ -2,6 +2,8 @@
 # Each filter is optional; the final audience is the UNION of every filter that
 # is present. Only contacts with a phone number are eligible (WAHA send mode).
 class Broadcasts::AudienceResolver
+  DEFAULT_COUNTRY_CODE = '55'.freeze
+
   def initialize(broadcast)
     @broadcast = broadcast
     @account = broadcast.account
@@ -16,6 +18,23 @@ class Broadcasts::AudienceResolver
           from_phone_numbers
 
     with_phone(ids.uniq)
+  end
+
+  # Typed numbers that have no contact yet. They are real recipients, so the
+  # preview counts them and the dispatch creates them before resolving ids.
+  def missing_phone_numbers
+    return [] if normalized_phone_numbers.empty?
+
+    normalized_phone_numbers - @account.contacts.where(phone_number: normalized_phone_numbers).pluck(:phone_number)
+  end
+
+  # Called by the dispatch only — never by the preview, which must not write.
+  def ensure_contacts!
+    missing_phone_numbers.each do |number|
+      @account.contacts.create!(name: number, phone_number: number)
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.warn("[Broadcast audience] skipped #{number}: #{e.message}")
+    end
   end
 
   private
@@ -55,10 +74,24 @@ class Broadcasts::AudienceResolver
   end
 
   def from_phone_numbers
-    numbers = Array(@filters['phone_numbers']).map { |n| n.to_s.strip }.reject(&:blank?)
-    return [] if numbers.empty?
+    return [] if normalized_phone_numbers.empty?
 
-    @account.contacts.where(phone_number: numbers).pluck(:id)
+    @account.contacts.where(phone_number: normalized_phone_numbers).pluck(:id)
+  end
+
+  # A pasted list arrives raw: "(11) 99999-8888", "11999998888", "5511999998888".
+  # Matching those against the stored "+5511999998888" as typed is why a cold
+  # list used to resolve to zero recipients without saying so.
+  def normalized_phone_numbers
+    @normalized_phone_numbers ||= Array(@filters['phone_numbers']).filter_map { |n| normalize_phone(n) }.uniq
+  end
+
+  def normalize_phone(raw)
+    digits = raw.to_s.gsub(/\D/, '')
+    return if digits.length < 10
+
+    digits = "#{DEFAULT_COUNTRY_CODE}#{digits}" if digits.length <= 11
+    "+#{digits}"
   end
 
   def with_phone(ids)

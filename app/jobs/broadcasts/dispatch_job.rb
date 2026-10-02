@@ -20,7 +20,12 @@ class Broadcasts::DispatchJob < ApplicationJob
   def build_recipients
     return if @broadcast.broadcast_recipients.exists?
 
-    contact_ids = Broadcasts::AudienceResolver.new(@broadcast).contact_ids
+    resolver = Broadcasts::AudienceResolver.new(@broadcast)
+    # Numbers typed straight into the composer have no contact row yet; without
+    # this the whole cold list resolves to nothing and the broadcast reports
+    # zero recipients instead of saying the list never landed.
+    resolver.ensure_contacts!
+    contact_ids = resolver.contact_ids
     return if contact_ids.empty?
 
     now = Time.current

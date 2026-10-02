@@ -1,6 +1,7 @@
-# Sends one broadcast recipient in WAHA mode. The outgoing message is created
-# through Messages::MessageBuilder — exactly like Chatflow::NodeRunnerService —
-# so it renders in the Chatwoot timeline AND dispatches to WhatsApp via WAHA.
+# Sends one broadcast recipient. WAHA mode goes through Messages::MessageBuilder
+# — exactly like Chatflow::NodeRunnerService — so it renders in the Chatwoot
+# timeline AND dispatches to WhatsApp. Official mode ships an approved template
+# through the Meta Cloud API and then records what left.
 # Never raises: a single bad recipient is marked failed and the batch goes on.
 class Broadcasts::RecipientSenderService
   def initialize(recipient)
@@ -29,60 +30,72 @@ class Broadcasts::RecipientSenderService
     @recipient.update!(status: :sent, sent_at: Time.current, conversation_id: conversation.display_id)
   end
 
-  # Official (Meta Cloud API): send an approved template, reusing Chatwoot's
-  # existing template machinery (same path as Whatsapp::OneoffCampaignService).
+  # Official (Meta Cloud API): send an approved template, then persist it so the
+  # thread shows what the customer received.
   def send_official
+    external_id = deliver_template
+    # `send_template` answers with the provider's message id, or nil when Meta
+    # refused — a paused template, a number not on WhatsApp, the tier limit.
+    # Trusting the call instead of its answer is what reported whole broadcasts
+    # as sent while nothing had left.
+    return mark_failed('provider refused the template') if external_id.blank?
+
+    conversation = find_or_create_conversation
+    record_official_message(conversation, external_id)
+    @recipient.update!(status: :sent, sent_at: Time.current, conversation_id: conversation.display_id)
+  end
+
+  def deliver_template
     channel = @inbox.channel
     raise 'official mode needs a WhatsApp Cloud inbox' unless channel.respond_to?(:send_template)
-
-    template_params = personalized_template_params
-    raise 'missing template config' if template_params.blank?
+    raise 'missing template config' if official_template_params.blank?
 
     name, namespace, lang_code, parameters = Whatsapp::TemplateProcessorService.new(
-      channel: channel, template_params: template_params, message: nil
+      channel: channel, template_params: official_template_params, message: nil
     ).call
-    raise 'template not resolved' if name.blank?
+    # The processor echoes the requested name back whatever happens, so `name`
+    # proves nothing. `parameters` is nil only when the template is absent from
+    # the channel cache or is not approved — that is the real existence check.
+    raise "template '#{name}' is not approved on this inbox" if parameters.nil?
 
     channel.send_template(@contact.phone_number,
                           { name: name, namespace: namespace, lang_code: lang_code, parameters: parameters }, nil)
-    @recipient.update!(status: :sent, sent_at: Time.current)
   end
 
-  # Per-recipient copy of the template config with contact tokens resolved.
-  # Tokens like `{contact.name}`, `{contact.phone_number}`, `{contact.email}`
-  # or `{contact.attr.KEY}` are replaced with this contact's values so each
-  # recipient gets a personalized template. Deep-duped so recipients never
-  # bleed into each other.
-  def personalized_template_params
-    raw = @broadcast.message['template']
-    return raw if raw.blank?
-
-    resolve_tokens(Marshal.load(Marshal.dump(raw)))
+  # The template already left through the Cloud API, so it is stored carrying
+  # the provider id: Base::SendOnChannelService skips any message that has a
+  # source_id, which is what keeps this from going out a second time.
+  def record_official_message(conversation, external_id)
+    ::Message.create!(
+      account_id: @inbox.account_id,
+      inbox_id: @inbox.id,
+      conversation_id: conversation.id,
+      message_type: :outgoing,
+      content: template_preview,
+      source_id: external_id,
+      additional_attributes: { 'template_params' => official_template_params }
+    )
   end
 
-  def resolve_tokens(node)
-    case node
-    when Hash then node.transform_values { |v| resolve_tokens(v) }
-    when Array then node.map { |v| resolve_tokens(v) }
-    when String then replace_contact_tokens(node)
-    else node
+  # The body the customer actually received, so an agent opening the thread
+  # later reads the template instead of an empty conversation.
+  def template_preview
+    template = @inbox.channel.message_templates.to_a.find { |t| t['name'] == official_template_params['name'] }
+    body = template && Array(template['components']).find { |c| c['type'] == 'BODY' }
+    return official_template_params['name'].to_s if body.blank? || body['text'].blank?
+
+    fill_in(body['text'])
+  end
+
+  def fill_in(text)
+    values = official_template_params.dig('processed_params', 'body') || {}
+    values.each_with_index.reduce(text) do |acc, ((key, value), index)|
+      acc.gsub("{{#{key}}}", value.to_s).gsub("{{#{index + 1}}}", value.to_s)
     end
   end
 
-  def replace_contact_tokens(str)
-    str.gsub(/\{contact\.([a-z_]+)(?:\.([^}]+))?\}/) do
-      contact_token_value(Regexp.last_match(1), Regexp.last_match(2))
-    end
-  end
-
-  def contact_token_value(field, key)
-    case field
-    when 'name' then @contact.name.to_s
-    when 'phone', 'phone_number' then @contact.phone_number.to_s
-    when 'email' then @contact.email.to_s
-    when 'attr', 'custom' then (@contact.custom_attributes || {})[key].to_s
-    else ''
-    end
+  def official_template_params
+    @official_template_params ||= Broadcasts::ContactTokenResolver.new(@contact).resolve(@broadcast.message['template'])
   end
 
   def find_or_create_conversation

@@ -82,6 +82,18 @@ class Campaign < ApplicationRecord
     return unless inbox
 
     errors.add :inbox, 'Unsupported Inbox type' unless ['Website', 'Twilio SMS', 'Sms', 'Whatsapp'].include? inbox.inbox_type
+    validate_whatsapp_provider
+  end
+
+  # Whatsapp::OneoffCampaignService sends through the Cloud API only, and it
+  # refuses anything else from inside the job: the campaign stays active and the
+  # scheduler retries it every 5 minutes for three days without a word on
+  # screen. Refusing it here is what keeps that campaign from being created.
+  def validate_whatsapp_provider
+    return unless inbox.inbox_type == 'Whatsapp'
+    return if inbox.channel.provider == 'whatsapp_cloud'
+
+    errors.add :inbox, 'WhatsApp campaigns require a WhatsApp Cloud inbox'
   end
 
   # TO-DO we clean up with better validations when campaigns evolve into more inboxes

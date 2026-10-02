@@ -57,6 +57,7 @@ class Ai::FollowUpBroadcastService
     broadcast = @account.broadcasts.create!(
       name: "Follow-up #{@assistant.name} · #{Time.current.strftime('%d/%m %H:%M')}",
       inbox: inbox,
+      mode: 'waha',
       message: { 'text' => @message },
       audience: { 'contact_ids' => contact_ids },
       throttle: THROTTLE
@@ -72,13 +73,26 @@ class Ai::FollowUpBroadcastService
   def sendable_inbox
     candidate = @inbox || @assistant.inboxes.detect { |i| sendable?(i) } ||
                 @account.inboxes.detect { |i| sendable?(i) }
-    raise NoSendableInbox, 'no WhatsApp inbox to send this follow-up from' unless sendable?(candidate)
+    raise NoSendableInbox, 'no WhatsApp inbox able to send free text for this follow-up' unless sendable?(candidate)
 
     candidate
   end
 
   def sendable?(inbox)
-    inbox.present? && SENDABLE_CHANNELS.include?(inbox.channel_type)
+    return false if inbox.blank?
+    return false unless SENDABLE_CHANNELS.include?(inbox.channel_type)
+
+    # A follow-up is free text to someone who went quiet, so by definition it
+    # lands outside the 24h window. The Cloud API refuses that without an
+    # approved template, and this service has no way to pick one — so a Cloud
+    # inbox is not sendable here. Saying so beats marking every lead contacted
+    # and delivering nothing.
+    !cloud_inbox?(inbox)
+  end
+
+  def cloud_inbox?(inbox)
+    channel = inbox.channel
+    channel.is_a?(Channel::Whatsapp) && channel.provider == 'whatsapp_cloud'
   end
 
   # `followed`, not `won`: the message went out, the sale did not happen yet.
