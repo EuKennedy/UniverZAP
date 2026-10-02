@@ -80,8 +80,17 @@ class Broadcast < ApplicationRecord
     # stuck in `running` after every recipient was already sent.
     return unless mode_changed? || inbox_id_changed?
 
-    errors.add(:mode, 'official requires a WhatsApp Cloud inbox') if mode == 'official' && !cloud_inbox?
-    errors.add(:mode, 'waha cannot send free text on a WhatsApp Cloud inbox') if mode == 'waha' && cloud_inbox?
+    mismatch = mode_mismatch
+    errors.add(:mode, mismatch) if mismatch
+  end
+
+  # Why the mode and the inbox disagree, or nil when they are a valid pair.
+  def mode_mismatch
+    cloud = cloud_inbox?
+    return 'official requires a WhatsApp Cloud inbox' if mode == 'official' && !cloud
+    return 'waha cannot send free text on a WhatsApp Cloud inbox' if mode == 'waha' && cloud
+
+    nil
   end
 
   def cloud_inbox?
