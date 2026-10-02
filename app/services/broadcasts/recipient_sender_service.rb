@@ -40,9 +40,20 @@ class Broadcasts::RecipientSenderService
     # as sent while nothing had left.
     return mark_failed('provider refused the template') if external_id.blank?
 
+    # Past this line the customer HAS the message. A timeline write that blows
+    # up must not rewrite that into `failed`: losing the thread is a far smaller
+    # problem than a report that tells the operator to send it all again.
+    conversation = record_delivery(external_id)
+    @recipient.update!(status: :sent, sent_at: Time.current, conversation_id: conversation&.display_id)
+  end
+
+  def record_delivery(external_id)
     conversation = find_or_create_conversation
     record_official_message(conversation, external_id)
-    @recipient.update!(status: :sent, sent_at: Time.current, conversation_id: conversation.display_id)
+    conversation
+  rescue StandardError => e
+    Rails.logger.error("[Broadcast send] timeline recipient=#{@recipient.id} #{e.message}")
+    nil
   end
 
   def deliver_template

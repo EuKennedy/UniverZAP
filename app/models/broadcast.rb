@@ -75,6 +75,10 @@ class Broadcast < ApplicationRecord
   # recipient was marked sent anyway.
   def mode_matches_inbox
     return if inbox.blank?
+    # Only judge the pair when somebody actually sets it. Rows that predate this
+    # rule would otherwise fail on status_completed! and leave the broadcast
+    # stuck in `running` after every recipient was already sent.
+    return unless mode_changed? || inbox_id_changed?
 
     errors.add(:mode, 'official requires a WhatsApp Cloud inbox') if mode == 'official' && !cloud_inbox?
     errors.add(:mode, 'waha cannot send free text on a WhatsApp Cloud inbox') if mode == 'waha' && cloud_inbox?
