@@ -370,7 +370,7 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
 .vsl-live i{width:14px;height:14px;color:var(--lime)}
 .vsl-tag{font-weight:500;font-size:12.5px;color:rgba(234,244,238,.82);text-shadow:0 1px 6px rgba(0,0,0,.6)}
 .vsl-frame{width:100%;aspect-ratio:16/9;border-radius:26px;overflow:hidden;background:#000;border:1px solid var(--glass-bd);box-shadow:var(--lg-inset),0 44px 96px -44px rgba(0,0,0,.8)}
-.vsl-frame iframe{width:100%;height:100%;border:0;display:block}
+.vsl-frame iframe,.vsl-frame video{width:100%;height:100%;border:0;display:block;background:#000}
 .vsl-cta{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:clamp(26px,4vw,40px)}
 @media(max-width:640px){.vsl-tag{display:none}.vsl-glow{filter:blur(24px)}}
 
@@ -443,7 +443,7 @@ fbq('init','2274850053326427');fbq('track','PageView');
     <div class="vsl-stage rv">
       <span class="vsl-glow"></span>
       <button class="vsl-player" id="vslPlayer" type="button" aria-label="Assistir o vídeo de apresentação do UniverZAP">
-        <img class="vsl-poster" src="https://vz-df16a48e-aa1.b-cdn.net/413f5a7b-de3f-4b16-adeb-c1b90f6106c3/thumbnail.jpg" alt="Apresentação do UniverZAP em vídeo" loading="eager" onerror="this.style.display='none'">
+        <img class="vsl-poster" src="/landing/univerzap-vsl-poster.jpg" alt="Apresentação do UniverZAP em vídeo" loading="eager" onerror="this.style.display='none'">
         <span class="vsl-shade"></span>
         <span class="vsl-play"><i data-lucide="play"></i></span>
         <span class="vsl-meta">
@@ -767,6 +767,9 @@ fbq('init','2274850053326427');fbq('track','PageView');
 window.BUNNY_LIB  = "706484";
 window.BUNNY_HOST = "vz-df16a48e-aa1.b-cdn.net";
 window.VSL_GUID   = "413f5a7b-de3f-4b16-adeb-c1b90f6106c3";
+// VSL nova hospedada no próprio site; quando ela subir na Bunny, basta trocar o VSL_GUID e apagar VSL_SRC.
+window.VSL_SRC    = "/landing/univerzap-vsl.mp4";
+window.VSL_POSTER = "/landing/univerzap-vsl-poster.jpg";
 window.TESTIMONIALS = [
   { guid:"c99fce6f-73f4-41a8-9790-99d2e85890ec", name:"Cliente UniverZAP", tag:"depoimento em vídeo" },
   { guid:"033f8812-cc1b-4d98-93c0-66662f27af25", name:"Cliente UniverZAP", tag:"depoimento em vídeo" },
@@ -847,9 +850,10 @@ window.TESTIMONIALS = [
   // overflow do corpo por conta de um lightbox que ninguém abriu.
   if(lb){document.getElementById('lbX').addEventListener('click',closeLb);lb.addEventListener('click',function(e){if(e.target===lb)closeLb()});addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.classList.contains('open'))closeLb()});}
 
-  var VID=window.VSL_GUID,vslP=document.getElementById('vslPlayer');
-  if(vslP&&VID){vslP.addEventListener('click',function(){
+  var VID=window.VSL_GUID,SRC=window.VSL_SRC,vslP=document.getElementById('vslPlayer');
+  if(vslP&&(SRC||VID)){vslP.addEventListener('click',function(){
     var f=document.createElement('div');f.className='vsl-frame';
+    if(SRC){f.innerHTML='<video src="'+SRC+'" poster="'+(window.VSL_POSTER||'')+'" controls autoplay playsinline preload="auto"></video>';vslP.parentNode.replaceChild(f,vslP);return;}
     f.innerHTML='<iframe src="https://iframe.mediadelivery.net/embed/'+LIB+'/'+VID+'?autoplay=true&preload=true&responsive=true" loading="lazy" allow="autoplay;fullscreen;picture-in-picture;encrypted-media" allowfullscreen></iframe>';
     vslP.parentNode.replaceChild(f,vslP);
   });}
