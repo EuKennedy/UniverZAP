@@ -91,6 +91,7 @@ export default {
       greetingMessage: '',
       emailCollectEnabled: false,
       senderNameType: 'friendly',
+      agentNameSignature: false,
       businessName: '',
       locktoSingleConversation: false,
       allowMessagesAfterResolved: true,
@@ -115,6 +116,11 @@ export default {
     };
   },
   computed: {
+    // Caixa criada pelo assistente do WAHA: por baixo e Channel::Api, e o
+    // waha_session e o que a API expoe para distingui-la.
+    isAWahaInbox() {
+      return Boolean(this.inbox?.waha_session);
+    },
     ...mapGetters({
       accountId: 'getCurrentAccountId',
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
@@ -467,6 +473,8 @@ export default {
       this.greetingMessage = this.inbox.greeting_message || '';
       this.emailCollectEnabled = this.inbox.enable_email_collect;
       this.senderNameType = this.inbox.sender_name_type;
+      this.agentNameSignature =
+        this.inbox.additional_attributes?.agent_name_signature || false;
       this.businessName = this.inbox.business_name;
       this.allowMessagesAfterResolved =
         this.inbox.allow_messages_after_resolved;
@@ -603,6 +611,15 @@ export default {
             reply_time: this.replyTime || 'in_a_few_minutes',
             continuity_via_email:
               this.isInboundEmailEnabled && this.continuityViaEmail,
+            // Espalha o que ja existe: additional_attributes e substituido
+            // inteiro no update, e e onde mora o source: 'waha' que faz o
+            // markdown ser traduzido para o WhatsApp.
+            ...(this.isAWahaInbox && {
+              additional_attributes: {
+                ...this.inbox.additional_attributes,
+                agent_name_signature: this.agentNameSignature,
+              },
+            }),
           },
         };
         if (this.avatarFile) {
@@ -1203,6 +1220,15 @@ export default {
                   $t(
                     'INBOX_MGMT.SETTINGS_POPUP.ALLOW_MESSAGES_AFTER_RESOLVED_SUB_TEXT'
                   )
+                "
+              />
+
+              <SettingsToggleSection
+                v-if="isAWahaInbox"
+                v-model="agentNameSignature"
+                :header="$t('INBOX_MGMT.SETTINGS_POPUP.AGENT_NAME_SIGNATURE')"
+                :description="
+                  $t('INBOX_MGMT.SETTINGS_POPUP.AGENT_NAME_SIGNATURE_SUB_TEXT')
                 "
               />
 

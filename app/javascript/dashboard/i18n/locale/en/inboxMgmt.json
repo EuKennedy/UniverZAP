@@ -615,6 +615,8 @@
           "SAVE_BUTTON_TEXT": "Save"
         }
       },
+      "AGENT_NAME_SIGNATURE": "Sign messages with the agent name",
+      "AGENT_NAME_SIGNATURE_SUB_TEXT": "Puts the name of whoever wrote the message in bold above it, in the customer's WhatsApp. Leave this off if the WAHA session already signs through its own Chatwoot app, or the name goes out twice.",
       "ALLOW_MESSAGES_AFTER_RESOLVED": {
         "ENABLED": "Enabled",
         "DISABLED": "Disabled"
