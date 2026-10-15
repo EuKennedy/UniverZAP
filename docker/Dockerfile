@@ -172,3 +172,13 @@ ENTRYPOINT ["docker/entrypoints/rails.sh"]
 CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
 
 EXPOSE 3000
+
+# Requisito do rolling update do Coolify: sem healthcheck passando ele nao tem
+# como saber a hora de trocar o trafego para o container novo. `start_period`
+# cobre o boot do Rails, durante o qual falhar e esperado.
+#
+# ATENCAO: esta mesma imagem roda o sidekiq, que NAO sobe servidor web. La o
+# healthcheck e desligado no compose (`healthcheck: disable: true`), senao
+# aquele container reporta unhealthy para sempre.
+HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=3 \
+  CMD curl -fsS http://localhost:3000/health || exit 1

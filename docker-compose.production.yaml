@@ -17,6 +17,16 @@ services:
       - postgres
       - redis
     restart: unless-stopped
+    # Liveness: se o Puma responde, da para rotear. `start_period` cobre o boot
+    # do Rails, durante o qual falhar e esperado e nao deve contar como doente.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    # Tempo para terminar as requisicoes em voo antes do SIGKILL.
+    stop_grace_period: 30s
 
   sidekiq:
     image: ghcr.io/eukennedy/univerzap:staging
@@ -34,6 +44,17 @@ services:
       - postgres
       - redis
     restart: unless-stopped
+    # O config/sidekiq.yml pede 60s para drenar, e explica por que: abaixo
+    # disso um job longo (download de midia + gatilho do Athenas + criacao de
+    # contato) era SIGKILLado no meio da transacao e a mensagem recebida do
+    # WhatsApp se perdia. Sem este valor aqui, o Docker mata muito antes e o
+    # pedido daquele arquivo nunca foi atendido. 90s da folga sobre os 60s.
+    stop_grace_period: 90s
+    # Desliga o HEALTHCHECK que vem na imagem: ele bate em localhost:3000, e
+    # este container nao sobe servidor web. Quem reporta a saude do Sidekiq e o
+    # /health/sidekiq do rails, que le o estado pelo Redis.
+    healthcheck:
+      disable: true
 
   postgres:
     image: pgvector/pgvector:pg16
