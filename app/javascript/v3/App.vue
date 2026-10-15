@@ -1,5 +1,9 @@
 <script>
 import SnackbarContainer from './components/SnackBar/Container.vue';
+// O mesmo aplicador do dashboard. Antes esta tela so olhava o SO, entao quem
+// escolhia tema claro no app continuava vendo o login escuro — duas telas do
+// mesmo produto discordando na mesma sessao.
+import { setColorTheme as applyColorTheme } from 'dashboard/helper/themeHelper';
 
 export default {
   components: { SnackbarContainer },
@@ -13,26 +17,16 @@ export default {
   },
   methods: {
     setColorTheme() {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        this.theme = 'dark';
-        document.documentElement.classList.add('dark');
-      } else {
-        this.theme = 'light';
-        document.documentElement.classList.remove('dark');
-      }
+      const isOSOnDarkMode = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches;
+      applyColorTheme(isOSOnDarkMode);
+      this.theme = document.body.classList.contains('dark') ? 'dark' : 'light';
     },
     listenToThemeChanges() {
       const mql = window.matchMedia('(prefers-color-scheme: dark)');
 
-      mql.onchange = e => {
-        if (e.matches) {
-          this.theme = 'dark';
-          document.documentElement.classList.add('dark');
-        } else {
-          this.theme = 'light';
-          document.documentElement.classList.remove('dark');
-        }
-      };
+      mql.onchange = () => this.setColorTheme();
     },
     setLocale(locale) {
       if (locale) {

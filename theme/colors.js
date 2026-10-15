@@ -226,8 +226,10 @@ export const colors = {
     },
 
     black: '#000000',
-    // UniverZAP Dopamine Green — replaces upstream Chatwoot blue (#2781F6)
-    brand: '#10B981',
+    // UniverZAP Dopamine Green. Vive nos tokens junto com o resto da paleta,
+    // para que trocar a marca seja uma edicao so e para que o tema escuro
+    // possa ter o seu proprio tom sem tocar aqui.
+    brand: 'rgb(var(--brand) / <alpha-value>)',
     background: 'rgb(var(--background-color) / <alpha-value>)',
     'input-background': 'rgba(var(--background-input-box))',
     surface: {

@@ -44,6 +44,12 @@ body {
   @apply h-full w-full;
 }
 
+// ATENCAO AO TROCAR A PALETA: as duas cores abaixo (#E2E3E7 claro, #343434
+// escuro) vivem DENTRO da string do data-URI e nao aparecem em busca por token.
+// Nao da para ler uma CSS var de dentro de um data-URI, entao elas precisam ser
+// trocadas na mao junto com os tokens — ou convertidas para mask-image com
+// background-color tokenizado, o que preserva o tracejado e custa um teste
+// visual.
 .custom-dashed-border {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23E2E3E7' stroke-width='2' stroke-dasharray='6, 8' stroke-dashoffset='0' stroke-linecap='round'/%3E%3C/svg%3E");
   background-position: center;
