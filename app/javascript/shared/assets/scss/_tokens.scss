@@ -8,6 +8,16 @@
 // Tailwind as consuma como `rgb(var(--slate-1) / <alpha-value>)` em
 // theme/colors.js e o canal alpha continue funcionando (`bg-n-slate-3/50`).
 // scss-lint:disable PropertySortOrder
+// A rampa abaixo ainda se chama `blue` e renderiza verde. O nome fica por ora
+// de proposito: renomear para `accent` toca 2698 usos em arquivos .vue e viraria
+// uma maquina de conflito contra o trabalho de landing em andamento. Trocar os
+// VALORES repinta o app inteiro sem conflitar com nada. O rename e um sed
+// mecanico, verificavel por build, e pode vir sozinho quando a landing fechar.
+//
+// Passo 9 (solido) e 37 160 105 — o verde do BotConversa. Escolhido por
+// contraste: o 19 203 141 que estava aqui da 2,1:1 com texto branco e reprova
+// em acessibilidade. Este da 3,3:1, que passa no limiar de texto grande, que e
+// o caso de botao.
 @layer base {
   // NEXT COLORS START
   :root {
@@ -38,18 +48,18 @@
     --iris-11: 87 83 198;
     --iris-12: 39 41 98;
 
-    --blue-1: 251 253 255;
-    --blue-2: 245 249 255;
-    --blue-3: 233 243 255;
-    --blue-4: 218 236 255;
-    --blue-5: 201 226 255;
-    --blue-6: 181 213 255;
-    --blue-7: 155 195 252;
-    --blue-8: 117 171 247;
-    --blue-9: 39 129 246;
-    --blue-10: 16 115 233;
-    --blue-11: 8 109 224;
-    --blue-12: 11 50 101;
+    --blue-1: 248 254 252;
+    --blue-2: 240 252 247;
+    --blue-3: 218 248 235;
+    --blue-4: 192 242 220;
+    --blue-5: 161 233 200;
+    --blue-6: 121 221 176;
+    --blue-7: 70 207 154;
+    --blue-8: 38 200 145;
+    --blue-9: 37 160 105;
+    --blue-10: 26 138 90;
+    --blue-11: 11 132 88;
+    --blue-12: 8 60 41;
 
     --ruby-1: 255 252 253;
     --ruby-2: 255 247 248;
@@ -117,28 +127,29 @@
     --violet-11: 101 85 183;
     --violet-12: 47 38 95;
 
-    // UniverZAP Dopamine Green. Mesmo valor nos dois temas por ora;
-    // a Fase 1 ajusta o tom escuro se precisar de mais contraste.
-    --brand: 16 185 129;
+    // Um verde so no produto inteiro. Era 16 185 129 (o verde da logo), mas
+    // deixar o acento das acoes num tom e a marca em outro, a 10% de distancia,
+    // le como erro e nao como sistema. Este e o mesmo do passo 9.
+    --brand: 37 160 105;
     --background-color: 247 247 247;
     --surface-1: 254 254 254;
     --surface-2: 255 255 255;
     --surface-active: 255 255 255;
     --background-input-box: 0, 0, 0, 0.03;
-    --text-blue: 1 22 44;
+    --text-blue: 2 30 20;
     --text-purple: 2 4 49;
     --text-amber: 37 24 1;
     --border-container: 236 236 236;
     --border-strong: 226 227 231;
     --border-weak: 234 234 234;
-    --border-blue-strong: 18 61 117;
+    --border-blue-strong: 12 78 60;
     --solid-1: 255 255 255;
     --solid-2: 255 255 255;
     --solid-3: 255 255 255;
     --solid-active: 255 255 255;
     --solid-amber: 255 228 181;
-    --solid-blue: 218 236 255;
-    --solid-blue-2: 251 253 255;
+    --solid-blue: 192 242 220;
+    --solid-blue-2: 248 254 252;
     --solid-iris: 230 231 255;
     --solid-purple: 230 231 255;
     --solid-red: 254 200 201;
@@ -156,7 +167,7 @@
     --alpha-3: 255, 255, 255, 0.96;
     --black-alpha-1: 0, 0, 0, 0.12;
     --black-alpha-2: 0, 0, 0, 0.04;
-    --border-blue: 39, 129, 246, 0.5;
+    --border-blue: 37, 160, 105, 0.5;
     --white-alpha: 255, 255, 255, 0.8;
   }
 
@@ -188,18 +199,18 @@
     --iris-11: 158 177 255;
     --iris-12: 224 223 254;
 
-    --blue-1: 10 17 28;
-    --blue-2: 15 24 38;
-    --blue-3: 15 39 72;
-    --blue-4: 10 49 99;
-    --blue-5: 18 61 117;
-    --blue-6: 29 84 134;
-    --blue-7: 40 89 156;
-    --blue-8: 48 106 186;
-    --blue-9: 39 129 246;
-    --blue-10: 21 116 231;
-    --blue-11: 126 182 255;
-    --blue-12: 205 227 255;
+    --blue-1: 12 22 18;
+    --blue-2: 16 30 25;
+    --blue-3: 14 48 38;
+    --blue-4: 6 64 50;
+    --blue-5: 12 78 60;
+    --blue-6: 22 95 73;
+    --blue-7: 30 116 88;
+    --blue-8: 34 145 107;
+    --blue-9: 37 160 105;
+    --blue-10: 48 180 120;
+    --blue-11: 96 232 184;
+    --blue-12: 188 244 218;
 
     --ruby-1: 25 17 19;
     --ruby-2: 30 21 23;
@@ -267,25 +278,25 @@
     --violet-11: 169 153 236;
     --violet-12: 226 221 254;
 
-    --brand: 16 185 129;
+    --brand: 37 160 105;
     --background-color: 28 29 32;
     --surface-1: 20 21 23;
     --surface-2: 22 23 26;
     --surface-active: 53 57 66;
     --background-input-box: 255, 255, 255, 0.02;
-    --text-blue: 213 234 255;
+    --text-blue: 199 245 225;
     --text-purple: 232 233 254;
     --text-amber: 255 247 234;
     --border-strong: 46 45 50;
     --border-weak: 31 31 37;
-    --border-blue-strong: 201 226 255;
+    --border-blue-strong: 161 233 200;
     --solid-1: 23 23 26;
     --solid-2: 29 30 36;
     --solid-3: 44 45 54;
     --solid-active: 53 57 66;
     --solid-amber: 56 50 41;
-    --solid-blue: 15 57 102;
-    --solid-blue-2: 26 29 35;
+    --solid-blue: 10 70 52;
+    --solid-blue-2: 24 32 28;
     --solid-iris: 38 42 101;
     --solid-purple: 51 51 107;
     --solid-red: 90 33 34;
@@ -303,7 +314,7 @@
     --alpha-3: 33, 34, 38, 0.95;
     --black-alpha-1: 0, 0, 0, 0.3;
     --black-alpha-2: 0, 0, 0, 0.2;
-    --border-blue: 39, 129, 246, 0.5;
+    --border-blue: 37, 160, 105, 0.5;
     --border-container: 255, 255, 255, 0;
     --white-alpha: 255, 255, 255, 0.1;
   }
