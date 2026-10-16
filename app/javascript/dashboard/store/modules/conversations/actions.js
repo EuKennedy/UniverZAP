@@ -50,17 +50,15 @@ const actions = {
       const {
         data: { data },
       } = await ConversationApi.get(params);
-      // UniverZAP: the waiting / in_attendance tabs send assignee_type=all, but
-      // ChatList keys pagination (currentPage / endReached) by the tab itself,
-      // i.e. the conversation_type. Bucket the page state under the same key,
-      // otherwise endReached for these tabs is never set and the list spins
-      // forever (infinite loadMore + repeated meta calls).
-      const conversationTypeTabs = ['waiting', 'in_attendance', 'groups'];
-      const pageFilterKey = conversationTypeTabs.includes(
-        params.conversationType
-      )
-        ? params.conversationType
-        : params.assigneeType;
+      // UniverZAP: Grupos and the Todos dropdown all send assignee_type=all,
+      // but ChatList keys pagination (currentPage / endReached) by the bucket
+      // on screen. Bucket the page state under the same key, otherwise
+      // endReached is never set and the list spins forever (infinite loadMore
+      // + repeated meta calls). Mirrors ChatList's listKey.
+      const pageFilterKey =
+        params.conversationType === 'groups'
+          ? params.conversationType
+          : params.replyState || params.assigneeType;
       buildConversationList({ commit, dispatch }, params, data, pageFilterKey);
     } catch (error) {
       // Always clear the loading flag — otherwise a failed/timed-out list
@@ -422,11 +420,12 @@ const actions = {
 
   updateConversationLastActivity(
     { commit },
-    { conversationId, lastActivityAt }
+    { conversationId, lastActivityAt, awaitingReply }
   ) {
     commit(types.UPDATE_CONVERSATION_LAST_ACTIVITY, {
       lastActivityAt,
       conversationId,
+      awaitingReply,
     });
   },
 

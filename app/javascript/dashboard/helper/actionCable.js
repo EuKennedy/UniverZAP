@@ -2,6 +2,7 @@ import AuthAPI from '../api/auth';
 import BaseActionCableConnector from '../../shared/helpers/BaseActionCableConnector';
 import DashboardAudioNotificationHelper from './AudioAlerts/DashboardAudioNotificationHelper';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
+import { MESSAGE_TYPE } from 'shared/constants/messages';
 import { emitter } from 'shared/helpers/mitt';
 import { useImpersonation } from 'dashboard/composables/useImpersonation';
 
@@ -189,7 +190,10 @@ class ActionCableConnector extends BaseActionCableConnector {
 
   onMessageCreated = data => {
     const {
-      conversation: { last_activity_at: lastActivityAt },
+      conversation: {
+        last_activity_at: lastActivityAt,
+        awaiting_reply: awaitingReply,
+      },
       conversation_id: conversationId,
     } = data;
     DashboardAudioNotificationHelper.onNewMessage(data);
@@ -197,7 +201,13 @@ class ActionCableConnector extends BaseActionCableConnector {
     this.app.$store.dispatch('updateConversationLastActivity', {
       lastActivityAt,
       conversationId,
+      awaitingReply,
     });
+    // A chat message can move its conversation between Não atendidos and
+    // Atendidos; their badges (and where the list stops paginating) follow.
+    if (!data.private && data.message_type !== MESSAGE_TYPE.ACTIVITY) {
+      this.fetchConversationStats();
+    }
   };
 
   // eslint-disable-next-line class-methods-use-this

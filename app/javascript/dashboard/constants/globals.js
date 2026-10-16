@@ -4,10 +4,14 @@ export default {
     ME: 'me',
     UNASSIGNED: 'unassigned',
     ALL: 'all',
-    // UniverZAP: conversation_type tabs (drive `conversation_type` API param, not assignee_id).
-    WAITING: 'waiting',
-    IN_ATTENDANCE: 'in_attendance',
+    // UniverZAP: WhatsApp groups tab (drives the `conversation_type` API param).
     GROUPS: 'groups',
+  },
+  // UniverZAP: the dropdown of the Todos tab, sent as `reply_state`.
+  REPLY_STATE: {
+    ALL: 'all',
+    UNANSWERED: 'unanswered',
+    ANSWERED: 'answered',
   },
   STATUS_TYPE: {
     OPEN: 'open',

@@ -132,11 +132,12 @@ class Conversation < ApplicationRecord
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
   scope :unattended, -> { where(first_reply_created_at: nil).or(where.not(waiting_since: nil)) }
-  # UniverZAP semantics:
-  # - waiting       = no agent reply yet (conversation still awaiting first response).
-  # - in_attendance = agent has already replied at least once.
-  scope :waiting, -> { where(first_reply_created_at: nil) }
-  scope :in_attendance, -> { where.not(first_reply_created_at: nil) }
+  # UniverZAP: who has the last word. `awaiting_reply` is true while the latest
+  # chat message came from the contact (Message#set_conversation_activity keeps
+  # it). Not the same as waiting_since: that is the SLA clock only a human reply
+  # stops, so a broadcast or API message would leave it running forever.
+  scope :unanswered, -> { where(awaiting_reply: true) }
+  scope :answered, -> { where(awaiting_reply: false) }
   # UniverZAP: WhatsApp group chats (contact identifier ends with "@g.us") are
   # bucketed into a dedicated "Grupos" tab and excluded from the regular tabs
   # to cut visual noise. `is_group` is set on create (see set_group_flag) and

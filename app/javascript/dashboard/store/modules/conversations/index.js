@@ -120,13 +120,17 @@ export const mutations = {
     chat.meta.team = team;
   },
 
+  // Mirrors Message#set_conversation_activity, which writes both columns
+  // without a conversation.updated event: this is how Não atendidos /
+  // Atendidos follow a new message live.
   [types.UPDATE_CONVERSATION_LAST_ACTIVITY](
     _state,
-    { lastActivityAt, conversationId }
+    { lastActivityAt, conversationId, awaitingReply }
   ) {
     const [chat] = _state.allConversations.filter(c => c.id === conversationId);
     if (chat) {
       chat.last_activity_at = lastActivityAt;
+      if (awaitingReply !== undefined) chat.awaiting_reply = awaitingReply;
     }
   },
   [types.ASSIGN_PRIORITY](_state, { priority, conversationId }) {

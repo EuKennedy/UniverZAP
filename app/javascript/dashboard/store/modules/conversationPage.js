@@ -1,16 +1,20 @@
 import * as types from '../mutation-types';
 
+// Keyed by the bucket on screen (ChatList's listKey): Todos and its dropdown
+// states, Grupos, or the applied advanced filters.
 const state = {
   currentPage: {
-    me: 0,
-    unassigned: 0,
     all: 0,
+    unanswered: 0,
+    answered: 0,
+    groups: 0,
     appliedFilters: 0,
   },
   hasEndReached: {
-    me: false,
-    unassigned: false,
     all: false,
+    unanswered: false,
+    answered: false,
+    groups: false,
   },
 };
 
@@ -18,9 +22,9 @@ export const getters = {
   getHasEndReached: $state => filter => {
     return $state.hasEndReached[filter];
   },
-  // Zero for a tab this state was never told about. The fork added the
-  // attendance tabs (Aguardando, Em atendimento, Grupos) as assignee tabs but
-  // not as keys here, so the page came back undefined, `currentPage + 1` was
+  // Zero for a tab this state was never told about. The fork once added tabs
+  // (Aguardando, Em atendimento, Grupos) without keys here, so the page came
+  // back undefined, `currentPage + 1` was
   // NaN, and every request asked the server for page NaN — which answers with
   // page 1, for ever. The list never grew past the first page, so neither
   // hasLoadedAllForTab nor the empty-page end marker could ever fire, and the
@@ -55,11 +59,12 @@ export const mutations = {
     };
   },
   [types.default.SET_CONVERSATION_END_REACHED]: ($state, { filter }) => {
+    // Todos holds both dropdown states: once it is exhausted, so are they.
     if (filter === 'all') {
       $state.hasEndReached = {
         ...$state.hasEndReached,
-        unassigned: true,
-        me: true,
+        unanswered: true,
+        answered: true,
       };
     }
     $state.hasEndReached = {
@@ -69,16 +74,18 @@ export const mutations = {
   },
   [types.default.CLEAR_CONVERSATION_PAGE]: $state => {
     $state.currentPage = {
-      me: 0,
-      unassigned: 0,
       all: 0,
+      unanswered: 0,
+      answered: 0,
+      groups: 0,
       appliedFilters: 0,
     };
 
     $state.hasEndReached = {
-      me: false,
-      unassigned: false,
       all: false,
+      unanswered: false,
+      answered: false,
+      groups: false,
       appliedFilters: false,
     };
   },

@@ -141,6 +141,7 @@ RSpec.describe Message do
             source_id: message.conversation.contact_inbox.source_id
           },
           last_activity_at: message.conversation.last_activity_at.to_i,
+          awaiting_reply: message.conversation.awaiting_reply,
           unread_count: message.conversation.unread_incoming_messages.count
         },
         sentiment: {},

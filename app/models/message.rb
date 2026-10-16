@@ -160,6 +160,7 @@ class Message < ApplicationRecord
       assignee_id: conversation.assignee_id,
       unread_count: conversation.unread_incoming_messages.count,
       last_activity_at: conversation.last_activity_at.to_i,
+      awaiting_reply: conversation.awaiting_reply,
       contact_inbox: { source_id: conversation.contact_inbox.source_id }
     }
   end
@@ -347,9 +348,11 @@ class Message < ApplicationRecord
 
   def execute_after_create_commit_callbacks
     # rails issue with order of active record callbacks being executed https://github.com/rails/rails/issues/20911
+    # Activity first: reopening broadcasts the conversation, and that payload
+    # must already carry who has the last word.
+    set_conversation_activity
     reopen_conversation
     mark_pending_conversation_as_open_for_human_response
-    set_conversation_activity
     dispatch_create_events
     send_reply
     execute_message_template_hooks
@@ -470,8 +473,13 @@ class Message < ApplicationRecord
   end
 
   def set_conversation_activity
+    attributes = { last_activity_at: created_at, updated_at: Time.current }
+    # Any outgoing message answers — agent, AI, broadcast, API. Private notes,
+    # activities and templates (out-of-office, greeting, CSAT) don't change
+    # who has the last word.
+    attributes[:awaiting_reply] = incoming? if (incoming? || outgoing?) && !private?
     # rubocop:disable Rails/SkipsModelValidations
-    conversation.update_columns(last_activity_at: created_at, updated_at: Time.current)
+    conversation.update_columns(attributes)
     # rubocop:enable Rails/SkipsModelValidations
   end
 

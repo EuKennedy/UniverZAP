@@ -72,7 +72,8 @@ const store = useStore();
 
 const resolveAttributesModalRef = ref(null);
 
-const activeAssigneeTab = ref(wootConstants.ASSIGNEE_TYPE.ME);
+const activeAssigneeTab = ref(wootConstants.ASSIGNEE_TYPE.ALL);
+const activeReplyState = ref(wootConstants.REPLY_STATE.ALL);
 const activeStatus = ref(wootConstants.STATUS_TYPE.OPEN);
 const activeSortBy = ref(wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC);
 const showAdvancedFilters = ref(false);
@@ -92,9 +93,7 @@ const advancedFilterTypes = ref(
 
 const currentUser = useMapGetter('getCurrentUser');
 const chatLists = useMapGetter('getFilteredConversations');
-const mineChatsList = useMapGetter('getMineChats');
 const allChatList = useMapGetter('getAllStatusChats');
-const unAssignedChatsList = useMapGetter('getUnAssignedChats');
 const participatingChatsList = useMapGetter('getParticipatingChats');
 const chatListLoading = useMapGetter('getChatListLoadingStatus');
 const activeInbox = useMapGetter('getSelectedInbox');
@@ -172,6 +171,20 @@ const userPermissions = computed(() => {
   return getUserPermissions(currentUser.value, currentAccountId.value);
 });
 
+const REPLY_STATE_COUNT_KEYS = {
+  [wootConstants.REPLY_STATE.ALL]: 'allCount',
+  [wootConstants.REPLY_STATE.UNANSWERED]: 'unansweredCount',
+  [wootConstants.REPLY_STATE.ANSWERED]: 'answeredCount',
+};
+
+const replyStateItems = computed(() =>
+  Object.entries(REPLY_STATE_COUNT_KEYS).map(([key, countKey]) => ({
+    key,
+    name: t(`CHAT_LIST.REPLY_STATE.${key}`),
+    count: conversationStats.value[countKey] || 0,
+  }))
+);
+
 const assigneeTabItems = computed(() => {
   return filterItemsByPermission(
     ASSIGNEE_TYPE_TAB_PERMISSIONS,
@@ -181,8 +194,24 @@ const assigneeTabItems = computed(() => {
     key,
     name: t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${key}`),
     count: conversationStats.value[countKey] || 0,
+    ...(key === wootConstants.ASSIGNEE_TYPE.ALL && {
+      options: replyStateItems.value,
+      activeOption: activeReplyState.value,
+    }),
   }));
 });
+
+const isGroupsTab = computed(
+  () => activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.GROUPS
+);
+
+// The bucket on screen: Grupos, or Todos narrowed by its dropdown. Pagination
+// and the end-of-list badge are kept per bucket.
+const listKey = computed(() =>
+  isGroupsTab.value
+    ? wootConstants.ASSIGNEE_TYPE.GROUPS
+    : activeReplyState.value
+);
 
 const showAssigneeInConversationCard = computed(() => {
   return (
@@ -194,13 +223,13 @@ const showAssigneeInConversationCard = computed(() => {
 const currentPageFilterKey = computed(() => {
   return hasAppliedFiltersOrActiveFolders.value
     ? 'appliedFilters'
-    : activeAssigneeTab.value;
+    : listKey.value;
 });
 
 const inbox = useFunctionGetter('inboxes/getInbox', activeInbox);
 const currentPage = useFunctionGetter(
   'conversationPage/getCurrentPageFilter',
-  activeAssigneeTab
+  listKey
 );
 const currentFiltersPage = useFunctionGetter(
   'conversationPage/getCurrentPageFilter',
@@ -217,10 +246,10 @@ const conversationCustomAttributes = useFunctionGetter(
 );
 
 const activeAssigneeTabCount = computed(() => {
-  const count = assigneeTabItems.value.find(
-    item => item.key === activeAssigneeTab.value
-  ).count;
-  return count;
+  const countKey = isGroupsTab.value
+    ? 'groupCount'
+    : REPLY_STATE_COUNT_KEYS[activeReplyState.value];
+  return conversationStats.value[countKey] || 0;
 });
 
 const conversationListPagination = computed(() => {
@@ -245,33 +274,25 @@ const conversationListPagination = computed(() => {
   return currentPage.value + 1;
 });
 
-// UniverZAP: waiting / in_attendance are attendance-state tabs, not
-// assignee filters. Translate them into `conversation_type` while keeping
-// assignee_type='all' so the backend returns the full attendance bucket.
-const ATTENDANCE_STATE_TABS = [
-  wootConstants.ASSIGNEE_TYPE.WAITING,
-  wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE,
-  wootConstants.ASSIGNEE_TYPE.GROUPS,
-];
-
-const isAttendanceStateTab = computed(() =>
-  ATTENDANCE_STATE_TABS.includes(activeAssigneeTab.value)
-);
-
+// UniverZAP: Grupos is not an assignee filter but a `conversation_type`, and
+// the Todos dropdown travels as `reply_state`; both keep assignee_type=all.
 const conversationFilters = computed(() => {
   return {
     inboxId: props.conversationInbox ? props.conversationInbox : undefined,
-    assigneeType: isAttendanceStateTab.value
-      ? wootConstants.ASSIGNEE_TYPE.ALL
-      : activeAssigneeTab.value,
+    assigneeType: wootConstants.ASSIGNEE_TYPE.ALL,
     status: activeStatus.value,
     sortBy: activeSortBy.value,
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
     teamId: props.teamId || undefined,
-    conversationType: isAttendanceStateTab.value
-      ? activeAssigneeTab.value
+    conversationType: isGroupsTab.value
+      ? wootConstants.ASSIGNEE_TYPE.GROUPS
       : props.conversationType || undefined,
+    replyState:
+      isGroupsTab.value ||
+      activeReplyState.value === wootConstants.REPLY_STATE.ALL
+        ? undefined
+        : activeReplyState.value,
   };
 });
 
@@ -312,27 +333,19 @@ const pageTitle = computed(() => {
   return t('CHAT_LIST.TAB_HEADING');
 });
 
-function filterByAssigneeTab(conversations) {
-  // Groups tab shows ONLY WhatsApp groups; every other tab excludes them so
-  // they don't pollute the regular lists. The store accumulates both, so the
-  // client-side split mirrors the backend filtering.
-  if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.GROUPS) {
+// The store accumulates every bucket fetched so far, so the list on screen is
+// the client-side mirror of the backend split: Grupos holds ONLY WhatsApp
+// groups, Todos everything else, narrowed by who has the last word.
+function filterByListKey(conversations) {
+  if (isGroupsTab.value) {
     return conversations.filter(c => c.is_group);
   }
   const nonGroups = conversations.filter(c => !c.is_group);
-  if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.ME) {
-    return nonGroups.filter(
-      c => c.meta?.assignee?.id === currentUser.value?.id
-    );
+  if (activeReplyState.value === wootConstants.REPLY_STATE.UNANSWERED) {
+    return nonGroups.filter(c => c.awaiting_reply);
   }
-  if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.UNASSIGNED) {
-    return nonGroups.filter(c => !c.meta?.assignee);
-  }
-  if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.WAITING) {
-    return nonGroups.filter(c => !c.first_reply_created_at);
-  }
-  if (activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE) {
-    return nonGroups.filter(c => !!c.first_reply_created_at);
+  if (activeReplyState.value === wootConstants.REPLY_STATE.ANSWERED) {
+    return nonGroups.filter(c => !c.awaiting_reply);
   }
   return nonGroups;
 }
@@ -342,35 +355,11 @@ const conversationList = computed(() => {
 
   if (!hasAppliedFiltersOrActiveFolders.value) {
     const filters = conversationFilters.value;
-    if (
+    const chats =
       props.conversationType === wootConstants.CONVERSATION_TYPE.PARTICIPATING
-    ) {
-      localConversationList = filterByAssigneeTab(
-        participatingChatsList.value(filters)
-      );
-    } else if (activeAssigneeTab.value === 'me') {
-      localConversationList = mineChatsList
-        .value(filters)
-        .filter(c => !c.is_group);
-    } else if (activeAssigneeTab.value === 'unassigned') {
-      localConversationList = unAssignedChatsList
-        .value(filters)
-        .filter(c => !c.is_group);
-    } else if (
-      activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.WAITING ||
-      activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.IN_ATTENDANCE ||
-      activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.GROUPS
-    ) {
-      // Backend already returns the filtered bucket; reuse the "all" list and
-      // filter client-side (groups-only for the Grupos tab, first_reply for
-      // waiting/in_attendance, all of which exclude groups).
-      localConversationList = filterByAssigneeTab(allChatList.value(filters));
-    } else {
-      // Default (Todos): exclude groups — they live only in the Grupos tab.
-      localConversationList = allChatList
-        .value(filters)
-        .filter(c => !c.is_group);
-    }
+        ? participatingChatsList.value(filters)
+        : allChatList.value(filters);
+    localConversationList = filterByListKey(chats);
   } else {
     localConversationList = [...chatLists.value];
   }
@@ -650,15 +639,29 @@ function loadMoreConversations() {
   }
 }
 
+// Switching buckets keeps what the store already holds; only a bucket that was
+// never fetched asks the server for its first page.
+function fetchIfBucketIsEmpty() {
+  resetBulkActions();
+  emitter.emit('clearSearchInput');
+  if (!currentPage.value) {
+    fetchConversations();
+  }
+}
+
 function updateAssigneeTab(selectedTab) {
   if (activeAssigneeTab.value !== selectedTab) {
-    resetBulkActions();
-    emitter.emit('clearSearchInput');
     activeAssigneeTab.value = selectedTab;
-    if (!currentPage.value) {
-      fetchConversations();
-    }
+    fetchIfBucketIsEmpty();
   }
+}
+
+// The dropdown belongs to Todos: picking a state from it also leaves Grupos.
+function updateReplyState(selectedState) {
+  if (activeReplyState.value === selectedState && !isGroupsTab.value) return;
+  activeReplyState.value = selectedState;
+  activeAssigneeTab.value = wootConstants.ASSIGNEE_TYPE.ALL;
+  fetchIfBucketIsEmpty();
 }
 
 function onBasicFilterChange(value, type) {
@@ -978,8 +981,8 @@ watch(conversationFilters, (newVal, oldVal) => {
       v-if="!hasAppliedFiltersOrActiveFolders"
       :items="assigneeTabItems"
       :active-tab="activeAssigneeTab"
-      is-compact
       @chat-tab-change="updateAssigneeTab"
+      @option-change="updateReplyState"
     />
 
     <p
