@@ -1,6 +1,6 @@
 services:
   rails:
-    image: ghcr.io/eukennedy/univerzap:sha-755df24
+    image: ghcr.io/eukennedy/univerzap:staging
     pull_policy: always
     env_file: .env
     environment:
@@ -33,7 +33,7 @@ services:
     stop_grace_period: 30s
 
   sidekiq:
-    image: ghcr.io/eukennedy/univerzap:sha-755df24
+    image: ghcr.io/eukennedy/univerzap:staging
     pull_policy: always
     env_file: .env
     environment:
