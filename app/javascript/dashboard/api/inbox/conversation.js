@@ -16,7 +16,7 @@ class ConversationApi extends ApiClient {
     conversationType,
     sortBy,
     updatedWithin,
-    replyState,
+    attendanceState,
   }) {
     return axios.get(this.url, {
       params: {
@@ -29,7 +29,7 @@ class ConversationApi extends ApiClient {
         conversation_type: conversationType,
         sort_by: sortBy,
         updated_within: updatedWithin,
-        reply_state: replyState,
+        attendance_state: attendanceState,
       },
     });
   }

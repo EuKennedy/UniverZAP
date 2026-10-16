@@ -1,19 +1,21 @@
 import * as types from '../mutation-types';
 
 // Keyed by the bucket on screen (ChatList's listKey): Todos and its dropdown
-// states, Grupos, or the applied advanced filters.
+// views, Grupos, or the applied advanced filters.
 const state = {
   currentPage: {
     all: 0,
-    unanswered: 0,
-    answered: 0,
+    me: 0,
+    waiting: 0,
+    in_attendance: 0,
     groups: 0,
     appliedFilters: 0,
   },
   hasEndReached: {
     all: false,
-    unanswered: false,
-    answered: false,
+    me: false,
+    waiting: false,
+    in_attendance: false,
     groups: false,
   },
 };
@@ -59,12 +61,13 @@ export const mutations = {
     };
   },
   [types.default.SET_CONVERSATION_END_REACHED]: ($state, { filter }) => {
-    // Todos holds both dropdown states: once it is exhausted, so are they.
+    // Todos holds every dropdown view: once it is exhausted, so are they.
     if (filter === 'all') {
       $state.hasEndReached = {
         ...$state.hasEndReached,
-        unanswered: true,
-        answered: true,
+        me: true,
+        waiting: true,
+        in_attendance: true,
       };
     }
     $state.hasEndReached = {
@@ -75,16 +78,18 @@ export const mutations = {
   [types.default.CLEAR_CONVERSATION_PAGE]: $state => {
     $state.currentPage = {
       all: 0,
-      unanswered: 0,
-      answered: 0,
+      me: 0,
+      waiting: 0,
+      in_attendance: 0,
       groups: 0,
       appliedFilters: 0,
     };
 
     $state.hasEndReached = {
       all: false,
-      unanswered: false,
-      answered: false,
+      me: false,
+      waiting: false,
+      in_attendance: false,
       groups: false,
       appliedFilters: false,
     };

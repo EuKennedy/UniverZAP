@@ -18,22 +18,24 @@ describe('#mutations', () => {
   describe('#CLEAR_CONVERSATION_PAGE', () => {
     it('resets the state to initial state', () => {
       const state = {
-        currentPage: { all: 3, unanswered: 2, answered: 1, groups: 1 },
-        hasEndReached: { all: true, unanswered: true, groups: true },
+        currentPage: { all: 3, me: 2, waiting: 1, groups: 1 },
+        hasEndReached: { all: true, waiting: true, groups: true },
       };
       mutations[types.default.CLEAR_CONVERSATION_PAGE](state);
       expect(state).toEqual({
         currentPage: {
           all: 0,
-          unanswered: 0,
-          answered: 0,
+          me: 0,
+          waiting: 0,
+          in_attendance: 0,
           groups: 0,
           appliedFilters: 0,
         },
         hasEndReached: {
           all: false,
-          unanswered: false,
-          answered: false,
+          me: false,
+          waiting: false,
+          in_attendance: false,
           groups: false,
           appliedFilters: false,
         },
@@ -44,24 +46,25 @@ describe('#mutations', () => {
   describe('#SET_CONVERSATION_END_REACHED', () => {
     it('set conversation end reached correctly', () => {
       const state = {
-        hasEndReached: { all: false, unanswered: false, answered: false },
+        hasEndReached: { all: false, me: false, waiting: false },
       };
       mutations[types.default.SET_CONVERSATION_END_REACHED](state, {
-        filter: 'unanswered',
+        filter: 'waiting',
       });
       expect(state.hasEndReached).toEqual({
         all: false,
-        unanswered: true,
-        answered: false,
+        me: false,
+        waiting: true,
       });
     });
 
-    it('marks both dropdown states as reached once Todos is exhausted', () => {
+    it('marks every dropdown view as reached once Todos is exhausted', () => {
       const state = {
         hasEndReached: {
           all: false,
-          unanswered: false,
-          answered: false,
+          me: false,
+          waiting: false,
+          in_attendance: false,
           groups: false,
         },
       };
@@ -70,8 +73,9 @@ describe('#mutations', () => {
       });
       expect(state.hasEndReached).toEqual({
         all: true,
-        unanswered: true,
-        answered: true,
+        me: true,
+        waiting: true,
+        in_attendance: true,
         groups: false,
       });
     });

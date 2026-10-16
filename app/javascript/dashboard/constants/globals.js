@@ -7,11 +7,13 @@ export default {
     // UniverZAP: WhatsApp groups tab (drives the `conversation_type` API param).
     GROUPS: 'groups',
   },
-  // UniverZAP: the dropdown of the Todos tab, sent as `reply_state`.
-  REPLY_STATE: {
+  // UniverZAP: the views of the Todos dropdown. Minhas narrows by assignee;
+  // Aguardando / Em atendimento travel as `attendance_state`.
+  LIST_VIEW: {
     ALL: 'all',
-    UNANSWERED: 'unanswered',
-    ANSWERED: 'answered',
+    ME: 'me',
+    WAITING: 'waiting',
+    IN_ATTENDANCE: 'in_attendance',
   },
   STATUS_TYPE: {
     OPEN: 'open',

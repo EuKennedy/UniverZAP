@@ -17,13 +17,10 @@
     "ASSIGNEE_TYPE_TABS": {
       "me": "Mine",
       "unassigned": "Unassigned",
+      "waiting": "Waiting",
+      "in_attendance": "In attendance",
       "all": "All",
       "groups": "Groups"
-    },
-    "REPLY_STATE": {
-      "all": "All",
-      "unanswered": "Unanswered",
-      "answered": "Answered"
     },
     "CHAT_STATUS_FILTER_ITEMS": {
       "open": {

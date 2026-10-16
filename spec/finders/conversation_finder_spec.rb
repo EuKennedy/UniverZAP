@@ -106,16 +106,16 @@ describe ConversationFinder do
 
       it 'returns the correct meta' do
         result = conversation_finder.perform
-        # UniverZAP adds the Grupos tab and the Todos dropdown (Não atendidos /
-        # Atendidos) alongside the upstream four.
+        # UniverZAP adds the Grupos tab and the Todos dropdown (Aguardando /
+        # Em atendimento) alongside the upstream four.
         expect(result[:count]).to eq({
                                        mine_count: 2,
                                        assigned_count: 3,
                                        unassigned_count: 1,
                                        all_count: 4,
                                        group_count: 0,
-                                       unanswered_count: 0,
-                                       answered_count: 4
+                                       waiting_count: 4,
+                                       in_attendance_count: 0
                                      })
       end
     end
@@ -212,8 +212,8 @@ describe ConversationFinder do
                                        unassigned_count: 1,
                                        all_count: 4,
                                        group_count: 0,
-                                       unanswered_count: 0,
-                                       answered_count: 4
+                                       waiting_count: 4,
+                                       in_attendance_count: 0
                                      })
       end
 
@@ -238,42 +238,47 @@ describe ConversationFinder do
       end
     end
 
-    context 'with reply_state' do
+    context 'with attendance_state' do
+      let!(:replied) do
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, first_reply_created_at: Time.current)
+      end
+
+      def bucket(attendance_state)
+        described_class.new(user_1, { assignee_type: 'all', attendance_state: attendance_state }).perform[:conversations].map(&:id)
+      end
+
+      it 'splits Aguardando from Em atendimento by the first agent reply' do
+        expect(bucket('in_attendance')).to eq([replied.id])
+        expect(bucket('waiting')).not_to include(replied.id)
+        expect(bucket('waiting').size).to eq(4)
+      end
+
+      it 'counts both views before narrowing the list' do
+        count = described_class.new(user_1, { assignee_type: 'all', attendance_state: 'waiting' }).perform[:count]
+
+        expect(count.slice(:waiting_count, :in_attendance_count)).to eq(waiting_count: 4, in_attendance_count: 1)
+      end
+
+      it 'narrows the route conversation_type instead of replacing it' do
+        create(:mention, account: account, user: user_1, conversation: replied)
+        params = { assignee_type: 'all', conversation_type: 'mention', attendance_state: 'waiting' }
+
+        expect(described_class.new(user_1, params).perform[:conversations]).to be_empty
+      end
+    end
+
+    context 'with awaiting_reply' do
       let(:conversation) { create(:conversation, account: account, inbox: inbox, assignee: user_1) }
 
-      def bucket(reply_state)
-        described_class.new(user_1, { assignee_type: 'all', reply_state: reply_state }).perform[:conversations].map(&:id)
-      end
-
-      it 'puts the conversation whose contact spoke last in Não atendidos' do
-        create(:message, conversation: conversation, message_type: :incoming)
-
-        expect(bucket('unanswered')).to eq([conversation.id])
-        expect(bucket('answered')).not_to include(conversation.id)
-      end
-
-      it 'counts a message without a human sender (broadcast, API) as an answer' do
-        create(:message, conversation: conversation, message_type: :incoming)
-        create(:message, conversation: conversation, message_type: :outgoing, sender: nil)
-
-        expect(bucket('answered')).to include(conversation.id)
-        expect(bucket('unanswered')).to be_empty
-      end
-
-      it 'ignores private notes, activities and automatic templates (out-of-office, greeting, CSAT)' do
+      it 'keeps who has the last word, ignoring notes, activities and automatic templates' do
         create(:message, conversation: conversation, message_type: :incoming)
         create(:message, conversation: conversation, message_type: :outgoing, private: true)
         create(:message, conversation: conversation, message_type: :activity)
         create(:message, conversation: conversation, message_type: :template)
+        expect(conversation.reload.awaiting_reply).to be(true)
 
-        expect(bucket('unanswered')).to eq([conversation.id])
-      end
-
-      it 'counts both buckets before narrowing the list' do
-        create(:message, conversation: conversation, message_type: :incoming)
-        count = described_class.new(user_1, { assignee_type: 'all', reply_state: 'answered' }).perform[:count]
-
-        expect(count.slice(:unanswered_count, :answered_count)).to eq(unanswered_count: 1, answered_count: 4)
+        create(:message, conversation: conversation, message_type: :outgoing, sender: nil)
+        expect(conversation.reload.awaiting_reply).to be(false)
       end
     end
 

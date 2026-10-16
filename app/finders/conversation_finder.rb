@@ -47,7 +47,7 @@ class ConversationFinder
 
     apply_group_scope
     filter_by_conversation_type if params[:conversation_type]
-    filter_by_reply_state
+    filter_by_attendance_state
     filter_by_assignee_type
 
     { conversations: conversations, count: counts }
@@ -147,14 +147,15 @@ class ConversationFinder
     @conversations
   end
 
-  # UniverZAP: the dropdown of the Todos tab. A param of its own, so it narrows
-  # any conversation_type (mentions, unattended…) instead of replacing it.
-  def filter_by_reply_state
-    case params[:reply_state]
-    when 'unanswered'
-      @conversations = @conversations.unanswered
-    when 'answered'
-      @conversations = @conversations.answered
+  # UniverZAP: Aguardando / Em atendimento in the Todos dropdown. A param of its
+  # own, so it narrows any conversation_type (mentions, unattended…) instead of
+  # replacing it.
+  def filter_by_attendance_state
+    case params[:attendance_state]
+    when 'waiting'
+      @conversations = @conversations.waiting
+    when 'in_attendance'
+      @conversations = @conversations.in_attendance
     end
   end
 
@@ -215,15 +216,15 @@ class ConversationFinder
       unassigned_count: unassigned_count,
       all_count: all_count,
       group_count: @conversations.groups.count,
-      **reply_state_counts(all_count)
+      **attendance_state_counts(all_count)
     }
   end
 
-  # UniverZAP: badges of the Todos dropdown (Não atendidos / Atendidos). One
+  # UniverZAP: badges of Aguardando / Em atendimento in the Todos dropdown. One
   # query: every non-group conversation is exactly one of the two.
-  def reply_state_counts(all_count)
-    unanswered_count = count_scope.unanswered.count
-    { unanswered_count: unanswered_count, answered_count: all_count - unanswered_count }
+  def attendance_state_counts(all_count)
+    waiting_count = count_scope.waiting.count
+    { waiting_count: waiting_count, in_attendance_count: all_count - waiting_count }
   end
 
   def current_page

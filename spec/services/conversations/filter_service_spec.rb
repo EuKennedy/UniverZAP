@@ -556,10 +556,12 @@ describe Conversations::FilterService do
     it 'narrows to the tab the list is on' do
       group = create(:conversation, account: account, inbox: inbox, assignee: user_1,
                                     contact: create(:contact, account: account, identifier: '120363000000000001@g.us'))
-      create(:message, conversation: en_conversation_1, message_type: :incoming)
+
+      en_conversation_1.update_columns(first_reply_created_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
 
       expect(ids_for(condition('is_group', [true]))).to eq([group.id])
-      expect(ids_for(condition('is_group', [false]), condition('awaiting_reply', [true]))).to eq([en_conversation_1.id])
+      expect(ids_for(condition('is_group', [false]), condition('first_reply_created_at', [], filter_operator: 'is_present')))
+        .to eq([en_conversation_1.id])
     end
 
     it "counts a day in the agent's timezone when it is sent" do

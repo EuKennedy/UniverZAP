@@ -71,7 +71,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['conversationLoad']);
-const { uiSettings } = useUISettings();
+const { uiSettings, updateUISettings } = useUISettings();
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
@@ -80,7 +80,7 @@ const store = useStore();
 const resolveAttributesModalRef = ref(null);
 
 const activeAssigneeTab = ref(wootConstants.ASSIGNEE_TYPE.ALL);
-const activeReplyState = ref(wootConstants.REPLY_STATE.ALL);
+const activeListView = ref(wootConstants.LIST_VIEW.ALL);
 const activeStatus = ref(wootConstants.STATUS_TYPE.OPEN);
 const activeSortBy = ref(wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC);
 const showAdvancedFilters = ref(false);
@@ -179,16 +179,17 @@ const userPermissions = computed(() => {
   return getUserPermissions(currentUser.value, currentAccountId.value);
 });
 
-const REPLY_STATE_COUNT_KEYS = {
-  [wootConstants.REPLY_STATE.ALL]: 'allCount',
-  [wootConstants.REPLY_STATE.UNANSWERED]: 'unansweredCount',
-  [wootConstants.REPLY_STATE.ANSWERED]: 'answeredCount',
+const VIEW_COUNT_KEYS = {
+  [wootConstants.LIST_VIEW.ALL]: 'allCount',
+  [wootConstants.LIST_VIEW.ME]: 'mineCount',
+  [wootConstants.LIST_VIEW.WAITING]: 'waitingCount',
+  [wootConstants.LIST_VIEW.IN_ATTENDANCE]: 'inAttendanceCount',
 };
 
-const replyStateItems = computed(() =>
-  Object.entries(REPLY_STATE_COUNT_KEYS).map(([key, countKey]) => ({
+const viewItems = computed(() =>
+  Object.entries(VIEW_COUNT_KEYS).map(([key, countKey]) => ({
     key,
-    name: t(`CHAT_LIST.REPLY_STATE.${key}`),
+    name: t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${key}`),
     count: conversationStats.value[countKey] || 0,
   }))
 );
@@ -203,8 +204,8 @@ const assigneeTabItems = computed(() => {
     name: t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${key}`),
     count: conversationStats.value[countKey] || 0,
     ...(key === wootConstants.ASSIGNEE_TYPE.ALL && {
-      options: replyStateItems.value,
-      activeOption: activeReplyState.value,
+      options: viewItems.value,
+      activeOption: activeListView.value,
     }),
   }));
 });
@@ -216,9 +217,7 @@ const isGroupsTab = computed(
 // The bucket on screen: Grupos, or Todos narrowed by its dropdown. Pagination
 // and the end-of-list badge are kept per bucket.
 const listKey = computed(() =>
-  isGroupsTab.value
-    ? wootConstants.ASSIGNEE_TYPE.GROUPS
-    : activeReplyState.value
+  isGroupsTab.value ? wootConstants.ASSIGNEE_TYPE.GROUPS : activeListView.value
 );
 
 const showAssigneeInConversationCard = computed(() => {
@@ -256,7 +255,7 @@ const conversationCustomAttributes = useFunctionGetter(
 const activeAssigneeTabCount = computed(() => {
   const countKey = isGroupsTab.value
     ? 'groupCount'
-    : REPLY_STATE_COUNT_KEYS[activeReplyState.value];
+    : VIEW_COUNT_KEYS[activeListView.value];
   return conversationStats.value[countKey] || 0;
 });
 
@@ -282,12 +281,25 @@ const conversationListPagination = computed(() => {
   return currentPage.value + 1;
 });
 
-// UniverZAP: Grupos is not an assignee filter but a `conversation_type`, and
-// the Todos dropdown travels as `reply_state`; both keep assignee_type=all.
+const ATTENDANCE_VIEWS = [
+  wootConstants.LIST_VIEW.WAITING,
+  wootConstants.LIST_VIEW.IN_ATTENDANCE,
+];
+
+const isMineView = computed(
+  () =>
+    !isGroupsTab.value && activeListView.value === wootConstants.LIST_VIEW.ME
+);
+
+// UniverZAP: Grupos is not an assignee filter but a `conversation_type`.
+// Minhas is assignee_type=me; Aguardando / Em atendimento travel as
+// `attendance_state`, so they narrow the route's own conversation_type.
 const conversationFilters = computed(() => {
   return {
     inboxId: props.conversationInbox ? props.conversationInbox : undefined,
-    assigneeType: wootConstants.ASSIGNEE_TYPE.ALL,
+    assigneeType: isMineView.value
+      ? wootConstants.ASSIGNEE_TYPE.ME
+      : wootConstants.ASSIGNEE_TYPE.ALL,
     status: activeStatus.value,
     sortBy: activeSortBy.value,
     page: conversationListPagination.value,
@@ -296,11 +308,10 @@ const conversationFilters = computed(() => {
     conversationType: isGroupsTab.value
       ? wootConstants.ASSIGNEE_TYPE.GROUPS
       : props.conversationType || undefined,
-    replyState:
-      isGroupsTab.value ||
-      activeReplyState.value === wootConstants.REPLY_STATE.ALL
-        ? undefined
-        : activeReplyState.value,
+    attendanceState:
+      !isGroupsTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)
+        ? activeListView.value
+        : undefined,
   };
 });
 
@@ -343,19 +354,24 @@ const pageTitle = computed(() => {
 
 // The store accumulates every bucket fetched so far, so the list on screen is
 // the client-side mirror of the backend split: Grupos holds ONLY WhatsApp
-// groups, Todos everything else, narrowed by who has the last word.
+// groups, Todos everything else, narrowed by the view of its dropdown.
 function filterByListKey(conversations) {
   if (isGroupsTab.value) {
     return conversations.filter(c => c.is_group);
   }
   const nonGroups = conversations.filter(c => !c.is_group);
-  if (activeReplyState.value === wootConstants.REPLY_STATE.UNANSWERED) {
-    return nonGroups.filter(c => c.awaiting_reply);
+  switch (activeListView.value) {
+    case wootConstants.LIST_VIEW.ME:
+      return nonGroups.filter(
+        c => c.meta?.assignee?.id === currentUser.value?.id
+      );
+    case wootConstants.LIST_VIEW.WAITING:
+      return nonGroups.filter(c => !c.first_reply_created_at);
+    case wootConstants.LIST_VIEW.IN_ATTENDANCE:
+      return nonGroups.filter(c => !!c.first_reply_created_at);
+    default:
+      return nonGroups;
   }
-  if (activeReplyState.value === wootConstants.REPLY_STATE.ANSWERED) {
-    return nonGroups.filter(c => !c.awaiting_reply);
-  }
-  return nonGroups;
 }
 
 const conversationList = computed(() => {
@@ -418,8 +434,14 @@ const uniqueInboxes = computed(() => {
 
 // ---------------------- Methods -----------------------
 function setFiltersFromUISettings() {
-  const { conversations_filter_by: filterBy = {} } = uiSettings.value;
+  const {
+    conversations_filter_by: filterBy = {},
+    conversation_list_view: view,
+  } = uiSettings.value;
   const { status, order_by: orderBy } = filterBy;
+  activeListView.value = Object.values(wootConstants.LIST_VIEW).includes(view)
+    ? view
+    : wootConstants.LIST_VIEW.ALL;
   activeStatus.value = status || wootConstants.STATUS_TYPE.OPEN;
   activeSortBy.value = Object.values(wootConstants.SORT_BY_TYPE).includes(
     orderBy
@@ -635,14 +657,20 @@ function listContextConditions() {
     listFilterCondition('status', 'equal_to', [activeStatus.value]),
     listFilterCondition('is_group', 'equal_to', [isGroupsTab.value]),
   ];
-  if (
-    !isGroupsTab.value &&
-    activeReplyState.value !== wootConstants.REPLY_STATE.ALL
-  ) {
+  if (isMineView.value) {
     conditions.push(
-      listFilterCondition('awaiting_reply', 'equal_to', [
-        activeReplyState.value === wootConstants.REPLY_STATE.UNANSWERED,
-      ])
+      listFilterCondition('assignee_id', 'equal_to', [currentUser.value.id])
+    );
+  }
+  if (!isGroupsTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)) {
+    conditions.push(
+      listFilterCondition(
+        'first_reply_created_at',
+        activeListView.value === wootConstants.LIST_VIEW.WAITING
+          ? 'is_not_present'
+          : 'is_present',
+        []
+      )
     );
   }
   if (props.conversationInbox) {
@@ -680,7 +708,7 @@ const listFilterChips = computed(() => describeListFilter(listFilter.value, t));
 // The bucket the applied filter narrows, shown as its first chip.
 const listFilterScope = computed(() => {
   if (isGroupsTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.groups');
-  return t(`CHAT_LIST.REPLY_STATE.${activeReplyState.value}`);
+  return t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${activeListView.value}`);
 });
 
 const hasAppliedListFilter = computed(
@@ -725,11 +753,13 @@ function updateAssigneeTab(selectedTab) {
   }
 }
 
-// The dropdown belongs to Todos: picking a state from it also leaves Grupos.
-function updateReplyState(selectedState) {
-  if (activeReplyState.value === selectedState && !isGroupsTab.value) return;
-  activeReplyState.value = selectedState;
+// The dropdown belongs to Todos: picking a view from it also leaves Grupos.
+// The agent's last view is kept, so the list opens where they left it.
+function updateView(selectedView) {
+  if (activeListView.value === selectedView && !isGroupsTab.value) return;
+  activeListView.value = selectedView;
   activeAssigneeTab.value = wootConstants.ASSIGNEE_TYPE.ALL;
+  updateUISettings({ conversation_list_view: selectedView });
   fetchIfBucketIsEmpty();
 }
 
@@ -1051,7 +1081,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       :items="assigneeTabItems"
       :active-tab="activeAssigneeTab"
       @chat-tab-change="updateAssigneeTab"
-      @option-change="updateReplyState"
+      @option-change="updateView"
     >
       <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
     </ChatTypeTabs>

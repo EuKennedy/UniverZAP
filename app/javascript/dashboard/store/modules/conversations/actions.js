@@ -50,15 +50,15 @@ const actions = {
       const {
         data: { data },
       } = await ConversationApi.get(params);
-      // UniverZAP: Grupos and the Todos dropdown all send assignee_type=all,
-      // but ChatList keys pagination (currentPage / endReached) by the bucket
-      // on screen. Bucket the page state under the same key, otherwise
+      // UniverZAP: ChatList keys pagination (currentPage / endReached) by the
+      // bucket on screen, and Grupos / Aguardando / Em atendimento all send
+      // assignee_type=all. Bucket the page state under the same key, otherwise
       // endReached is never set and the list spins forever (infinite loadMore
       // + repeated meta calls). Mirrors ChatList's listKey.
       const pageFilterKey =
         params.conversationType === 'groups'
           ? params.conversationType
-          : params.replyState || params.assigneeType;
+          : params.attendanceState || params.assigneeType;
       buildConversationList({ commit, dispatch }, params, data, pageFilterKey);
     } catch (error) {
       // Always clear the loading flag — otherwise a failed/timed-out list
@@ -420,12 +420,11 @@ const actions = {
 
   updateConversationLastActivity(
     { commit },
-    { conversationId, lastActivityAt, awaitingReply }
+    { conversationId, lastActivityAt }
   ) {
     commit(types.UPDATE_CONVERSATION_LAST_ACTIVITY, {
       lastActivityAt,
       conversationId,
-      awaitingReply,
     });
   },
 

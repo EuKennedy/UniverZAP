@@ -123,18 +123,19 @@ conversations:
     data_type: "kanban_stage"
     filter_operators:
       - "equal_to"
-  # UniverZAP: the tab the filter narrows — Todos or Grupos, and the Todos
-  # dropdown (Não atendidos / Atendidos).
+  # UniverZAP: the tab the filter narrows — Todos or Grupos, and the
+  # Aguardando / Em atendimento views of the Todos dropdown.
   is_group:
     attribute_type: "standard"
     data_type: "boolean"
     filter_operators:
       - "equal_to"
-  awaiting_reply:
+  first_reply_created_at:
     attribute_type: "standard"
-    data_type: "boolean"
+    data_type: "date"
     filter_operators:
-      - "equal_to"
+      - "is_present"
+      - "is_not_present"
 
 ### ----- End of Conversation Filters ----- ###
 
