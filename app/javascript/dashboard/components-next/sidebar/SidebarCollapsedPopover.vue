@@ -166,14 +166,18 @@ onMounted(async () => {
                       v-if="subChild.isHeading"
                       class="flex items-center gap-2 px-2 pt-1.5 pb-0.5 text-xs font-medium text-n-slate-10"
                     >
-                      <Icon :icon="subChild.icon" class="size-3.5 flex-shrink-0" />
+                      <Icon
+                        :icon="subChild.icon"
+                        class="size-3.5 flex-shrink-0"
+                      />
                       <span class="truncate">{{ subChild.label }}</span>
                     </span>
                     <button
                       v-else
                       class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
                       :class="{
-                        'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15': isActive(subChild),
+                        'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15':
+                          isActive(subChild),
                         'text-n-slate-11 hover:bg-n-alpha-2':
                           !isActive(subChild),
                       }"
@@ -196,7 +200,8 @@ onMounted(async () => {
               <button
                 class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
                 :class="{
-                  'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15': isActive(child),
+                  'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15':
+                    isActive(child),
                   'text-n-slate-11 hover:bg-n-alpha-2': !isActive(child),
                 }"
                 @click="navigateAndClose(child.to)"
