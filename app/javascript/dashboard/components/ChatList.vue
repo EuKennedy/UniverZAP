@@ -13,6 +13,7 @@ import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import ConversationFilter from 'next/filter/ConversationFilter.vue';
 import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
+import ConversationListFilter from 'dashboard/components-next/filter/ConversationListFilter.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
 import ConversationBulkActions from './widgets/conversation/conversationBulkActions/Index.vue';
 import TeleportWithDirection from 'dashboard/components-next/TeleportWithDirection.vue';
@@ -40,6 +41,12 @@ import languages from 'dashboard/components/widgets/conversation/advancedFilterI
 import countries from 'shared/constants/countries';
 import { generateValuesForEditCustomViews } from 'dashboard/helper/customViewsHelper';
 import { conversationListPageURL } from '../helper/URLHelper';
+import {
+  buildListFilterConditions,
+  describeListFilter,
+  emptyListFilter,
+  listFilterCondition,
+} from '../helper/conversationListFilter';
 import {
   isOnMentionsView,
   isOnParticipatingView,
@@ -77,6 +84,7 @@ const activeReplyState = ref(wootConstants.REPLY_STATE.ALL);
 const activeStatus = ref(wootConstants.STATUS_TYPE.OPEN);
 const activeSortBy = ref(wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC);
 const showAdvancedFilters = ref(false);
+const listFilter = ref(emptyListFilter());
 // chatsOnView is to store the chats that are currently visible on the screen,
 // which mirrors the conversationList.
 const chatsOnView = ref([]);
@@ -604,6 +612,7 @@ function fetchConversations() {
 
 function resetAndFetchData() {
   appliedFilter.value = [];
+  listFilter.value = emptyListFilter();
   resetBulkActions();
   store.dispatch('conversationPage/reset');
   store.dispatch('emptyAllConversations');
@@ -617,6 +626,66 @@ function resetAndFetchData() {
   }
   fetchConversations();
 }
+
+// UniverZAP: the list filter narrows what the list was showing — the status,
+// the tab (Todos or Grupos, and the Todos dropdown) and the inbox, team or
+// label of the route — so those travel as conditions of their own.
+function listContextConditions() {
+  const conditions = [
+    listFilterCondition('status', 'equal_to', [activeStatus.value]),
+    listFilterCondition('is_group', 'equal_to', [isGroupsTab.value]),
+  ];
+  if (
+    !isGroupsTab.value &&
+    activeReplyState.value !== wootConstants.REPLY_STATE.ALL
+  ) {
+    conditions.push(
+      listFilterCondition('awaiting_reply', 'equal_to', [
+        activeReplyState.value === wootConstants.REPLY_STATE.UNANSWERED,
+      ])
+    );
+  }
+  if (props.conversationInbox) {
+    conditions.push(
+      listFilterCondition('inbox_id', 'equal_to', [
+        Number(props.conversationInbox),
+      ])
+    );
+  }
+  if (props.teamId) {
+    conditions.push(
+      listFilterCondition('team_id', 'equal_to', [Number(props.teamId)])
+    );
+  }
+  if (props.label) {
+    conditions.push(listFilterCondition('labels', 'equal_to', [props.label]));
+  }
+  return conditions;
+}
+
+function applyListFilter(filter) {
+  const fieldConditions = buildListFilterConditions(filter);
+  if (!fieldConditions.length) {
+    resetAndFetchData();
+    return;
+  }
+  const conditions = [...listContextConditions(), ...fieldConditions];
+  store.dispatch('setConversationFilters', conditions);
+  onApplyFilter(conditions);
+  listFilter.value = filter;
+}
+
+const listFilterChips = computed(() => describeListFilter(listFilter.value, t));
+
+// The bucket the applied filter narrows, shown as its first chip.
+const listFilterScope = computed(() => {
+  if (isGroupsTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.groups');
+  return t(`CHAT_LIST.REPLY_STATE.${activeReplyState.value}`);
+});
+
+const hasAppliedListFilter = computed(
+  () => hasAppliedFilters.value && !hasActiveFolders.value
+);
 
 function loadMoreConversations() {
   if (hasCurrentPageEndReached.value || chatListLoading.value) {
@@ -983,7 +1052,31 @@ watch(conversationFilters, (newVal, oldVal) => {
       :active-tab="activeAssigneeTab"
       @chat-tab-change="updateAssigneeTab"
       @option-change="updateReplyState"
-    />
+    >
+      <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
+    </ChatTypeTabs>
+    <div
+      v-else-if="hasAppliedListFilter"
+      class="flex items-center w-full h-10 gap-2 px-3 -mt-1 border-b border-n-weak"
+    >
+      <ul
+        class="flex items-center flex-1 min-w-0 gap-1.5 mb-0 overflow-x-auto list-none [scrollbar-width:none]"
+      >
+        <li
+          class="px-2 py-0.5 text-xs rounded-md shrink-0 bg-n-alpha-1 text-n-slate-11"
+        >
+          {{ listFilterScope }}
+        </li>
+        <li
+          v-for="(chip, index) in listFilterChips"
+          :key="index"
+          class="px-2 py-0.5 text-xs rounded-md shrink-0 bg-n-teal-3 text-n-teal-11"
+        >
+          {{ chip }}
+        </li>
+      </ul>
+      <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
+    </div>
 
     <p
       v-if="!chatListLoading && !conversationList.length"

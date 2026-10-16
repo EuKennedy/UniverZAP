@@ -529,6 +529,50 @@ describe Conversations::FilterService do
     end
   end
 
+  describe '#perform on the UniverZAP list filter' do
+    let(:params) { { payload: [], page: 1 } }
+    let(:funnel) { create(:funnel, account: account) }
+    let(:stage) { create(:funnel_stage, funnel: funnel) }
+    let(:other_stage) { create(:funnel_stage, funnel: funnel) }
+
+    def condition(attribute_key, values, filter_operator: 'equal_to')
+      { attribute_key: attribute_key, filter_operator: filter_operator, values: values, query_operator: nil }.with_indifferent_access
+    end
+
+    def ids_for(*conditions, **extra)
+      conditions[0..-2].each { |c| c[:query_operator] = 'AND' }
+      filter_service.new(params.merge(payload: conditions, **extra), user_1, account).perform[:conversations].map(&:id)
+    end
+
+    it 'matches a conversation linked to a task in the stage, once, however many tasks it has' do
+      create(:kanban_task, account: account, funnel: funnel, funnel_stage: stage, conversations: [en_conversation_1])
+      create(:kanban_task, account: account, funnel: funnel, funnel_stage: stage, conversations: [en_conversation_1])
+      create(:kanban_task, account: account, funnel: funnel, funnel_stage: other_stage, conversations: [en_conversation_2])
+
+      expect(ids_for(condition('kanban_stage_id', [stage.id]))).to eq([en_conversation_1.id])
+      expect(ids_for(condition('kanban_stage_id', [stage.id, other_stage.id]))).to contain_exactly(en_conversation_1.id, en_conversation_2.id)
+    end
+
+    it 'narrows to the tab the list is on' do
+      group = create(:conversation, account: account, inbox: inbox, assignee: user_1,
+                                    contact: create(:contact, account: account, identifier: '120363000000000001@g.us'))
+      create(:message, conversation: en_conversation_1, message_type: :incoming)
+
+      expect(ids_for(condition('is_group', [true]))).to eq([group.id])
+      expect(ids_for(condition('is_group', [false]), condition('awaiting_reply', [true]))).to eq([en_conversation_1.id])
+    end
+
+    it "counts a day in the agent's timezone when it is sent" do
+      # 01:30 UTC on the 16th is still the 15th in São Paulo.
+      en_conversation_1.update_columns(last_activity_at: Time.utc(2026, 10, 16, 1, 30)) # rubocop:disable Rails/SkipsModelValidations
+      on_the_15th = [condition('last_activity_at', ['2026-10-14'], filter_operator: 'is_greater_than'),
+                     condition('last_activity_at', ['2026-10-16'], filter_operator: 'is_less_than')]
+
+      expect(ids_for(*on_the_15th.map(&:dup), timezone: 'America/Sao_Paulo')).to include(en_conversation_1.id)
+      expect(ids_for(*on_the_15th.map(&:dup))).not_to include(en_conversation_1.id)
+    end
+  end
+
   describe '#perform on date filter with no current account' do
     before do
       Current.account = nil

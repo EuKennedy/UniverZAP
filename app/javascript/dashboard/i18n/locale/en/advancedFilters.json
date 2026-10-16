@@ -1,5 +1,24 @@
 {
   "FILTER": {
+    "LIST_FILTER": {
+      "PERIOD": "Last activity",
+      "PERIODS": {
+        "today": "Today",
+        "last_7_days": "7 days",
+        "last_30_days": "30 days",
+        "custom": "Custom"
+      },
+      "FROM": "From",
+      "TO": "To",
+      "ASSIGNEE": "Agent",
+      "ANY_ASSIGNEE": "Any agent",
+      "NO_ASSIGNEE": "No agent",
+      "LABELS": "Labels",
+      "KANBAN": "Kanban",
+      "FUNNEL": "Funnel",
+      "ALL_STAGES": "All stages",
+      "CLEAR": "Clear"
+    },
     "TITLE": "Filter conversations",
     "SUBTITLE": "Add your filters below and hit 'Apply filters' to cut through the chat clutter.",
     "EDIT_CUSTOM_FILTER": "Edit Folder",

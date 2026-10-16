@@ -1,5 +1,24 @@
 {
   "FILTER": {
+    "LIST_FILTER": {
+      "PERIOD": "Última atividade",
+      "PERIODS": {
+        "today": "Hoje",
+        "last_7_days": "7 dias",
+        "last_30_days": "30 dias",
+        "custom": "Personalizado"
+      },
+      "FROM": "De",
+      "TO": "Até",
+      "ASSIGNEE": "Atendente",
+      "ANY_ASSIGNEE": "Qualquer atendente",
+      "NO_ASSIGNEE": "Sem atendente",
+      "LABELS": "Etiquetas",
+      "KANBAN": "Kanban",
+      "FUNNEL": "Funil",
+      "ALL_STAGES": "Todas as etapas",
+      "CLEAR": "Limpar"
+    },
     "TITLE": "Filtrar conversas",
     "SUBTITLE": "Adicione seus filtros abaixo e clique em 'Aplicar filtros' para reduzir a desordem na conversa.",
     "EDIT_CUSTOM_FILTER": "Editar Pasta",

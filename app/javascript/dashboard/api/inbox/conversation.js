@@ -34,10 +34,12 @@ class ConversationApi extends ApiClient {
     });
   }
 
+  // UniverZAP: date conditions are compared in the agent's timezone.
   filter(payload) {
     return axios.post(`${this.url}/filter`, payload.queryData, {
       params: {
         page: payload.page,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
     });
   }

@@ -218,7 +218,12 @@ describe('#ConversationAPI', () => {
       expect(axiosMock.post).toHaveBeenCalledWith(
         '/api/v1/conversations/filter',
         payload.queryData,
-        { params: { page: payload.page } }
+        {
+          params: {
+            page: payload.page,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+        }
       );
     });
 

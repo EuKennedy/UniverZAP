@@ -80,6 +80,12 @@ const getValueFromConversation = (conversation, attributeKey) => {
     case 'browser_language':
     case 'referer':
       return conversation.additional_attributes?.[attributeKey];
+    // UniverZAP: the conversation list filter.
+    case 'is_group':
+    case 'awaiting_reply':
+      return conversation[attributeKey];
+    case 'kanban_stage_id':
+      return conversation.kanban_stage_ids;
     default:
       // Check if it's a custom attribute
       if (
