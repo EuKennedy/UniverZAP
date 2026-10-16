@@ -36,6 +36,9 @@ services:
       NODE_ENV: production
       RAILS_ENV: production
       INSTALLATION_ENV: docker
+      # Só o rails migra no boot. Os dois migrando juntos disputam o advisory
+      # lock do Rails, e o perdedor sai com ConcurrentMigrationError e reinicia.
+      RUN_DB_MIGRATIONS: "false"
     command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
     volumes:
       - storage_data:/app/storage
