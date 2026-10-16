@@ -180,5 +180,9 @@ EXPOSE 3000
 # ATENCAO: esta mesma imagem roda o sidekiq, que NAO sobe servidor web. La o
 # healthcheck e desligado no compose (`healthcheck: disable: true`), senao
 # aquele container reporta unhealthy para sempre.
+#
+# Ruby e nao curl: o curl so e instalado fora de producao (veja o apk acima),
+# entao um check com curl falha sempre nesta imagem. Com FORCE_SSL o /health
+# responde 301, por isso qualquer resposta abaixo de 400 conta como vivo.
 HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=3 \
-  CMD curl -fsS http://localhost:3000/health || exit 1
+  CMD ["ruby", "-rnet/http", "-e", "exit Net::HTTP.get_response(URI('http://localhost:3000/health')).code.to_i < 400"]

@@ -19,8 +19,12 @@ services:
     restart: unless-stopped
     # Liveness: se o Puma responde, da para rotear. `start_period` cobre o boot
     # do Rails, durante o qual falhar e esperado e nao deve contar como doente.
+    # Ruby e nao curl: a imagem de producao nao tem curl (o Dockerfile so o
+    # instala fora de producao), e com curl este check falhava SEMPRE — o proxy
+    # tirava o container do ar mesmo com o Rails respondendo. Qualquer resposta
+    # abaixo de 400 conta como vivo (com FORCE_SSL o /health responde 301).
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:3000/health"]
+      test: ["CMD", "ruby", "-rnet/http", "-e", "exit Net::HTTP.get_response(URI('http://localhost:3000/health')).code.to_i < 400"]
       interval: 15s
       timeout: 5s
       retries: 3
