@@ -6,6 +6,8 @@ import { useKbd } from 'dashboard/composables/utils/useKbd';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
+import { isAConversationRoute } from 'dashboard/helper/routeHelpers';
 import { useSidebarKeyboardShortcuts } from './useSidebarKeyboardShortcuts';
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
@@ -99,6 +101,8 @@ const {
   saveWidth,
   snapToCollapsed,
   snapToExpanded,
+  collapseTransient,
+  restoreSaved,
   COLLAPSED_THRESHOLD,
 } = useSidebarResize();
 
@@ -145,9 +149,42 @@ const onResizeMove = event => {
   setSidebarWidth(startWidth.value + delta);
 };
 
+// UniverZAP: entering the conversations — or picking a channel — folds the
+// sidebar into its rail, so the agent's attention goes to the list. Leaving
+// gives back the width the user had; resizing or the toggle hands control
+// back to the user.
+const route = useRoute();
+const autoCollapsed = ref(false);
+
+watch(
+  () => [route.name, route.params.inbox_id],
+  ([name, inboxId], [previousName, previousInboxId] = []) => {
+    if (isMobile.value) return;
+    if (!isAConversationRoute(name, true)) {
+      if (autoCollapsed.value) restoreSaved();
+      autoCollapsed.value = false;
+      return;
+    }
+    const entered = !isAConversationRoute(previousName, true);
+    const pickedChannel = inboxId && inboxId !== previousInboxId;
+    if ((entered || pickedChannel) && !isCollapsed.value) {
+      collapseTransient();
+      autoCollapsed.value = true;
+    }
+  },
+  { immediate: true }
+);
+
+const toggleSidebar = () => {
+  autoCollapsed.value = false;
+  if (isCollapsed.value) snapToExpanded();
+  else snapToCollapsed();
+};
+
 const onResizeEnd = () => {
   if (!isResizing.value) return;
 
+  autoCollapsed.value = false;
   isResizing.value = false;
   Object.assign(document.body.style, { cursor: '', userSelect: '' });
 
@@ -159,10 +196,7 @@ const onResizeEnd = () => {
   }
 };
 
-const onResizeHandleDoubleClick = () => {
-  if (isCollapsed.value) snapToExpanded();
-  else snapToCollapsed();
-};
+const onResizeHandleDoubleClick = toggleSidebar;
 
 // Support both mouse and touch events
 useEventListener(document, 'mousemove', onResizeMove);
@@ -315,23 +349,6 @@ const builtMenu = computed(() => {
                 active: leafProps.active,
                 inbox,
               }),
-          })),
-        },
-        {
-          name: 'Labels',
-          label: t('SIDEBAR.LABELS'),
-          icon: 'i-lucide-tag',
-          activeOn: ['conversations_through_label'],
-          children: labels.value.map(label => ({
-            name: `${label.title}-${label.id}`,
-            label: label.title,
-            icon: h('span', {
-              class: `size-[8px] rounded-sm`,
-              style: { backgroundColor: label.color },
-            }),
-            to: accountScopedRoute('label_conversations', {
-              label: label.title,
-            }),
           })),
         },
       ],
@@ -939,6 +956,28 @@ watch(builtMenu, publishMenu, { immediate: true });
             />
           </template>
         </ComposeConversation>
+        <Button
+          v-if="!isMobile"
+          v-tooltip.right="
+            isEffectivelyCollapsed
+              ? t('SIDEBAR.EXPAND_SIDEBAR')
+              : t('SIDEBAR.COLLAPSE_SIDEBAR')
+          "
+          :icon="
+            isEffectivelyCollapsed
+              ? 'i-lucide-panel-left-open'
+              : 'i-lucide-panel-left-close'
+          "
+          color="slate"
+          size="sm"
+          class="rtl:rotate-180 dark:hover:!bg-n-slate-9/30"
+          :class="
+            isEffectivelyCollapsed
+              ? '!size-8 !outline-n-weak !text-n-slate-11'
+              : '!h-7 !outline-n-weak !text-n-slate-11 flex-shrink-0'
+          "
+          @click="toggleSidebar"
+        />
       </div>
     </section>
     <nav

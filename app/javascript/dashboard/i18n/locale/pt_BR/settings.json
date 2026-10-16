@@ -296,6 +296,8 @@
     }
   },
   "SIDEBAR": {
+    "EXPAND_SIDEBAR": "Expandir menu",
+    "COLLAPSE_SIDEBAR": "Recolher menu",
     "NO_ITEMS": "Nenhum item",
     "CURRENTLY_VIEWING_ACCOUNT": "Visualização atual:",
     "SWITCH": "Trocar",

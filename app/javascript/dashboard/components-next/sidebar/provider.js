@@ -38,6 +38,17 @@ export function useSidebarResize() {
     updateUISettings({ sidebar_width: DEFAULT_WIDTH });
   };
 
+  // UniverZAP: the conversations screen folds the sidebar into its rail to give
+  // the agent focus. Not persisted — the saved width is what the user chose,
+  // and it comes back on the way out.
+  const collapseTransient = () => {
+    sidebarWidth.value = MIN_WIDTH;
+  };
+
+  const restoreSaved = () => {
+    sidebarWidth.value = uiSettings.value.sidebar_width || DEFAULT_WIDTH;
+  };
+
   return {
     sidebarWidth,
     isCollapsed,
@@ -45,6 +56,8 @@ export function useSidebarResize() {
     saveWidth,
     snapToCollapsed,
     snapToExpanded,
+    collapseTransient,
+    restoreSaved,
     MIN_WIDTH,
     MAX_WIDTH,
     COLLAPSED_THRESHOLD,
