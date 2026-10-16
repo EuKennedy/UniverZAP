@@ -1,5 +1,20 @@
 {
   "INBOX_MGMT": {
+    "GROUPS": {
+      "BUTTON": "Grupos de canais",
+      "TITLE": "Grupos de canais",
+      "DESCRIPTION": "Organize como os canais aparecem em Canais, no menu lateral. Cada canal vai para o grupo do seu tipo, a menos que você o mova.",
+      "NEW_GROUP": "Novo grupo",
+      "NEW_GROUP_PLACEHOLDER": "Nome do grupo",
+      "CREATE": "Criar",
+      "MOVE_TO": "Mover para",
+      "DELETE": "Excluir grupo",
+      "RESET": "Voltar ao nome padrão",
+      "EMPTY": "Nenhum canal ainda",
+      "SAVED": "Grupos atualizados",
+      "ERROR": "Não foi possível salvar os grupos",
+      "CLOSE": "Fechar"
+    },
     "HEADER": "Caixas de Entrada",
     "DESCRIPTION": "Um canal é o modo de comunicação que seu cliente escolhe para interagir com você. Uma caixa de entrada é onde você gerencia interações para um canal específico. Pode incluir comunicações de várias fontes, como e-mail, chat ao vivo e mídia social.",
     "LEARN_MORE": "Saiba mais sobre as caixas de entrada",

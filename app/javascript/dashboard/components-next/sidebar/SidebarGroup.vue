@@ -61,9 +61,11 @@ const subItemClass = computed(() =>
   props.nested && !isCollapsed.value ? SUB_ITEM_CLASS : ''
 );
 
-const navigableChildren = computed(() => {
-  return props.children?.flatMap(child => child.children || child) || [];
-});
+// Leaves at any depth: inboxes sit inside their channel group, two levels down.
+const leavesOf = items =>
+  items.flatMap(child => (child.children ? leavesOf(child.children) : child));
+
+const navigableChildren = computed(() => leavesOf(props.children || []));
 
 const route = useRoute();
 const router = useRouter();

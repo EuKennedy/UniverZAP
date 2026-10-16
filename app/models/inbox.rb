@@ -54,10 +54,12 @@ class Inbox < ApplicationRecord
   validates :greeting_message, length: { maximum: Limits::GREETING_MESSAGE_MAX_LENGTH }
   validate :ensure_valid_max_assignment_limit
   validate :ai_assistant_belongs_to_same_account
+  validate :inbox_group_belongs_to_same_account
 
   belongs_to :account
   belongs_to :portal, optional: true
   belongs_to :ai_assistant, class_name: 'Ai::Assistant', optional: true
+  belongs_to :inbox_group, optional: true
 
   belongs_to :channel, polymorphic: true, dependent: :destroy
 
@@ -260,6 +262,13 @@ class Inbox < ApplicationRecord
     return if ai_assistant&.account_id == account_id
 
     errors.add(:ai_assistant, 'must belong to the same account')
+  end
+
+  def inbox_group_belongs_to_same_account
+    return if inbox_group_id.blank?
+    return if inbox_group&.account_id == account_id
+
+    errors.add(:inbox_group, 'must belong to the same account')
   end
 
   def delete_round_robin_agents

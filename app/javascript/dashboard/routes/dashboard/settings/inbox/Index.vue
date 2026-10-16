@@ -15,6 +15,8 @@ import {
 import ChannelName from './components/ChannelName.vue';
 import ChannelIcon from 'next/icon/ChannelIcon.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import InboxGroupsManager from './components/InboxGroupsManager.vue';
 
 const getters = useStoreGetters();
 const store = useStore();
@@ -24,6 +26,7 @@ const { isAdmin } = useAdmin();
 const showDeletePopup = ref(false);
 const selectedInbox = ref({});
 const searchQuery = ref('');
+const groupsDialogRef = ref(null);
 
 const inboxes = useMapGetter('inboxes/getInboxes');
 
@@ -101,6 +104,15 @@ const openDelete = inbox => {
           </span>
         </template>
         <template #actions>
+          <Button
+            v-if="isAdmin"
+            :label="$t('INBOX_MGMT.GROUPS.BUTTON')"
+            icon="i-lucide-folder-tree"
+            size="sm"
+            slate
+            faded
+            @click="groupsDialogRef.open()"
+          />
           <router-link v-if="isAdmin" :to="{ name: 'settings_inbox_new' }">
             <Button
               :label="$t('SETTINGS.INBOXES.NEW_INBOX')"
@@ -195,5 +207,15 @@ const openDelete = inbox => {
       @on-confirm="confirmDeletion"
       @on-close="closeDelete"
     />
+    <Dialog
+      ref="groupsDialogRef"
+      :title="$t('INBOX_MGMT.GROUPS.TITLE')"
+      :description="$t('INBOX_MGMT.GROUPS.DESCRIPTION')"
+      :show-confirm-button="false"
+      :cancel-button-label="$t('INBOX_MGMT.GROUPS.CLOSE')"
+      width="2xl"
+    >
+      <InboxGroupsManager />
+    </Dialog>
   </SettingsLayout>
 </template>

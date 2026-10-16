@@ -189,12 +189,14 @@ const sendAnalyticsEvent = channelType => {
 };
 
 export const actions = {
-  revalidate: async ({ commit }, { newKey }) => {
+  revalidate: async ({ commit, dispatch }, { newKey }) => {
     try {
       const isExistingKeyValid = await InboxesAPI.validateCacheKey(newKey);
       if (!isExistingKeyValid) {
         const response = await InboxesAPI.refetchAndCommit(newKey);
         commit(types.default.SET_INBOXES, response.data.payload);
+        // UniverZAP: the groups of "Canais" share the inbox cache key.
+        dispatch('inboxGroups/get', null, { root: true });
       }
     } catch (error) {
       // Ignore error

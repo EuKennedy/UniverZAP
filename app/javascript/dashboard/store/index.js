@@ -51,6 +51,7 @@ import slaReports from './modules/SLAReports';
 import summaryReports from './modules/summaryReports';
 import tasks from './modules/tasks';
 import taskViews from './modules/taskViews';
+import inboxGroups from './modules/inboxGroups';
 import tasksNotifications from './modules/tasksNotifications';
 import teamChat from './modules/teamChat';
 import teamMembers from './modules/teamMembers';
@@ -123,6 +124,7 @@ export default createStore({
     summaryReports,
     tasks,
     taskViews,
+    inboxGroups,
     tasksNotifications,
     teamChat,
     teamMembers,

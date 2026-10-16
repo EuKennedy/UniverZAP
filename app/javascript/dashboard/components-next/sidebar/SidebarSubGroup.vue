@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import SidebarGroupLeaf from './SidebarGroupLeaf.vue';
+import SidebarChannelGroup from './SidebarChannelGroup.vue';
 import SidebarGroupSeparator from './SidebarGroupSeparator.vue';
 
 import { useSidebarContext } from './provider';
@@ -17,10 +18,11 @@ const props = defineProps({
 const { isAllowed } = useSidebarContext();
 const scrollableContainer = ref(null);
 
+// A child can itself be a group (the channel groups of "Canais").
 const accessibleItems = computed(() =>
-  props.children.filter(child => {
-    return child.to && isAllowed(child.to);
-  })
+  props.children
+    .flatMap(child => child.children || child)
+    .filter(child => child.to && isAllowed(child.to))
 );
 
 const hasAccessibleItems = computed(() => {
@@ -28,7 +30,7 @@ const hasAccessibleItems = computed(() => {
 });
 
 const isScrollable = computed(() => {
-  return accessibleItems.value.length > 7;
+  return props.children.length > 7;
 });
 
 const scrollEnd = ref(false);
@@ -61,13 +63,20 @@ useEventListener(scrollableContainer, 'scroll', () => {
         'max-h-[calc(14rem+16px)] overflow-y-scroll no-scrollbar': isScrollable,
       }"
     >
-      <SidebarGroupLeaf
-        v-for="child in children"
-        v-show="isExpanded || activeChild?.name === child.name"
-        v-bind="child"
-        :key="child.name"
-        :active="activeChild?.name === child.name"
-      />
+      <template v-for="child in children" :key="child.name">
+        <SidebarChannelGroup
+          v-if="child.children"
+          v-bind="child"
+          :is-expanded="isExpanded"
+          :active-child="activeChild"
+        />
+        <SidebarGroupLeaf
+          v-else
+          v-show="isExpanded || activeChild?.name === child.name"
+          v-bind="child"
+          :active="activeChild?.name === child.name"
+        />
+      </template>
     </div>
     <div
       v-if="isScrollable && isExpanded"

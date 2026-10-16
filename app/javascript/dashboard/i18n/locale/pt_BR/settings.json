@@ -296,6 +296,21 @@
     }
   },
   "SIDEBAR": {
+    "CHANNEL_GROUPS": {
+      "KINDS": {
+        "whatsapp": "WhatsApp",
+        "instagram": "Instagram",
+        "facebook": "Messenger",
+        "telegram": "Telegram",
+        "line": "LINE",
+        "sms": "SMS",
+        "tiktok": "TikTok",
+        "twitter": "X",
+        "email": "E-mail",
+        "website": "Site",
+        "api": "API"
+      }
+    },
     "EXPAND_SIDEBAR": "Expandir menu",
     "COLLAPSE_SIDEBAR": "Recolher menu",
     "NO_ITEMS": "Nenhum item",

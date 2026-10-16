@@ -35,8 +35,18 @@ const navigateAndClose = to => {
 
 const isActive = child => props.activeChild?.name === child.name;
 
+// Leaves at any depth: inboxes sit inside their channel group.
+const leavesOf = items =>
+  items.flatMap(child => (child.children ? leavesOf(child.children) : child));
+
+// A nested group (the channel groups of "Canais") turns into a heading row
+// followed by its inboxes.
 const getAccessibleSubChildren = children =>
-  children.filter(c => isAllowed(c.to));
+  children.flatMap(child => {
+    if (!child.children) return isAllowed(child.to) ? [child] : [];
+    const leaves = child.children.filter(c => isAllowed(c.to));
+    return leaves.length ? [{ ...child, isHeading: true }, ...leaves] : [];
+  });
 
 const renderIcon = icon => ({
   component: typeof icon === 'object' ? icon : Icon,
@@ -59,7 +69,7 @@ const transition = computed(() =>
 const accessibleChildren = computed(() => {
   return props.children.filter(child => {
     if (child.children) {
-      return child.children.some(subChild => isAllowed(subChild.to));
+      return leavesOf(child.children).some(subChild => isAllowed(subChild.to));
     }
     return child.to && isAllowed(child.to);
   });
@@ -71,7 +81,9 @@ onMounted(async () => {
   // Auto-expand subgroup if active child is inside it
   if (props.activeChild) {
     const parentGroup = props.children.find(child =>
-      child.children?.some(subChild => subChild.name === props.activeChild.name)
+      leavesOf(child.children || []).some(
+        subChild => subChild.name === props.activeChild.name
+      )
     );
     if (parentGroup) {
       expandedSubGroup.value = parentGroup.name;
@@ -150,7 +162,15 @@ onMounted(async () => {
                     :key="subChild.name"
                     class="py-0.5"
                   >
+                    <span
+                      v-if="subChild.isHeading"
+                      class="flex items-center gap-2 px-2 pt-1.5 pb-0.5 text-xs font-medium text-n-slate-10"
+                    >
+                      <Icon :icon="subChild.icon" class="size-3.5 flex-shrink-0" />
+                      <span class="truncate">{{ subChild.label }}</span>
+                    </span>
                     <button
+                      v-else
                       class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
                       :class="{
                         'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15': isActive(subChild),

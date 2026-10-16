@@ -17,6 +17,11 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
 import SidebarSection from './SidebarSection.vue';
 import { applyLayout } from './helper/applyLayout';
+import {
+  groupInboxes,
+  channelGroupLabel,
+  channelGroupIcon,
+} from './helper/channelGroups';
 import { useSidebarLayout } from 'dashboard/composables/useSidebarLayout';
 import SidebarProfileMenu from './SidebarProfileMenu.vue';
 import SidebarChangelogCard from './SidebarChangelogCard.vue';
@@ -205,6 +210,7 @@ useEventListener(document, 'touchmove', onResizeMove, { passive: false });
 useEventListener(document, 'touchend', onResizeEnd);
 
 const inboxes = useMapGetter('inboxes/getInboxes');
+const inboxGroups = useMapGetter('inboxGroups/getInboxGroups');
 const labels = useMapGetter('labels/getLabelsOnSidebar');
 const teams = useMapGetter('teams/getMyTeams');
 const contactCustomViews = useMapGetter('customViews/getContactCustomViews');
@@ -215,6 +221,7 @@ const conversationCustomViews = useMapGetter(
 onMounted(() => {
   store.dispatch('labels/get');
   store.dispatch('inboxes/get');
+  store.dispatch('inboxGroups/get');
   store.dispatch('notifications/unReadCount');
   store.dispatch('teams/get');
   store.dispatch('attributes/get');
@@ -338,18 +345,29 @@ const builtMenu = computed(() => {
           label: t('SIDEBAR.CHANNELS'),
           icon: 'i-lucide-mailbox',
           activeOn: ['conversation_through_inbox'],
-          children: sortedInboxes.value.map(inbox => ({
-            name: `${inbox.name}-${inbox.id}`,
-            label: inbox.name,
-            icon: h(ChannelIcon, { inbox, class: 'size-[16px]' }),
-            to: accountScopedRoute('inbox_dashboard', { inbox_id: inbox.id }),
-            component: leafProps =>
-              h(ChannelLeaf, {
-                label: leafProps.label,
-                active: leafProps.active,
-                inbox,
-              }),
-          })),
+          // UniverZAP: one collapsible row per group (WhatsApp, Instagram or
+          // one of the account's), each holding its inboxes.
+          children: groupInboxes(sortedInboxes.value, inboxGroups.value).map(
+            group => ({
+              name: `channel-group-${group.key}`,
+              label: channelGroupLabel(group, t),
+              icon: channelGroupIcon(group),
+              children: group.inboxes.map(inbox => ({
+                name: `${inbox.name}-${inbox.id}`,
+                label: inbox.name,
+                icon: h(ChannelIcon, { inbox, class: 'size-[16px]' }),
+                to: accountScopedRoute('inbox_dashboard', {
+                  inbox_id: inbox.id,
+                }),
+                component: leafProps =>
+                  h(ChannelLeaf, {
+                    label: leafProps.label,
+                    active: leafProps.active,
+                    inbox,
+                  }),
+              })),
+            })
+          ),
         },
       ],
     },
