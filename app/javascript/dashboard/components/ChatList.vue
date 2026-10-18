@@ -13,6 +13,7 @@ import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import ConversationFilter from 'next/filter/ConversationFilter.vue';
 import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
+import VerticalStatusChips from './widgets/VerticalStatusChips.vue';
 import ConversationListFilter from 'dashboard/components-next/filter/ConversationListFilter.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
 import ConversationBulkActions from './widgets/conversation/conversationBulkActions/Index.vue';
@@ -184,7 +185,18 @@ const VIEW_COUNT_KEYS = {
   [wootConstants.LIST_VIEW.ME]: 'mineCount',
   [wootConstants.LIST_VIEW.WAITING]: 'waitingCount',
   [wootConstants.LIST_VIEW.IN_ATTENDANCE]: 'inAttendanceCount',
+  // UniverZAP: "Fila, sem dono" and "Resolvidas" quick filters
+  [wootConstants.LIST_VIEW.UNASSIGNED]: 'unAssignedCount',
+  [wootConstants.LIST_VIEW.RESOLVED]: 'resolvedCount',
 };
+
+// Shown as flat pills below the Todos/Grupos tabs, in addition to living in
+// the Todos dropdown — same state, just a faster way to reach the two most
+// reached-for views.
+const QUICK_FILTER_VIEWS = [
+  wootConstants.LIST_VIEW.UNASSIGNED,
+  wootConstants.LIST_VIEW.RESOLVED,
+];
 
 const viewItems = computed(() =>
   Object.entries(VIEW_COUNT_KEYS).map(([key, countKey]) => ({
@@ -192,6 +204,12 @@ const viewItems = computed(() =>
     name: t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${key}`),
     count: conversationStats.value[countKey] || 0,
   }))
+);
+
+// Same views as above, just the two most reached-for ones surfaced as flat
+// pills instead of buried a click deep in the Todos dropdown.
+const quickFilterItems = computed(() =>
+  viewItems.value.filter(item => QUICK_FILTER_VIEWS.includes(item.key))
 );
 
 const assigneeTabItems = computed(() => {
@@ -291,15 +309,26 @@ const isMineView = computed(
     !isGroupsTab.value && activeListView.value === wootConstants.LIST_VIEW.ME
 );
 
+const isUnassignedView = computed(
+  () =>
+    !isGroupsTab.value &&
+    activeListView.value === wootConstants.LIST_VIEW.UNASSIGNED
+);
+
+function resolveAssigneeType() {
+  if (isMineView.value) return wootConstants.ASSIGNEE_TYPE.ME;
+  if (isUnassignedView.value) return wootConstants.ASSIGNEE_TYPE.UNASSIGNED;
+  return wootConstants.ASSIGNEE_TYPE.ALL;
+}
+
 // UniverZAP: Grupos is not an assignee filter but a `conversation_type`.
-// Minhas is assignee_type=me; Aguardando / Em atendimento travel as
-// `attendance_state`, so they narrow the route's own conversation_type.
+// Minhas / Fila (sem dono) are assignee_type; Aguardando / Em atendimento
+// travel as `attendance_state`, so they narrow the route's own
+// conversation_type.
 const conversationFilters = computed(() => {
   return {
     inboxId: props.conversationInbox ? props.conversationInbox : undefined,
-    assigneeType: isMineView.value
-      ? wootConstants.ASSIGNEE_TYPE.ME
-      : wootConstants.ASSIGNEE_TYPE.ALL,
+    assigneeType: resolveAssigneeType(),
     status: activeStatus.value,
     sortBy: activeSortBy.value,
     page: conversationListPagination.value,
@@ -369,6 +398,10 @@ function filterByListKey(conversations) {
       return nonGroups.filter(c => !c.first_reply_created_at);
     case wootConstants.LIST_VIEW.IN_ATTENDANCE:
       return nonGroups.filter(c => !!c.first_reply_created_at);
+    case wootConstants.LIST_VIEW.UNASSIGNED:
+      return nonGroups.filter(c => !c.meta?.assignee);
+    case wootConstants.LIST_VIEW.RESOLVED:
+      return nonGroups.filter(c => c.status === 'resolved');
     default:
       return nonGroups;
   }
@@ -757,6 +790,14 @@ function updateAssigneeTab(selectedTab) {
 // The agent's last view is kept, so the list opens where they left it.
 function updateView(selectedView) {
   if (activeListView.value === selectedView && !isGroupsTab.value) return;
+  // Resolvidas is the one view backed by conversation status rather than
+  // assignee/attendance, so entering or leaving it is the only time this
+  // flips activeStatus — every other transition leaves it untouched.
+  if (selectedView === wootConstants.LIST_VIEW.RESOLVED) {
+    activeStatus.value = wootConstants.STATUS_TYPE.RESOLVED;
+  } else if (activeListView.value === wootConstants.LIST_VIEW.RESOLVED) {
+    activeStatus.value = wootConstants.STATUS_TYPE.OPEN;
+  }
   activeListView.value = selectedView;
   activeAssigneeTab.value = wootConstants.ASSIGNEE_TYPE.ALL;
   updateUISettings({ conversation_list_view: selectedView });
@@ -1085,6 +1126,28 @@ watch(conversationFilters, (newVal, oldVal) => {
     >
       <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
     </ChatTypeTabs>
+    <ul
+      v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
+      class="flex items-center flex-wrap gap-1.5 px-3 pt-1.5 pb-0 mb-0 list-none"
+    >
+      <li v-for="item in quickFilterItems" :key="item.key">
+        <button
+          type="button"
+          class="px-2.5 py-1 text-xs rounded-full"
+          :class="
+            item.key === activeListView
+              ? 'bg-n-teal-3 text-n-teal-11'
+              : 'bg-n-alpha-1 text-n-slate-11 hover:bg-n-alpha-2'
+          "
+          @click="updateView(item.key)"
+        >
+          {{ item.name }} {{ item.count }}
+        </button>
+      </li>
+    </ul>
+    <VerticalStatusChips
+      v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
+    />
     <div
       v-else-if="hasAppliedListFilter"
       class="flex items-center w-full h-10 gap-2 px-3 -mt-1 border-b border-n-weak"

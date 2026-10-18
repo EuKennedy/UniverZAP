@@ -298,6 +298,7 @@ Rails.application.routes.draw do
             end
           end
           resources :labels, only: [:index, :show, :create, :update, :destroy]
+          resources :vertical_statuses, only: [:index]
           resources :inbox_groups, only: [:index, :create, :update, :destroy]
 
           resources :funnels do

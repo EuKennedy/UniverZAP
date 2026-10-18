@@ -14,6 +14,8 @@ export default {
     ME: 'me',
     WAITING: 'waiting',
     IN_ATTENDANCE: 'in_attendance',
+    UNASSIGNED: 'unassigned',
+    RESOLVED: 'resolved',
   },
   STATUS_TYPE: {
     OPEN: 'open',

@@ -77,6 +77,9 @@ class ConversationFinder
     set_assignee_type
 
     find_all_conversations
+    # Snapshot before the status filter narrows @conversations: resolved_count
+    # needs every status, not just whichever one the active tab asked for.
+    @conversations_before_status = @conversations
     filter_by_status unless params[:q]
     filter_by_team
     filter_by_labels
@@ -215,6 +218,7 @@ class ConversationFinder
       assigned_count: all_count - unassigned_count,
       unassigned_count: unassigned_count,
       all_count: all_count,
+      resolved_count: @conversations_before_status.non_groups.where(status: 'resolved').count,
       group_count: @conversations.groups.count,
       **attendance_state_counts(all_count)
     }

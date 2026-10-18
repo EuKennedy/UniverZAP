@@ -19,6 +19,7 @@
       "unassigned": "Unassigned",
       "waiting": "Waiting",
       "in_attendance": "In attendance",
+      "resolved": "Resolved",
       "all": "All",
       "groups": "Groups"
     },
