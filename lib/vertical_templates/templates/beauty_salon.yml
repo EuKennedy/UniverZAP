@@ -1,0 +1,84 @@
+labels:
+  - title: novo-contato
+    color: '#94A3B8'
+    description: Mensagem recebida, ainda não triada
+  - title: triagem
+    color: '#94A3B8'
+    description: Identificando o motivo do contato
+  - title: em-atendimento
+    color: '#14B8A6'
+    description: Atendente conduzindo a conversa
+  - title: agendado
+    color: '#14B8A6'
+    description: Horário reservado, aguardando confirmação do cliente
+  - title: confirmado
+    color: '#14B8A6'
+    description: Cliente confirmou presença
+  - title: lembrete-enviado
+    color: '#14B8A6'
+    description: Lembrete de 48h, 24h ou 2h enviado
+  - title: lista-espera
+    color: '#14B8A6'
+    description: Cliente aguardando uma vaga
+  - title: reagendado
+    color: '#F97316'
+    description: Cliente pediu uma nova data
+  - title: cancelado
+    color: '#EF4444'
+    description: Cliente desistiu do horário
+  - title: nao-compareceu
+    color: '#EF4444'
+    description: Cliente faltou sem avisar
+  - title: escalado
+    color: '#EF4444'
+    description: Reclamação encaminhada à gerência
+  - title: atendimento-encerrado
+    color: '#94A3B8'
+    description: Serviço concluído e avaliação enviada
+  - title: lembrete-recompra
+    color: '#14B8A6'
+    description: Lembrete de retorno enviado após o ciclo do serviço
+  - title: ficou-inativo
+    color: '#94A3B8'
+    description: Sem resposta ao lembrete de recompra
+
+custom_attribute_definitions:
+  - attribute_key: servico
+    attribute_display_name: Serviço
+    attribute_model: conversation_attribute
+    attribute_display_type: list
+    attribute_values: [Corte, Coloração, Escova, Manicure, Depilação, Outro]
+    attribute_description: Serviço agendado pelo cliente
+  - attribute_key: profissional
+    attribute_display_name: Profissional
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+    attribute_description: Profissional responsável pelo atendimento
+  - attribute_key: data_agendamento
+    attribute_display_name: Data do agendamento
+    attribute_model: conversation_attribute
+    attribute_display_type: date
+    attribute_description: Data e hora reservadas para o atendimento
+  - attribute_key: ciclo_recompra_semanas
+    attribute_display_name: Ciclo de recompra (semanas)
+    attribute_model: conversation_attribute
+    attribute_display_type: number
+    attribute_description: Intervalo recomendado até o próximo atendimento
+
+automation_rules:
+  - name: Novo contato recebido
+    description: Aplica a label de entrada em toda conversa nova
+    event_name: conversation_created
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [novo-contato]
+  - name: Atendimento encerrado
+    description: Troca a label de em-atendimento pela de encerrado quando a conversa é resolvida
+    event_name: conversation_resolved
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [atendimento-encerrado]
+      - action_name: remove_label
+        action_params: [em-atendimento]

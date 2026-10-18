@@ -1016,7 +1016,11 @@ Rails.application.routes.draw do
       resources :accounts, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
         post :seed, on: :member
         post :reset_cache, on: :member
+        post :apply_vertical_template, on: :member
       end
+      resources :verticals, only: [:index, :new, :create, :show, :edit, :update, :destroy]
+      resources :vertical_statuses, only: [:index, :new, :create, :show, :edit, :update, :destroy]
+
       resources :users, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
         delete :avatar, on: :member, action: :destroy_avatar
       end

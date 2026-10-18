@@ -5,13 +5,17 @@
 #  id                     :integer          not null, primary key
 #  additional_attributes  :jsonb
 #  agent_last_seen_at     :datetime
+#  ai_mode                :string
 #  assignee_last_seen_at  :datetime
+#  awaiting_reply         :boolean          default(FALSE), not null
 #  cached_label_list      :text
 #  contact_last_seen_at   :datetime
 #  custom_attributes      :jsonb
 #  first_reply_created_at :datetime
 #  identifier             :string
+#  is_group               :boolean          default(FALSE), not null
 #  last_activity_at       :datetime         not null
+#  pinned_at              :datetime
 #  priority               :integer
 #  snoozed_until          :datetime
 #  status                 :integer          default("open"), not null
@@ -20,6 +24,7 @@
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
 #  account_id             :integer          not null
+#  ai_assistant_id        :bigint
 #  assignee_agent_bot_id  :bigint
 #  assignee_id            :integer
 #  campaign_id            :bigint
@@ -35,6 +40,9 @@
 #  conv_acid_inbid_stat_asgnid_idx                    (account_id,inbox_id,status,assignee_id)
 #  index_conversations_on_account_id                  (account_id)
 #  index_conversations_on_account_id_and_display_id   (account_id,display_id) UNIQUE
+#  index_conversations_on_account_id_and_is_group     (account_id,is_group)
+#  index_conversations_on_ai_assistant_id             (ai_assistant_id)
+#  index_conversations_on_ai_mode                     (ai_mode)
 #  index_conversations_on_assignee_id_and_account_id  (assignee_id,account_id)
 #  index_conversations_on_campaign_id                 (campaign_id)
 #  index_conversations_on_contact_id                  (contact_id)
@@ -43,12 +51,17 @@
 #  index_conversations_on_id_and_account_id           (account_id,id)
 #  index_conversations_on_identifier_and_account_id   (identifier,account_id)
 #  index_conversations_on_inbox_id                    (inbox_id)
+#  index_conversations_on_pinned_at                   (pinned_at)
 #  index_conversations_on_priority                    (priority)
 #  index_conversations_on_status_and_account_id       (status,account_id)
 #  index_conversations_on_status_and_priority         (status,priority)
 #  index_conversations_on_team_id                     (team_id)
 #  index_conversations_on_uuid                        (uuid) UNIQUE
 #  index_conversations_on_waiting_since               (waiting_since)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (ai_assistant_id => ai_assistants.id)
 #
 
 class Conversation < ApplicationRecord
@@ -330,10 +343,27 @@ class Conversation < ApplicationRecord
   end
 
   def execute_after_update_commit_callbacks
+    handle_closing_label_applied
     handle_resolved_status_change
     notify_status_change
     create_activity
     notify_conversation_updation
+  end
+
+  # When a label flagged as "closes_conversation" (an account's custom closing
+  # status, e.g. atendimento-encerrado, cancelado) gets applied, the
+  # conversation is archived by resolving it. Message#reopen_conversation
+  # already reopens resolved conversations on the contact's next message, so
+  # that's also how an archived conversation comes back.
+  def handle_closing_label_applied
+    return unless saved_change_to_label_list?
+    return if resolved?
+
+    _, current_labels = previous_changes[:label_list]
+    return unless current_labels.is_a?(Array)
+
+    closing_titles = account.labels.where(closes_conversation: true).pluck(:title)
+    resolved! if current_labels.intersect?(closing_titles)
   end
 
   def handle_resolved_status_change

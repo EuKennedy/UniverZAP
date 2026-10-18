@@ -1,0 +1,81 @@
+labels:
+  - title: novo-contato
+    color: '#94A3B8'
+    description: Mensagem recebida, ainda não triada
+  - title: triagem
+    color: '#94A3B8'
+    description: Identificando o motivo do contato
+  - title: em-atendimento
+    color: '#14B8A6'
+    description: Atendente conduzindo a conversa
+  - title: pedido-confirmado
+    color: '#14B8A6'
+    description: Pedido fechado e enviado para a cozinha
+  - title: em-preparo
+    color: '#14B8A6'
+    description: Pedido em preparação
+  - title: saiu-para-entrega
+    color: '#14B8A6'
+    description: Pedido com o entregador
+  - title: entregue
+    color: '#94A3B8'
+    description: Pedido entregue ao cliente
+  - title: pedido-cancelado
+    color: '#EF4444'
+    description: Pedido cancelado pelo cliente ou pela loja
+  - title: pagamento-recusado
+    color: '#EF4444'
+    description: Gateway recusou a cobrança
+  - title: escalado
+    color: '#EF4444'
+    description: Reclamação grave encaminhada à gerência
+  - title: atendimento-encerrado
+    color: '#94A3B8'
+    description: Conversa resolvida
+  - title: oferta-reativacao
+    color: '#14B8A6'
+    description: Oferta de retorno enviada a cliente inativo
+  - title: ficou-inativo
+    color: '#94A3B8'
+    description: Sem resposta à oferta de reativação
+
+custom_attribute_definitions:
+  - attribute_key: numero_pedido
+    attribute_display_name: Número do pedido
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+    attribute_description: Identificador do pedido no sistema de vendas
+  - attribute_key: itens_pedido
+    attribute_display_name: Itens do pedido
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+    attribute_description: Resumo dos itens pedidos
+  - attribute_key: endereco_entrega
+    attribute_display_name: Endereço de entrega
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+    attribute_description: Endereço informado para a entrega
+  - attribute_key: forma_pagamento
+    attribute_display_name: Forma de pagamento
+    attribute_model: conversation_attribute
+    attribute_display_type: list
+    attribute_values: [Pix, Cartão na entrega, Cartão online, Dinheiro]
+    attribute_description: Forma de pagamento escolhida pelo cliente
+
+automation_rules:
+  - name: Novo contato recebido
+    description: Aplica a label de entrada em toda conversa nova
+    event_name: conversation_created
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [novo-contato]
+  - name: Atendimento encerrado
+    description: Troca a label de em-atendimento pela de encerrado quando a conversa é resolvida
+    event_name: conversation_resolved
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [atendimento-encerrado]
+      - action_name: remove_label
+        action_params: [em-atendimento]

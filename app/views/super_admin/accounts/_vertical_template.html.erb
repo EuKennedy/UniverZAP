@@ -1,0 +1,18 @@
+<section class="main-content__body">
+ <hr/>
+  <%= form_for([:apply_vertical_template, namespace, page.resource], method: :post, html: { class: "form" }) do |f| %>
+
+  <div class="form-actions">
+    <div class="pb-3">
+      <p>Apply a vertical's flow template (labels, custom attributes and automation rules) to this account.</p>
+      <p>Current template: <strong><%= page.resource.custom_attributes['vertical_template'] || 'none' %></strong></p>
+    </div>
+    <select name="vertical">
+      <% VerticalTemplates::Applier.available_verticals.each do |vertical| %>
+        <option value="<%= vertical %>" <%= 'selected' if page.resource.custom_attributes['vertical_template'] == vertical %>><%= vertical.titleize %></option>
+      <% end %>
+    </select>
+  <%= f.submit 'Apply vertical template' %>
+  </div>
+  <% end %>
+</section>

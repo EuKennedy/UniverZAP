@@ -1,0 +1,87 @@
+labels:
+  - title: novo-contato
+    color: '#94A3B8'
+    description: Mensagem recebida, ainda não triada
+  - title: triagem
+    color: '#94A3B8'
+    description: Identificando o motivo do contato
+  - title: em-atendimento
+    color: '#14B8A6'
+    description: Atendente conduzindo a conversa
+  - title: qualificacao-lead
+    color: '#14B8A6'
+    description: Levantando perfil, orçamento e urgência do interessado
+  - title: visita-agendada
+    color: '#14B8A6'
+    description: Visita ao imóvel marcada
+  - title: visita-realizada
+    color: '#14B8A6'
+    description: Visita concluída
+  - title: proposta-enviada
+    color: '#14B8A6'
+    description: Proposta de compra ou locação enviada
+  - title: em-negociacao
+    color: '#14B8A6'
+    description: Negociando condições com o cliente
+  - title: documentacao-pendente
+    color: '#F97316'
+    description: Aguardando documentos do cliente ou do proprietário
+  - title: fechado-ganho
+    color: '#14B8A6'
+    description: Contrato assinado
+  - title: fechado-perdido
+    color: '#EF4444'
+    description: Lead desistiu ou escolheu outro imóvel
+  - title: escalado
+    color: '#EF4444'
+    description: Impasse encaminhado à gerência
+  - title: atendimento-encerrado
+    color: '#94A3B8'
+    description: Conversa resolvida
+  - title: lembrete-renovacao
+    color: '#14B8A6'
+    description: Lembrete de renovação de contrato de locação
+  - title: ficou-inativo
+    color: '#94A3B8'
+    description: Sem resposta após o fechamento ou a renovação
+
+custom_attribute_definitions:
+  - attribute_key: tipo_interesse
+    attribute_display_name: Tipo de interesse
+    attribute_model: conversation_attribute
+    attribute_display_type: list
+    attribute_values: [Compra, Locação, Venda do imóvel próprio]
+    attribute_description: Classificação dada na qualificação do lead
+  - attribute_key: imovel_codigo
+    attribute_display_name: Código do imóvel
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+    attribute_description: Identificador do imóvel de interesse no catálogo
+  - attribute_key: faixa_orcamento
+    attribute_display_name: Faixa de orçamento
+    attribute_model: conversation_attribute
+    attribute_display_type: currency
+    attribute_description: Orçamento informado pelo interessado
+  - attribute_key: corretor_responsavel
+    attribute_display_name: Corretor responsável
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+    attribute_description: Corretor que está conduzindo o atendimento
+
+automation_rules:
+  - name: Novo contato recebido
+    description: Aplica a label de entrada em toda conversa nova
+    event_name: conversation_created
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [novo-contato]
+  - name: Atendimento encerrado
+    description: Troca a label de em-atendimento pela de encerrado quando a conversa é resolvida
+    event_name: conversation_resolved
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [atendimento-encerrado]
+      - action_name: remove_label
+        action_params: [em-atendimento]

@@ -1,0 +1,93 @@
+labels:
+  - title: novo-contato
+    color: '#94A3B8'
+    description: Mensagem recebida, ainda não triada
+  - title: triagem
+    color: '#94A3B8'
+    description: Identificando o motivo do contato
+  - title: em-atendimento
+    color: '#14B8A6'
+    description: Atendente conduzindo a conversa
+  - title: pedido-confirmado
+    color: '#14B8A6'
+    description: Checkout concluído
+  - title: aguardando-pagamento
+    color: '#14B8A6'
+    description: Pix ou boleto gerado, sem confirmação
+  - title: em-separacao
+    color: '#14B8A6'
+    description: Pagamento aprovado, pedido em preparação
+  - title: enviado
+    color: '#14B8A6'
+    description: Código de rastreio gerado
+  - title: entregue
+    color: '#94A3B8'
+    description: Transportadora confirmou a entrega
+  - title: carrinho-abandonado
+    color: '#F97316'
+    description: Checkout iniciado e não concluído
+  - title: pagamento-recusado
+    color: '#EF4444'
+    description: Gateway recusou a cobrança
+  - title: troca-devolucao
+    color: '#F97316'
+    description: Cliente solicitou troca ou devolução
+  - title: reembolso
+    color: '#F97316'
+    description: Estorno em processamento ou confirmado
+  - title: escalado
+    color: '#EF4444'
+    description: Reclamação grave encaminhada à gerência
+  - title: atendimento-encerrado
+    color: '#94A3B8'
+    description: Conversa resolvida
+  - title: lembrete-reposicao
+    color: '#14B8A6'
+    description: Lembrete de recompra de produto consumível
+  - title: comprou-novamente
+    color: '#14B8A6'
+    description: Cliente fez um novo pedido
+  - title: ficou-inativo
+    color: '#94A3B8'
+    description: Sem resposta ao lembrete de recompra
+
+custom_attribute_definitions:
+  - attribute_key: numero_pedido
+    attribute_display_name: Número do pedido
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+    attribute_description: Identificador do pedido no sistema de vendas
+  - attribute_key: codigo_rastreio
+    attribute_display_name: Código de rastreio
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+    attribute_description: Código de rastreamento da transportadora
+  - attribute_key: motivo_contato
+    attribute_display_name: Motivo do contato
+    attribute_model: conversation_attribute
+    attribute_display_type: list
+    attribute_values: [Dúvida de produto, Pedido ou rastreio, Troca ou devolução, Reclamação]
+    attribute_description: Classificação dada na triagem
+  - attribute_key: valor_pedido
+    attribute_display_name: Valor do pedido
+    attribute_model: conversation_attribute
+    attribute_display_type: currency
+    attribute_description: Valor total do pedido relacionado à conversa
+
+automation_rules:
+  - name: Novo contato recebido
+    description: Aplica a label de entrada em toda conversa nova
+    event_name: conversation_created
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [novo-contato]
+  - name: Atendimento encerrado
+    description: Troca a label de em-atendimento pela de encerrado quando a conversa é resolvida
+    event_name: conversation_resolved
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [atendimento-encerrado]
+      - action_name: remove_label
+        action_params: [em-atendimento]

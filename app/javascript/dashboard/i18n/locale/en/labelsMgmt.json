@@ -38,6 +38,9 @@
       "SHOW_ON_SIDEBAR": {
         "LABEL": "Show label on sidebar"
       },
+      "CLOSES_CONVERSATION": {
+        "LABEL": "Applying this label automatically archives the conversation"
+      },
       "EDIT": "Edit",
       "CREATE": "Create",
       "DELETE": "Delete",

@@ -57,6 +57,13 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     # rubocop:enable Rails/I18nLocaleTexts
   end
 
+  def apply_vertical_template
+    VerticalTemplates::Applier.new(account: requested_resource, vertical: params[:vertical]).perform!
+    redirect_back(fallback_location: [namespace, requested_resource], notice: "Vertical template '#{params[:vertical]}' applied")
+  rescue ActiveRecord::RecordNotFound => e
+    redirect_back(fallback_location: [namespace, requested_resource], alert: e.message)
+  end
+
   def destroy
     account = Account.find(params[:id])
 
