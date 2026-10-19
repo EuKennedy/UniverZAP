@@ -476,11 +476,20 @@ function setFiltersFromUISettings() {
     ? view
     : wootConstants.LIST_VIEW.ALL;
   activeStatus.value = status || wootConstants.STATUS_TYPE.OPEN;
+  // The view persists across reloads via conversation_list_view, but an
+  // explicit order_by (picked from the sort filter) doesn't carry the
+  // Aguardando-is-the-fila-de-risco default with it — without this, reopening
+  // the app on a restored Aguardando view silently falls back to last
+  // activity instead of longest wait first.
+  const defaultSortBy =
+    activeListView.value === wootConstants.LIST_VIEW.WAITING
+      ? wootConstants.SORT_BY_TYPE.WAITING_SINCE_ASC
+      : wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC;
   activeSortBy.value = Object.values(wootConstants.SORT_BY_TYPE).includes(
     orderBy
   )
     ? orderBy
-    : wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC;
+    : defaultSortBy;
 }
 
 function emitConversationLoaded() {
