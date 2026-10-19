@@ -50,6 +50,10 @@
           "LABEL": "Lead de anúncio",
           "HINT": "Começa quando a mensagem vem de um anúncio Click-to-WhatsApp (Facebook/Instagram)."
         },
+        "RECURRING_CUSTOMER": {
+          "LABEL": "Cliente recorrente",
+          "HINT": "Começa na primeira mensagem de uma cliente que já teve um atendimento encerrado."
+        },
         "NO_REPLY": {
           "LABEL": "Cliente esperando",
           "HINT": "Começa quando a cliente espera um atendente há mais minutos do que o configurado abaixo (verificado a cada 5 minutos)."

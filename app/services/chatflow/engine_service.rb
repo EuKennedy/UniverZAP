@@ -103,6 +103,9 @@ class Chatflow::EngineService
     when 'keyword' then keyword_hit?(chatflow)
     when 'any_message' then true
     when 'ad_referral' then ad_message?
+    # Once per conversation, decided from the data (a previous conversation that
+    # ended), not from the label: the conversation.created job may still be running.
+    when 'recurring_customer' then first_inbound_message? && Conversations::RecurringCustomerService.recurring?(@conversation)
     else false
     end
   end

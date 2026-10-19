@@ -35,7 +35,7 @@ en:
     label_description: Conversation that started from a Click-to-WhatsApp ad
     attributes:
       origem_lead: Lead origin
-      origem_lead_description: "How the customer reached you (e.g. anuncio_facebook)"
+      origem_lead_description: "How the customer reached you: anuncio_facebook or organico, set on the first touch"
       anuncio_id: Ad ID
       anuncio_id_description: ID of the Facebook/Instagram ad the customer clicked
       anuncio_titulo: Ad title
@@ -44,6 +44,11 @@ en:
       anuncio_url_description: Link to the ad on Facebook
       anuncio_cliques: Ad clicks
       anuncio_cliques_description: How many times the customer came back through an ad
+  recurring_customer:
+    label_description: Conversation of a customer who already had a conversation that ended
+    attributes:
+      recorrente: Returning customer
+      recorrente_description: The contact already had at least one conversation that ended
   kanban:
     activity:
       stage_changed: 'Kanban: "%{task}" moved to "%{stage}" in %{funnel}.'

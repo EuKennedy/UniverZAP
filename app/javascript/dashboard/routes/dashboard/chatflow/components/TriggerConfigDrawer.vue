@@ -38,6 +38,7 @@ const TRIGGER_TYPES = [
   { value: 'any_message', icon: 'i-lucide-messages-square' },
   { value: 'webhook', icon: 'i-lucide-webhook' },
   { value: 'ad_referral', icon: 'i-lucide-megaphone' },
+  { value: 'recurring_customer', icon: 'i-lucide-repeat' },
   { value: 'no_reply', icon: 'i-lucide-timer' },
 ];
 

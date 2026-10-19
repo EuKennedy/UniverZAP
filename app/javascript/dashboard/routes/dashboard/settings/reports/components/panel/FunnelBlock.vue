@@ -1,7 +1,8 @@
 <script setup>
 /**
- * Anúncio → conversão. Totais do período e a mesma tabela vista por anúncio
- * ou por atendente (quem recebeu o lead). Os números vêm do
+ * Anúncio → conversão. Totais do período e a mesma tabela vista por anúncio,
+ * por atendente (quem recebeu o lead) ou por cliente nova × recorrente
+ * (etiqueta cliente-recorrente). Os números vêm do
  * V2::Reports::AdLeadsBuilder: leads, respondidas (first_reply_created_at),
  * resolvidas (status) e convertidas (etiqueta escolhida na página).
  */
@@ -13,14 +14,21 @@ import { rate } from './panelFormat';
 const props = defineProps({
   byAd: { type: Array, default: () => [] },
   byAgent: { type: Array, default: () => [] },
+  byCustomer: { type: Array, default: () => [] },
   conversionLabel: { type: String, default: '' },
 });
 
 const { t } = useI18n();
+const VIEWS = ['ad', 'agent', 'customer'];
 const view = ref('ad');
 
 const hasConversion = computed(() => Boolean(props.conversionLabel));
-const rows = computed(() => (view.value === 'ad' ? props.byAd : props.byAgent));
+const rows = computed(
+  () =>
+    ({ ad: props.byAd, agent: props.byAgent, customer: props.byCustomer })[
+      view.value
+    ]
+);
 
 const totals = computed(() =>
   props.byAd.reduce(
@@ -36,10 +44,15 @@ const totals = computed(() =>
 
 const rowTitle = row => {
   if (view.value === 'ad') return row.title || row.ad_id;
+  if (view.value === 'customer')
+    return t(`PANEL_REPORTS.FUNNEL.CUSTOMER_${row.customer.toUpperCase()}`);
   return row.title || t('PANEL_REPORTS.UNASSIGNED');
 };
-const rowKey = row =>
-  view.value === 'ad' ? row.ad_id : `agent-${row.agent_id}`;
+const rowKey = row => {
+  if (view.value === 'ad') return row.ad_id;
+  if (view.value === 'customer') return `customer-${row.customer}`;
+  return `agent-${row.agent_id}`;
+};
 const pct = (part, total) => (total ? `(${rate(part, total)})` : '');
 </script>
 
@@ -58,7 +71,7 @@ const pct = (part, total) => (total ? `(${rate(part, total)})` : '');
         class="inline-flex rounded-lg border border-n-weak bg-n-solid-1 p-0.5 text-xs"
       >
         <button
-          v-for="option in ['ad', 'agent']"
+          v-for="option in VIEWS"
           :key="option"
           type="button"
           class="rounded-md px-3 py-1 font-medium"

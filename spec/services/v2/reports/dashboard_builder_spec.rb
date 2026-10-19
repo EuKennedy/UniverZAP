@@ -19,6 +19,7 @@ RSpec.describe V2::Reports::DashboardBuilder do
 
     expect(result[:funnel][:by_ad].first).to include(ad_id: '100', leads: 1, replied: 1)
     expect(result[:funnel][:by_agent].first).to include(agent_id: agent.id, title: 'Ana', leads: 1)
+    expect(result[:funnel][:by_customer].map { |row| row[:customer] }).to eq(%w[new recurring])
     expect(result[:queue]).to include(waiting: 1, at_risk: 1)
     expect(result[:agents].map { |row| row[:agent_id] }).to contain_exactly(agent.id, nil)
     expect(result[:risk_minutes]).to eq(30)

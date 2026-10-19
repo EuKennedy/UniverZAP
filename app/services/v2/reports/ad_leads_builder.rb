@@ -1,6 +1,7 @@
 # Leads per Click-to-WhatsApp ad: conversations stamped by
 # Conversations::AdReferralService, grouped by ad id inside the period — or by
-# assignee when `group_by: 'agent'`, to see who turns ad leads into bookings.
+# assignee when `group_by: 'agent'`, to see who turns ad leads into bookings,
+# or new vs returning customer when `group_by: 'customer'`.
 # "converted" counts the ones carrying the label the caller treats as the
 # goal (e.g. agendado); without a label the column is nil, not zero.
 class V2::Reports::AdLeadsBuilder
@@ -14,8 +15,17 @@ class V2::Reports::AdLeadsBuilder
     Arel.sql("MAX(conversations.custom_attributes->>'anuncio_url')")
   ].freeze
   COUNTS = [Arel.sql('COUNT(*)'), REPLIED, RESOLVED].freeze
+  # The label Conversations::RecurringCustomerService writes on a conversation
+  # of a customer who already had a conversation that ended.
+  RECURRING = Arel.sql(<<~SQL.squish)
+    EXISTS (SELECT 1 FROM taggings INNER JOIN tags ON tags.id = taggings.tag_id
+            WHERE taggings.taggable_type = 'Conversation' AND taggings.taggable_id = conversations.id
+              AND taggings.context = 'labels' AND tags.name = '#{Conversations::RecurringCustomerService::LABEL}')
+  SQL
 
   def build
+    return customer_rows if params[:group_by] == 'customer'
+
     rows = params[:group_by] == 'agent' ? agent_rows : ad_rows
     rows.sort_by { |row| -row[:leads] }
   end
@@ -38,6 +48,16 @@ class V2::Reports::AdLeadsBuilder
     names = account.users.pluck(:id, :name).to_h
     base_scope.group(:assignee_id).pluck(:assignee_id, *COUNTS).map do |agent_id, *counts|
       { agent_id: agent_id, title: names[agent_id], **metrics(counts, converted, agent_id) }
+    end
+  end
+
+  # Always two rows, new first, so the page can show the split even when one
+  # side is empty.
+  def customer_rows
+    converted = converted_by(base_scope, RECURRING)
+    counts = base_scope.group(RECURRING).pluck(RECURRING, *COUNTS).to_h { |recurring, *row| [recurring, row] }
+    [false, true].map do |recurring|
+      { customer: recurring ? 'recurring' : 'new', **metrics(counts.fetch(recurring, [0, 0, 0]), converted, recurring) }
     end
   end
 

@@ -26,6 +26,9 @@ module Events::Types
 
   # UniverZAP: a conversation's first message came from a Click-to-WhatsApp ad.
   CONVERSATION_AD_REFERRAL = 'conversation.ad_referral'
+  # UniverZAP: a conversation was created for a contact who already had a
+  # conversation that ended (Conversations::RecurringCustomerService).
+  CONVERSATION_RECURRING_CUSTOMER = 'conversation.recurring_customer'
 
   CONVERSATION_STATUS_CHANGED = 'conversation.status_changed'
   CONVERSATION_CONTACT_CHANGED = 'conversation.contact_changed'

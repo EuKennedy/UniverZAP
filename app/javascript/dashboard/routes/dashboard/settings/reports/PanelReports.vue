@@ -149,6 +149,7 @@ onMounted(async () => {
       <FunnelBlock
         :by-ad="report.funnel.by_ad"
         :by-agent="report.funnel.by_agent"
+        :by-customer="report.funnel.by_customer"
         :conversion-label="report.conversion_label || ''"
       />
       <QueueBlock :queue="report.queue" :risk-minutes="report.risk_minutes" />
