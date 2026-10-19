@@ -18,6 +18,11 @@
     "KPI_FIRST_REPLY_MEDIAN": "(median)",
     "KPI_FIRST_REPLY_PENDING": "· {replied} replied, {pending} unanswered",
     "KPI_FIRST_REPLY_NONE": "· no conversations today",
+    "TODAY": {
+      "TITLE": "Today",
+      "TOGGLE": "Show or fold the day panel",
+      "COMPACT": "first reply {time} · {pending} unanswered"
+    },
     "STATUS_BAR": {
       "PICK": "Choose the labels on the bar",
       "HINT": "Applies to the whole team. The order you tick is the order on the bar.",

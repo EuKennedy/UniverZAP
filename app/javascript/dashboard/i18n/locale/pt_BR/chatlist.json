@@ -18,6 +18,11 @@
     "KPI_FIRST_REPLY_MEDIAN": "(mediana)",
     "KPI_FIRST_REPLY_PENDING": "· {replied} respondidas, {pending} sem resposta",
     "KPI_FIRST_REPLY_NONE": "· nenhuma conversa hoje",
+    "TODAY": {
+      "TITLE": "Hoje",
+      "TOGGLE": "Mostrar ou recolher o painel do dia",
+      "COMPACT": "1ª resposta {time} · {pending} sem resposta"
+    },
     "STATUS_BAR": {
       "PICK": "Escolher as etiquetas da barra",
       "HINT": "Vale para toda a equipe. A ordem em que você marca é a ordem na barra.",

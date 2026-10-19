@@ -86,6 +86,11 @@ const activeAssigneeTab = ref(wootConstants.ASSIGNEE_TYPE.ALL);
 const activeListView = ref(wootConstants.LIST_VIEW.ALL);
 const activeStatus = ref(wootConstants.STATUS_TYPE.OPEN);
 const activeSortBy = ref(wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC);
+const todayCollapsed = ref(false);
+function toggleToday() {
+  todayCollapsed.value = !todayCollapsed.value;
+  updateUISettings({ conversation_list_today_collapsed: todayCollapsed.value });
+}
 const showAdvancedFilters = ref(false);
 const listFilter = ref(emptyListFilter());
 // chatsOnView is to store the chats that are currently visible on the screen,
@@ -476,7 +481,15 @@ function setFiltersFromUISettings() {
   const {
     conversations_filter_by: filterBy = {},
     conversation_list_view: view,
+    conversation_list_today_collapsed: todayPref,
   } = uiSettings.value;
+  // The "Hoje" block opens on a desktop and starts folded on a phone, where
+  // every row of the list counts; once the agent toggles it, their choice
+  // wins on every device.
+  todayCollapsed.value =
+    typeof todayPref === 'boolean'
+      ? todayPref
+      : window.matchMedia('(max-width: 767px)').matches;
   const { status, order_by: orderBy } = filterBy;
   activeListView.value = Object.values(wootConstants.LIST_VIEW).includes(view)
     ? view
@@ -1194,7 +1207,9 @@ watch(conversationFilters, (newVal, oldVal) => {
       :items="kpiItems"
       :active-key="activeListView"
       :first-reply="firstReply"
+      :collapsed="todayCollapsed"
       @select="updateView"
+      @toggle="toggleToday"
     />
     <VerticalStatusChips
       v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
