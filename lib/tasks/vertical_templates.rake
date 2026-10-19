@@ -12,7 +12,7 @@ namespace :vertical_templates do
       'real_estate' => 'Imobiliárias'
     }
 
-    Dir[Rails.root.join('lib/vertical_templates/templates/*.yml')].sort.each do |path|
+    Dir[Rails.root.join('lib/vertical_templates/templates/*.yml')].each do |path|
       key = File.basename(path, '.yml')
       template = YAML.safe_load(File.read(path))
       vertical = Vertical.find_or_create_by!(key: key) { |v| v.name = names.fetch(key, key.humanize) }
