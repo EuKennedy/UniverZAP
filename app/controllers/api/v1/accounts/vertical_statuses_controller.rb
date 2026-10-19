@@ -17,7 +17,7 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
     vertical.vertical_statuses.where(closes_conversation: false).order(:position).limit(MAX_STATUSES).filter_map do |status|
       next unless Current.account.labels.exists?(title: status.title)
 
-      { title: status.title, color: status.color, count: label_count(status.title) }
+      { title: status.title, color: status.color, description: status.description, count: label_count(status.title) }
     end
   end
 

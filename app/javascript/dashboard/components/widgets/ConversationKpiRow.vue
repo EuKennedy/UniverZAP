@@ -28,11 +28,12 @@ const firstReplyLabel = computed(() =>
     : formatSeconds(props.firstReply.median, t)
 );
 
-// The actionable number: today's conversations nobody answered yet.
+// Today's base: how many were answered, and the actionable rest nobody has.
 const firstReplyCount = computed(() =>
   props.firstReply?.created
     ? t('CHAT_LIST.KPI_FIRST_REPLY_PENDING', {
-        n: props.firstReply.created - props.firstReply.replied,
+        replied: props.firstReply.replied,
+        pending: props.firstReply.created - props.firstReply.replied,
       })
     : t('CHAT_LIST.KPI_FIRST_REPLY_NONE')
 );

@@ -16,7 +16,7 @@
     "FILTER_ALL": "Todos",
     "KPI_FIRST_REPLY": "Hoje · 1ª resposta:",
     "KPI_FIRST_REPLY_MEDIAN": "(mediana)",
-    "KPI_FIRST_REPLY_PENDING": "· {n} sem resposta",
+    "KPI_FIRST_REPLY_PENDING": "· {replied} respondidas, {pending} sem resposta",
     "KPI_FIRST_REPLY_NONE": "· nenhuma conversa hoje",
     "KPI_FIRST_REPLY_HINT": "Mediana (não média) do tempo entre a conversa ser criada hoje e a primeira resposta humana, contando só as conversas já respondidas. Metade delas foi respondida mais rápido que isso, metade mais devagar. Atualiza a cada minuto.",
     "ASSIGNEE_TYPE_TABS": {
