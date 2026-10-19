@@ -18,6 +18,10 @@
 #available at https://guides.rubyonrails.org/i18n.html.
 pt_BR:
   hello: 'Olá, mundo'
+  date:
+    month_names: [~, janeiro, fevereiro, março, abril, maio, junho, julho, agosto, setembro, outubro, novembro, dezembro]
+    formats:
+      long: '%d de %B de %Y'
   kanban:
     activity:
       stage_changed: 'Kanban: "%{task}" movida para "%{stage}" em %{funnel}.'

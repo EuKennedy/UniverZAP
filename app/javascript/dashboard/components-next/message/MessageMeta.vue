@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
-import { messageTimestamp } from 'shared/helpers/timeHelper';
+import { useI18n } from 'vue-i18n';
+import { localizedMessageTimestamp } from 'shared/helpers/timeHelper';
 
 import MessageStatus from './MessageStatus.vue';
 import Icon from 'next/icon/Icon.vue';
@@ -32,8 +33,10 @@ const {
   contentAttributes,
 } = useMessageContext();
 
+const { locale } = useI18n();
+
 const readableTime = computed(() =>
-  messageTimestamp(createdAt.value, 'LLL d, h:mm a')
+  localizedMessageTimestamp(createdAt.value, locale.value)
 );
 
 const showStatusIndicator = computed(() => {

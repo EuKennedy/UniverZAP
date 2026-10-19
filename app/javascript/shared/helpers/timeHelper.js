@@ -34,6 +34,28 @@ export const messageTimestamp = (time, dateFormat = 'MMM d, yyyy') => {
 };
 
 /**
+ * Formats a Unix timestamp as a short, locale-aware date and time, e.g.
+ * "Oct 19, 5:41 AM" in en or "19 de out., 05:41" in pt_BR, adding the year
+ * when the message is not from the current one.
+ * @param {number} time - Unix timestamp.
+ * @param {string} locale - UI locale (e.g. 'pt_BR').
+ * @returns {string} Formatted date string.
+ */
+export const localizedMessageTimestamp = (time, locale) => {
+  const messageTime = fromUnixTime(time);
+  const options = {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  };
+  if (!isSameYear(messageTime, new Date())) options.year = 'numeric';
+  return new Intl.DateTimeFormat(locale.replace('_', '-'), options).format(
+    messageTime
+  );
+};
+
+/**
  * Converts a Unix timestamp to a relative time string (e.g., 3 hours ago).
  * @param {number} time - Unix timestamp.
  * @returns {string} Relative time string.
