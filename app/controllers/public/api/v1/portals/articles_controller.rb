@@ -21,6 +21,7 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
 
   def show
     @og_image_url = helpers.set_og_image_url(@portal.name, @article.title)
+    @sidebar_categories = @portal.categories.where(locale: @locale).order(:position)
   end
 
   def tracking_pixel

@@ -24,18 +24,30 @@
 <% if !@is_plain_layout_enabled %>
 <div id="portal-bg" class="bg-white dark:bg-slate-900 shadow-inner">
   <div id="portal-bg-gradient" class="pt-8 pb-8 md:pt-14 md:pb-6">
-    <div class="max-w-5xl px-4 md:px-8 mx-auto flex flex-col">
+    <div class="max-w-7xl px-4 md:px-8 mx-auto flex flex-col">
       <%= render "public/api/v1/portals/articles/article_header", article: @article %>
     </div>
   </div>
 </div>
 <% else %>
-<div class="max-w-5xl mx-auto space-y-4 w-full px-4 md:px-8 <%= @is_plain_layout_enabled ? 'py-4' : 'py-8' %>">
+<div class="max-w-7xl mx-auto space-y-4 w-full px-4 md:px-8 <%= @is_plain_layout_enabled ? 'py-4' : 'py-8' %>">
   <%= render "public/api/v1/portals/articles/article_header", article: @article %>
 </div>
 <% end %>
 
-<div class="flex max-w-5xl w-full px-4 md:px-8 mx-auto">
+<% if !@is_plain_layout_enabled %>
+<details class="md:hidden max-w-7xl w-full px-4 mx-auto pt-6">
+  <summary class="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-200"><%= I18n.t('public_portal.common.all_articles') %></summary>
+  <div class="pt-4"><%= render "public/api/v1/portals/articles/lessons_nav" %></div>
+</details>
+<% end %>
+
+<div class="flex max-w-7xl w-full px-4 md:px-8 mx-auto gap-8">
+  <% if !@is_plain_layout_enabled %>
+  <aside class="hidden md:block w-56 shrink-0 sticky top-24 self-start pt-8 max-h-[calc(100vh-7rem)] overflow-y-auto">
+    <%= render "public/api/v1/portals/articles/lessons_nav" %>
+  </aside>
+  <% end %>
   <article id="cw-article-content" class="article-content flex-grow flex-2 mx-auto text-slate-800 dark:text-slate-50 text-lg max-w-3xl prose-h1:text-2xl prose-h2:text-xl prose-h2:mt-0 prose-h3:text-lg prose-code:[&>p]:p-1 prose-code:[&>p]:rounded-sm prose-code:[&>p]:bg-black-100 dark:prose-code:[&>p]:bg-black-600 prose-code:after:content-none prose-code:before:content-none prose dark:prose-invert break-words w-full [&_table]:!border-slate-200 dark:[&_table]:!border-slate-800 [&_th]:!border-slate-200 dark:[&_th]:!border-slate-800 [&_td]:!border-slate-200 dark:[&_td]:!border-slate-800 [&_th]:!bg-slate-50 dark:[&_th]:!bg-slate-800/50 <%= @is_plain_layout_enabled ? 'py-4' : 'pt-8 pb-12' %>">
     <%= @parsed_content %>
   </article>

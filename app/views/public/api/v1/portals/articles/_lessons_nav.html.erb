@@ -1,0 +1,28 @@
+<nav class="flex flex-col gap-5 text-sm">
+  <% @sidebar_categories.each do |category| %>
+    <% articles = category.articles.published.order(:position) %>
+    <% next if articles.empty? %>
+    <div class="flex flex-col gap-1">
+      <a
+        class="font-semibold text-slate-900 dark:text-white hover:underline"
+        href="<%= generate_category_link(portal_slug: @portal.slug, category_locale: category.locale, category_slug: category.slug, theme: @theme_from_params, is_plain_layout_enabled: @is_plain_layout_enabled) %>"
+      >
+        <%= category.name %>
+      </a>
+      <ul class="flex flex-col border-l border-slate-200 dark:border-slate-700">
+        <% articles.each do |article| %>
+          <% current = article.id == @article.id %>
+          <li>
+            <a
+              class="block -ml-px border-l-2 pl-3 py-1 leading-5 <%= current ? 'border-woot-500 text-woot-600 dark:text-woot-500 font-medium' : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white' %>"
+              aria-current="<%= current ? 'page' : 'false' %>"
+              href="<%= generate_article_link(@portal.slug, article.slug, @theme_from_params, @is_plain_layout_enabled) %>"
+            >
+              <%= article.title %>
+            </a>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+</nav>
