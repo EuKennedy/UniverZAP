@@ -21,6 +21,35 @@
     "CALL_INITIATED": "Efetuando chamada…",
     "CALL_FAILED": "Não foi possível iniciar a chamada. Tente novamente.",
     "CLICK_TO_EDIT": "Click to edit",
+    "SHEET": {
+      "NO_PHONE": "sem número",
+      "COPY_PHONE": "Copiar número",
+      "STAGE": "Estágio",
+      "ORIGIN": "Origem",
+      "ORIGIN_AD": "Anúncio",
+      "ORIGIN_ORGANIC": "Orgânico",
+      "TYPE": "Tipo",
+      "TYPE_NEW": "Nova",
+      "TYPE_RECURRING": "Recorrente",
+      "SERVICE": "Serviço",
+      "PROFESSIONAL": "Profissional",
+      "APPOINTMENT": "Agendamento",
+      "REPURCHASE": "Recompra",
+      "REPURCHASE_EVERY": "a cada {count} semana | a cada {count} semanas",
+      "EMPTY": "—",
+      "SAVE": "Salvar",
+      "SCHEDULE": {
+        "BUTTON": "Agendar",
+        "TITLE": "Agendar atendimento",
+        "DESCRIPTION": "Grava o agendamento nesta conversa e a passa para o estágio \"agendado\".",
+        "DATE": "Data e hora",
+        "SERVICE_PLACEHOLDER": "Escolha o serviço",
+        "REPURCHASE_WEEKS": "Ciclo de recompra (semanas)",
+        "CONFIRM": "Agendar",
+        "SUCCESS": "Agendamento salvo. A conversa está no estágio \"agendado\".",
+        "ERROR": "Não foi possível salvar o agendamento. Tente de novo."
+      }
+    },
     "VOICE_INBOX_PICKER": {
       "TITLE": "Escolha uma caixa de entrada de voz"
     },

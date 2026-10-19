@@ -493,6 +493,29 @@ const actions = {
     }
   },
 
+  // UniverZAP: "Agendar" writes the appointment and swaps the stage in one go.
+  scheduleConversation: async (
+    { commit, dispatch },
+    { conversationId, attributes }
+  ) => {
+    const response = await ConversationApi.schedule({
+      conversationId,
+      attributes,
+    });
+    const { custom_attributes: customAttributes, labels } = response.data;
+    commit(types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES, {
+      conversationId,
+      customAttributes,
+    });
+    commit(types.UPDATE_CONVERSATION_LABELS, { conversationId, labels });
+    dispatch(
+      'conversationLabels/setConversationLabel',
+      { id: conversationId, data: labels },
+      { root: true }
+    );
+    return response.data;
+  },
+
   attachToKanban: async (_, { conversationId, funnelStageId, title }) => {
     const response = await ConversationApi.attachToKanban({
       conversationId,
