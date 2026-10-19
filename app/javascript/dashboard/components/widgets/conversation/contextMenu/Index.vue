@@ -196,6 +196,19 @@ export default {
   computed: {
     ...mapGetters({
       labels: 'labels/getLabels',
+    }),
+    // UniverZAP: closing statuses (labels flagged closes_conversation). With
+    // any present, "resolve" lists them: applying one resolves the conversation
+    // through the label path, the same way the header button does.
+    closingLabels() {
+      return this.labels.filter(label => label.closes_conversation);
+    },
+    resolveOption() {
+      return this.statusMenuConfig.find(
+        option => option.key === wootConstants.STATUS_TYPE.RESOLVED
+      );
+    },
+    ...mapGetters({
       teams: 'teams/getTeams',
       assignableAgentsUiFlags: 'inboxAssignableAgents/getUIFlags',
       currentUser: 'getCurrentUser',
@@ -318,9 +331,29 @@ export default {
       <hr class="m-1 rounded border-b border-n-weak dark:border-n-weak" />
     </template>
     <template v-if="isAllowed([MENU.STATUS, MENU.SNOOZE])">
+      <MenuItemWithSubmenu
+        v-if="
+          closingLabels.length &&
+          show(resolveOption.key) &&
+          isAllowed([MENU.STATUS])
+        "
+        :option="resolveOption"
+      >
+        <MenuItem
+          v-for="label in closingLabels"
+          :key="label.id"
+          :option="generateMenuLabelConfig(label, 'label')"
+          variant="label"
+          @click.stop="$emit('assignLabel', label)"
+        />
+      </MenuItemWithSubmenu>
       <template v-for="option in statusMenuConfig">
         <MenuItem
-          v-if="show(option.key) && isAllowed([MENU.STATUS])"
+          v-if="
+            show(option.key) &&
+            isAllowed([MENU.STATUS]) &&
+            (option.key !== resolveOption.key || !closingLabels.length)
+          "
           :key="option.key"
           :option="option"
           variant="icon"

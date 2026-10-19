@@ -362,7 +362,7 @@ class Conversation < ApplicationRecord
     _, current_labels = previous_changes[:label_list]
     return unless current_labels.is_a?(Array)
 
-    closing_titles = account.labels.where(closes_conversation: true).pluck(:title)
+    closing_titles = account.labels.closing.pluck(:title)
     resolved! if current_labels.intersect?(closing_titles)
   end
 

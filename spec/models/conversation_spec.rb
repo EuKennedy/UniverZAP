@@ -25,6 +25,28 @@ RSpec.describe Conversation do
     it_behaves_like 'auto_assignment_handler'
   end
 
+  describe 'closing statuses' do
+    let(:account) { create(:account) }
+    let(:conversation) { create(:conversation, account: account, status: :open) }
+
+    before do
+      create(:label, account: account, title: 'cancelado', closes_conversation: true)
+      create(:label, account: account, title: 'agendado')
+    end
+
+    it 'resolves the conversation when a closing label is applied' do
+      conversation.add_labels(['cancelado'])
+
+      expect(conversation.reload.status).to eq('resolved')
+    end
+
+    it 'keeps the conversation open when an ordinary label is applied' do
+      conversation.add_labels(['agendado'])
+
+      expect(conversation.reload.status).to eq('open')
+    end
+  end
+
   describe '.before_create' do
     let(:conversation) { build(:conversation, display_id: nil) }
 

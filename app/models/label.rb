@@ -31,6 +31,11 @@ class Label < ApplicationRecord
   after_update_commit :update_associated_models
   default_scope { order(:title) }
 
+  # Closing statuses: labels that archive the conversation when applied
+  # (see Conversation#handle_closing_label_applied). An account with at least
+  # one of these asks the agent which one applies before resolving.
+  scope :closing, -> { where(closes_conversation: true) }
+
   before_validation do
     self.title = title.downcase if attribute_present?('title')
   end

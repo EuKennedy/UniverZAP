@@ -1,11 +1,13 @@
 <script setup>
-import { useTemplateRef, computed } from 'vue';
+import { useTemplateRef, computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToggle } from '@vueuse/core';
 import { vOnClickOutside } from '@vueuse/components';
+import { useClosingLabels } from 'dashboard/composables/useClosingLabels';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
+import ClosingLabelMenu from 'dashboard/components/widgets/conversation/ClosingLabelMenu.vue';
 
 const props = defineProps({
   showResolve: {
@@ -28,6 +30,27 @@ const { t } = useI18n();
 
 const containerRef = useTemplateRef('containerRef');
 const [showDropdown, toggleDropdown] = useToggle(false);
+const { closingLabels, requiresClosingLabel } = useClosingLabels();
+// UniverZAP: resolving in bulk on an account with closing statuses asks
+// which one applies, in a second step of the same dropdown.
+const pickingClosingLabel = ref(false);
+
+const closeDropdown = () => {
+  toggleDropdown(false);
+  pickingClosingLabel.value = false;
+};
+
+const openClosingLabelPicker = () => {
+  pickingClosingLabel.value = true;
+  toggleDropdown(true);
+};
+
+const onClosingLabelSelected = label => {
+  emit('update', 'resolved', label.title);
+  closeDropdown();
+};
+
+defineExpose({ openClosingLabelPicker });
 
 const updateMenuItems = computed(() => {
   const items = [];
@@ -68,10 +91,13 @@ const handleUpdate = item => {
     // Open the snooze option for bulk action in the cmd bar.
     const ninja = document.querySelector('ninja-keys');
     ninja?.open({ parent: 'bulk_action_snooze_conversation' });
+  } else if (item.value === 'resolved' && requiresClosingLabel.value) {
+    pickingClosingLabel.value = true;
+    return;
   } else {
     emit('update', item.value);
   }
-  toggleDropdown(false);
+  closeDropdown();
 };
 </script>
 
@@ -94,12 +120,16 @@ const handleUpdate = item => {
       leave-from-class="opacity-100 scale-100"
       leave-to-class="opacity-0 scale-95"
     >
+      <ClosingLabelMenu
+        v-if="showDropdown && pickingClosingLabel"
+        v-on-click-outside="[closeDropdown, { ignore: [containerRef] }]"
+        :labels="closingLabels"
+        class="absolute ltr:-right-[4.5rem] rtl:-left-[4.5rem] ltr:2xl:right-0 rtl:2xl:left-0 bottom-8 z-50"
+        @select="onClosingLabelSelected"
+      />
       <DropdownMenu
-        v-if="showDropdown"
-        v-on-click-outside="[
-          () => toggleDropdown(false),
-          { ignore: [containerRef] },
-        ]"
+        v-else-if="showDropdown"
+        v-on-click-outside="[closeDropdown, { ignore: [containerRef] }]"
         :menu-items="updateMenuItems"
         class="ltr:-right-[4.5rem] rtl:-left-[4.5rem] ltr:2xl:right-0 rtl:2xl:left-0 bottom-8 w-36"
         @action="handleUpdate"

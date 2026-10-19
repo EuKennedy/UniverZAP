@@ -124,6 +124,10 @@
         "NEXT_WEEK": "Próxima semana"
       }
     },
+    "CLOSING_LABEL": {
+      "TITLE": "Como esta conversa terminou?",
+      "DESCRIPTION": "Escolha o status que encerra. Ele vira etiqueta e a conversa é resolvida."
+    },
     "MENTION": {
       "AGENTS": "Atendentes",
       "TEAMS": "Times"

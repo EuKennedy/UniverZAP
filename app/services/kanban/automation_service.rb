@@ -16,16 +16,19 @@ class Kanban::AutomationService
       end
     end
 
+    # A conversation resolved under a closing status (label flagged
+    # closes_conversation) lands in the column named after it — the same
+    # name ↔ label convention `tag_conversation_with_stage` uses the other
+    # way round ("Atendimento encerrado" ↔ atendimento-encerrado). Without a
+    # matching column the funnel's own "win on resolve" automation applies.
     def handle_conversation_resolved(conversation)
+      closing_titles = conversation.label_list.to_a & conversation.account.labels.closing.pluck(:title)
+
       conversation.kanban_tasks.includes(:funnel, :funnel_stage).find_each do |task|
-        funnel = task.funnel
-        next unless funnel.automation_enabled?('auto_win_task_on_conversation_resolve')
-        next if task.funnel_stage&.status_type.to_s == 'lost'
+        stage = stage_for_closing_status(task.funnel, closing_titles) || won_stage_for(task)
+        next if stage.blank? || task.funnel_stage_id == stage.id
 
-        won_stage = funnel.funnel_stages.where(status_type: FunnelStage.status_types[:won]).order(:position).first
-        next if won_stage.blank? || task.funnel_stage_id == won_stage.id
-
-        task.update(funnel_stage: won_stage)
+        task.update(funnel_stage: stage)
       end
     end
 
@@ -72,6 +75,20 @@ class Kanban::AutomationService
     end
 
     private
+
+    def stage_for_closing_status(funnel, closing_titles)
+      return if closing_titles.empty?
+
+      funnel.funnel_stages.ordered.detect { |stage| closing_titles.include?(stage.name.to_s.parameterize) }
+    end
+
+    def won_stage_for(task)
+      funnel = task.funnel
+      return unless funnel.automation_enabled?('auto_win_task_on_conversation_resolve')
+      return if task.funnel_stage&.status_type.to_s == 'lost'
+
+      funnel.funnel_stages.where(status_type: FunnelStage.status_types[:won]).order(:position).first
+    end
 
     def auto_resolve_if_closed(task, funnel, stage)
       return unless funnel.automation_enabled?('auto_resolve_conversation_on_task_close')

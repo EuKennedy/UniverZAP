@@ -2,6 +2,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   include Events::Types
   include DateRangeHelper
   include HmacConcern
+  include ClosingLabelGuard
 
   before_action :conversation, except: [:index, :meta, :search, :create, :filter]
   before_action :inbox, :contact, :contact_inbox, only: [:create]
@@ -81,12 +82,16 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
 
   def toggle_status
     # FIXME: move this logic into a service object
+    return render_closing_label_required if closing_label_missing?
+
     if pending_to_open_by_bot?
       @conversation.bot_handoff!
     elsif params[:status].present?
       set_conversation_status
+      apply_closing_label
       @status = @conversation.save!
     else
+      apply_closing_label
       @status = @conversation.toggle_status
     end
     assign_conversation if should_assign_conversation?
@@ -262,6 +267,31 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   def set_conversation_status
     @conversation.status = params[:status]
     @conversation.snoozed_until = parse_date_time(params[:snoozed_until].to_s) if params[:snoozed_until]
+  end
+
+  # Resolving by hand on an account with closing statuses (see ClosingLabelGuard)
+  # needs `closing_label`: the title of one of those labels. It is applied in the
+  # same save as the status change, so the conversation closes under its reason.
+  def closing_label_missing?
+    resolving? && closing_label_required? && closing_label.blank?
+  end
+
+  def resolving?
+    return params[:status] == 'resolved' if params[:status].present?
+
+    @conversation.open?
+  end
+
+  def closing_label
+    return if params[:closing_label].blank?
+
+    @closing_label ||= Current.account.labels.closing.find_by(title: params[:closing_label].to_s.downcase)
+  end
+
+  def apply_closing_label
+    return if closing_label.blank?
+
+    @conversation.label_list = @conversation.label_list.to_a | [closing_label.title]
   end
 
   def assign_conversation

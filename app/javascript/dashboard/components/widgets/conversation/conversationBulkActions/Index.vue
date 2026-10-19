@@ -1,5 +1,13 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, useAttrs } from 'vue';
+import {
+  ref,
+  computed,
+  onMounted,
+  onUnmounted,
+  useAttrs,
+  useTemplateRef,
+} from 'vue';
+import { useClosingLabels } from 'dashboard/composables/useClosingLabels';
 import { getUnixTime } from 'date-fns';
 import { findSnoozeTime } from 'dashboard/helper/snoozeHelpers';
 import { emitter } from 'shared/helpers/mitt';
@@ -62,6 +70,8 @@ const {
 } = useBulkActions();
 
 const showCustomTimeSnoozeModal = ref(false);
+const { requiresClosingLabel } = useClosingLabels();
+const bulkUpdateActionsRef = useTemplateRef('bulkUpdateActionsRef');
 
 function onCmdSnoozeConversation(snoozeType) {
   if (snoozeType === wootConstants.SNOOZE_OPTIONS.UNTIL_CUSTOM_TIME) {
@@ -78,7 +88,16 @@ function onCmdReopenConversation() {
 }
 
 function onCmdResolveConversation() {
+  // Accounts with closing statuses pick one before the bulk resolve goes out.
+  if (requiresClosingLabel.value) {
+    bulkUpdateActionsRef.value?.openClosingLabelPicker();
+    return;
+  }
   onUpdateConversations('resolved', null);
+}
+
+function onBulkStatusUpdate(status, closingLabel = null) {
+  onUpdateConversations(status, null, closingLabel);
 }
 
 function customSnoozeTime(customSnoozedTime) {
@@ -162,10 +181,11 @@ onUnmounted(() => {
         <div class="flex items-center gap-2">
           <BulkLabelActions @assign="onAssignLabels" />
           <BulkUpdateActions
+            ref="bulkUpdateActionsRef"
             :show-resolve="!showResolvedAction"
             :show-reopen="!showOpenAction"
             :show-snooze="!showSnoozedAction"
-            @update="onUpdateConversations"
+            @update="onBulkStatusUpdate"
           />
           <BulkAgentActions
             :selected-inboxes="selectedInboxes"

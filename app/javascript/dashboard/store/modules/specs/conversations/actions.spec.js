@@ -401,6 +401,44 @@ describe('#actions', () => {
         ],
       ]);
     });
+
+    it('sends the closing label along when resolving with a reason', async () => {
+      axios.post.mockResolvedValue({
+        data: {
+          payload: {
+            conversation_id: 1,
+            current_status: 'resolved',
+            snoozed_until: null,
+          },
+        },
+      });
+      await actions.toggleStatus(
+        { commit },
+        { conversationId: 1, status: 'resolved', closingLabel: 'cancelado' }
+      );
+      expect(axios.post).toHaveBeenCalledWith(
+        '/api/v1/conversations/1/toggle_status',
+        { status: 'resolved', snoozed_until: null, closing_label: 'cancelado' }
+      );
+      expect(commit.mock.calls).toEqual([
+        [
+          'CHANGE_CONVERSATION_STATUS',
+          { conversationId: 1, status: 'resolved', snoozedUntil: null },
+        ],
+      ]);
+    });
+
+    it('rethrows when the backend refuses the status change', async () => {
+      const error = { response: { status: 422, data: { error: 'nope' } } };
+      axios.post.mockRejectedValue(error);
+      await expect(
+        actions.toggleStatus(
+          { commit },
+          { conversationId: 1, status: 'resolved' }
+        )
+      ).rejects.toEqual(error);
+      expect(commit).not.toHaveBeenCalled();
+    });
   });
 
   describe('#assignTeam', () => {
