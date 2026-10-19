@@ -18,6 +18,12 @@
     "KPI_FIRST_REPLY_MEDIAN": "(mediana)",
     "KPI_FIRST_REPLY_PENDING": "· {replied} respondidas, {pending} sem resposta",
     "KPI_FIRST_REPLY_NONE": "· nenhuma conversa hoje",
+    "STATUS_BAR": {
+      "PICK": "Escolher as etiquetas da barra",
+      "HINT": "Vale para toda a equipe. A ordem em que você marca é a ordem na barra.",
+      "SAVE": "Salvar",
+      "RESET": "Voltar ao padrão do vertical"
+    },
     "KPI_FIRST_REPLY_HINT": "Mediana (não média) do tempo entre a conversa ser criada hoje e a primeira resposta humana, contando só as conversas já respondidas. Metade delas foi respondida mais rápido que isso, metade mais devagar. Atualiza a cada minuto.",
     "ASSIGNEE_TYPE_TABS": {
       "me": "Minhas",
