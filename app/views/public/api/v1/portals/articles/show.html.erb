@@ -50,6 +50,22 @@
   <% end %>
   <article id="cw-article-content" class="article-content flex-grow flex-2 mx-auto text-slate-800 dark:text-slate-50 text-lg max-w-3xl prose-h1:text-2xl prose-h2:text-xl prose-h2:mt-0 prose-h3:text-lg prose-code:[&>p]:p-1 prose-code:[&>p]:rounded-sm prose-code:[&>p]:bg-black-100 dark:prose-code:[&>p]:bg-black-600 prose-code:after:content-none prose-code:before:content-none prose dark:prose-invert break-words w-full [&_table]:!border-slate-200 dark:[&_table]:!border-slate-800 [&_th]:!border-slate-200 dark:[&_th]:!border-slate-800 [&_td]:!border-slate-200 dark:[&_td]:!border-slate-800 [&_th]:!bg-slate-50 dark:[&_th]:!bg-slate-800/50 <%= @is_plain_layout_enabled ? 'py-4' : 'pt-8 pb-12' %>">
     <%= @parsed_content %>
+    <% if @previous_article || @next_article %>
+    <nav class="not-prose flex justify-between gap-4 mt-10 pt-6 border-t border-slate-200 dark:border-slate-800 text-base">
+      <% if @previous_article %>
+        <a class="flex flex-col gap-1 max-w-[48%] text-slate-800 dark:text-slate-50 hover:underline" href="<%= generate_article_link(@portal.slug, @previous_article.slug, @theme_from_params, @is_plain_layout_enabled) %>">
+          <span class="text-sm text-slate-500 dark:text-slate-400"><%= I18n.t('public_portal.common.previous_article') %></span>
+          <span class="font-medium"><%= @previous_article.title %></span>
+        </a>
+      <% end %>
+      <% if @next_article %>
+        <a class="flex flex-col gap-1 max-w-[48%] ml-auto text-right text-slate-800 dark:text-slate-50 hover:underline" href="<%= generate_article_link(@portal.slug, @next_article.slug, @theme_from_params, @is_plain_layout_enabled) %>">
+          <span class="text-sm text-slate-500 dark:text-slate-400"><%= I18n.t('public_portal.common.next_article') %></span>
+          <span class="font-medium"><%= @next_article.title %></span>
+        </a>
+      <% end %>
+    </nav>
+    <% end %>
   </article>
   <div class="flex-1" id="cw-hc-toc"></div>
 </div>

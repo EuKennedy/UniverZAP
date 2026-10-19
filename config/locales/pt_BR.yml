@@ -432,6 +432,8 @@ pt_BR:
       by: Por
       no_articles: Não há artigos aqui
       all_articles: Todos os artigos
+      previous_article: Anterior
+      next_article: Próximo
     footer:
       made_with: Criado com
     header:

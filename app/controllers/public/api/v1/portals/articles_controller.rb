@@ -22,6 +22,7 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
   def show
     @og_image_url = helpers.set_og_image_url(@portal.name, @article.title)
     @sidebar_categories = @portal.categories.where(locale: @locale).order(:position)
+    set_adjacent_articles
   end
 
   def tracking_pixel
@@ -64,6 +65,17 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
   def set_article
     @article = @portal.articles.find_by(slug: permitted_params[:article_slug])
     @parsed_content = render_article_content(@article.content.to_s)
+  end
+
+  def set_adjacent_articles
+    return if @article.category.blank?
+
+    siblings = @article.category.articles.published.order(:position).to_a
+    index = siblings.index(@article)
+    return if index.nil?
+
+    @previous_article = siblings[index - 1] if index.positive?
+    @next_article = siblings[index + 1]
   end
 
   def set_category

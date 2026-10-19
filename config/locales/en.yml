@@ -456,6 +456,8 @@ en:
       by: By
       no_articles: There are no articles here
       all_articles: All articles
+      previous_article: Previous
+      next_article: Next
     footer:
       made_with: Made with
     header:
