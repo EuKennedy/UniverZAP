@@ -7,7 +7,9 @@ RSpec.describe AutoAssignment::LeastBusySelector do
   let(:idle_agent) { create(:user, account: account, role: :agent) }
   let(:busy_member) { create(:inbox_member, inbox: inbox, user: busy_agent) }
   let(:idle_member) { create(:inbox_member, inbox: inbox, user: idle_agent) }
-  let(:selector) { described_class.new(inbox: inbox) }
+  # The `before` conversations run the assignment handler, which caches an
+  # empty inbox_members on this object; the round robin needs a fresh inbox.
+  let(:selector) { described_class.new(inbox: inbox.reload) }
 
   before do
     create_list(:conversation, 2, inbox: inbox, assignee: busy_agent, status: :open)
