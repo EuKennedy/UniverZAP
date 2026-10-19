@@ -51,11 +51,19 @@ RSpec.describe Belezaki::CustomerCardService do
         history = { client: client_json,
                     appointments: [appointment('a-old', 'no_show', now - 60.days), yesterday] }
 
+        # The history window is a date range computed in the app's time zone,
+        # which differs between this machine and CI; this example is about the
+        # split, so match the two calls by shape (with/without a range), not
+        # by the exact dates.
         stub_request(:get, "#{base}/appointments")
-          .with(query: { phone: '+5531984956383' }, headers: { 'X-Tenant-External-Id' => 'ext-1' })
+          .with(query: hash_including(phone: '+5531984956383'), headers: { 'X-Tenant-External-Id' => 'ext-1' }) do |req|
+            !req.uri.query_values.key?('from')
+          end
           .to_return(status: 200, body: upcoming.to_json, headers: json)
         stub_request(:get, "#{base}/appointments")
-          .with(query: { phone: '+5531984956383', from: '2025-10-19', to: '2026-10-18' })
+          .with(query: hash_including(phone: '+5531984956383')) do |req|
+            req.uri.query_values.key?('from') && req.uri.query_values.key?('to')
+          end
           .to_return(status: 200, body: history.to_json, headers: json)
 
         expect(card[:status]).to eq('ok')
