@@ -19,6 +19,14 @@ describe AutoAssignment::InboxRoundRobinService do
       expect(inbox_round_robin_service.send(:queue)).to eq(expected_queue)
     end
 
+    it 'rebuilds an empty queue for an inbox without members instead of raising' do
+      inbox_round_robin_service.add_agent_to_queue('stale-id')
+      inbox.inbox_members.destroy_all
+
+      expect(described_class.new(inbox: inbox.reload).available_agent(allowed_agent_ids: ['stale-id'])).to be_nil
+      expect(inbox_round_robin_service.send(:queue)).to eq([])
+    end
+
     it 'constructs round_robin_queue if queue is not present' do
       inbox_round_robin_service.clear_queue
       expect(inbox_round_robin_service.send(:queue)).to eq([])

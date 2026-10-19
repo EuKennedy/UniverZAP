@@ -8,6 +8,10 @@ class AutoAssignment::InboxRoundRobinService
 
   # called on inbox member create
   def add_agent_to_queue(user_id)
+    # An inbox without members resets to an empty list; Redis rejects an
+    # LPUSH with no values, which would abort the whole assignment pass.
+    return if Array(user_id).empty?
+
     ::Redis::Alfred.lpush(round_robin_key, user_id)
   end
 
