@@ -38,15 +38,25 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
 
   def audience_preview
     resolver = Broadcasts::AudienceResolver.new(@broadcast)
+    ids = resolver.contact_ids
     # Typed numbers with no contact yet are still recipients — the dispatch
     # creates them. Counting only existing contacts would under-report the list.
-    render json: { count: resolver.contact_ids.length + resolver.missing_phone_numbers.length }
+    cold = resolver.missing_phone_numbers.length
+    # `new_count` is who a relaunch would actually reach: contacts already
+    # recipients are never sent again. Subtracting totals on the screen goes
+    # wrong as soon as the audience both lost and gained people.
+    already = @broadcast.broadcast_recipients.pluck(:contact_id)
+    render json: { count: ids.length + cold, new_count: (ids - already).length + cold }
   end
 
   # Approved Meta templates for a Cloud API inbox, for the official-mode picker.
+  # Reads the channel's cached copy, which the scheduler refreshes every few
+  # hours. `refresh=true` syncs from Meta first: without it a template approved
+  # minutes ago stayed invisible here, while the inbox settings screen — which
+  # asks Meta live — already listed it.
   def templates
-    inbox = Current.account.inboxes.find(params[:inbox_id])
-    channel = inbox.channel
+    channel = Current.account.inboxes.find(params[:inbox_id]).channel
+    channel.sync_templates if refresh_templates?(channel)
     list = channel.respond_to?(:message_templates) ? Array(channel.message_templates) : []
     render json: { templates: list.select { |tpl| tpl['status']&.downcase == 'approved' } }
   end
@@ -84,6 +94,10 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
       sent_at: recipient.sent_at&.to_i,
       error: recipient.error
     }
+  end
+
+  def refresh_templates?(channel)
+    ActiveModel::Type::Boolean.new.cast(params[:refresh]) && channel.respond_to?(:sync_templates)
   end
 
   def fetch_broadcast

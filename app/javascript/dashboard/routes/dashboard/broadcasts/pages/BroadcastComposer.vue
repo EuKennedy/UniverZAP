@@ -94,6 +94,8 @@ const form = reactive({
 });
 
 const audienceCount = ref(null);
+// Who a relaunch would actually reach — contacts already sent are skipped.
+const audienceNewCount = ref(null);
 const isPreviewing = ref(false);
 
 // Media upload (WAHA mode) — tracks which message block is currently uploading.
@@ -247,18 +249,28 @@ const hasMessage = computed(() => {
   );
 });
 
+// Judged on the form, not on the server count. The count only reflects what
+// was SAVED, so gating on it kept this button disabled until the operator
+// found out on their own that they had to save first — launch now saves by
+// itself. 'completed' is allowed so a campaign tested on one contact can go
+// out to the rest: the dispatch only sends to contacts not reached yet.
+const hasAudience = computed(() =>
+  Object.values(form.audience).some(value =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value)
+  )
+);
+
 const canLaunch = computed(
   () =>
-    ['draft', 'paused'].includes(status.value) &&
-    Number(audienceCount.value) > 0 &&
+    ['draft', 'paused', 'completed'].includes(status.value) &&
+    hasAudience.value &&
     Boolean(form.inbox_id) &&
     hasMessage.value
 );
 
 const launchHint = computed(() => {
   if (!form.inbox_id) return t('BROADCAST.COMPOSER.LAUNCH_NEEDS_INBOX');
-  if (!(Number(audienceCount.value) > 0))
-    return t('BROADCAST.COMPOSER.LAUNCH_NEEDS_AUDIENCE');
+  if (!hasAudience.value) return t('BROADCAST.COMPOSER.LAUNCH_NEEDS_AUDIENCE');
   if (!hasMessage.value) return t('BROADCAST.COMPOSER.LAUNCH_NEEDS_MESSAGE');
   return '';
 });
@@ -419,6 +431,27 @@ const loadTemplates = async () => {
   } catch (error) {
     templates.value = [];
     useAlert(error?.message || t('BROADCAST.MESSAGE.TEMPLATE_LOAD_ERROR'));
+  }
+};
+
+const isRefreshingTemplates = ref(false);
+
+// Syncs from Meta before listing. A template approved minutes ago is not in
+// the cached list yet, and this is the way to pull it without leaving here.
+const refreshTemplates = async () => {
+  if (!form.inbox_id) return;
+  isRefreshingTemplates.value = true;
+  try {
+    const { data } = await BroadcastsAPI.templates(form.inbox_id, {
+      refresh: true,
+    });
+    templates.value = data.templates || [];
+    useAlert(t('BROADCAST.MESSAGE.TEMPLATES_REFRESHED'));
+  } catch (error) {
+    // Keeps the list it already had: a failed sync must not empty the picker.
+    useAlert(error?.message || t('BROADCAST.MESSAGE.TEMPLATE_LOAD_ERROR'));
+  } finally {
+    isRefreshingTemplates.value = false;
   }
 };
 
@@ -628,6 +661,7 @@ const refreshAudience = async () => {
   try {
     const { data } = await BroadcastsAPI.audiencePreview(props.broadcastId);
     audienceCount.value = data.count;
+    audienceNewCount.value = data.new_count ?? data.count;
   } catch (error) {
     useAlert(error?.message || t('BROADCAST.COMPOSER.PREVIEW_ERROR'));
   } finally {
@@ -635,25 +669,46 @@ const refreshAudience = async () => {
   }
 };
 
-const save = async () => {
+const persist = async ({ quiet = false } = {}) => {
   try {
     const data = await store.dispatch('broadcasts/update', buildPayload());
     hydrate(data);
-    useAlert(t('BROADCAST.COMPOSER.SAVED'));
+    if (!quiet) useAlert(t('BROADCAST.COMPOSER.SAVED'));
     await refreshAudience();
+    return true;
   } catch (error) {
     useAlert(error?.message || t('BROADCAST.COMPOSER.SAVE_ERROR'));
+    return false;
   }
 };
 
-const launch = async () => {
+const save = () => persist();
+
+// The dispatch reads what is persisted on the server, so firing without
+// saving used to send the PREVIOUS audience and message. Save first, then
+// confirm against the count of what was actually saved.
+const confirmLaunch = () => {
+  const sent = Number(broadcast.value?.sent_count) || 0;
+  const message =
+    sent > 0
+      ? t('BROADCAST.COMPOSER.LAUNCH_CONFIRM_RELAUNCH', {
+          count: audienceNewCount.value,
+          sent,
+        })
+      : t('BROADCAST.COMPOSER.LAUNCH_CONFIRM', {
+          count: audienceNewCount.value,
+        });
   // eslint-disable-next-line no-alert
-  if (
-    !window.confirm(
-      t('BROADCAST.COMPOSER.LAUNCH_CONFIRM', { count: audienceCount.value })
-    )
-  )
+  return window.confirm(message);
+};
+
+const launch = async () => {
+  if (!(await persist({ quiet: true }))) return;
+  if (!(Number(audienceNewCount.value) > 0)) {
+    useAlert(t('BROADCAST.COMPOSER.LAUNCH_NOTHING_NEW'));
     return;
+  }
+  if (!confirmLaunch()) return;
   try {
     const data = await store.dispatch('broadcasts/launch', props.broadcastId);
     hydrate(data);
@@ -937,12 +992,35 @@ onBeforeUnmount(stopStatsRefresh);
           </template>
 
           <template v-else>
-            <label v-if="templates.length" class="flex flex-col gap-1.5">
-              <span class="text-xs font-medium text-n-slate-11">
-                {{ t('BROADCAST.MESSAGE.TEMPLATE') }}
-              </span>
+            <!-- O botao de atualizar fica FORA do v-if do select: com a lista
+                 vazia o seletor inteiro sumia, e junto qualquer forma de buscar
+                 o template recem-aprovado. -->
+            <div class="flex flex-col gap-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <span
+                  id="broadcast-template-label"
+                  class="text-xs font-medium text-n-slate-11"
+                >
+                  {{ t('BROADCAST.MESSAGE.TEMPLATE') }}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 px-2 h-7 rounded-md border border-n-weak text-[11px] font-medium text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  :disabled="!form.inbox_id || isRefreshingTemplates"
+                  @click="refreshTemplates"
+                >
+                  <Icon
+                    icon="i-lucide-refresh-cw"
+                    class="size-3.5"
+                    :class="{ 'animate-spin': isRefreshingTemplates }"
+                  />
+                  <span>{{ t('BROADCAST.MESSAGE.TEMPLATES_REFRESH') }}</span>
+                </button>
+              </div>
               <select
+                v-if="templates.length"
                 v-model="selectedTemplateKey"
+                aria-labelledby="broadcast-template-label"
                 class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
                 @change="onTemplateSelect"
               >
@@ -957,7 +1035,7 @@ onBeforeUnmount(stopStatsRefresh);
                   {{ tpl.name }} ({{ tpl.language }})
                 </option>
               </select>
-            </label>
+            </div>
 
             <div
               v-if="templatePreview"
