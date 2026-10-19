@@ -6,7 +6,9 @@ on:
     branches:
       - develop
       - master
+  # Upstream Chatwoot only. PRs into univerzap/** are gated by univerzap-ci.yml.
   pull_request:
+    branches: [develop, master]
   workflow_dispatch:
 
 jobs:

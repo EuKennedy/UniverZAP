@@ -3,7 +3,9 @@ permissions:
   contents: read
 
 on:
+  # Upstream Chatwoot only. PRs into univerzap/** are gated by univerzap-ci.yml.
   pull_request:
+    branches: [develop, master]
 
 # If two pushes happen within a short time in the same PR, cancel the run of the oldest push
 concurrency:
