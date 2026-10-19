@@ -96,4 +96,20 @@ module PortalHelper
 
     colors[username.length % colors.size]
   end
+
+  # The "last updated" date of a help-center article, in the reader's locale.
+  # Only a locale that defines its own `date.formats.long` can be localized:
+  # rails-i18n ships pluralization only here (config/application.rb), so most
+  # portal locales carry no date data. Calling I18n.l regardless raised
+  # "Translation missing: es.date.formats.long" on every non-pt_BR article page.
+  # In production the default-locale fallback masked it by printing a
+  # Portuguese date on a Spanish page; in test it raised and the error page hung
+  # the suite. `fallback: false` is the point — a locale without its own date
+  # data keeps the format it had before.
+  def portal_updated_on(time)
+    date = time.to_date
+    return I18n.l(date, format: :long) if I18n.exists?(:'date.formats.long', I18n.locale, fallback: false)
+
+    date.strftime('%b %d, %Y')
+  end
 end
