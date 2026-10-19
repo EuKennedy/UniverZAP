@@ -236,6 +236,36 @@ RSpec.describe Message do
     end
   end
 
+  # UniverZAP: the WAHA Chatwoot app records a reply typed in the phone's
+  # WhatsApp as a private note headed "📱 Enviado do WhatsApp". The customer
+  # already got that reply, so it answers like one sent from the panel.
+  describe 'reply typed in the phone WhatsApp' do
+    let(:conversation) { create(:conversation) }
+    let(:phone_reply) { "*📱 Enviado do WhatsApp*\nOi Neyla! ✨ Querida, temos horário sábado às 10h." }
+
+    before { create(:message, conversation: conversation, message_type: :incoming) }
+
+    it 'answers the contact' do
+      expect(conversation.reload.awaiting_reply).to be(true)
+
+      note = create(:message, conversation: conversation, message_type: :outgoing, private: true, content: phone_reply)
+      conversation.reload
+
+      expect(conversation.awaiting_reply).to be(false)
+      expect(conversation.waiting_since).to be_nil
+      expect(conversation.first_reply_created_at).to eq note.created_at
+    end
+
+    it 'leaves an ordinary private note out of it' do
+      create(:message, conversation: conversation, message_type: :outgoing, private: true, content: 'ligar amanhã')
+      conversation.reload
+
+      expect(conversation.awaiting_reply).to be(true)
+      expect(conversation.waiting_since).to be_present
+      expect(conversation.first_reply_created_at).to be_nil
+    end
+  end
+
   describe '#reopen_conversation' do
     let(:conversation) { create(:conversation) }
     let(:message) { build(:message, message_type: :incoming, conversation: conversation) }

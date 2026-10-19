@@ -222,7 +222,7 @@ class Message < ApplicationRecord
   end
 
   def valid_first_reply?
-    return false unless human_response? && !private?
+    return false unless human_response? && (!private? || phone_reply_note?)
     return false if conversation.first_reply_created_at.present?
     return false if conversation.messages.outgoing
                                 .where.not(sender_type: ['AgentBot', 'Captain::Assistant'])
@@ -273,6 +273,16 @@ class Message < ApplicationRecord
     /\s*Sent from WhatsApp\s*\z/i,
     /\s*Sent via WhatsApp\s*\z/i
   ].freeze
+
+  # The WAHA Chatwoot app records a reply typed in the phone's WhatsApp as a
+  # private note headed with its `message.from.whatsapp` template. The customer
+  # already got that reply, so it answers like one sent from the panel — while
+  # staying a note, so no webhook sends it to WhatsApp a second time.
+  PHONE_REPLY_NOTE_PATTERN = /\A\s*\*?📱 (?:Enviado do|Sent from) WhatsApp\*?/
+
+  def phone_reply_note?
+    private? && content.to_s.match?(PHONE_REPLY_NOTE_PATTERN)
+  end
 
   # Returns message content suitable for LLM consumption
   # Falls back to audio transcription or attachment placeholder when content is nil
@@ -363,7 +373,7 @@ class Message < ApplicationRecord
   end
 
   def update_waiting_since
-    clear_waiting_since_on_outgoing_response if conversation.waiting_since.present? && !private
+    clear_waiting_since_on_outgoing_response if conversation.waiting_since.present? && (!private || phone_reply_note?)
     set_waiting_since_on_incoming_message
   end
 
@@ -390,6 +400,8 @@ class Message < ApplicationRecord
     # if automation rule id is present, it's not a human response
     # if campaign id is present, it's not a human response
     # external echo messages are responses sent from the native app (WhatsApp Business, Instagram)
+    return true if phone_reply_note?
+
     outgoing? &&
       content_attributes['automation_rule_id'].blank? &&
       additional_attributes['campaign_id'].blank? &&
@@ -475,8 +487,13 @@ class Message < ApplicationRecord
     attributes = { last_activity_at: created_at, updated_at: Time.current }
     # Any outgoing message answers — agent, AI, broadcast, API. Private notes,
     # activities and templates (out-of-office, greeting, CSAT) don't change
-    # who has the last word.
-    attributes[:awaiting_reply] = incoming? if (incoming? || outgoing?) && !private?
+    # who has the last word — except the note WAHA writes for a reply typed in
+    # the phone, which the customer did receive.
+    if phone_reply_note?
+      attributes[:awaiting_reply] = false
+    elsif (incoming? || outgoing?) && !private?
+      attributes[:awaiting_reply] = incoming?
+    end
     # rubocop:disable Rails/SkipsModelValidations
     conversation.update_columns(attributes)
     # rubocop:enable Rails/SkipsModelValidations
