@@ -18,9 +18,11 @@ labels:
     color: '#14B8A6'
     description: Pedido com o entregador
   - title: entregue
+    closes_conversation: true
     color: '#94A3B8'
     description: Pedido entregue ao cliente
   - title: pedido-cancelado
+    closes_conversation: true
     color: '#EF4444'
     description: Pedido cancelado pelo cliente ou pela loja
   - title: pagamento-recusado
@@ -30,12 +32,14 @@ labels:
     color: '#EF4444'
     description: Reclamação grave encaminhada à gerência
   - title: atendimento-encerrado
+    closes_conversation: true
     color: '#94A3B8'
     description: Conversa resolvida
   - title: oferta-reativacao
     color: '#14B8A6'
     description: Oferta de retorno enviada a cliente inativo
   - title: ficou-inativo
+    closes_conversation: true
     color: '#94A3B8'
     description: Sem resposta à oferta de reativação
 

@@ -27,21 +27,25 @@ labels:
     color: '#F97316'
     description: Aguardando documentos do cliente ou do proprietário
   - title: fechado-ganho
+    closes_conversation: true
     color: '#14B8A6'
     description: Contrato assinado
   - title: fechado-perdido
+    closes_conversation: true
     color: '#EF4444'
     description: Lead desistiu ou escolheu outro imóvel
   - title: escalado
     color: '#EF4444'
     description: Impasse encaminhado à gerência
   - title: atendimento-encerrado
+    closes_conversation: true
     color: '#94A3B8'
     description: Conversa resolvida
   - title: lembrete-renovacao
     color: '#14B8A6'
     description: Lembrete de renovação de contrato de locação
   - title: ficou-inativo
+    closes_conversation: true
     color: '#94A3B8'
     description: Sem resposta após o fechamento ou a renovação
 

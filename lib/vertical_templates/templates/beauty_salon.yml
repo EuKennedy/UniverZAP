@@ -24,6 +24,7 @@ labels:
     color: '#F97316'
     description: Cliente pediu uma nova data
   - title: cancelado
+    closes_conversation: true
     color: '#EF4444'
     description: Cliente desistiu do horário
   - title: nao-compareceu
@@ -33,12 +34,14 @@ labels:
     color: '#EF4444'
     description: Reclamação encaminhada à gerência
   - title: atendimento-encerrado
+    closes_conversation: true
     color: '#94A3B8'
     description: Serviço concluído e avaliação enviada
   - title: lembrete-recompra
     color: '#14B8A6'
     description: Lembrete de retorno enviado após o ciclo do serviço
   - title: ficou-inativo
+    closes_conversation: true
     color: '#94A3B8'
     description: Sem resposta ao lembrete de recompra
 

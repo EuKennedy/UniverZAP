@@ -24,6 +24,7 @@ labels:
     color: '#F97316'
     description: Paciente pediu uma nova data
   - title: cancelado
+    closes_conversation: true
     color: '#EF4444'
     description: Paciente desistiu da consulta
   - title: nao-compareceu
@@ -33,12 +34,14 @@ labels:
     color: '#EF4444'
     description: Caso encaminhado à coordenação clínica
   - title: atendimento-encerrado
+    closes_conversation: true
     color: '#94A3B8'
     description: Consulta concluída
   - title: lembrete-retorno
     color: '#14B8A6'
     description: Lembrete de retorno ou acompanhamento enviado
   - title: ficou-inativo
+    closes_conversation: true
     color: '#94A3B8'
     description: Sem resposta ao lembrete de retorno
 

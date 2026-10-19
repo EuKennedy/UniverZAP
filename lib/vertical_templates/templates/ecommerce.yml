@@ -21,6 +21,7 @@ labels:
     color: '#14B8A6'
     description: Código de rastreio gerado
   - title: entregue
+    closes_conversation: true
     color: '#94A3B8'
     description: Transportadora confirmou a entrega
   - title: carrinho-abandonado
@@ -39,6 +40,7 @@ labels:
     color: '#EF4444'
     description: Reclamação grave encaminhada à gerência
   - title: atendimento-encerrado
+    closes_conversation: true
     color: '#94A3B8'
     description: Conversa resolvida
   - title: lembrete-reposicao
@@ -48,6 +50,7 @@ labels:
     color: '#14B8A6'
     description: Cliente fez um novo pedido
   - title: ficou-inativo
+    closes_conversation: true
     color: '#94A3B8'
     description: Sem resposta ao lembrete de recompra
 
