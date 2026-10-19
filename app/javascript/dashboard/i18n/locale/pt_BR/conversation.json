@@ -425,8 +425,32 @@
       "MACROS": "Macros",
       "LINEAR_ISSUES": "Problemas do Linear vinculados",
       "SHOPIFY_ORDERS": "Pedidos do Shopify",
+      "BELEZAKI_CUSTOMER": "Ficha da cliente (belezaki)",
       "SHARED_FILES": "Anexos",
       "KANBAN_TASKS": "Tarefas do Kanban"
+    },
+    "BELEZAKI": {
+      "NOT_LINKED": "Conecte o salão do belezaki em Aplicativos para ver a ficha da cliente aqui.",
+      "OPEN_APPS": "Abrir Aplicativos",
+      "NO_PHONE": "Este contato não tem número de telefone, então o salão não consegue encontrá-lo.",
+      "UNAVAILABLE": "Não deu para falar com o belezaki agora ({error}).",
+      "RETRY": "Tentar de novo",
+      "UNKNOWN_CLIENT": "Ainda não é cliente do {salon}.",
+      "CLIENT_AT": "{name} · cliente do {salon}",
+      "NEXT": "Próximo horário",
+      "NO_NEXT": "Sem horário marcado",
+      "UPCOMING": "Também marcados",
+      "HISTORY": "Últimos atendimentos",
+      "NO_HISTORY": "Sem atendimentos nos últimos 12 meses",
+      "WITH": "com {professional}",
+      "STATUS": {
+        "confirmed": "Confirmado",
+        "scheduled": "Agendado",
+        "done": "Atendida",
+        "no_show": "Faltou",
+        "cancelled": "Cancelado",
+        "cancelled_client": "Cancelado pela cliente"
+      }
     },
     "SHOPIFY": {
       "ORDER_ID": "Pedido #{id}",

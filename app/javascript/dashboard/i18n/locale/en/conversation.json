@@ -429,6 +429,7 @@
       "MACROS": "Macros",
       "LINEAR_ISSUES": "Linked Linear Issues",
       "SHOPIFY_ORDERS": "Shopify Orders",
+      "BELEZAKI_CUSTOMER": "Customer card (belezaki)",
       "SHARED_FILES": "Attachments",
       "KANBAN_TASKS": "Kanban tasks"
     },
@@ -442,6 +443,29 @@
       "SHOW_LESS": "Show less",
       "MORE_COUNT": "+{count}",
       "UNTITLED_FILE": "Untitled file"
+    },
+    "BELEZAKI": {
+      "NOT_LINKED": "Connect the belezaki salon in Apps to see the customer card here.",
+      "OPEN_APPS": "Open Apps",
+      "NO_PHONE": "This contact has no phone number, so the salon cannot find them.",
+      "UNAVAILABLE": "Could not reach belezaki right now ({error}).",
+      "RETRY": "Try again",
+      "UNKNOWN_CLIENT": "Not a customer at {salon} yet.",
+      "CLIENT_AT": "{name} · customer at {salon}",
+      "NEXT": "Next appointment",
+      "NO_NEXT": "No upcoming appointment",
+      "UPCOMING": "Also scheduled",
+      "HISTORY": "Recent visits",
+      "NO_HISTORY": "No visits in the last 12 months",
+      "WITH": "with {professional}",
+      "STATUS": {
+        "confirmed": "Confirmed",
+        "scheduled": "Scheduled",
+        "done": "Done",
+        "no_show": "No-show",
+        "cancelled": "Cancelled",
+        "cancelled_client": "Cancelled by customer"
+      }
     },
     "SHOPIFY": {
       "ORDER_ID": "Order #{id}",

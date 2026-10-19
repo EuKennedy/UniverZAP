@@ -121,7 +121,9 @@ export const actions = {
       commit(types.default.SET_INTEGRATIONS_UI_FLAG, { isCreatingHook: false });
     } catch (error) {
       commit(types.default.SET_INTEGRATIONS_UI_FLAG, { isCreatingHook: false });
-      throw new Error(error);
+      // Rethrown as is: wrapping it in a new Error dropped `response`, and the
+      // form could never show the reason the server refused the hook.
+      throw error;
     }
   },
   deleteHook: async ({ commit }, { appId, hookId }) => {
