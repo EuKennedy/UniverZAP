@@ -424,6 +424,8 @@ en:
     survey:
       response: 'Please rate this conversation, %{link}'
   contacts:
+    whatsapp:
+      no_phone_number: 'Contact without phone number'
     online:
       delete: '%{contact_name} is Online, please try again later'
   integration_apps:

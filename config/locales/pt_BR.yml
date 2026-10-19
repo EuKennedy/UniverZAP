@@ -407,6 +407,8 @@ pt_BR:
     survey:
       response: 'Por favor, classifique esta conversa, %{link}'
   contacts:
+    whatsapp:
+      no_phone_number: 'Contato sem número'
     online:
       delete: '%{contact_name} está Online, por favor, tente novamente mais tarde'
   integration_apps:
