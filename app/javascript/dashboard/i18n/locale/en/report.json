@@ -513,6 +513,78 @@
       "PLACEHOLDER": "Select date range"
     }
   },
+  "PANEL_REPORTS": {
+    "HEADER": "Dashboard",
+    "DESCRIPTION": "What management looks at every day: how many ad leads turned into a reply and a booking, who is waiting in the queue and how each agent is doing. Everything is measured from conversations, nothing estimated.",
+    "CONVERSION_LABEL": "Count as conversion the label",
+    "NO_CONVERSION_LABEL": "Don't measure conversion",
+    "PICK_CONVERSION_LABEL": "Pick a label above",
+    "RISK_MINUTES": "At risk when the customer waits more than",
+    "RISK_OPTION": "{minutes} min",
+    "LOADING": "Refreshing…",
+    "LIVE": "Right now",
+    "UNASSIGNED": "Unassigned",
+    "DURATION": {
+      "SECONDS": "{n} s",
+      "MINUTES": "{n} min",
+      "HOURS": "{h} h {m} min",
+      "DAYS": "{d} d {h} h"
+    },
+    "FUNNEL": {
+      "TITLE": "Ad → conversion",
+      "DESCRIPTION": "Conversations that started from a Click-to-WhatsApp ad in the period, how many got a first reply, were resolved and reached the conversion label.",
+      "VIEW_AD": "By ad",
+      "VIEW_AGENT": "By agent",
+      "COLUMN_AD": "Ad",
+      "COLUMN_AGENT": "Agent",
+      "LEADS": "Leads",
+      "LEADS_HINT": "conversations from ads",
+      "REPLIED": "Replied",
+      "RESOLVED": "Resolved",
+      "CONVERTED": "Converted",
+      "EMPTY": "No ad leads in the period.",
+      "AD_ID": "ID {id}",
+      "VIEW_AD_LINK": "View ad"
+    },
+    "QUEUE": {
+      "TITLE": "Queue and speed",
+      "DESCRIPTION": "Open, waiting and at risk are live. The first-response median and replied count are for the selected period. At risk: the customer had the last word more than {minutes} min ago.",
+      "OPEN": "Open",
+      "WAITING": "Waiting for 1st reply",
+      "WAITING_HINT": "open with no reply yet",
+      "AT_RISK": "At risk (> {minutes} min)",
+      "AT_RISK_HINT": "customer waiting for a reply",
+      "MEDIAN_FIRST_RESPONSE": "Median 1st reply",
+      "MEDIAN_HINT": "over {n} replied conversations",
+      "REPLIED_IN_PERIOD": "Replied in the period",
+      "REPLIED_HINT": "{replied} of {created} created",
+      "COLUMNS": {
+        "CONTACT": "Customer waiting",
+        "AGENT": "Agent",
+        "WAITING_FOR": "Waiting for"
+      },
+      "NO_CONTACT": "No name",
+      "MORE_AT_RISK": "And {n} more at risk.",
+    "OPEN_UNATTENDED": "See them all under Unattended"
+    },
+    "AGENTS": {
+      "TITLE": "By agent",
+      "DESCRIPTION": "Conversations of the period by their current agent. Waiting and at risk are the live queue.",
+      "COLUMNS": {
+        "AGENT": "Agent",
+        "ASSIGNED": "Assigned",
+        "REPLIED": "Replied",
+        "RESOLVED": "Resolved",
+        "CONVERTED": "Converted",
+        "FIRST_RESPONSE": "1st reply (median)",
+        "WAITING": "Waiting",
+        "AT_RISK": "At risk (> {minutes} min)"
+      },
+      "SHOW_IDLE": "Show {n} agents with no conversations in the period",
+      "HIDE_IDLE": "Hide agents with no conversations in the period",
+      "EMPTY": "No conversations in the period."
+    }
+  },
   "AD_LEADS_REPORTS": {
     "HEADER": "Ad leads",
     "DESCRIPTION": "Conversations that started from a Click-to-WhatsApp ad, grouped by ad. Pick a label to count conversions.",

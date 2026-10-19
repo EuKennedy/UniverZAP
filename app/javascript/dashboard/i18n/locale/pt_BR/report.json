@@ -528,6 +528,78 @@
       "PLACEHOLDER": "Selecionar intervalo de datas"
     }
   },
+  "PANEL_REPORTS": {
+    "HEADER": "Painel",
+    "DESCRIPTION": "O que a gestão olha todo dia: quanto dos leads de anúncio virou resposta e agendamento, quem está esperando na fila e como cada atendente está indo. Tudo medido a partir das conversas, nada estimado.",
+    "CONVERSION_LABEL": "Conta como conversão a etiqueta",
+    "NO_CONVERSION_LABEL": "Não medir conversão",
+    "PICK_CONVERSION_LABEL": "Escolha uma etiqueta acima",
+    "RISK_MINUTES": "Em risco quando o cliente espera mais de",
+    "RISK_OPTION": "{minutes} min",
+    "LOADING": "Atualizando…",
+    "LIVE": "Agora",
+    "UNASSIGNED": "Sem atendente",
+    "DURATION": {
+      "SECONDS": "{n} s",
+      "MINUTES": "{n} min",
+      "HOURS": "{h} h {m} min",
+      "DAYS": "{d} d {h} h"
+    },
+    "FUNNEL": {
+      "TITLE": "Anúncio → conversão",
+      "DESCRIPTION": "Conversas que começaram por um anúncio Click-to-WhatsApp no período, quantas receberam a primeira resposta, foram resolvidas e chegaram à etiqueta de conversão.",
+      "VIEW_AD": "Por anúncio",
+      "VIEW_AGENT": "Por atendente",
+      "COLUMN_AD": "Anúncio",
+      "COLUMN_AGENT": "Atendente",
+      "LEADS": "Leads",
+      "LEADS_HINT": "conversas vindas de anúncio",
+      "REPLIED": "Respondidas",
+      "RESOLVED": "Resolvidas",
+      "CONVERTED": "Convertidas",
+      "EMPTY": "Nenhum lead de anúncio no período.",
+      "AD_ID": "ID {id}",
+      "VIEW_AD_LINK": "Ver anúncio"
+    },
+    "QUEUE": {
+      "TITLE": "Fila e velocidade",
+      "DESCRIPTION": "Abertas, aguardando e em risco são agora, ao vivo. A mediana da 1ª resposta e as respondidas são do período escolhido. Em risco: o cliente escreveu por último há mais de {minutes} min.",
+      "OPEN": "Abertas",
+      "WAITING": "Aguardando 1ª resposta",
+      "WAITING_HINT": "abertas sem nenhuma resposta",
+      "AT_RISK": "Em risco (> {minutes} min)",
+      "AT_RISK_HINT": "cliente esperando resposta",
+      "MEDIAN_FIRST_RESPONSE": "Mediana da 1ª resposta",
+      "MEDIAN_HINT": "sobre {n} conversas respondidas",
+      "REPLIED_IN_PERIOD": "Respondidas no período",
+      "REPLIED_HINT": "{replied} de {created} criadas",
+      "COLUMNS": {
+        "CONTACT": "Cliente esperando",
+        "AGENT": "Atendente",
+        "WAITING_FOR": "Esperando há"
+      },
+      "NO_CONTACT": "Sem nome",
+      "MORE_AT_RISK": "E mais {n} em risco.",
+    "OPEN_UNATTENDED": "Ver todas em Não atendidas"
+    },
+    "AGENTS": {
+      "TITLE": "Por atendente",
+      "DESCRIPTION": "Conversas do período pelo atendente atual. Aguardando e em risco são a fila agora.",
+      "COLUMNS": {
+        "AGENT": "Atendente",
+        "ASSIGNED": "Atribuídas",
+        "REPLIED": "Respondidas",
+        "RESOLVED": "Resolvidas",
+        "CONVERTED": "Convertidas",
+        "FIRST_RESPONSE": "1ª resposta (mediana)",
+        "WAITING": "Aguardando",
+        "AT_RISK": "Em risco (> {minutes} min)"
+      },
+      "SHOW_IDLE": "Mostrar {n} atendentes sem conversas no período",
+      "HIDE_IDLE": "Ocultar atendentes sem conversas no período",
+      "EMPTY": "Nenhuma conversa no período."
+    }
+  },
   "AD_LEADS_REPORTS": {
     "HEADER": "Leads por anúncio",
     "DESCRIPTION": "Conversas que começaram por um anúncio Click-to-WhatsApp, agrupadas por anúncio. Escolha uma etiqueta para contar conversões.",

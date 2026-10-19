@@ -24,6 +24,7 @@ import AthenasReports from './AthenasReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
 import AdLeadsReports from './AdLeadsReports.vue';
+import PanelReports from './PanelReports.vue';
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -177,6 +178,13 @@ export default {
           name: 'ad_leads_reports',
           meta,
           component: AdLeadsReports,
+        },
+        // Painel gerencial: funil de anúncio, fila e atendentes num só lugar.
+        {
+          path: 'painel',
+          name: 'panel_reports',
+          meta,
+          component: PanelReports,
         },
         // A rota antiga continua respondendo para não quebrar link salvo nem
         // aba deixada aberta: leva para o mesmo lugar.
