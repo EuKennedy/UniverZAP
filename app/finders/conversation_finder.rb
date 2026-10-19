@@ -197,10 +197,13 @@ class ConversationFinder
     @conversations = @conversations.where(contact_inboxes: { source_id: params[:source_id] })
   end
 
-  # Standard tab badges count NON-group conversations only — groups have their
-  # own "Grupos" tab and must not inflate Minhas/Todos/etc.
+  # Standard tab badges (Todos/Minhas/Aguardando/Em atendimento) always count
+  # OPEN conversations, no matter which status the active view asked for —
+  # otherwise picking Resolvidas would also narrow every other badge to
+  # resolved conversations. Built from the pre-status snapshot, so it never
+  # inherits whatever params[:status] the current request carries.
   def count_scope
-    @conversations.non_groups
+    @conversations_before_status.non_groups.where(status: 'open')
   end
 
   def set_count_for_all_conversations
@@ -219,7 +222,7 @@ class ConversationFinder
       unassigned_count: unassigned_count,
       all_count: all_count,
       resolved_count: @conversations_before_status.non_groups.where(status: 'resolved').count,
-      group_count: @conversations.groups.count,
+      group_count: @conversations_before_status.groups.count,
       **attendance_state_counts(all_count)
     }
   end

@@ -121,6 +121,29 @@ describe ConversationFinder do
       end
     end
 
+    context 'with status resolved' do
+      let(:params) { { status: 'resolved' } }
+
+      # UniverZAP: Resolvidas is its own dropdown view, picked by setting
+      # status=resolved on the request. The Todos/Minhas/Aguardando/Em
+      # atendimento badges must still reflect the open conversations — a
+      # regression once had them collapse to the resolved-only counts
+      # whenever the active view happened to be Resolvidas.
+      it 'keeps the other badges scoped to open conversations' do
+        result = conversation_finder.perform
+        expect(result[:count]).to eq({
+                                       mine_count: 2,
+                                       assigned_count: 3,
+                                       unassigned_count: 1,
+                                       all_count: 4,
+                                       resolved_count: 1,
+                                       group_count: 0,
+                                       waiting_count: 4,
+                                       in_attendance_count: 0
+                                     })
+      end
+    end
+
     context 'with team' do
       let(:team) { create(:team, account: account) }
       let(:params) { { team_id: team.id } }
