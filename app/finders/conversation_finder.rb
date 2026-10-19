@@ -248,6 +248,13 @@ class ConversationFinder
   def conversations
     @conversations = conversations_base_query
 
+    # UniverZAP: Aguardando is the fila de risco, so a contact who is actually
+    # waiting on us (they have the last word) always outranks a thread where
+    # our own broadcast or template was the last thing said — a months-old
+    # waiting_since must not push the latter above the former. The agent's
+    # chosen sort still applies, just within each of those two halves.
+    @conversations = @conversations.order(awaiting_reply: :desc) if params[:attendance_state] == 'waiting'
+
     sort_by, sort_order = SORT_OPTIONS[params[:sort_by]] || SORT_OPTIONS['last_activity_at_desc']
     @conversations = @conversations.send(sort_by, sort_order)
 

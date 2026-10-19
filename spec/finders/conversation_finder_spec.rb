@@ -290,6 +290,22 @@ describe ConversationFinder do
 
         expect(described_class.new(user_1, params).perform[:conversations]).to be_empty
       end
+
+      # UniverZAP: Aguardando is the fila de risco. A months-old thread where
+      # our own broadcast was the last word must not outrank a contact who
+      # wrote an hour ago and is still waiting on us, however the list is
+      # sorted — so the contact-has-the-last-word flag comes before the sort.
+      it 'puts whoever is waiting on us ahead of threads where we had the last word' do
+        stale = create(:conversation, account: account, inbox: inbox, assignee: user_1,
+                                      waiting_since: 30.days.ago, awaiting_reply: false)
+        live = create(:conversation, account: account, inbox: inbox, assignee: user_1,
+                                     waiting_since: 1.hour.ago, awaiting_reply: true)
+
+        params = { assignee_type: 'all', attendance_state: 'waiting', sort_by: 'waiting_since_asc' }
+        ids = described_class.new(user_1, params).perform[:conversations].map(&:id)
+
+        expect(ids.index(live.id)).to be < ids.index(stale.id)
+      end
     end
 
     context 'with awaiting_reply' do
