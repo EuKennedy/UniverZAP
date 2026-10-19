@@ -253,7 +253,10 @@ RSpec.describe Message do
 
       expect(conversation.awaiting_reply).to be(false)
       expect(conversation.waiting_since).to be_nil
-      expect(conversation.first_reply_created_at).to eq note.created_at
+      # Both sides from the database: `conversation` was reloaded, so its
+      # timestamp is truncated to Postgres' microseconds, while `note` still
+      # held Ruby's nanoseconds — equal in meaning, different in the last digits.
+      expect(conversation.first_reply_created_at).to eq note.reload.created_at
     end
 
     it 'leaves an ordinary private note out of it' do
