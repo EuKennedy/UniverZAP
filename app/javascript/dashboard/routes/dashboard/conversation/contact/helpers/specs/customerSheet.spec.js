@@ -154,9 +154,13 @@ describe('customerSheet helpers', () => {
     });
   });
 
+  // Stored values are ISO 8601 (UTC); the sheet shows them in the agent's
+  // zone, so the expectations are built from a local Date to hold in any TZ.
+  const localAppointment = new Date(2026, 9, 25, 14, 0);
+
   describe('formatAppointment', () => {
     it('shows weekday, day, month and time in the given locale', () => {
-      const text = formatAppointment('2026-10-25T14:00:00.000Z', 'pt_BR');
+      const text = formatAppointment(localAppointment.toISOString(), 'pt_BR');
       expect(text).toContain('25/10');
       expect(text).toContain('14:00');
     });
@@ -175,9 +179,9 @@ describe('customerSheet helpers', () => {
 
   describe('datetime-local round trip', () => {
     it('prefills the input and stores ISO 8601', () => {
-      const local = toDateTimeLocal('2026-10-25T14:00:00.000Z');
+      const local = toDateTimeLocal(localAppointment.toISOString());
       expect(local).toBe('2026-10-25T14:00');
-      expect(fromDateTimeLocal(local)).toBe('2026-10-25T14:00:00.000Z');
+      expect(fromDateTimeLocal(local)).toBe(localAppointment.toISOString());
       expect(toDateTimeLocal('')).toBe('');
       expect(fromDateTimeLocal('')).toBe('');
     });
