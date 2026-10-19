@@ -25,9 +25,17 @@
     },
     "STATUS_BAR": {
       "PICK": "Choose the labels on the bar",
-      "HINT": "Applies to the whole team. The order you tick is the order on the bar.",
+      "HINT": "The order you tick is the order on the bar.",
+      "SCOPE_ME": "Just for me",
+      "SCOPE_TEAM": "For the team",
+      "SEARCH": "Search label…",
+      "OPEN": "{n} open",
+      "UP": "Move up",
+      "DOWN": "Move down",
+      "REMOVE": "Remove from the bar",
       "SAVE": "Save",
-      "RESET": "Back to the vertical default"
+      "RESET": "Back to the vertical default",
+      "RESET_ME": "Use the team's bar"
     },
     "KPI_FIRST_REPLY_HINT": "Median (not average) time between a conversation being created today and its first human reply, counting only the conversations already replied. Half of them were answered faster than this, half slower. Updates every minute.",
     "ASSIGNEE_TYPE_TABS": {

@@ -25,12 +25,39 @@ RSpec.describe 'Vertical statuses API', type: :request do
       expect(response.parsed_body['statuses'].pluck('title')).to eq(%w[lead-anuncio agendado])
     end
 
+    it 'serves an agent their own bar when titles are asked for, over the account pick' do
+      account.update!(custom_attributes: { 'conversation_bar_labels' => %w[agendado] })
+
+      get "/api/v1/accounts/#{account.id}/vertical_statuses",
+          params: { titles: %w[lead-anuncio novo-contato] },
+          headers: agent.create_new_auth_token,
+          as: :json
+
+      expect(response.parsed_body['statuses'].pluck('title')).to eq(%w[lead-anuncio novo-contato])
+    end
+
     it 'skips picked titles that no longer exist as labels' do
       account.update!(custom_attributes: { 'conversation_bar_labels' => %w[agendado apagada] })
 
       get "/api/v1/accounts/#{account.id}/vertical_statuses", headers: agent.create_new_auth_token, as: :json
 
       expect(response.parsed_body['statuses'].pluck('title')).to eq(%w[agendado])
+    end
+  end
+
+  describe 'GET /api/v1/accounts/{account.id}/vertical_statuses/catalog' do
+    it 'lists every label with its open count, most used first' do
+      tagged = create(:conversation, account: account)
+      tagged.update_labels(%w[agendado])
+      create(:conversation, account: account, status: :resolved).update_labels(%w[agendado novo-contato])
+
+      get "/api/v1/accounts/#{account.id}/vertical_statuses/catalog", headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      labels = response.parsed_body['labels']
+      expect(labels.first).to include('title' => 'agendado', 'count' => 1)
+      expect(labels.pluck('title')).to match_array(%w[agendado lead-anuncio novo-contato])
+      expect(labels.find { |l| l['title'] == 'novo-contato' }['count']).to eq(0)
     end
   end
 

@@ -25,9 +25,17 @@
     },
     "STATUS_BAR": {
       "PICK": "Escolher as etiquetas da barra",
-      "HINT": "Vale para toda a equipe. A ordem em que você marca é a ordem na barra.",
+      "HINT": "A ordem em que você marca é a ordem na barra.",
+      "SCOPE_ME": "Só para mim",
+      "SCOPE_TEAM": "Para a equipe",
+      "SEARCH": "Buscar etiqueta…",
+      "OPEN": "{n} abertas",
+      "UP": "Subir",
+      "DOWN": "Descer",
+      "REMOVE": "Tirar da barra",
       "SAVE": "Salvar",
-      "RESET": "Voltar ao padrão do vertical"
+      "RESET": "Voltar ao padrão do vertical",
+      "RESET_ME": "Usar a barra da equipe"
     },
     "KPI_FIRST_REPLY_HINT": "Mediana (não média) do tempo entre a conversa ser criada hoje e a primeira resposta humana, contando só as conversas já respondidas. Metade delas foi respondida mais rápido que isso, metade mais devagar. Atualiza a cada minuto.",
     "ASSIGNEE_TYPE_TABS": {

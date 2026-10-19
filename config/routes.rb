@@ -300,6 +300,7 @@ Rails.application.routes.draw do
           resources :labels, only: [:index, :show, :create, :update, :destroy]
           resources :vertical_statuses, only: [:index] do
             collection do
+              get :catalog
               patch :selection
             end
           end

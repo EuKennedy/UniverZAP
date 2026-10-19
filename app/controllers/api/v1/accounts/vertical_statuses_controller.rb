@@ -4,13 +4,27 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
   MAX_STATUSES = 5
   SELECTION_KEY = 'conversation_bar_labels'.freeze
 
+  # The second row of the conversation list. Three sources, in order of
+  # precedence: the titles the caller asks for (an agent's personal bar),
+  # the labels an admin picked for the whole account, the vertical's default.
   def index
     @vertical_key = Current.account.custom_attributes['vertical_template']
-    @statuses = selected_titles.present? ? selected_statuses : default_statuses
+    titles = params[:titles].present? ? Array(params[:titles]).map(&:to_s) : selected_titles
+    @statuses = titles.present? ? statuses_for(titles) : default_statuses
   end
 
-  # Which labels the conversation list's second row shows, chosen by an admin
-  # for the whole account. An empty list goes back to the vertical's default.
+  # Every label of the account with its open count, most used first — what
+  # the picker shows so choosing is informed, not a guess.
+  def catalog
+    counts = open_counts_by_label
+    @labels = Current.account.labels.order(:title).map do |label|
+      { title: label.title, color: label.color, description: label.description, count: counts.fetch(label.title, 0) }
+    end
+    @labels.sort_by! { |label| [-label[:count], label[:title]] }
+  end
+
+  # Which labels the bar shows for the whole account, chosen by an admin.
+  # An empty list goes back to the vertical's default.
   def selection
     authorize Current.account, :update?
     titles = Array(params[:titles]).map(&:to_s).uniq & Current.account.labels.pluck(:title)
@@ -25,9 +39,9 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
     Array(Current.account.custom_attributes[SELECTION_KEY])
   end
 
-  def selected_statuses
-    labels = Current.account.labels.where(title: selected_titles).index_by(&:title)
-    selected_titles.filter_map do |title|
+  def statuses_for(titles)
+    labels = Current.account.labels.where(title: titles).index_by(&:title)
+    titles.uniq.filter_map do |title|
       label = labels[title]
       next unless label
 
@@ -50,5 +64,13 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
 
   def label_count(title)
     Current.account.conversations.non_groups.open.tagged_with(title).count
+  end
+
+  # One query for the whole catalog instead of one per label.
+  def open_counts_by_label
+    Current.account.conversations.non_groups.open
+           .joins(:taggings).joins('INNER JOIN tags ON tags.id = taggings.tag_id')
+           .where(taggings: { context: 'labels' })
+           .group('tags.name').count
   end
 end
