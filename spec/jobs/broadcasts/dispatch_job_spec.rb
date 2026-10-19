@@ -19,8 +19,13 @@ RSpec.describe Broadcasts::DispatchJob do
     end
   end
 
+  # `reload` first: the job runs on its own instance and leaves the row
+  # `completed`, while this memoized object still says `running`. Without it
+  # dirty tracking sees no status change, skips the write, and the job exits on
+  # its first line — which also made the idempotence example pass without ever
+  # reaching the diff.
   def relaunch_with(*contacts)
-    broadcast.update!(audience: { 'contact_ids' => contacts.map(&:id) }, status: :running)
+    broadcast.reload.update!(audience: { 'contact_ids' => contacts.map(&:id) }, status: :running)
     described_class.perform_now(broadcast.id)
   end
 
