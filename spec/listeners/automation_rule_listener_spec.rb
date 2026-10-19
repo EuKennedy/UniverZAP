@@ -247,4 +247,31 @@ describe AutomationRuleListener do
       end
     end
   end
+
+  describe 'conversation_ad_referral' do
+    let!(:automation_rule) { create(:automation_rule, event_name: 'conversation_ad_referral', account: account) }
+    let(:event) do
+      Events::Base.new('conversation_ad_referral', Time.zone.now,
+                       { conversation: conversation, ad_referral: { 'ad_id' => '1', 'title' => 'Promo' } })
+    end
+
+    it 'calls AutomationRules::ActionService if conditions match' do
+      allow(condition_match).to receive(:present?).and_return(true)
+      listener.conversation_ad_referral(event)
+      expect(AutomationRules::ActionService).to have_received(:new).with(automation_rule, account, conversation)
+    end
+
+    it 'does not call AutomationRules::ActionService if conditions do not match' do
+      allow(condition_match).to receive(:present?).and_return(false)
+      listener.conversation_ad_referral(event)
+      expect(AutomationRules::ActionService).not_to have_received(:new)
+    end
+
+    it 'ignores rules for other events' do
+      automation_rule.update!(event_name: 'conversation_created')
+      allow(condition_match).to receive(:present?).and_return(true)
+      listener.conversation_ad_referral(event)
+      expect(AutomationRules::ActionService).not_to have_received(:new)
+    end
+  end
 end

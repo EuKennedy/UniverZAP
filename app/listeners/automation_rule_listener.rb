@@ -23,6 +23,14 @@ class AutomationRuleListener < BaseListener
     process_conversation_event(event, 'conversation_resolved')
   end
 
+  # UniverZAP: fired once per conversation by Conversations::AdReferralService
+  # when its first message came from a Click-to-WhatsApp ad.
+  def conversation_ad_referral(event)
+    return if sandbox_event?(event)
+
+    process_conversation_event(event, 'conversation_ad_referral')
+  end
+
   def message_created(event)
     return if sandbox_event?(event)
 

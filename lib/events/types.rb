@@ -24,6 +24,9 @@ module Events::Types
   CONVERSATION_CAPTAIN_INFERENCE_RESOLVED = 'conversation.captain_inference_resolved'
   CONVERSATION_CAPTAIN_INFERENCE_HANDOFF = 'conversation.captain_inference_handoff'
 
+  # UniverZAP: a conversation's first message came from a Click-to-WhatsApp ad.
+  CONVERSATION_AD_REFERRAL = 'conversation.ad_referral'
+
   CONVERSATION_STATUS_CHANGED = 'conversation.status_changed'
   CONVERSATION_CONTACT_CHANGED = 'conversation.contact_changed'
   ASSIGNEE_CHANGED = 'assignee.changed'

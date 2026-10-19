@@ -23,6 +23,7 @@ import CsatResponses from './CsatResponses.vue';
 import AthenasReports from './AthenasReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
+import AdLeadsReports from './AdLeadsReports.vue';
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -170,6 +171,12 @@ export default {
           name: 'athenas_reports',
           meta,
           component: AthenasReports,
+        },
+        {
+          path: 'ad_leads',
+          name: 'ad_leads_reports',
+          meta,
+          component: AdLeadsReports,
         },
         // A rota antiga continua respondendo para não quebrar link salvo nem
         // aba deixada aberta: leva para o mesmo lugar.

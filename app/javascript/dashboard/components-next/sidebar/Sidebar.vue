@@ -624,6 +624,11 @@ const builtMenu = computed(() => {
           to: accountScopedRoute('csat_reports'),
         },
         {
+          name: 'Reports Ad Leads',
+          label: t('SIDEBAR.REPORTS_AD_LEADS'),
+          to: accountScopedRoute('ad_leads_reports'),
+        },
+        {
           name: 'Reports SLA',
           label: t('SIDEBAR.REPORTS_SLA'),
           to: accountScopedRoute('sla_reports'),

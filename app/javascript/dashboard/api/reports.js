@@ -91,6 +91,12 @@ class ReportsAPI extends ApiClient {
     });
   }
 
+  getAdLeadsReport({ from: since, to: until, conversionLabel }) {
+    return axios.get(`${this.url}/ad_leads`, {
+      params: { since, until, conversion_label: conversionLabel || undefined },
+    });
+  }
+
   getBotMetrics({ from, to } = {}) {
     return axios.get(`${this.url}/bot_metrics`, {
       params: { since: from, until: to },

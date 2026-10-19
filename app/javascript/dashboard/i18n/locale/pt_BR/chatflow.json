@@ -45,6 +45,10 @@
         "WEBHOOK": {
           "LABEL": "Webhook",
           "HINT": "Iniciado por um sistema externo chamando a URL do fluxo."
+        },
+        "AD_REFERRAL": {
+          "LABEL": "Lead de anúncio",
+          "HINT": "Começa quando a mensagem vem de um anúncio Click-to-WhatsApp (Facebook/Instagram)."
         }
       },
       "SENDER_NAME": "Nome que assina as mensagens",

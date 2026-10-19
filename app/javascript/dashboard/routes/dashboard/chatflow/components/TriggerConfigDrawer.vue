@@ -37,6 +37,7 @@ const TRIGGER_TYPES = [
   { value: 'keyword', icon: 'i-lucide-hash' },
   { value: 'any_message', icon: 'i-lucide-messages-square' },
   { value: 'webhook', icon: 'i-lucide-webhook' },
+  { value: 'ad_referral', icon: 'i-lucide-megaphone' },
 ];
 
 const RESTART_MODES = ['once', 'cooldown'];

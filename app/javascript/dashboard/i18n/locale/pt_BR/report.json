@@ -528,6 +528,23 @@
       "PLACEHOLDER": "Selecionar intervalo de datas"
     }
   },
+  "AD_LEADS_REPORTS": {
+    "HEADER": "Leads por anúncio",
+    "DESCRIPTION": "Conversas que começaram por um anúncio Click-to-WhatsApp, agrupadas por anúncio. Escolha uma etiqueta para contar conversões.",
+    "CONVERSION_LABEL": "Contar como convertido quando a conversa tiver a etiqueta",
+    "NO_CONVERSION_LABEL": "Não contar conversões",
+    "NO_RECORDS": "Nenhum lead de anúncio no período.",
+    "TOTAL": "Total",
+    "COLUMNS": {
+      "AD": "Anúncio",
+      "LEADS": "Leads",
+      "REPLIED": "Respondidas",
+      "RESOLVED": "Resolvidas",
+      "CONVERTED": "Convertidas"
+    },
+    "AD_ID": "ID {id}",
+    "VIEW_AD": "Ver anúncio"
+  },
   "CSAT_REPORTS": {
     "HEADER": "Relatórios CSAT",
     "NO_RECORDS": "Ainda não há respostas",

@@ -686,6 +686,14 @@ export const AUTOMATIONS = {
   },
 };
 
+// UniverZAP: a conversation whose first message came from a Click-to-WhatsApp ad
+// (see Conversations::AdReferralService). Same conditions and actions as a new
+// conversation; the ad fields arrive as conversation custom attributes.
+AUTOMATIONS.conversation_ad_referral = {
+  conditions: AUTOMATIONS.conversation_created.conditions,
+  actions: AUTOMATIONS.conversation_created.actions,
+};
+
 export const AUTOMATION_RULE_EVENTS = [
   {
     key: 'conversation_created',
@@ -706,6 +714,10 @@ export const AUTOMATION_RULE_EVENTS = [
   {
     key: 'conversation_opened',
     value: 'CONVERSATION_OPENED',
+  },
+  {
+    key: 'conversation_ad_referral',
+    value: 'CONVERSATION_AD_REFERRAL',
   },
 ];
 

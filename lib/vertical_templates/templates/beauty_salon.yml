@@ -82,3 +82,12 @@ automation_rules:
         action_params: [atendimento-encerrado]
       - action_name: remove_label
         action_params: [em-atendimento]
+  - name: Lead de anúncio
+    description: Marca e prioriza conversas que começaram por um anúncio Click-to-WhatsApp
+    event_name: conversation_ad_referral
+    conditions: []
+    actions:
+      - action_name: add_label
+        action_params: [lead-anuncio]
+      - action_name: change_priority
+        action_params: [high]

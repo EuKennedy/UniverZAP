@@ -380,6 +380,7 @@
     "ONGOING": "Ongoing",
     "ONE_OFF": "One off",
     "REPORTS_SLA": "SLA",
+    "REPORTS_AD_LEADS": "Ad leads",
     "REPORTS_BOT": "Bot",
     "REPORTS_ATHENAS": "AI agent",
     "REPORTS_AGENT": "Agents",

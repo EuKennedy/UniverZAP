@@ -422,4 +422,39 @@ RSpec.describe Api::V2::Accounts::ReportsController, type: :request do
       end
     end
   end
+
+  describe 'GET /api/v2/accounts/{account.id}/reports/ad_leads' do
+    before do
+      create(:conversation, account: account, inbox: inbox,
+                            custom_attributes: { 'anuncio_id' => '77', 'anuncio_titulo' => 'Promo', 'anuncio_url' => 'https://fb.me/77' })
+    end
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        get "/api/v2/accounts/#{account.id}/reports/ad_leads"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as agent' do
+      it 'returns unauthorized' do
+        get "/api/v2/accounts/#{account.id}/reports/ad_leads",
+            headers: agent.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as admin' do
+      it 'returns the leads grouped by ad' do
+        get "/api/v2/accounts/#{account.id}/reports/ad_leads",
+            params: { since: 1.day.ago.to_i, until: Time.current.to_i },
+            headers: admin.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:success)
+        body = response.parsed_body
+        expect(body.length).to eq(1)
+        expect(body.first).to include('ad_id' => '77', 'title' => 'Promo', 'leads' => 1)
+      end
+    end
+  end
 end

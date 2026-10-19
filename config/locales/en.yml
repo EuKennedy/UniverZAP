@@ -31,6 +31,19 @@
 
 en:
   hello: 'Hello world'
+  ad_referral:
+    label_description: Conversation that started from a Click-to-WhatsApp ad
+    attributes:
+      origem_lead: Lead origin
+      origem_lead_description: "How the customer reached you (e.g. anuncio_facebook)"
+      anuncio_id: Ad ID
+      anuncio_id_description: ID of the Facebook/Instagram ad the customer clicked
+      anuncio_titulo: Ad title
+      anuncio_titulo_description: Headline of the ad the customer clicked
+      anuncio_url: Ad link
+      anuncio_url_description: Link to the ad on Facebook
+      anuncio_cliques: Ad clicks
+      anuncio_cliques_description: How many times the customer came back through an ad
   kanban:
     activity:
       stage_changed: 'Kanban: "%{task}" moved to "%{stage}" in %{funnel}.'

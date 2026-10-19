@@ -1,0 +1,39 @@
+require 'rails_helper'
+
+RSpec.describe V2::Reports::AdLeadsBuilder do
+  let(:account) { create(:account) }
+  let(:inbox) { create(:inbox, account: account) }
+  let(:agent) { create(:user, account: account) }
+  let(:params) { { since: 7.days.ago.to_i.to_s, until: Time.current.to_i.to_s, conversion_label: 'agendado' } }
+
+  def lead(ad_id:, title:, **attrs)
+    create(:conversation, account: account, inbox: inbox,
+                          custom_attributes: { 'origem_lead' => 'anuncio_facebook', 'anuncio_id' => ad_id, 'anuncio_titulo' => title,
+                                               'anuncio_url' => "https://fb.me/#{ad_id}" }, **attrs)
+  end
+
+  before do
+    create(:label, account: account, title: 'agendado')
+    lead(ad_id: '100', title: 'Progressiva')
+    lead(ad_id: '100', title: 'Progressiva', first_reply_created_at: 1.hour.ago).add_labels(['agendado'])
+    lead(ad_id: '100', title: 'Progressiva', status: :resolved)
+    lead(ad_id: '200', title: 'Manicure')
+    create(:conversation, account: account, inbox: inbox) # sem anúncio
+    lead(ad_id: '300', title: 'Antigo', created_at: 30.days.ago)
+  end
+
+  it 'groups leads by ad with replied, resolved and converted counts inside the period' do
+    rows = described_class.new(account: account, params: params).build
+
+    expect(rows.map { |r| r[:ad_id] }).to eq(%w[100 200])
+    first = rows.first
+    expect(first).to include(ad_id: '100', title: 'Progressiva', url: 'https://fb.me/100', leads: 3, replied: 1, resolved: 1, converted: 1)
+    expect(rows.last).to include(ad_id: '200', leads: 1, converted: 0)
+  end
+
+  it 'reports converted as nil when no conversion label is given' do
+    rows = described_class.new(account: account, params: params.except(:conversion_label)).build
+
+    expect(rows.first[:converted]).to be_nil
+  end
+end

@@ -22,6 +22,19 @@ pt_BR:
     month_names: [~, janeiro, fevereiro, março, abril, maio, junho, julho, agosto, setembro, outubro, novembro, dezembro]
     formats:
       long: '%d de %B de %Y'
+  ad_referral:
+    label_description: Conversa que começou por um anúncio Click-to-WhatsApp
+    attributes:
+      origem_lead: Origem do lead
+      origem_lead_description: "Por onde o cliente chegou (ex.: anuncio_facebook)"
+      anuncio_id: ID do anúncio
+      anuncio_id_description: ID do anúncio do Facebook/Instagram que o cliente clicou
+      anuncio_titulo: Título do anúncio
+      anuncio_titulo_description: Título do anúncio que o cliente clicou
+      anuncio_url: Link do anúncio
+      anuncio_url_description: Link do anúncio no Facebook
+      anuncio_cliques: Cliques no anúncio
+      anuncio_cliques_description: Quantas vezes o cliente voltou por um anúncio
   kanban:
     activity:
       stage_changed: 'Kanban: "%{task}" movida para "%{stage}" em %{funnel}.'

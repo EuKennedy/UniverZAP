@@ -102,8 +102,16 @@ class Chatflow::EngineService
     when 'on_first_message' then first_message_trigger?(chatflow)
     when 'keyword' then keyword_hit?(chatflow)
     when 'any_message' then true
+    when 'ad_referral' then ad_message?
     else false
     end
+  end
+
+  # The parsed attribute is written by AdReferralListener, which may still be
+  # running when this job starts; the raw text is the same signal either way.
+  def ad_message?
+    @message.content_attributes['ad_referral'].present? ||
+      Conversations::AdReferralService.ad_message?(@message.content)
   end
 
   # The first-message trigger fires on the conversation's first inbound
