@@ -165,9 +165,13 @@ export function useAutomation(startValue = null) {
       'contact_custom_attribute',
     ]);
 
+    // `conversation_ad_referral` belongs here: it mirrors a new conversation,
+    // and the ad fields it exists to filter on arrive as conversation custom
+    // attributes. Left out, an ad-lead rule never offered those conditions.
     [
       'message_created',
       'conversation_created',
+      'conversation_ad_referral',
       'conversation_updated',
       'conversation_opened',
     ].forEach(eventToUpdate => {
