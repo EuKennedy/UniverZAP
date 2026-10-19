@@ -1,49 +1,48 @@
 # Leads per Click-to-WhatsApp ad: conversations stamped by
-# Conversations::AdReferralService, grouped by ad id inside the period.
+# Conversations::AdReferralService, grouped by ad id inside the period — or by
+# assignee when `group_by: 'agent'`, to see who turns ad leads into bookings.
 # "converted" counts the ones carrying the label the caller treats as the
 # goal (e.g. agendado); without a label the column is nil, not zero.
 class V2::Reports::AdLeadsBuilder
+  include V2::Reports::DashboardScopes
+
   pattr_initialize [:account!, :params!]
 
   AD_ID = Arel.sql("conversations.custom_attributes->>'anuncio_id'")
-  COLUMNS = [
-    AD_ID,
+  AD_COLUMNS = [
     Arel.sql("MAX(conversations.custom_attributes->>'anuncio_titulo')"),
-    Arel.sql("MAX(conversations.custom_attributes->>'anuncio_url')"),
-    Arel.sql('COUNT(*)'),
-    Arel.sql('COUNT(conversations.first_reply_created_at)'),
-    Arel.sql("COUNT(*) FILTER (WHERE conversations.status = #{Conversation.statuses[:resolved]})")
+    Arel.sql("MAX(conversations.custom_attributes->>'anuncio_url')")
   ].freeze
+  COUNTS = [Arel.sql('COUNT(*)'), REPLIED, RESOLVED].freeze
 
   def build
-    converted = converted_counts
-    rows = base_scope.group(AD_ID).pluck(*COLUMNS).map do |row|
-      ad_id, title, url, leads, replied, resolved = row
-      { ad_id: ad_id, title: title, url: url, leads: leads, replied: replied, resolved: resolved,
-        converted: converted&.fetch(ad_id, 0) }
-    end
+    rows = params[:group_by] == 'agent' ? agent_rows : ad_rows
     rows.sort_by { |row| -row[:leads] }
   end
 
   private
 
   def base_scope
-    account.conversations.unscope(:order)
-           .where("jsonb_exists(conversations.custom_attributes, 'anuncio_id')")
-           .where(created_at: range)
+    period_scope.where("jsonb_exists(conversations.custom_attributes, 'anuncio_id')")
   end
 
-  def range
-    since = params[:since].present? ? Time.zone.at(params[:since].to_i) : 30.days.ago
-    # `until` arrives in whole seconds; cover that whole second.
-    till = params[:until].present? ? Time.zone.at(params[:until].to_i + 1) : Time.current
-    since...till
+  def ad_rows
+    converted = converted_by(base_scope, AD_ID)
+    base_scope.group(AD_ID).pluck(AD_ID, *AD_COLUMNS, *COUNTS).map do |ad_id, title, url, *counts|
+      { ad_id: ad_id, title: title, url: url, **metrics(counts, converted, ad_id) }
+    end
   end
 
-  def converted_counts
-    label = params[:conversion_label].presence
-    return nil if label.nil?
+  def agent_rows
+    converted = converted_by(base_scope, :assignee_id)
+    names = account.users.pluck(:id, :name).to_h
+    base_scope.group(:assignee_id).pluck(:assignee_id, *COUNTS).map do |agent_id, *counts|
+      { agent_id: agent_id, title: names[agent_id], **metrics(counts, converted, agent_id) }
+    end
+  end
 
-    base_scope.tagged_with(label, on: :labels).group(AD_ID).count
+  def metrics(counts, converted, key)
+    leads, replied, resolved = counts
+    { leads: leads, replied: replied, resolved: resolved, converted: converted&.fetch(key, 0) }
   end
 end

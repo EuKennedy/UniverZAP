@@ -36,4 +36,15 @@ RSpec.describe V2::Reports::AdLeadsBuilder do
 
     expect(rows.first[:converted]).to be_nil
   end
+
+  it 'groups by assignee when asked, naming the agent' do
+    lead(ad_id: '400', title: 'Escova', assignee: agent, first_reply_created_at: 1.hour.ago).add_labels(['agendado'])
+
+    rows = described_class.new(account: account, params: params.merge(group_by: 'agent')).build
+
+    agent_row = rows.find { |row| row[:agent_id] == agent.id }
+    expect(agent_row).to include(title: agent.name, leads: 1, replied: 1, converted: 1)
+    expect(rows.find { |row| row[:agent_id].nil? }).to include(leads: 4, converted: 1)
+    expect(rows.first[:leads]).to eq(4)
+  end
 end

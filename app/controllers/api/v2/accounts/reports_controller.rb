@@ -62,6 +62,11 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     render json: V2::Reports::AdLeadsBuilder.new(account: Current.account, params: ad_leads_params).build
   end
 
+  # UniverZAP: management dashboard (funnel, queue, agents) in one payload.
+  def dashboard
+    render json: V2::Reports::DashboardBuilder.new(account: Current.account, params: dashboard_params).build
+  end
+
   def bot_metrics
     bot_metrics = V2::Reports::BotMetricsBuilder.new(Current.account, params).metrics
     render json: bot_metrics
@@ -101,7 +106,11 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
   end
 
   def ad_leads_params
-    params.permit(:since, :until, :conversion_label)
+    params.permit(:since, :until, :conversion_label, :group_by)
+  end
+
+  def dashboard_params
+    params.permit(:since, :until, :conversion_label, :risk_minutes)
   end
 
   def check_authorization
