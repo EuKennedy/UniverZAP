@@ -343,6 +343,9 @@ const conversationFilters = computed(() => {
       !isGroupsTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)
         ? activeListView.value
         : undefined,
+    // The bucket this page belongs to, so the store files pagination under
+    // the same key this list reads it from.
+    listKey: listKey.value,
   };
 });
 
@@ -477,7 +480,12 @@ function setFiltersFromUISettings() {
   activeListView.value = Object.values(wootConstants.LIST_VIEW).includes(view)
     ? view
     : wootConstants.LIST_VIEW.ALL;
-  activeStatus.value = status || wootConstants.STATUS_TYPE.OPEN;
+  // Resolvidas is backed by status, not by the persisted status filter: a
+  // restored Resolvidas view with status "open" would list nothing and spin.
+  activeStatus.value =
+    activeListView.value === wootConstants.LIST_VIEW.RESOLVED
+      ? wootConstants.STATUS_TYPE.RESOLVED
+      : status || wootConstants.STATUS_TYPE.OPEN;
   // The view persists across reloads via conversation_list_view, but an
   // explicit order_by (picked from the sort filter) doesn't carry the
   // Aguardando-is-the-fila-de-risco default with it — without this, reopening
