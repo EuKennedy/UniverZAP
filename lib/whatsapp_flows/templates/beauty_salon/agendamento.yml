@@ -1,0 +1,91 @@
+# Agendamento em uma tela: serviço, profissional, data, período e observação.
+# A lista de serviços vem do atributo `servico` da conta quando ele existe;
+# a lista abaixo é o que entra quando a conta ainda não o definiu.
+name: Agendamento
+category: APPOINTMENT_BOOKING
+description: Serviço, profissional, data e período em uma tela. Grava na conversa e aplica a etiqueta "agendado".
+attribute_definitions:
+  - attribute_key: servico
+    attribute_display_name: Serviço
+    attribute_model: conversation_attribute
+    attribute_display_type: list
+    attribute_values: [Corte, Coloração, Escova, Manicure, Depilação, Outro]
+  - attribute_key: profissional
+    attribute_display_name: Profissional
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+  - attribute_key: data_agendamento
+    attribute_display_name: Data do agendamento
+    attribute_model: conversation_attribute
+    attribute_display_type: date
+  - attribute_key: periodo_agendamento
+    attribute_display_name: Período do agendamento
+    attribute_model: conversation_attribute
+    attribute_display_type: list
+    attribute_values: [Manhã, Tarde, Noite]
+  - attribute_key: observacao_agendamento
+    attribute_display_name: Observação do agendamento
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+field_mappings:
+  fields:
+    servico: { model: conversation, key: servico }
+    profissional: { model: conversation, key: profissional }
+    data: { model: conversation, key: data_agendamento }
+    periodo: { model: conversation, key: periodo_agendamento }
+    observacao: { model: conversation, key: observacao_agendamento }
+  labels: [agendado]
+flow_json:
+  version: "7.3"
+  screens:
+    - id: AGENDAMENTO
+      title: Agendar horário
+      terminal: true
+      layout:
+        type: SingleColumnLayout
+        children:
+          - type: TextHeading
+            text: Vamos agendar?
+          - type: TextBody
+            text: Escolha o serviço e o melhor dia. A gente confirma o horário por aqui.
+          - type: Form
+            name: form
+            children:
+              - type: Dropdown
+                name: servico
+                label: Serviço
+                required: true
+                data-source:
+                  $attribute: servico
+              - type: TextInput
+                name: profissional
+                label: Profissional
+                input-type: text
+                required: false
+                helper-text: Opcional
+              - type: DatePicker
+                name: data
+                label: Data
+                required: true
+              - type: RadioButtonsGroup
+                name: periodo
+                label: Período
+                required: true
+                data-source:
+                  - { id: manha, title: Manhã }
+                  - { id: tarde, title: Tarde }
+                  - { id: noite, title: Noite }
+              - type: TextArea
+                name: observacao
+                label: Observações
+                required: false
+              - type: Footer
+                label: Enviar
+                on-click-action:
+                  name: complete
+                  payload:
+                    servico: ${form.servico}
+                    profissional: ${form.profissional}
+                    data: ${form.data}
+                    periodo: ${form.periodo}
+                    observacao: ${form.observacao}

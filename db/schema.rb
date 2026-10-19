@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_18_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_19_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -2366,6 +2366,26 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_18_000000) do
     t.index ["account_id", "url"], name: "index_webhooks_on_account_id_and_url", unique: true
   end
 
+  create_table "whatsapp_flows", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "inbox_id", null: false
+    t.string "name", limit: 255, null: false
+    t.string "category", default: "OTHER", null: false
+    t.string "template_key"
+    t.jsonb "flow_json", default: {}, null: false
+    t.jsonb "field_mappings", default: {}, null: false
+    t.string "meta_flow_id"
+    t.string "status", default: "draft", null: false
+    t.jsonb "validation_errors", default: [], null: false
+    t.string "preview_url"
+    t.datetime "published_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_whatsapp_flows_on_account_id"
+    t.index ["inbox_id"], name: "index_whatsapp_flows_on_inbox_id"
+    t.index ["meta_flow_id"], name: "index_whatsapp_flows_on_meta_flow_id", unique: true, where: "(meta_flow_id IS NOT NULL)"
+  end
+
   create_table "working_hours", force: :cascade do |t|
     t.bigint "inbox_id"
     t.bigint "account_id"
@@ -2518,6 +2538,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_18_000000) do
   add_foreign_key "team_chat_messages", "users"
   add_foreign_key "univercart_subscriptions", "users"
   add_foreign_key "vertical_statuses", "verticals"
+  add_foreign_key "whatsapp_flows", "accounts"
+  add_foreign_key "whatsapp_flows", "inboxes", on_delete: :cascade
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").
       after(:insert).

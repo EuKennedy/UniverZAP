@@ -32,6 +32,9 @@ class ChatflowNode < ApplicationRecord
   # confirmation — fecha o atendimento perguntando se resolveu. Duas saídas, cada
   #                uma casada por uma LISTA de palavras-chave, e uma mensagem
   #                própria para quando a resposta não casa com nenhuma.
+  # send_flow    — manda um formulário nativo do WhatsApp (Flow) e espera. Sai
+  #                por `default` quando a resposta chega e por `fallback` quando
+  #                o cliente digita em vez de preencher.
   enum kind: {
     send_message: 0,
     send_audio: 1,
@@ -42,7 +45,8 @@ class ChatflowNode < ApplicationRecord
     assign_agent: 6,
     add_to_kanban: 7,
     webhook: 8,
-    confirmation: 9
+    confirmation: 9,
+    send_flow: 10
   }, _prefix: :kind
 
   validates :name, length: { maximum: 255 }, allow_blank: true
@@ -62,6 +66,10 @@ class ChatflowNode < ApplicationRecord
   # já desenhada no canvas no dia em que ele trocasse uma letra.
   RESOLVED = 'resolved'.freeze
   UNRESOLVED = 'unresolved'.freeze
+
+  # A saída do formulário para quem digitou em vez de preencher. Opcional: sem
+  # ela ligada, o fluxo segue esperando o formulário.
+  FALLBACK = 'fallback'.freeze
 
   # Quantas vezes reperguntar antes de desistir. O menu repergunta para SEMPRE,
   # e numa etapa de fechamento isso prende o cliente num robô: quem escreveu um

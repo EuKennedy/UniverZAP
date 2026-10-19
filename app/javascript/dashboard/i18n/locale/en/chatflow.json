@@ -77,7 +77,8 @@
         "ADD_TO_KANBAN": "Add to Kanban",
         "WEBHOOK": "Webhook",
         "END_FLOW": "End",
-        "CONFIRMATION": "Confirmation"
+        "CONFIRMATION": "Confirmation",
+        "SEND_FLOW": "Send form"
       },
       "MENU_EMPTY": "Untitled menu",
       "AUDIO_SUMMARY": "Voice message",
@@ -91,7 +92,10 @@
       "DELETE": "Delete step",
       "CONFIRMATION_EMPTY": "Question not set",
       "CONFIRMATION_RESOLVED": "Resolved",
-      "CONFIRMATION_UNRESOLVED": "Not resolved"
+      "CONFIRMATION_UNRESOLVED": "Not resolved",
+      "FLOW_ANSWERED": "Answered",
+      "FLOW_TYPED": "Typed instead",
+      "FLOW_SUMMARY": "Sends a WhatsApp form"
     },
     "EDITOR": {
       "NAME": "Step name",
@@ -137,7 +141,12 @@
       "CONFIRMATION_FALLBACK": "When the reply is not understood",
       "CONFIRMATION_FALLBACK_PLACEHOLDER": "Sorry, I didn't get that. Please answer Yes or No.",
       "CONFIRMATION_FALLBACK_HINT": "Sent with the question again. After 2 tries the flow leaves through \"not resolved\".",
-      "INSERT_NAME": "+ customer's name"
+      "INSERT_NAME": "+ customer's name",
+      "FLOW": "Form",
+      "FLOW_TEXT": "Message above the button",
+      "FLOW_CTA": "Button label",
+      "FLOW_CTA_PLACEHOLDER": "Fill in",
+      "FLOW_HINT": "Works only on WhatsApp Cloud API inboxes. In test mode a draft form is sent; live flows need a published form."
     },
     "TEST": {
       "BUTTON": "Test flow",

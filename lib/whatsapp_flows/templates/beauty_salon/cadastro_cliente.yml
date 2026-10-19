@@ -1,0 +1,86 @@
+# Cadastro do cliente: o que o salão precisa saber antes do primeiro
+# atendimento. Tudo vai para o CONTATO, porque acompanha a pessoa e não a
+# conversa.
+name: Cadastro do cliente
+category: SIGN_UP
+description: Nascimento, alergias, preferências e como conheceu o salão. Grava no contato.
+attribute_definitions:
+  - attribute_key: data_nascimento
+    attribute_display_name: Data de nascimento
+    attribute_model: contact_attribute
+    attribute_display_type: date
+  - attribute_key: alergias
+    attribute_display_name: Alergias
+    attribute_model: contact_attribute
+    attribute_display_type: text
+  - attribute_key: preferencias
+    attribute_display_name: Preferências
+    attribute_model: contact_attribute
+    attribute_display_type: text
+  - attribute_key: como_conheceu
+    attribute_display_name: Como conheceu
+    attribute_model: contact_attribute
+    attribute_display_type: list
+    attribute_values: [Instagram, Indicação, Google, Passou na frente, Outro]
+  - attribute_key: aceita_novidades
+    attribute_display_name: Aceita receber novidades
+    attribute_model: contact_attribute
+    attribute_display_type: checkbox
+field_mappings:
+  fields:
+    data_nascimento: { model: contact, key: data_nascimento }
+    alergias: { model: contact, key: alergias }
+    preferencias: { model: contact, key: preferencias }
+    como_conheceu: { model: contact, key: como_conheceu }
+    aceita_novidades: { model: contact, key: aceita_novidades }
+  labels: []
+flow_json:
+  version: "7.3"
+  screens:
+    - id: CADASTRO
+      title: Seu cadastro
+      terminal: true
+      layout:
+        type: SingleColumnLayout
+        children:
+          - type: TextHeading
+            text: Conta um pouco sobre você
+          - type: TextBody
+            text: Leva menos de um minuto e ajuda a gente a cuidar melhor de você.
+          - type: Form
+            name: form
+            children:
+              - type: DatePicker
+                name: data_nascimento
+                label: Data de nascimento
+                required: false
+              - type: TextArea
+                name: alergias
+                label: Alergias
+                required: false
+                helper-text: Produtos ou substâncias que devemos evitar
+              - type: TextArea
+                name: preferencias
+                label: Preferências
+                required: false
+                helper-text: Profissional, horário, estilo…
+              - type: Dropdown
+                name: como_conheceu
+                label: Como conheceu o salão?
+                required: false
+                data-source:
+                  $attribute: como_conheceu
+              - type: OptIn
+                name: aceita_novidades
+                label: Quero receber novidades e promoções
+                required: false
+              - type: Footer
+                label: Enviar
+                on-click-action:
+                  name: complete
+                  payload:
+                    data_nascimento: ${form.data_nascimento}
+                    alergias: ${form.alergias}
+                    preferencias: ${form.preferencias}
+                    como_conheceu: ${form.como_conheceu}
+                    aceita_novidades: ${form.aceita_novidades}

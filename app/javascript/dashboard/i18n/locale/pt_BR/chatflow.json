@@ -77,7 +77,8 @@
         "ADD_TO_KANBAN": "Adicionar ao Kanban",
         "WEBHOOK": "Webhook",
         "END_FLOW": "Finalizar",
-        "CONFIRMATION": "Confirmação"
+        "CONFIRMATION": "Confirmação",
+        "SEND_FLOW": "Enviar formulário"
       },
       "MENU_EMPTY": "Menu sem título",
       "AUDIO_SUMMARY": "Mensagem de voz",
@@ -91,7 +92,10 @@
       "DELETE": "Excluir etapa",
       "CONFIRMATION_EMPTY": "Pergunta não configurada",
       "CONFIRMATION_RESOLVED": "Resolvido",
-      "CONFIRMATION_UNRESOLVED": "Não resolvido"
+      "CONFIRMATION_UNRESOLVED": "Não resolvido",
+      "FLOW_ANSWERED": "Respondeu",
+      "FLOW_TYPED": "Digitou em vez de responder",
+      "FLOW_SUMMARY": "Envia um formulário do WhatsApp"
     },
     "EDITOR": {
       "NAME": "Nome da etapa",
@@ -137,7 +141,12 @@
       "CONFIRMATION_FALLBACK": "Quando não entender a resposta",
       "CONFIRMATION_FALLBACK_PLACEHOLDER": "Desculpa, não entendi. Responda com Sim ou Não.",
       "CONFIRMATION_FALLBACK_HINT": "Enviado junto com a pergunta de novo. Depois de 2 tentativas, o fluxo segue por \"não resolvido\".",
-      "INSERT_NAME": "+ nome do cliente"
+      "INSERT_NAME": "+ nome do cliente",
+      "FLOW": "Formulário",
+      "FLOW_TEXT": "Mensagem acima do botão",
+      "FLOW_CTA": "Texto do botão",
+      "FLOW_CTA_PLACEHOLDER": "Preencher",
+      "FLOW_HINT": "Só funciona em caixas WhatsApp Cloud API. Em modo de teste vai o rascunho; fluxo ativo exige formulário publicado."
     },
     "TEST": {
       "BUTTON": "Testar fluxo",

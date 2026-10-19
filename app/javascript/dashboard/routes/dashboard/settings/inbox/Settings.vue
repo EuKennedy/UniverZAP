@@ -28,6 +28,7 @@ import CollaboratorsPage from './settingsPage/CollaboratorsPage.vue';
 import BotConfiguration from './components/BotConfiguration.vue';
 import AccountHealth from './components/AccountHealth.vue';
 import WhatsappTemplates from './components/WhatsappTemplates.vue';
+import WhatsappFlows from './components/WhatsappFlows.vue';
 import { FEATURE_FLAGS } from '../../../../featureFlags';
 import SenderNameExamplePreview from './components/SenderNameExamplePreview.vue';
 import LockToSingleConversationPreview from './components/LockToSingleConversationPreview.vue';
@@ -47,6 +48,7 @@ import { copyTextToClipboard } from 'shared/helpers/clipboard';
 export default {
   components: {
     WhatsappTemplates,
+    WhatsappFlows,
     AthenasInboxSettings,
     BotConfiguration,
     CollaboratorsPage,
@@ -243,6 +245,11 @@ export default {
           {
             key: 'whatsapp-templates',
             name: this.$t('INBOX_MGMT.TABS.WHATSAPP_TEMPLATES'),
+          },
+          // Formulários nativos (Flows): também só existem na API oficial.
+          {
+            key: 'whatsapp-flows',
+            name: this.$t('INBOX_MGMT.TABS.WHATSAPP_FLOWS'),
           },
         ];
       }
@@ -1320,6 +1327,9 @@ export default {
         </div>
         <div v-if="selectedTabKey === 'whatsapp-templates'">
           <WhatsappTemplates :inbox-id="inbox.id" />
+        </div>
+        <div v-if="selectedTabKey === 'whatsapp-flows'">
+          <WhatsappFlows :inbox-id="inbox.id" />
         </div>
         <div v-if="selectedTabKey === 'whatsapp-health'">
           <AccountHealth

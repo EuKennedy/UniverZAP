@@ -4,6 +4,8 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
 
     if message.attachments.present?
       send_attachment_message(phone_number, message)
+    elsif message.content_attributes['whatsapp_flow'].present?
+      send_flow_message(phone_number, message)
     elsif message.content_type == 'input_select'
       send_interactive_text_message(phone_number, message)
     else
@@ -185,6 +187,39 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
 
     {
       message_id: reply_to
+    }
+  end
+
+  # Formulário nativo (Flow): o corpo é o texto da mensagem e o botão abre o
+  # Flow publicado (ou o rascunho, quando o fluxo está em modo de teste).
+  # https://developers.facebook.com/docs/whatsapp/flows/guides/sendingaflow
+  def send_flow_message(phone_number, message)
+    response = HTTParty.post(
+      "#{phone_id_path}/messages",
+      headers: api_headers,
+      body: { messaging_product: 'whatsapp', to: phone_number, interactive: flow_payload(message), type: 'interactive' }.to_json
+    )
+
+    process_response(response, message)
+  end
+
+  def flow_payload(message)
+    flow = message.content_attributes['whatsapp_flow'].to_h.with_indifferent_access
+    {
+      type: 'flow',
+      body: { text: message.outgoing_content },
+      action: {
+        name: 'flow',
+        parameters: {
+          flow_message_version: '3',
+          flow_token: Whatsapp::Flows::FlowToken.generate(message.id),
+          flow_id: flow[:meta_flow_id],
+          flow_cta: flow[:cta],
+          mode: flow[:mode] || 'published',
+          flow_action: 'navigate',
+          flow_action_payload: { screen: flow[:screen] }
+        }
+      }
     }
   end
 

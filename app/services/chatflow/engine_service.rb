@@ -139,6 +139,7 @@ class Chatflow::EngineService
     node = execution.current_node
     return complete(execution) if node.blank?
     return advance_from_confirmation(execution, node) if node.kind_confirmation?
+    return advance_from_flow(execution, node) if node.kind_send_flow?
 
     option = Chatflow::ReplyMatcher.new(node, @message.content).match
     return reprompt(execution, node) if option.nil?
@@ -157,6 +158,22 @@ class Chatflow::EngineService
 
     record_selection(execution, node, 'value' => handle, 'label' => handle)
     follow(execution, node, handle)
+  end
+
+  # A resposta do formulário (deste formulário, não de um antigo) segue pela
+  # saída normal. Texto digitado sai pelo `fallback` quando ele está ligado;
+  # sem ligação, o fluxo continua esperando o formulário — o cliente ainda pode
+  # preenchê-lo, e encerrar aqui o deixaria sem nada.
+  def advance_from_flow(execution, node)
+    response = @message.content_attributes['flow_response']
+    if response.present? && response['flow_id'].to_s == node.config['whatsapp_flow_id'].to_s
+      record_selection(execution, node, 'value' => 'default', 'label' => 'respondeu')
+      return follow(execution, node, 'default')
+    end
+    return unless node.outgoing_edges.exists?(source_handle: ChatflowNode::FALLBACK)
+
+    record_selection(execution, node, 'value' => ChatflowNode::FALLBACK, 'label' => 'digitou')
+    follow(execution, node, ChatflowNode::FALLBACK)
   end
 
   # Duas tentativas e sai pela porta de NÃO RESOLVIDO. Errar para o lado de

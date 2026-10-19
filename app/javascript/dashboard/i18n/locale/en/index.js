@@ -47,6 +47,7 @@ import teamChat from './teamChat.json';
 import teamsSettings from './teamsSettings.json';
 import whatsappProfile from './whatsappProfile.json';
 import whatsappTemplates from './whatsappTemplates.json';
+import whatsappFlows from './whatsappFlows.json';
 import contentTemplates from './contentTemplates.json';
 import mfa from './mfa.json';
 import legal from './legal.json';
@@ -103,6 +104,7 @@ export default {
   ...teamsSettings,
   ...whatsappProfile,
   ...whatsappTemplates,
+  ...whatsappFlows,
   ...contentTemplates,
   ...mfa,
   ...legal,

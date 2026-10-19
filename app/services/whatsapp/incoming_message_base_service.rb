@@ -97,7 +97,17 @@ class Whatsapp::IncomingMessageBaseService
     create_message(message, source_id: message[:id])
     attach_files
     attach_location if message_type == 'location'
+    attach_flow_response(message) if flow_reply?(message)
     @message.save!
+    Whatsapp::Flows::ApplyResponseJob.perform_later(@message.id) if flow_reply?(message)
+  end
+
+  # Resposta de um Flow: o texto que o atendente lê sai dos rótulos do Flow,
+  # e os dados ficam em content_attributes para a automação e o mapeamento.
+  def attach_flow_response(message)
+    parsed = Whatsapp::Flows::ResponseParser.new(message.dig(:interactive, :nfm_reply)).parse
+    @message.content = parsed.content
+    @message.content_attributes[:flow_response] = parsed.flow_response
   end
 
   def set_contact

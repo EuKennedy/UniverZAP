@@ -81,6 +81,7 @@ class Account < ApplicationRecord
   has_many :kanban_api_tokens, dependent: :destroy
   has_many :kanban_webhook_subscriptions, dependent: :destroy
   has_many :chatflows, dependent: :destroy
+  has_many :whatsapp_flows, dependent: :destroy
   has_many :broadcasts, dependent: :destroy
   has_many :sales_goals, dependent: :destroy
   has_many :sale_records, dependent: :destroy

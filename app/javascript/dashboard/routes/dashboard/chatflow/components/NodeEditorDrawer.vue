@@ -6,6 +6,7 @@ import { DirectUpload } from 'activestorage';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
+import WhatsappFlowsAPI from 'dashboard/api/whatsappFlows';
 
 // Side panel that edits one node's config. Shape of `config` depends on the
 // node kind; we keep an editable local copy and emit a normalized patch on
@@ -42,6 +43,24 @@ const isUploading = ref(false);
 const kind = computed(() => props.node.kind);
 const isMenu = computed(() => kind.value === 'menu');
 const isConfirmation = computed(() => kind.value === 'confirmation');
+const isSendFlow = computed(() => kind.value === 'send_flow');
+
+// send_flow: os formulários da conta. Rascunho aparece porque o fluxo em modo
+// de teste manda rascunho (é assim que a Meta pede para testar); depreciado
+// não, porque não pode mais ser enviado.
+const whatsappFlows = ref([]);
+const loadWhatsappFlows = async () => {
+  if (!isSendFlow.value) return;
+  try {
+    const { data } = await WhatsappFlowsAPI.list();
+    whatsappFlows.value = data.filter(f => f.status !== 'deprecated');
+  } catch {
+    whatsappFlows.value = [];
+  }
+};
+onMounted(loadWhatsappFlows);
+const flowOptionLabel = f =>
+  `${f.name} · ${t(`WHATSAPP_FLOWS.STATUS.${f.status.toUpperCase()}`)}`;
 
 // Listas de palavras-chave editadas como TEXTO separado por vírgula, e não como
 // uma lista de campinhos: quem configura isso está pensando "sim, resolveu,
@@ -80,6 +99,7 @@ const insertName = event => {
 
 const textLabel = computed(() => {
   if (isConfirmation.value) return t('CHATFLOW.EDITOR.CONFIRMATION_PROMPT');
+  if (isSendFlow.value) return t('CHATFLOW.EDITOR.FLOW_TEXT');
   if (isMenu.value) return t('CHATFLOW.EDITOR.MENU_PROMPT');
   return t('CHATFLOW.EDITOR.MESSAGE_TEXT');
 });
@@ -223,7 +243,9 @@ const save = () => {
 
       <!-- Message / Menu text -->
       <label
-        v-if="['send_message', 'menu', 'confirmation'].includes(kind)"
+        v-if="
+          ['send_message', 'menu', 'confirmation', 'send_flow'].includes(kind)
+        "
         class="flex flex-col gap-1.5"
       >
         <span class="text-xs font-medium text-n-slate-11">
@@ -437,6 +459,41 @@ const save = () => {
           />
           <span class="truncate">{{ label.title }}</span>
         </button>
+      </div>
+
+      <!-- Send WhatsApp form (Flow) -->
+      <div v-if="kind === 'send_flow'" class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.FLOW')
+          }}</span>
+          <select
+            v-model="config.whatsapp_flow_id"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+          >
+            <option :value="undefined">
+              {{ t('CHATFLOW.EDITOR.SELECT') }}
+            </option>
+            <option v-for="f in whatsappFlows" :key="f.id" :value="f.id">
+              {{ flowOptionLabel(f) }}
+            </option>
+          </select>
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">{{
+            t('CHATFLOW.EDITOR.FLOW_CTA')
+          }}</span>
+          <input
+            v-model="config.cta"
+            type="text"
+            maxlength="20"
+            :placeholder="t('CHATFLOW.EDITOR.FLOW_CTA_PLACEHOLDER')"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+        </label>
+        <p class="text-[11px] text-n-slate-10 m-0">
+          {{ t('CHATFLOW.EDITOR.FLOW_HINT') }}
+        </p>
       </div>
 
       <!-- Assign agent / team -->

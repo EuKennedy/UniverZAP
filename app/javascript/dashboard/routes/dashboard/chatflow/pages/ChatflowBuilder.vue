@@ -111,6 +111,7 @@ const PALETTE = [
   { kind: 'send_media', icon: 'i-lucide-image' },
   { kind: 'menu', icon: 'i-lucide-list-tree' },
   { kind: 'confirmation', icon: 'i-lucide-circle-check-big' },
+  { kind: 'send_flow', icon: 'i-lucide-clipboard-list' },
   { kind: 'set_label', icon: 'i-lucide-tag' },
   { kind: 'assign_agent', icon: 'i-lucide-user-check' },
   { kind: 'add_to_kanban', icon: 'i-lucide-kanban-square' },
@@ -132,6 +133,9 @@ const DEFAULT_CONFIG = {
     unresolved_keywords: ['não', 'nao resolveu', 'quero humano', 'atendente'],
     fallback_text: 'Desculpa, não entendi. Responda com Sim ou Não.',
   },
+  // Texto e botão já preenchidos: um formulário sem chamada é um botão vazio
+  // no WhatsApp, e a Meta recusa o envio.
+  send_flow: { text: 'Toque no botão para preencher.', cta: 'Preencher' },
   set_label: { label_ids: [] },
   assign_agent: {},
   add_to_kanban: {},

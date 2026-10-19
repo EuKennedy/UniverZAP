@@ -1,0 +1,67 @@
+# Pesquisa pós-atendimento: nota, o que pesou e um comentário livre. Vai para
+# a CONVERSA, porque é a avaliação daquele atendimento.
+name: Pesquisa pós-atendimento
+category: SURVEY
+description: Nota de 1 a 5, o que pesou e um comentário. Grava na conversa.
+attribute_definitions:
+  - attribute_key: nota_atendimento
+    attribute_display_name: Nota do atendimento
+    attribute_model: conversation_attribute
+    attribute_display_type: number
+  - attribute_key: motivo_avaliacao
+    attribute_display_name: O que pesou na avaliação
+    attribute_model: conversation_attribute
+    attribute_display_type: list
+    attribute_values: [Atendimento, Resultado, Tempo de espera, Preço, Ambiente]
+  - attribute_key: comentario_avaliacao
+    attribute_display_name: Comentário da avaliação
+    attribute_model: conversation_attribute
+    attribute_display_type: text
+field_mappings:
+  fields:
+    nota: { model: conversation, key: nota_atendimento }
+    motivo: { model: conversation, key: motivo_avaliacao }
+    comentario: { model: conversation, key: comentario_avaliacao }
+  labels: []
+flow_json:
+  version: "7.3"
+  screens:
+    - id: PESQUISA
+      title: Como foi?
+      terminal: true
+      layout:
+        type: SingleColumnLayout
+        children:
+          - type: TextHeading
+            text: Como foi seu atendimento?
+          - type: Form
+            name: form
+            children:
+              - type: RadioButtonsGroup
+                name: nota
+                label: Nota
+                required: true
+                data-source:
+                  - { id: "5", title: "5", description: Excelente }
+                  - { id: "4", title: "4", description: Bom }
+                  - { id: "3", title: "3", description: Regular }
+                  - { id: "2", title: "2", description: Ruim }
+                  - { id: "1", title: "1", description: Péssimo }
+              - type: Dropdown
+                name: motivo
+                label: O que mais pesou?
+                required: false
+                data-source:
+                  $attribute: motivo_avaliacao
+              - type: TextArea
+                name: comentario
+                label: Quer contar mais?
+                required: false
+              - type: Footer
+                label: Enviar
+                on-click-action:
+                  name: complete
+                  payload:
+                    nota: ${form.nota}
+                    motivo: ${form.motivo}
+                    comentario: ${form.comentario}

@@ -1,0 +1,14 @@
+json.id flow.id
+json.inbox_id flow.inbox_id
+json.name flow.name
+json.category flow.category
+json.template_key flow.template_key
+json.status flow.status
+json.meta_flow_id flow.meta_flow_id
+json.validation_errors flow.validation_errors
+json.preview_url flow.preview_url
+json.published_at flow.published_at&.to_i
+json.flow_json flow.flow_json
+json.field_mappings flow.field_mappings
+json.created_at flow.created_at.to_i
+json.updated_at flow.updated_at.to_i

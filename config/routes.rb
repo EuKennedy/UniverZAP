@@ -413,6 +413,18 @@ Rails.application.routes.draw do
               get :templates
             end
           end
+          # Formulários nativos do WhatsApp (Flows). Na conta, e não na caixa,
+          # porque o builder do Chatflow lista todos; cada Flow sabe a caixa
+          # (WABA) a que pertence.
+          resources :whatsapp_flows, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              post :publish
+              post :deprecate
+              post :sync
+            end
+            get :templates, on: :collection
+          end
+
           # Media for chatflow nodes is authored before any conversation
           # exists, so it uploads against the account (not a conversation).
           resource :chatflow_direct_uploads, only: [:create], controller: 'chatflows/direct_uploads'

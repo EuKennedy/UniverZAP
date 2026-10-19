@@ -21,6 +21,7 @@ class Chatflow::NodeRunnerService
     'send_media' => :send_media_node,
     'menu' => :send_menu_node,
     'confirmation' => :send_confirmation_node,
+    'send_flow' => :send_flow_node,
     'set_label' => :apply_labels_node,
     'assign_agent' => :assign_agent_node,
     'add_to_kanban' => :add_to_kanban_node,
@@ -71,6 +72,27 @@ class Chatflow::NodeRunnerService
   def send_confirmation_node
     send_message(content: config_text)
     :wait
+  end
+
+  # Formulário nativo do WhatsApp. Só sai pela caixa que publicou o Flow e com
+  # Flow publicado — ou rascunho, quando o fluxo está em modo de teste, que é
+  # exatamente como a Meta pede para testar. Fora disso a etapa é pulada em vez
+  # de travar a execução num formulário que nunca vai chegar.
+  def send_flow_node
+    flow = @conversation.account.whatsapp_flows.find_by(id: @node.config['whatsapp_flow_id'])
+    return :continue unless sendable_flow?(flow)
+
+    Whatsapp::Flows::SendService.new(
+      flow: flow, conversation: @conversation, text: signed(config_text), cta: @node.config['cta']
+    ).perform
+    :wait
+  end
+
+  def sendable_flow?(flow)
+    return false if flow.blank? || flow.inbox_id != @conversation.inbox_id
+    return true if flow.sendable?
+
+    flow.draft? && @execution.chatflow.test_mode
   end
 
   def apply_labels_node

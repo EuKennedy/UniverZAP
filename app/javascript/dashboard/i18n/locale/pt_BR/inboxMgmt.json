@@ -678,7 +678,8 @@
       "CSAT": "CSAT",
       "VOICE": "Voz",
       "ATHENAS_AI": "Agente de IA",
-      "WHATSAPP_TEMPLATES": "Templates"
+      "WHATSAPP_TEMPLATES": "Templates",
+      "WHATSAPP_FLOWS": "Formulários"
     },
     "ATHENAS_AI": {
       "TITLE": "Agente de IA",

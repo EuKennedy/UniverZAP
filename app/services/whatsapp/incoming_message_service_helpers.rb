@@ -33,6 +33,10 @@ module Whatsapp::IncomingMessageServiceHelpers
       message.dig(:name, :formatted_name)
   end
 
+  def flow_reply?(message)
+    message.dig(:interactive, :type) == 'nfm_reply'
+  end
+
   def file_content_type(file_type)
     return :image if %w[image sticker].include?(file_type)
     return :audio if %w[audio voice].include?(file_type)
