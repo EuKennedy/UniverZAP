@@ -31,6 +31,14 @@ class AutomationRuleListener < BaseListener
     process_conversation_event(event, 'conversation_ad_referral')
   end
 
+  # UniverZAP: fired once per conversation by Conversations::RecurringCustomerService
+  # when the contact already had a conversation that ended.
+  def conversation_recurring_customer(event)
+    return if sandbox_event?(event)
+
+    process_conversation_event(event, 'conversation_recurring_customer')
+  end
+
   def message_created(event)
     return if sandbox_event?(event)
 

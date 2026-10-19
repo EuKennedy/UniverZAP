@@ -44,6 +44,9 @@ labels:
     closes_conversation: true
     color: '#94A3B8'
     description: Sem resposta ao lembrete de recompra
+  - title: cliente-recorrente
+    color: '#94A3B8'
+    description: Cliente que já teve um atendimento encerrado antes (aplicada automaticamente)
 
 custom_attribute_definitions:
   - attribute_key: servico

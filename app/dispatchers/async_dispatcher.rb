@@ -12,6 +12,8 @@ class AsyncDispatcher < BaseDispatcher
     [
       AthenasAutopilotListener.instance,
       AdReferralListener.instance,
+      ContactOriginListener.instance,
+      RecurringCustomerListener.instance,
       ChatflowListener.instance,
       AutomationRuleListener.instance,
       CampaignListener.instance,

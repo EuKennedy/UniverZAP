@@ -53,7 +53,10 @@ class Chatflow < ApplicationRecord
   # ad_referral      — fires when an inbound message came from a Click-to-WhatsApp ad.
   # no_reply         — started by the waiting scanner when the customer has waited
   #                    trigger_config['no_reply_minutes'] without a human reply.
-  enum trigger_type: { on_first_message: 0, keyword: 1, any_message: 2, webhook: 3, ad_referral: 4, no_reply: 5 }, _prefix: :trigger
+  # recurring_customer — fires on the first inbound message of a conversation whose
+  #                    contact already had a conversation that ended.
+  enum trigger_type: { on_first_message: 0, keyword: 1, any_message: 2, webhook: 3, ad_referral: 4, no_reply: 5, recurring_customer: 6 },
+       _prefix: :trigger
 
   validates :name, presence: true, length: { maximum: 255 }
   validates :description, length: { maximum: 5000 }, allow_blank: true

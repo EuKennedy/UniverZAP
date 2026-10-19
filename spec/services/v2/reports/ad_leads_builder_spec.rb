@@ -47,4 +47,23 @@ RSpec.describe V2::Reports::AdLeadsBuilder do
     expect(rows.find { |row| row[:agent_id].nil? }).to include(leads: 4, converted: 1)
     expect(rows.first[:leads]).to eq(4)
   end
+
+  it 'splits the leads into new and returning customers when asked, new first' do
+    create(:label, account: account, title: 'cliente-recorrente')
+    lead(ad_id: '200', title: 'Manicure', first_reply_created_at: 1.hour.ago).add_labels(%w[cliente-recorrente agendado])
+
+    rows = described_class.new(account: account, params: params.merge(group_by: 'customer')).build
+
+    expect(rows).to eq([
+                         { customer: 'new', leads: 4, replied: 1, resolved: 1, converted: 1 },
+                         { customer: 'recurring', leads: 1, replied: 1, resolved: 0, converted: 1 }
+                       ])
+  end
+
+  it 'shows both customer rows even when nobody is returning' do
+    rows = described_class.new(account: account, params: params.merge(group_by: 'customer')).build
+
+    expect(rows.map { |row| row[:customer] }).to eq(%w[new recurring])
+    expect(rows.last).to include(leads: 0, replied: 0, resolved: 0, converted: 0)
+  end
 end
