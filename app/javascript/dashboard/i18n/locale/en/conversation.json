@@ -458,6 +458,17 @@
       "HISTORY": "Recent visits",
       "NO_HISTORY": "No visits in the last 12 months",
       "WITH": "with {professional}",
+      "RECURRENT": "Recurring",
+      "DEPOSIT_PENDING": "Deposit pending",
+      "STATS": {
+        "VISITS": "Visits",
+        "SPENT": "Total spent",
+        "TICKET": "Avg. ticket",
+        "LAST_VISIT": "Last visit",
+        "NO_SHOWS": "No-shows",
+        "CASHBACK": "Cashback",
+        "NEVER": "never"
+      },
       "STATUS": {
         "confirmed": "Confirmed",
         "scheduled": "Scheduled",

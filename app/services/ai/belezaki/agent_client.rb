@@ -83,6 +83,12 @@ class Ai::Belezaki::AgentClient
     get('/appointments', phone: phone, from: from, to: to)
   end
 
+  # Everything the salon knows about one client, by phone: profile, money,
+  # attendance and the agenda in both directions. Feeds the customer card.
+  def client_lookup(phone:)
+    get('/clients/lookup', phone: phone)
+  end
+
   def reschedule_appointment(id, payload)
     request(:patch, "/appointments/#{CGI.escape(id.to_s)}", { body: payload.to_json }, WRITE_TIMEOUT)
   end

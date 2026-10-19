@@ -62,6 +62,46 @@ describe('CustomerCard.vue', () => {
     expect(text.match(/Escova/g)).toHaveLength(3);
   });
 
+  it('shows the salon figures, the recurring badge, prices and a pending deposit', async () => {
+    getCustomer.mockResolvedValue({
+      data: {
+        status: 'ok',
+        salon: { name: 'Bella', timezone: 'America/Sao_Paulo' },
+        client: { id: 'c1', name: 'Maria Souza', phone: '5531984956383' },
+        stats: {
+          visits: 2,
+          no_shows: 1,
+          total_spent_cents: 20000,
+          ticket_avg_cents: 10000,
+          last_visit_at: '2026-10-09T14:00:00-03:00',
+          recurrent: true,
+          cashback_cents: 300,
+        },
+        next: {
+          ...appointment('a-next', 'scheduled', '2026-10-20T14:00:00-03:00'),
+          price_cents: 9000,
+          needs_deposit: true,
+        },
+        upcoming: [],
+        history: [],
+      },
+    });
+
+    const wrapper = await mountCard();
+
+    const text = wrapper.text();
+    expect(wrapper.find('[data-testid="recurrent"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="belezaki-stats"]').text()).toContain(
+      'No-shows'
+    );
+    expect(text).toContain('Scheduled');
+    expect(text).toContain('Deposit pending');
+    // money and the last visit are rendered, not left as cents or ISO
+    expect(text).toMatch(/R\$\s?200(?:\.|,)00/);
+    expect(text).toMatch(/R\$\s?90(?:\.|,)00/);
+    expect(text).toContain('2026');
+  });
+
   it('says there is nothing booked when every upcoming row is cancelled', async () => {
     getCustomer.mockResolvedValue({
       data: {

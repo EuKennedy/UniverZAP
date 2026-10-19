@@ -1,12 +1,13 @@
-# The salon's view of one contact, for the "Ficha da cliente" block in the
-# conversation sidebar. Read-only: everything comes live from the belezaki
-# agent API, scoped by the contact's phone (the key the two systems share), and
-# is cached for a minute so reopening a conversation does not count twice
-# against the salon's rate limit.
+# The salon's view of one contact, for the "Agenda no belezaki" section of the
+# customer sheet in the conversation sidebar. Read-only: everything comes live
+# from the belezaki agent API, scoped by the contact's phone (the key the two
+# systems share), and is cached for a minute so reopening a conversation does
+# not count twice against the salon's rate limit.
 #
-# Two calls because the agent API has no customer profile yet: the default
-# window of `/appointments` is "yesterday onwards", so history needs its own
-# `from`/`to`. Yesterday shows up in both and is deduped by id.
+# One call to `clients/lookup` carries profile, money, attendance and the
+# agenda. A salon still on the version before that route answers 404 for it,
+# and then the agenda alone (two `appointments` calls) is better than a blank
+# card until the salon updates.
 class Belezaki::CustomerCardService
   CACHE_TTL = 60.seconds
   HISTORY_MONTHS = 12
@@ -23,29 +24,45 @@ class Belezaki::CustomerCardService
     return { status: 'not_linked' } if external_id.blank?
     return { status: 'no_phone' } if phone.blank?
 
-    Rails.cache.fetch(cache_key, expires_in: CACHE_TTL) { fetch(external_id) }
+    Rails.cache.fetch(cache_key, expires_in: CACHE_TTL) { fetch(Ai::Belezaki::AgentClient.new(external_id: external_id)) }
   rescue Ai::Belezaki::AgentClient::Error => e
     { status: 'unavailable', error: e.code }
   end
 
   private
 
-  def fetch(external_id)
-    client = Ai::Belezaki::AgentClient.new(external_id: external_id)
+  def fetch(client)
+    profile = client.client_lookup(phone: phone)
+    return { status: 'unknown_client', salon: salon } if profile['client'].blank?
+
+    upcoming = Array(profile['upcoming'])
+    { status: 'ok', salon: salon, client: profile['client'], stats: profile['stats'],
+      next: next_of(upcoming), upcoming: upcoming, history: Array(profile['history']) }
+  rescue Ai::Belezaki::AgentClient::Error => e
+    raise unless e.code == 'http_404'
+
+    fetch_from_agenda(client)
+  end
+
+  # The default window of `/appointments` is "yesterday onwards", so history
+  # needs its own range; yesterday shows up in both and is deduped by id.
+  def fetch_from_agenda(client)
     current = client.appointments(phone: phone)
     return { status: 'unknown_client', salon: salon } if current['client'].blank?
 
     past = client.appointments(phone: phone, from: (Date.current - HISTORY_MONTHS.months).to_s, to: Date.yesterday.to_s)
-    { status: 'ok', salon: salon, client: current['client'] }.merge(split(Array(current['appointments']) + Array(past['appointments'])))
+    { status: 'ok', salon: salon, client: current['client'], stats: nil }
+      .merge(split(Array(current['appointments']) + Array(past['appointments'])))
   end
 
   def split(rows)
     future, history = rows.uniq { |row| row['id'] }.partition { |row| Time.iso8601(row['start']) >= Time.current }
-    {
-      next: future.find { |row| ACTIVE_STATUSES.include?(row['status']) },
-      upcoming: future.sort_by { |row| row['start'] },
-      history: history.sort_by { |row| row['start'] }.reverse.first(HISTORY_LIMIT)
-    }
+    upcoming = future.sort_by { |row| row['start'] }
+    { next: next_of(upcoming), upcoming: upcoming, history: history.sort_by { |row| row['start'] }.reverse.first(HISTORY_LIMIT) }
+  end
+
+  def next_of(upcoming)
+    upcoming.find { |row| ACTIVE_STATUSES.include?(row['status']) }
   end
 
   # Name and timezone were written on the hook by the connect probe; an account

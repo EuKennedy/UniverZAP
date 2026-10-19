@@ -443,6 +443,17 @@
       "HISTORY": "Últimos atendimentos",
       "NO_HISTORY": "Sem atendimentos nos últimos 12 meses",
       "WITH": "com {professional}",
+      "RECURRENT": "Recorrente",
+      "DEPOSIT_PENDING": "Sinal pendente",
+      "STATS": {
+        "VISITS": "Atendimentos",
+        "SPENT": "Gasto total",
+        "TICKET": "Ticket médio",
+        "LAST_VISIT": "Última visita",
+        "NO_SHOWS": "Faltas",
+        "CASHBACK": "Cashback",
+        "NEVER": "nunca"
+      },
       "STATUS": {
         "confirmed": "Confirmado",
         "scheduled": "Agendado",
