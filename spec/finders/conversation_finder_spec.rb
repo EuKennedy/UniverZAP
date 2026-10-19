@@ -106,13 +106,14 @@ describe ConversationFinder do
 
       it 'returns the correct meta' do
         result = conversation_finder.perform
-        # UniverZAP adds the Grupos tab and the Todos dropdown (Aguardando /
-        # Em atendimento) alongside the upstream four.
+        # UniverZAP adds the Grupos tab, the Todos dropdown (Aguardando /
+        # Em atendimento), and Resolvidas alongside the upstream four.
         expect(result[:count]).to eq({
                                        mine_count: 2,
                                        assigned_count: 3,
                                        unassigned_count: 1,
                                        all_count: 4,
+                                       resolved_count: 1,
                                        group_count: 0,
                                        waiting_count: 4,
                                        in_attendance_count: 0
@@ -211,6 +212,7 @@ describe ConversationFinder do
                                        assigned_count: 3,
                                        unassigned_count: 1,
                                        all_count: 4,
+                                       resolved_count: 1,
                                        group_count: 0,
                                        waiting_count: 4,
                                        in_attendance_count: 0
