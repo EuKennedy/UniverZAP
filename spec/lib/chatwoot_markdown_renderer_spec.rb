@@ -61,6 +61,33 @@ RSpec.describe ChatwootMarkdownRenderer do
     end
   end
 
+  describe '#render_article with video links' do
+    let(:markdown_content) do
+      <<~MARKDOWN
+        Intro
+
+        [Aula](https://www.youtube.com/watch?v=VIDEO_ID)
+
+        <iframe src="https://evil.example.com"></iframe>
+      MARKDOWN
+    end
+
+    before do
+      allow(CustomMarkdownRenderer).to receive(:new).and_call_original
+      allow(CommonMarker).to receive(:render_doc).and_call_original
+    end
+
+    it 'embeds a video link alone in a paragraph as a player iframe' do
+      expect(renderer.render_article).to include('<iframe', 'src="https://www.youtube-nocookie.com/embed/VIDEO_ID"')
+    end
+
+    it 'still drops raw HTML' do
+      html = renderer.render_article
+      expect(html).to include('<!-- raw HTML omitted -->')
+      expect(html).not_to include('evil.example.com')
+    end
+  end
+
   describe '#render_message' do
     let(:rendered_message) { renderer.render_message }
 

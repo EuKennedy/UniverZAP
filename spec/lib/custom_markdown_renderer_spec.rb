@@ -84,6 +84,21 @@ describe CustomMarkdownRenderer do
       end
     end
 
+    context 'when link is a youtu.be short URL' do
+      it 'renders an iframe with YouTube embed code' do
+        output = render_markdown_link('https://youtu.be/VIDEO_ID')
+        expect(output).to include('src="https://www.youtube-nocookie.com/embed/VIDEO_ID"')
+      end
+    end
+
+    context 'when link is a Vimeo player URL' do
+      it 'renders an iframe with Vimeo embed code' do
+        output = render_markdown_link('https://player.vimeo.com/video/1234567')
+        expect(output).to include('src="https://player.vimeo.com/video/1234567?dnt=true"')
+        expect(output).not_to include('<a href=')
+      end
+    end
+
     context 'when link is an MP4 URL' do
       let(:mp4_url) { 'https://example.com/video.mp4' }
 

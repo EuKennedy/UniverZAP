@@ -33,7 +33,7 @@ loom:
     </div>
 
 vimeo:
-  regex: 'https?://(?:www\.)?vimeo\.com/(?<video_id>\d+)'
+  regex: 'https?://(?:www\.|player\.)?vimeo\.com/(?:video/)?(?<video_id>\d+)'
   template: |
     <div style="position: relative; padding-bottom: 62.5%; height: 0;">
      <iframe
