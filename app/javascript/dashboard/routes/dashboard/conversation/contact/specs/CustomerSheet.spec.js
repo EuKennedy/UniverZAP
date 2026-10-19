@@ -57,6 +57,11 @@ const attributeDefinitions = [
   },
 ];
 
+// Stored values are ISO 8601 (UTC); the sheet shows them in the agent's zone,
+// so the fixtures are built from local Dates to hold in any TZ.
+const appointmentAt = new Date(2026, 9, 25, 14, 0).toISOString();
+const rescheduledAt = new Date(2026, 9, 26, 9, 30).toISOString();
+
 const mountSheet = (props = {}) =>
   mount(CustomerSheet, {
     props: { stages, attributeDefinitions, ...props },
@@ -82,7 +87,7 @@ describe('CustomerSheet', () => {
           anuncio_url: 'https://fb.me/corte',
           servico: 'Corte',
           profissional: 'Ana',
-          data_agendamento: '2026-10-25T14:00:00.000Z',
+          data_agendamento: appointmentAt,
           ciclo_recompra_semanas: 4,
         },
       },
@@ -224,7 +229,7 @@ describe('ScheduleDialog', () => {
       initialValues: {
         servico: 'Corte',
         profissional: 'Ana',
-        data_agendamento: '2026-10-25T14:00:00.000Z',
+        data_agendamento: appointmentAt,
         ciclo_recompra_semanas: 4,
       },
     });
@@ -249,7 +254,7 @@ describe('ScheduleDialog', () => {
         {
           servico: 'Corte',
           profissional: 'Bia',
-          data_agendamento: '2026-10-26T09:30:00.000Z',
+          data_agendamento: rescheduledAt,
           ciclo_recompra_semanas: 4,
         },
       ],
