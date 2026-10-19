@@ -14,6 +14,7 @@ import ConversationFilter from 'next/filter/ConversationFilter.vue';
 import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import VerticalStatusChips from './widgets/VerticalStatusChips.vue';
+import ConversationKpiRow from './widgets/ConversationKpiRow.vue';
 import ConversationListFilter from 'dashboard/components-next/filter/ConversationListFilter.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
 import ConversationBulkActions from './widgets/conversation/conversationBulkActions/Index.vue';
@@ -190,10 +191,13 @@ const VIEW_COUNT_KEYS = {
   [wootConstants.LIST_VIEW.RESOLVED]: 'resolvedCount',
 };
 
-// Shown as flat pills below the Todos/Grupos tabs, in addition to living in
-// the Todos dropdown — same state, just a faster way to reach the two most
-// reached-for views.
-const QUICK_FILTER_VIEWS = [
+// Shown as KPI cards below the Todos/Grupos tabs, in addition to living in
+// the Todos dropdown — same state, just the day's triage at a glance instead
+// of a click deep. Todos and Minhas stay dropdown-only: the tab already shows
+// Todos' count, and for a reception Minhas is usually the same number.
+const KPI_VIEWS = [
+  wootConstants.LIST_VIEW.WAITING,
+  wootConstants.LIST_VIEW.IN_ATTENDANCE,
   wootConstants.LIST_VIEW.UNASSIGNED,
   wootConstants.LIST_VIEW.RESOLVED,
 ];
@@ -206,10 +210,8 @@ const viewItems = computed(() =>
   }))
 );
 
-// Same views as above, just the two most reached-for ones surfaced as flat
-// pills instead of buried a click deep in the Todos dropdown.
-const quickFilterItems = computed(() =>
-  viewItems.value.filter(item => QUICK_FILTER_VIEWS.includes(item.key))
+const kpiItems = computed(() =>
+  viewItems.value.filter(item => KPI_VIEWS.includes(item.key))
 );
 
 const assigneeTabItems = computed(() => {
@@ -1058,6 +1060,12 @@ provide('isConversationSelected', isConversationSelected);
 provide('deleteConversation', handleDelete);
 
 watch(activeTeam, () => resetAndFetchData());
+// The list getter re-sorts the fetched page client-side with the store's
+// chatSortFilter, so a sort the view picked for itself (Aguardando's
+// longest-wait-first) has to reach the store too — otherwise the server
+// returns the fila de risco in order and the page renders it by last
+// activity. The manual sort dropdown already dispatches this itself.
+watch(activeSortBy, sortBy => store.dispatch('setChatSortFilter', sortBy));
 
 watch(
   computed(() => props.conversationInbox),
@@ -1144,25 +1152,12 @@ watch(conversationFilters, (newVal, oldVal) => {
     >
       <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
     </ChatTypeTabs>
-    <ul
+    <ConversationKpiRow
       v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
-      class="flex items-center flex-wrap gap-1.5 px-3 pt-1.5 pb-0 mb-0 list-none"
-    >
-      <li v-for="item in quickFilterItems" :key="item.key">
-        <button
-          type="button"
-          class="px-2.5 py-1 text-xs rounded-full"
-          :class="
-            item.key === activeListView
-              ? 'bg-n-teal-3 text-n-teal-11'
-              : 'bg-n-alpha-1 text-n-slate-11 hover:bg-n-alpha-2'
-          "
-          @click="updateView(item.key)"
-        >
-          {{ item.name }} {{ item.count }}
-        </button>
-      </li>
-    </ul>
+      :items="kpiItems"
+      :active-key="activeListView"
+      @select="updateView"
+    />
     <VerticalStatusChips
       v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
     />
