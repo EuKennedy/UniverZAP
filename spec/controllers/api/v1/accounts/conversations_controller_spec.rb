@@ -519,6 +519,81 @@ RSpec.describe 'Conversations API', type: :request do
       end
     end
 
+    context 'when the account has closing statuses' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+
+      before do
+        create(:label, account: account, title: 'cancelado', closes_conversation: true)
+        create(:label, account: account, title: 'agendado')
+        create(:inbox_member, user: agent, inbox: conversation.inbox)
+      end
+
+      it 'refuses to resolve without a closing label' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+             headers: agent.create_new_auth_token,
+             params: { status: 'resolved' },
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to eq(I18n.t('conversations.closing_label.required'))
+        expect(conversation.reload.status).to eq('open')
+      end
+
+      it 'refuses the bare toggle that would resolve an open conversation' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+             headers: agent.create_new_auth_token,
+             params: { status: '' },
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(conversation.reload.status).to eq('open')
+      end
+
+      it 'refuses a label that does not close the conversation' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+             headers: agent.create_new_auth_token,
+             params: { status: 'resolved', closing_label: 'agendado' },
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(conversation.reload.status).to eq('open')
+      end
+
+      it 'resolves and applies the closing label when one is given' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+             headers: agent.create_new_auth_token,
+             params: { status: 'resolved', closing_label: 'cancelado' },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body.dig('payload', 'current_status')).to eq('resolved')
+        expect(conversation.reload.status).to eq('resolved')
+        expect(conversation.label_list).to include('cancelado')
+      end
+
+      it 'still lets the agent reopen, snooze or mark pending without a label' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+             headers: agent.create_new_auth_token,
+             params: { status: 'pending' },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.status).to eq('pending')
+      end
+
+      it 'does not ask an agent bot for a reason' do
+        create(:agent_bot_inbox, inbox: conversation.inbox, agent_bot: agent_bot)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+             headers: { api_access_token: agent_bot.access_token.token },
+             params: { status: 'resolved' },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.status).to eq('resolved')
+      end
+    end
+
     context 'when it is an authenticated bot' do
       # this test will basically ensure that the status actually changes
       # regardless of the value to be done

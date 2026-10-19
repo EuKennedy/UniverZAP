@@ -278,6 +278,8 @@ en:
     attachment: 'Attachment'
     no_content: 'No content'
   conversations:
+    closing_label:
+      required: 'Choose how this conversation ended (a closing status) before resolving it.'
     captain:
       handoff: 'Transferring to another agent for further assistance.'
     messages:

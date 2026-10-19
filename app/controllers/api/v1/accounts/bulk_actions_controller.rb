@@ -1,7 +1,11 @@
 class Api::V1::Accounts::BulkActionsController < Api::V1::Accounts::BaseController
+  include ClosingLabelGuard
+
   def create
     case normalized_type
     when 'Conversation'
+      return render_closing_label_required if closing_label_missing?
+
       enqueue_conversation_job
       head :ok
     when 'Contact'
@@ -17,6 +21,14 @@ class Api::V1::Accounts::BulkActionsController < Api::V1::Accounts::BaseControll
 
   def normalized_type
     params[:type].to_s.camelize
+  end
+
+  # Bulk resolve by hand (see ClosingLabelGuard): the chosen closing status
+  # travels in `labels[add]`; BulkActionsJob applies labels before the status.
+  def closing_label_missing?
+    return false unless params.dig(:fields, :status) == 'resolved' && closing_label_required?
+
+    Array(params.dig(:labels, :add)).map(&:to_s).intersect?(closing_label_titles) == false
   end
 
   def enqueue_conversation_job

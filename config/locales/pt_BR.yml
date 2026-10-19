@@ -262,6 +262,8 @@ pt_BR:
     attachment: 'Anexo'
     no_content: 'Sem conteúdo'
   conversations:
+    closing_label:
+      required: 'Escolha como esta conversa terminou (um status que encerra) antes de resolvê-la.'
     captain:
       handoff: 'Transferindo para que outro atendente dê assistência.'
     messages:

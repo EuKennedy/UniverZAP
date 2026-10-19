@@ -60,6 +60,45 @@ RSpec.describe 'Api::V1::Accounts::BulkActionsController', type: :request do
         expect(Conversation.first.assignee_id).to be_nil
       end
 
+      context 'when the account has closing statuses' do
+        before do
+          create(:label, account: account, title: 'cancelado', closes_conversation: true)
+        end
+
+        it 'refuses to resolve in bulk without a closing label' do
+          post "/api/v1/accounts/#{account.id}/bulk_actions",
+               headers: agent.create_new_auth_token,
+               params: { type: 'Conversation', fields: { status: 'resolved' }, ids: Conversation.first(2).pluck(:display_id) }
+
+          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response.parsed_body['error']).to eq(I18n.t('conversations.closing_label.required'))
+          expect(Conversation.first.reload.status).to eq('open')
+        end
+
+        it 'resolves in bulk under the closing label sent along' do
+          perform_enqueued_jobs do
+            post "/api/v1/accounts/#{account.id}/bulk_actions",
+                 headers: agent.create_new_auth_token,
+                 params: { type: 'Conversation', fields: { status: 'resolved' }, labels: { add: ['cancelado'] },
+                           ids: Conversation.first(2).pluck(:display_id) }
+
+            expect(response).to have_http_status(:success)
+          end
+
+          expect(Conversation.first(2).map(&:status)).to all(eq('resolved'))
+          expect(Conversation.first.label_list).to include('cancelado')
+          expect(Conversation.last.status).to eq('open')
+        end
+
+        it 'still snoozes in bulk without a label' do
+          post "/api/v1/accounts/#{account.id}/bulk_actions",
+               headers: agent.create_new_auth_token,
+               params: { type: 'Conversation', fields: { status: 'snoozed' }, ids: Conversation.first(2).pluck(:display_id) }
+
+          expect(response).to have_http_status(:success)
+        end
+      end
+
       it 'Bulk update conversation team id to none' do
         params = { type: 'Conversation', fields: { team_id: 0 }, ids: Conversation.first(1).pluck(:display_id) }
         expect(Conversation.first.team).not_to be_nil
