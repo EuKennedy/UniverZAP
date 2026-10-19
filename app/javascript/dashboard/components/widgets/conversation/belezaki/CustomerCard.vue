@@ -64,7 +64,13 @@ const openApps = () => window.open(appsURL.value, '_blank');
 </script>
 
 <template>
-  <div class="px-4 py-3 text-sm text-n-slate-12 flex flex-col gap-3">
+  <div
+    class="pt-2 border-t border-n-weak text-sm text-n-slate-12 flex flex-col gap-2"
+    data-testid="belezaki-card"
+  >
+    <p class="text-xs uppercase tracking-wide text-n-slate-11">
+      {{ $t('CONVERSATION_SIDEBAR.BELEZAKI.TITLE') }}
+    </p>
     <div v-if="loading" class="flex justify-center items-center p-4">
       <Spinner :size="32" class="text-n-brand" />
     </div>

@@ -3,7 +3,6 @@ import { useStore, useStoreGetters } from 'dashboard/composables/store';
 
 export const DEFAULT_CONVERSATION_SIDEBAR_ITEMS_ORDER = Object.freeze([
   { name: 'conversation_actions' },
-  { name: 'belezaki_customer' },
   { name: 'macros' },
   { name: 'kanban_tasks' },
   { name: 'conversation_info' },

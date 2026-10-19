@@ -425,12 +425,12 @@
       "MACROS": "Macros",
       "LINEAR_ISSUES": "Problemas do Linear vinculados",
       "SHOPIFY_ORDERS": "Pedidos do Shopify",
-      "BELEZAKI_CUSTOMER": "Ficha da cliente (belezaki)",
       "SHARED_FILES": "Anexos",
       "KANBAN_TASKS": "Tarefas do Kanban"
     },
     "BELEZAKI": {
-      "NOT_LINKED": "Conecte o salão do belezaki em Aplicativos para ver a ficha da cliente aqui.",
+      "TITLE": "Agenda no belezaki",
+      "NOT_LINKED": "Conecte o salão do belezaki em Aplicativos para ver a agenda aqui.",
       "OPEN_APPS": "Abrir Aplicativos",
       "NO_PHONE": "Este contato não tem número de telefone, então o salão não consegue encontrá-lo.",
       "UNAVAILABLE": "Não deu para falar com o belezaki agora ({error}).",

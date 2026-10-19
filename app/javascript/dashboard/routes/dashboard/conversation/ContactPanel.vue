@@ -26,7 +26,6 @@ import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
 import KanbanTasksPanel from './KanbanTasksPanel.vue';
-import BelezakiCustomerCard from 'dashboard/components/widgets/conversation/belezaki/CustomerCard.vue';
 
 const props = defineProps({
   conversationId: {
@@ -57,15 +56,6 @@ const shopifyIntegration = useFunctionGetter(
 const isShopifyFeatureEnabled = computed(
   () => shopifyIntegration.value.enabled
 );
-
-// The salon card only shows once an admin connected the belezaki app; until
-// then the block stays out of the way instead of asking agents to connect it.
-const belezakiIntegration = useFunctionGetter(
-  'integrations/getIntegration',
-  'belezaki'
-);
-const isBelezakiEnabled = computed(() => belezakiIntegration.value.enabled);
-
 const { isCloudFeatureEnabled } = useAccount();
 
 const isLinearFeatureEnabled = computed(() =>
@@ -283,23 +273,6 @@ onMounted(() => {
             >
               <LinearSetupCTA v-if="!isLinearConnected" />
               <LinearIssuesList v-else :conversation-id="conversationId" />
-            </AccordionItem>
-          </div>
-          <div
-            v-else-if="
-              element.name === 'belezaki_customer' && isBelezakiEnabled
-            "
-          >
-            <AccordionItem
-              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.BELEZAKI_CUSTOMER')"
-              :is-open="isContactSidebarItemOpen('is_belezaki_customer_open')"
-              compact
-              @toggle="
-                value =>
-                  toggleSidebarUIState('is_belezaki_customer_open', value)
-              "
-            >
-              <BelezakiCustomerCard v-if="contactId" :contact-id="contactId" />
             </AccordionItem>
           </div>
           <div

@@ -429,7 +429,6 @@
       "MACROS": "Macros",
       "LINEAR_ISSUES": "Linked Linear Issues",
       "SHOPIFY_ORDERS": "Shopify Orders",
-      "BELEZAKI_CUSTOMER": "Customer card (belezaki)",
       "SHARED_FILES": "Attachments",
       "KANBAN_TASKS": "Kanban tasks"
     },
@@ -445,7 +444,8 @@
       "UNTITLED_FILE": "Untitled file"
     },
     "BELEZAKI": {
-      "NOT_LINKED": "Connect the belezaki salon in Apps to see the customer card here.",
+      "TITLE": "Agenda at belezaki",
+      "NOT_LINKED": "Connect the belezaki salon in Apps to see the agenda here.",
       "OPEN_APPS": "Open Apps",
       "NO_PHONE": "This contact has no phone number, so the salon cannot find them.",
       "UNAVAILABLE": "Could not reach belezaki right now ({error}).",

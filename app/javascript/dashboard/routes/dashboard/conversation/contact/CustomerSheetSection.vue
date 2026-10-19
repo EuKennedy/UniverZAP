@@ -9,6 +9,7 @@ import {
 import { useAlert } from 'dashboard/composables';
 import VerticalStatusesAPI from 'dashboard/api/verticalStatuses';
 import CustomerSheet from './CustomerSheet.vue';
+import BelezakiCustomerCard from 'dashboard/components/widgets/conversation/belezaki/CustomerCard.vue';
 
 // Store wiring for the customer sheet shown in the conversation's right panel.
 const props = defineProps({
@@ -29,6 +30,15 @@ const contactConversationsGetter = useMapGetter(
 const previousConversations = computed(() =>
   contactConversationsGetter.value(props.contact.id)
 );
+
+// The salon's agenda lives inside this same sheet. The section only exists
+// while the server offers the belezaki app; "connect it in Apps" is a state
+// of the card itself, so an unlinked account still sees where to go.
+const belezakiIntegration = useFunctionGetter(
+  'integrations/getIntegration',
+  'belezaki'
+);
+const showBelezaki = computed(() => !!belezakiIntegration.value.id);
 
 const stages = ref([]);
 const isScheduling = ref(false);
@@ -87,15 +97,21 @@ const onSchedule = async attributes => {
 </script>
 
 <template>
-  <CustomerSheet
-    ref="sheet"
-    :contact="contact"
-    :conversation="currentChat"
-    :stages="stages"
-    :attribute-definitions="attributeDefinitions"
-    :previous-conversations="previousConversations"
-    :is-scheduling="isScheduling"
-    @update="onUpdate"
-    @schedule="onSchedule"
-  />
+  <div class="flex flex-col w-full gap-2">
+    <CustomerSheet
+      ref="sheet"
+      :contact="contact"
+      :conversation="currentChat"
+      :stages="stages"
+      :attribute-definitions="attributeDefinitions"
+      :previous-conversations="previousConversations"
+      :is-scheduling="isScheduling"
+      @update="onUpdate"
+      @schedule="onSchedule"
+    />
+    <BelezakiCustomerCard
+      v-if="showBelezaki && contact.id"
+      :contact-id="contact.id"
+    />
+  </div>
 </template>
