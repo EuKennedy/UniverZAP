@@ -91,9 +91,25 @@ class ReportsAPI extends ApiClient {
     });
   }
 
-  getAdLeadsReport({ from: since, to: until, conversionLabel }) {
+  getAdLeadsReport({ from: since, to: until, conversionLabel, groupBy }) {
     return axios.get(`${this.url}/ad_leads`, {
-      params: { since, until, conversion_label: conversionLabel || undefined },
+      params: {
+        since,
+        until,
+        conversion_label: conversionLabel || undefined,
+        group_by: groupBy || undefined,
+      },
+    });
+  }
+
+  getDashboard({ from: since, to: until, conversionLabel, riskMinutes }) {
+    return axios.get(`${this.url}/dashboard`, {
+      params: {
+        since,
+        until,
+        conversion_label: conversionLabel || undefined,
+        risk_minutes: riskMinutes || undefined,
+      },
     });
   }
 

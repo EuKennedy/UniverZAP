@@ -371,6 +371,16 @@ const builtMenu = computed(() => {
         },
       ],
     },
+    // Painel gerencial a um clique. Mora em Relatórios (mesma permissão, mesma
+    // rota /reports/painel), mas a dona não deveria ter que abrir um grupo
+    // para ver a página que olha todo dia.
+    {
+      name: 'Panel',
+      label: t('SIDEBAR.REPORTS_PANEL'),
+      icon: 'i-lucide-layout-dashboard',
+      to: accountScopedRoute('panel_reports'),
+      activeOn: ['panel_reports'],
+    },
     {
       name: 'Kanban',
       label: t('SIDEBAR.KANBAN'),

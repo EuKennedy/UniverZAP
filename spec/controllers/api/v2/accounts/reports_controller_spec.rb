@@ -457,4 +457,42 @@ RSpec.describe Api::V2::Accounts::ReportsController, type: :request do
       end
     end
   end
+
+  describe 'GET /api/v2/accounts/{account.id}/reports/dashboard' do
+    before do
+      create(:conversation, account: account, inbox: inbox, awaiting_reply: true,
+                            custom_attributes: { 'anuncio_id' => '77', 'anuncio_titulo' => 'Promo' })
+        .update_columns(waiting_since: 2.hours.ago) # rubocop:disable Rails/SkipsModelValidations
+    end
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        get "/api/v2/accounts/#{account.id}/reports/dashboard"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as agent' do
+      it 'returns unauthorized' do
+        get "/api/v2/accounts/#{account.id}/reports/dashboard",
+            headers: agent.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as admin' do
+      it 'returns the funnel, the queue and the agents' do
+        get "/api/v2/accounts/#{account.id}/reports/dashboard",
+            params: { since: 1.day.ago.to_i, until: Time.current.to_i, risk_minutes: 30 },
+            headers: admin.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:success)
+        body = response.parsed_body
+        expect(body['funnel']['by_ad'].first).to include('ad_id' => '77', 'leads' => 1)
+        expect(body['queue']).to include('waiting' => 1, 'at_risk' => 1)
+        expect(body['agents'].first).to include('assigned' => 1)
+        expect(body['risk_minutes']).to eq(30)
+      end
+    end
+  end
 end
