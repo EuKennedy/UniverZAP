@@ -91,3 +91,14 @@ automation_rules:
         action_params: [lead-anuncio]
       - action_name: change_priority
         action_params: [high]
+  - name: Cliente sem resposta há 15 min
+    description: Passa a conversa para o atendente menos ocupado quando a cliente espera há mais de 15 minutos
+    event_name: conversation_waiting
+    conditions:
+      - attribute_key: waiting_minutes
+        filter_operator: is_greater_than
+        values: ['15']
+        query_operator: null
+    actions:
+      - action_name: assign_least_busy
+        action_params: []

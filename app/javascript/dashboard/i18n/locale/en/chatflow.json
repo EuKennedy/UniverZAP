@@ -49,8 +49,15 @@
         "AD_REFERRAL": {
           "LABEL": "Lead from ad",
           "HINT": "Starts when the message comes from a Click-to-WhatsApp ad (Facebook/Instagram)."
+        },
+        "NO_REPLY": {
+          "LABEL": "Customer waiting",
+          "HINT": "Starts when the customer has waited for an agent longer than the minutes below (checked every 5 minutes)."
         }
       },
+      "NO_REPLY_MINUTES": "Minutes without a human reply",
+      "NO_REPLY_HINT": "Counted from the customer's last unanswered message, like the risk queue.",
+      "SUMMARY_NO_REPLY": "Waiting for more than {minutes} min",
       "SENDER_NAME": "Name signing the messages",
       "SENDER_NAME_PLACEHOLDER": "e.g. Elisa",
       "SENDER_NAME_HINT": "Shown in bold before each flow message. Leave blank for no signature."

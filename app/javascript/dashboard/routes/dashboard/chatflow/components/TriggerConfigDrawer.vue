@@ -38,6 +38,7 @@ const TRIGGER_TYPES = [
   { value: 'any_message', icon: 'i-lucide-messages-square' },
   { value: 'webhook', icon: 'i-lucide-webhook' },
   { value: 'ad_referral', icon: 'i-lucide-megaphone' },
+  { value: 'no_reply', icon: 'i-lucide-timer' },
 ];
 
 const RESTART_MODES = ['once', 'cooldown'];
@@ -46,6 +47,7 @@ const inboxId = ref(null);
 const triggerType = ref('on_first_message');
 const keywords = ref([]);
 const keywordDraft = ref('');
+const noReplyMinutes = ref(15);
 const restartMode = ref('once');
 const restartHours = ref(24);
 const senderName = ref('');
@@ -55,6 +57,7 @@ watch(
   flow => {
     inboxId.value = flow.inbox_id || null;
     triggerType.value = flow.trigger_type || 'on_first_message';
+    noReplyMinutes.value = Number(flow.trigger_config?.no_reply_minutes) || 15;
     keywords.value = Array.isArray(flow.trigger_config?.keywords)
       ? [...flow.trigger_config.keywords]
       : [];
@@ -92,6 +95,7 @@ const save = () => {
       // abertura.
       ...(props.chatflow.trigger_config || {}),
       keywords: keywords.value,
+      no_reply_minutes: Number(noReplyMinutes.value) || 15,
       restart: { mode: restartMode.value, hours: Number(restartHours.value) },
       sender_name: senderName.value.trim(),
     },
@@ -241,6 +245,22 @@ const save = () => {
         </div>
         <p class="text-[11px] text-n-slate-10 m-0">
           {{ t('CHATFLOW.TRIGGER.KEYWORD_HINT') }}
+        </p>
+      </div>
+
+      <!-- Minutes without a human reply (no_reply trigger) -->
+      <div v-if="triggerType === 'no_reply'" class="flex flex-col gap-2">
+        <span class="text-xs font-medium text-n-slate-11">
+          {{ t('CHATFLOW.TRIGGER.NO_REPLY_MINUTES') }}
+        </span>
+        <input
+          v-model="noReplyMinutes"
+          type="number"
+          min="1"
+          class="h-10 w-32 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+        />
+        <p class="text-[11px] text-n-slate-10 m-0">
+          {{ t('CHATFLOW.TRIGGER.NO_REPLY_HINT') }}
         </p>
       </div>
 

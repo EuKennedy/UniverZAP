@@ -137,7 +137,8 @@
       "MESSAGE_CREATED": "Message Created",
       "CONVERSATION_RESOLVED": "Conversation Resolved",
       "CONVERSATION_OPENED": "Conversation Opened",
-      "CONVERSATION_AD_REFERRAL": "Lead from ad (Click-to-WhatsApp)"
+      "CONVERSATION_AD_REFERRAL": "Lead from ad (Click-to-WhatsApp)",
+      "CONVERSATION_WAITING": "Customer waiting for an agent (minutes)"
     },
     "ACTIONS": {
       "ASSIGN_AGENT": "Assign to Agent",
@@ -156,6 +157,9 @@
       "SEND_MESSAGE": "Send a Message",
       "ADD_PRIVATE_NOTE": "Add a Private Note",
       "CHANGE_PRIORITY": "Change Priority",
+      "ASSIGN_LEAST_BUSY": "Reassign to the least busy agent",
+      "NOTIFY_TEAM": "Notify a team (private note with mention)",
+      "START_CHATFLOW": "Start a Chatflow",
       "ADD_SLA": "Add SLA",
       "OPEN_CONVERSATION": "Open conversation",
       "PENDING_CONVERSATION": "Mark conversation as pending"
@@ -178,6 +182,7 @@
       "EMAIL": "Email",
       "INBOX": "Inbox",
       "CONVERSATION_LANGUAGE": "Conversation Language",
+      "WAITING_MINUTES": "Minutes waiting for an agent",
       "PHONE_NUMBER": "Phone Number",
       "STATUS": "Status",
       "BROWSER_LANGUAGE": "Browser Language",

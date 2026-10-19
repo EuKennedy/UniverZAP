@@ -3,17 +3,32 @@
 # Table name: chatflows
 #
 #  id             :bigint           not null, primary key
-#  account_id     :bigint           not null
-#  inbox_id       :bigint
-#  name           :string           not null
+#  color          :string           default("#5FB89F"), not null
 #  description    :text
-#  status         :integer          default(0), not null
-#  trigger_type   :integer          default(0), not null
-#  trigger_config :jsonb            default({}), not null
-#  start_node_id  :bigint
-#  display_id     :bigint
+#  name           :string(255)      not null
+#  status         :integer          default("draft"), not null
+#  test_mode      :boolean          default(FALSE), not null
+#  test_phone     :string
+#  trigger_config :jsonb            not null
+#  trigger_type   :integer          default("on_first_message"), not null
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
+#  account_id     :bigint           not null
+#  display_id     :bigint
+#  inbox_id       :bigint
+#  start_node_id  :bigint
+#
+# Indexes
+#
+#  index_chatflows_on_account_id                 (account_id)
+#  index_chatflows_on_account_id_and_display_id  (account_id,display_id) UNIQUE WHERE (display_id IS NOT NULL)
+#  index_chatflows_on_account_id_and_status      (account_id,status)
+#  index_chatflows_on_inbox_id                   (inbox_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (inbox_id => inboxes.id) ON DELETE => cascade
 #
 class Chatflow < ApplicationRecord
   include AccountDisplayId
@@ -36,7 +51,9 @@ class Chatflow < ApplicationRecord
   # keyword          — fires when an inbound message matches trigger_config['keywords'].
   # any_message      — fires on every inbound message with no live execution.
   # ad_referral      — fires when an inbound message came from a Click-to-WhatsApp ad.
-  enum trigger_type: { on_first_message: 0, keyword: 1, any_message: 2, webhook: 3, ad_referral: 4 }, _prefix: :trigger
+  # no_reply         — started by the waiting scanner when the customer has waited
+  #                    trigger_config['no_reply_minutes'] without a human reply.
+  enum trigger_type: { on_first_message: 0, keyword: 1, any_message: 2, webhook: 3, ad_referral: 4, no_reply: 5 }, _prefix: :trigger
 
   validates :name, presence: true, length: { maximum: 255 }
   validates :description, length: { maximum: 5000 }, allow_blank: true
@@ -52,6 +69,11 @@ class Chatflow < ApplicationRecord
   # melhor sem nome do que com um nome inventado por nós.
   def sender_name
     trigger_config['sender_name'].to_s.strip
+  end
+
+  def no_reply_minutes
+    minutes = trigger_config['no_reply_minutes'].to_i
+    minutes.positive? ? minutes : 15
   end
 
   def keywords

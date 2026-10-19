@@ -2,6 +2,7 @@ import {
   OPERATOR_TYPES_1,
   OPERATOR_TYPES_2,
   OPERATOR_TYPES_3,
+  OPERATOR_TYPES_5,
   OPERATOR_TYPES_6,
 } from './operators';
 
@@ -694,6 +695,34 @@ AUTOMATIONS.conversation_ad_referral = {
   actions: AUTOMATIONS.conversation_created.actions,
 };
 
+// UniverZAP: time-based trigger run by AutomationRules::WaitingScanner every
+// 5 minutes — the customer has the last word and no human replied for more
+// than N minutes. The first condition (waiting_minutes) is the threshold.
+AUTOMATIONS.conversation_waiting = {
+  conditions: [
+    {
+      key: 'waiting_minutes',
+      name: 'WAITING_MINUTES',
+      inputType: 'plain_text',
+      filterOperators: OPERATOR_TYPES_5,
+    },
+    ...AUTOMATIONS.conversation_created.conditions,
+  ],
+  actions: AUTOMATIONS.conversation_created.actions,
+};
+
+// UniverZAP actions available on every event.
+const UNIVERZAP_ACTIONS = [
+  { key: 'assign_least_busy', name: 'ASSIGN_LEAST_BUSY' },
+  { key: 'notify_team', name: 'NOTIFY_TEAM' },
+  { key: 'start_chatflow', name: 'START_CHATFLOW' },
+];
+Object.values(AUTOMATIONS).forEach(event => {
+  if (!event.actions.some(action => action.key === 'assign_least_busy')) {
+    event.actions = [...event.actions, ...UNIVERZAP_ACTIONS];
+  }
+});
+
 export const AUTOMATION_RULE_EVENTS = [
   {
     key: 'conversation_created',
@@ -718,6 +747,10 @@ export const AUTOMATION_RULE_EVENTS = [
   {
     key: 'conversation_ad_referral',
     value: 'CONVERSATION_AD_REFERRAL',
+  },
+  {
+    key: 'conversation_waiting',
+    value: 'CONVERSATION_WAITING',
   },
 ];
 
@@ -801,6 +834,21 @@ export const AUTOMATION_ACTION_TYPES = [
     key: 'send_message',
     label: 'SEND_MESSAGE',
     inputType: 'textarea',
+  },
+  {
+    key: 'assign_least_busy',
+    label: 'ASSIGN_LEAST_BUSY',
+    inputType: null,
+  },
+  {
+    key: 'notify_team',
+    label: 'NOTIFY_TEAM',
+    inputType: 'team_message',
+  },
+  {
+    key: 'start_chatflow',
+    label: 'START_CHATFLOW',
+    inputType: 'search_select',
   },
   {
     key: 'add_private_note',

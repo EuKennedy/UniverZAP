@@ -99,6 +99,7 @@ export const getActionOptions = ({
   teams,
   labels,
   slaPolicies,
+  chatflows = [],
   type,
   addNoneToListFn,
   priorityOptions,
@@ -111,6 +112,8 @@ export const getActionOptions = ({
     remove_label: generateConditionOptions(labels, 'title'),
     change_priority: priorityOptions,
     add_sla: slaPolicies,
+    notify_team: teams,
+    start_chatflow: chatflows,
   };
   return actionsMap[type];
 };

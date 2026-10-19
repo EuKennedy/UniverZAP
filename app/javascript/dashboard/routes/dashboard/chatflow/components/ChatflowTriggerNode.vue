@@ -35,6 +35,11 @@ const conditionText = computed(() => {
       ? t('CHATFLOW.TRIGGER.SUMMARY_KEYWORD', { keywords: kws.join(', ') })
       : t('CHATFLOW.TRIGGER.SUMMARY_KEYWORD_EMPTY');
   }
+  if (type === 'no_reply') {
+    return t('CHATFLOW.TRIGGER.SUMMARY_NO_REPLY', {
+      minutes: flow.value.trigger_config?.no_reply_minutes || 15,
+    });
+  }
   return t(`CHATFLOW.TRIGGER.TYPE.${type.toUpperCase()}.LABEL`);
 });
 </script>

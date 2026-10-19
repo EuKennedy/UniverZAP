@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_19_150000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_19_160000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -761,6 +761,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_150000) do
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
+  end
+
+  create_table "automation_rule_firings", force: :cascade do |t|
+    t.bigint "automation_rule_id", null: false
+    t.bigint "conversation_id", null: false
+    t.string "dedupe_key", null: false
+    t.datetime "created_at", null: false
+    t.index ["automation_rule_id", "conversation_id", "dedupe_key"], name: "index_automation_rule_firings_unique", unique: true
+    t.index ["automation_rule_id"], name: "index_automation_rule_firings_on_automation_rule_id"
+    t.index ["conversation_id"], name: "index_automation_rule_firings_on_conversation_id"
   end
 
   create_table "automation_rules", force: :cascade do |t|
@@ -2469,6 +2479,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_150000) do
   add_foreign_key "ai_revenue_events", "ai_assistants"
   add_foreign_key "ai_trainings", "accounts"
   add_foreign_key "ai_trainings", "ai_assistants"
+  add_foreign_key "automation_rule_firings", "automation_rules", on_delete: :cascade
+  add_foreign_key "automation_rule_firings", "conversations", on_delete: :cascade
   add_foreign_key "broadcast_recipients", "broadcasts"
   add_foreign_key "broadcast_recipients", "contacts"
   add_foreign_key "broadcasts", "accounts"

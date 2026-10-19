@@ -15,6 +15,11 @@ RSpec.describe TriggerScheduledItemsJob do
     described_class.perform_now
   end
 
+  it 'triggers AutomationRules::WaitingScannerJob' do
+    expect(AutomationRules::WaitingScannerJob).to receive(:perform_later).once
+    perform_enqueued_jobs { job }
+  end
+
   it 'triggers Notification::ReopenSnoozedNotificationsJob' do
     expect(Notification::ReopenSnoozedNotificationsJob).to receive(:perform_later).once
     described_class.perform_now

@@ -38,6 +38,25 @@ RSpec.describe AutomationRules::ConditionsFilterService do
       end
     end
 
+    context 'when conditions use waiting_minutes' do
+      before do
+        rule.conditions = [{ 'values': ['15'], 'attribute_key': 'waiting_minutes', 'query_operator': nil, 'filter_operator': 'is_greater_than' }]
+        rule.save
+      end
+
+      it 'matches a conversation the customer has been waiting on for longer' do
+        conversation.update!(waiting_since: 20.minutes.ago)
+        expect(described_class.new(rule, conversation, {}).perform).to be(true)
+      end
+
+      it 'does not match a shorter wait or no wait at all' do
+        conversation.update!(waiting_since: 5.minutes.ago)
+        expect(described_class.new(rule, conversation, {}).perform).to be(false)
+        conversation.update!(waiting_since: nil)
+        expect(described_class.new(rule, conversation, {}).perform).to be(false)
+      end
+    end
+
     context 'when conditions based on filter_operator start_with' do
       before do
         contact = conversation.contact

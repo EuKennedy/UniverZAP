@@ -14,6 +14,18 @@ class AutoAssignment::AssignmentService
     assigned_count
   end
 
+  # One conversation, policy-aware, never to the agent who holds it now. Used
+  # by the automation action assign_least_busy ("customer waiting for X min").
+  def reassign(conversation)
+    agent = find_available_agent(conversation, except_user_id: conversation.assignee_id)
+    return false unless agent
+
+    executed_by = Current.executed_by
+    assign_conversation(conversation, agent)
+  ensure
+    Current.executed_by = executed_by
+  end
+
   private
 
   def perform_for_conversation(conversation)
@@ -43,12 +55,13 @@ class AutoAssignment::AssignmentService
     scope.limit(limit)
   end
 
-  def find_available_agent(conversation = nil)
+  def find_available_agent(conversation = nil, except_user_id: nil)
     agents = filter_agents_by_team(candidate_agents, conversation)
     return nil if agents.nil?
 
     agents = filter_agents_by_rate_limit(agents)
     agents = filter_agents_by_capacity(agents)
+    agents = agents.reject { |member| member.user_id == except_user_id } if except_user_id
     return nil if agents.empty?
 
     sticky_agent(agents, conversation) || selector.select_agent(agents)

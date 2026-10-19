@@ -93,6 +93,30 @@ class ActionService
     end
   end
 
+  # UniverZAP: hand the conversation to whoever the inbox policy picks (least
+  # busy / round robin), never back to the agent who is not answering.
+  def assign_least_busy(_params)
+    AutoAssignment::AssignmentService.new(inbox: @conversation.inbox).reassign(@conversation)
+  end
+
+  # UniverZAP: a private note that @mentions the team, so every member gets
+  # the mention notification (push/e-mail) without a new notification type.
+  def notify_team(params)
+    teams = @account.teams.where(id: params[0][:team_ids])
+    return if teams.empty?
+
+    mentions = teams.map { |team| "[@#{team.name}](mention://team/#{team.id}/#{team.name})" }.join(' ')
+    content = [mentions, params[0][:message].to_s].reject(&:blank?).join(' ')
+    Messages::MessageBuilder.new(nil, @conversation, { content: content, private: true,
+                                                       content_attributes: { automation_rule_id: Current.executed_by&.id } }).perform
+  end
+
+  # UniverZAP: start a Chatflow on the conversation (e.g. a rescue message).
+  def start_chatflow(chatflow_ids)
+    chatflow = @account.chatflows.find_by(id: chatflow_ids[0])
+    Chatflow::EngineService.force_start(chatflow, @conversation) if chatflow
+  end
+
   private
 
   def last_responding_agent_id

@@ -17,6 +17,9 @@ class TriggerScheduledItemsJob < ApplicationJob
     # Job to auto-resolve conversations
     Account::ConversationsResolutionSchedulerJob.perform_later
 
+    # UniverZAP: time-based automation trigger (customer waiting for X minutes)
+    AutomationRules::WaitingScannerJob.perform_later
+
     # Job to sync whatsapp templates
     Channels::Whatsapp::TemplatesSyncSchedulerJob.perform_later
   end

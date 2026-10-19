@@ -136,7 +136,8 @@
       "MESSAGE_CREATED": "Mensagem Criada",
       "CONVERSATION_RESOLVED": "Conversa Resolvida",
       "CONVERSATION_OPENED": "Conversa Aberta",
-      "CONVERSATION_AD_REFERRAL": "Lead de anúncio (Click-to-WhatsApp)"
+      "CONVERSATION_AD_REFERRAL": "Lead de anúncio (Click-to-WhatsApp)",
+      "CONVERSATION_WAITING": "Cliente esperando atendente (minutos)"
     },
     "ACTIONS": {
       "ASSIGN_AGENT": "Atribuir ao Atendente",
@@ -155,6 +156,9 @@
       "SEND_MESSAGE": "Enviar Mensagem",
       "ADD_PRIVATE_NOTE": "Adicionar uma Nota Privada",
       "CHANGE_PRIORITY": "Alterar Prioridade",
+      "ASSIGN_LEAST_BUSY": "Reatribuir ao atendente menos ocupado",
+      "NOTIFY_TEAM": "Avisar um time (nota privada com menção)",
+      "START_CHATFLOW": "Iniciar um Chatflow",
       "ADD_SLA": "Adicionar SLA",
       "OPEN_CONVERSATION": "Abrir conversa",
       "PENDING_CONVERSATION": "Marcar conversa como pendente"
@@ -177,6 +181,7 @@
       "EMAIL": "E-mail",
       "INBOX": "Caixa de Entrada",
       "CONVERSATION_LANGUAGE": "Idioma da conversa",
+      "WAITING_MINUTES": "Minutos esperando atendente",
       "PHONE_NUMBER": "Número de Telefone",
       "STATUS": "Status",
       "BROWSER_LANGUAGE": "Idioma do navegador",
