@@ -15,6 +15,7 @@ import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import VerticalStatusChips from './widgets/VerticalStatusChips.vue';
 import ConversationKpiRow from './widgets/ConversationKpiRow.vue';
+import ReportsAPI from 'dashboard/api/reports';
 import ConversationListFilter from 'dashboard/components-next/filter/ConversationListFilter.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
 import ConversationBulkActions from './widgets/conversation/conversationBulkActions/Index.vue';
@@ -1018,9 +1019,31 @@ function toggleSelectAll(check) {
   selectAllConversations(check, conversationList);
 }
 
+// Median time to the first reply for today's conversations, read from the
+// same endpoint the Painel uses so the bar never tells a different story.
+// Reports are admin-only, so for an agent the request fails and the line
+// simply stays hidden. Refreshed with the stats, but at most once a minute:
+// the dashboard payload is far heavier than the counters.
+const FIRST_REPLY_REFRESH_MS = 60_000;
+const firstReplySeconds = ref();
+let firstReplyFetchedAt = 0;
+async function fetchFirstReplyTime() {
+  if (Date.now() - firstReplyFetchedAt < FIRST_REPLY_REFRESH_MS) return;
+  firstReplyFetchedAt = Date.now();
+  try {
+    const from = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+    const to = Math.floor(Date.now() / 1000);
+    const { data } = await ReportsAPI.getDashboard({ from, to });
+    firstReplySeconds.value = data.queue.median_first_response_seconds;
+  } catch {
+    firstReplySeconds.value = undefined;
+  }
+}
+
 useEmitter('fetch_conversation_stats', () => {
   if (hasAppliedFiltersOrActiveFolders.value) return;
   store.dispatch('conversationStats/get', conversationFilters.value);
+  fetchFirstReplyTime();
 });
 
 onMounted(() => {
@@ -1029,6 +1052,7 @@ onMounted(() => {
   store.dispatch('setChatStatusFilter', activeStatus.value);
   store.dispatch('setChatSortFilter', activeSortBy.value);
   resetAndFetchData();
+  fetchFirstReplyTime();
   if (hasActiveFolders.value) {
     store.dispatch('campaigns/get');
   }
@@ -1164,6 +1188,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
       :items="kpiItems"
       :active-key="activeListView"
+      :first-reply-seconds="firstReplySeconds"
       @select="updateView"
     />
     <VerticalStatusChips

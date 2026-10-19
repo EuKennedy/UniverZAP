@@ -14,6 +14,8 @@
       "INPUT": "Pesquisar pessoas, conversas, respostas salvas .."
     },
     "FILTER_ALL": "Todos",
+    "KPI_FIRST_REPLY": "1ª resposta hoje:",
+    "KPI_FIRST_REPLY_HINT": "Tempo mediano até a primeira resposta, conversas criadas hoje",
     "ASSIGNEE_TYPE_TABS": {
       "me": "Minhas",
       "unassigned": "Não atribuídas",

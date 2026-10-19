@@ -1,16 +1,30 @@
 <script setup>
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import wootConstants from 'dashboard/constants/globals';
+import { formatSeconds } from 'dashboard/routes/dashboard/settings/reports/components/panel/panelFormat';
 
 // UniverZAP: the glanceable layer of the conversation list — the four
 // counters a reception needs to triage the day, as cards instead of a pill
 // trail. Same views and same numbers the Todos dropdown already carries,
 // nothing extra is fetched; clicking a card is clicking that view.
-defineProps({
+const props = defineProps({
   items: { type: Array, required: true },
   activeKey: { type: String, required: true },
+  // Median seconds to the first reply for today's conversations; undefined
+  // while not loaded (line hidden), null when nothing was replied yet.
+  firstReplySeconds: { type: Number, default: undefined },
 });
 
 const emit = defineEmits(['select']);
+
+const { t } = useI18n();
+
+const firstReplyLabel = computed(() =>
+  props.firstReplySeconds === null
+    ? '—'
+    : formatSeconds(props.firstReplySeconds, t)
+);
 
 // Aguardando is the fila de risco: a non-zero count is the one number that
 // should pull the eye, so it alone gets the warning tone.
@@ -47,4 +61,15 @@ const isRisk = item =>
       </button>
     </li>
   </ul>
+  <p
+    v-if="firstReplySeconds !== undefined"
+    class="flex items-center gap-1 px-3 pt-1.5 pb-0 mb-0 text-xs text-n-slate-11"
+    :title="$t('CHAT_LIST.KPI_FIRST_REPLY_HINT')"
+  >
+    <span class="i-lucide-timer size-3.5" />
+    {{ $t('CHAT_LIST.KPI_FIRST_REPLY') }}
+    <span class="font-medium text-n-slate-12 tabular-nums">
+      {{ firstReplyLabel }}
+    </span>
+  </p>
 </template>
