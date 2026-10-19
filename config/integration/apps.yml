@@ -317,3 +317,32 @@ leadsquared:
       'conversation_activity_score',
       'transcript_activity_score',
     ]
+belezaki:
+  id: belezaki
+  logo: belezaki.png
+  i18n_key: belezaki
+  hook_type: account
+  allow_multiple_hooks: false
+  settings_json_schema:
+    {
+      'type': 'object',
+      'properties':
+        {
+          'external_id': { 'type': 'string', 'minLength': 1 },
+          'salon_name': { 'type': ['string', 'null'] },
+          'timezone': { 'type': ['string', 'null'] },
+        },
+      'required': ['external_id'],
+      'additionalProperties': false,
+    }
+  settings_form_schema:
+    [
+      {
+        'label': 'ID do salão no belezaki (external_user_id)',
+        'type': 'text',
+        'name': 'external_id',
+        'validation': 'required',
+        'help': 'O mesmo id da assinatura do salão (external_user_id). Ao conectar, o salão é consultado para confirmar o vínculo.',
+      },
+    ]
+  visible_properties: ['external_id', 'salon_name', 'timezone']

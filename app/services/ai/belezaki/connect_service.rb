@@ -21,7 +21,7 @@ class Ai::Belezaki::ConnectService
     raise AgendaTaken, 'google calendar connected' if @assistant.calendar_connections.active.exists?
     raise NotConfigured, 'shared key missing' if Ai::Belezaki::AgentClient.api_key.blank?
 
-    external_id = Ai::Belezaki::TenantResolver.external_id(@assistant.account)
+    external_id = Belezaki::TenantResolver.external_id(@assistant.account)
     raise NotLinked, 'account has no belezaki salon' if external_id.blank?
 
     persist(external_id, probe(external_id))

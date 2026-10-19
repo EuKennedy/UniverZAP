@@ -243,65 +243,67 @@ export default {
         <p v-if="additionalAttributes.description" class="break-words mb-0.5">
           {{ additionalAttributes.description }}
         </p>
-        <div class="flex flex-col items-start w-full gap-2">
-          <ContactInfoRow
-            :href="contact.email ? `mailto:${contact.email}` : ''"
-            :value="contact.email"
-            icon="mail"
-            emoji="✉️"
-            :title="$t('CONTACT_PANEL.EMAIL_ADDRESS')"
-            show-copy
-            editable
-            @update="value => onFieldUpdate('email', value)"
-          />
-          <ContactInfoRow
-            :href="contact.phone_number ? `tel:${contact.phone_number}` : ''"
-            :value="contact.phone_number"
-            icon="call"
-            emoji="📞"
-            :title="$t('CONTACT_PANEL.PHONE_NUMBER')"
-            show-copy
-            editable
-            @update="value => onFieldUpdate('phone_number', value)"
-          />
-          <ContactInfoRow
-            v-if="contact.identifier"
-            :value="contact.identifier"
-            icon="contact-identify"
-            emoji="🪪"
-            :title="$t('CONTACT_PANEL.IDENTIFIER')"
-          />
-          <ContactInfoRow
-            :value="additionalAttributes.company_name"
-            icon="building-bank"
-            emoji="🏢"
-            :title="$t('CONTACT_PANEL.COMPANY')"
-            editable
-            @update="
-              value =>
-                updateContactField({
-                  additional_attributes: {
-                    ...additionalAttributes,
-                    company_name: value,
-                  },
-                })
-            "
-          />
-          <ContactInfoRow
-            v-if="location || additionalAttributes.location"
-            :value="location || additionalAttributes.location"
-            icon="map"
-            emoji="🌍"
-            :title="$t('CONTACT_PANEL.LOCATION')"
-          />
-          <ContactInfoRow
-            :value="purchasesValue"
-            icon="building-bank"
-            emoji="💰"
-            :title="$t('METAS.SALE.CONTACT_PANEL_LABEL')"
-          />
-          <SocialIcons :social-profiles="socialProfiles" />
-        </div>
+        <slot name="details">
+          <div class="flex flex-col items-start w-full gap-2">
+            <ContactInfoRow
+              :href="contact.email ? `mailto:${contact.email}` : ''"
+              :value="contact.email"
+              icon="mail"
+              emoji="✉️"
+              :title="$t('CONTACT_PANEL.EMAIL_ADDRESS')"
+              show-copy
+              editable
+              @update="value => onFieldUpdate('email', value)"
+            />
+            <ContactInfoRow
+              :href="contact.phone_number ? `tel:${contact.phone_number}` : ''"
+              :value="contact.phone_number"
+              icon="call"
+              emoji="📞"
+              :title="$t('CONTACT_PANEL.PHONE_NUMBER')"
+              show-copy
+              editable
+              @update="value => onFieldUpdate('phone_number', value)"
+            />
+            <ContactInfoRow
+              v-if="contact.identifier"
+              :value="contact.identifier"
+              icon="contact-identify"
+              emoji="🪪"
+              :title="$t('CONTACT_PANEL.IDENTIFIER')"
+            />
+            <ContactInfoRow
+              :value="additionalAttributes.company_name"
+              icon="building-bank"
+              emoji="🏢"
+              :title="$t('CONTACT_PANEL.COMPANY')"
+              editable
+              @update="
+                value =>
+                  updateContactField({
+                    additional_attributes: {
+                      ...additionalAttributes,
+                      company_name: value,
+                    },
+                  })
+              "
+            />
+            <ContactInfoRow
+              v-if="location || additionalAttributes.location"
+              :value="location || additionalAttributes.location"
+              icon="map"
+              emoji="🌍"
+              :title="$t('CONTACT_PANEL.LOCATION')"
+            />
+            <ContactInfoRow
+              :value="purchasesValue"
+              icon="building-bank"
+              emoji="💰"
+              :title="$t('METAS.SALE.CONTACT_PANEL_LABEL')"
+            />
+            <SocialIcons :social-profiles="socialProfiles" />
+          </div>
+        </slot>
       </div>
       <div class="flex items-center w-full mt-0.5 gap-2">
         <ComposeConversation :contact-id="String(contact.id)">

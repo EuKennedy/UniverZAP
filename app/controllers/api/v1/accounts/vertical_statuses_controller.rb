@@ -9,8 +9,7 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
   # the labels an admin picked for the whole account, the vertical's default.
   def index
     @vertical_key = Current.account.custom_attributes['vertical_template']
-    titles = params[:titles].present? ? Array(params[:titles]).map(&:to_s) : selected_titles
-    @statuses = titles.present? ? statuses_for(titles) : default_statuses
+    @statuses = params[:scope] == 'all' ? all_statuses : bar_statuses
   end
 
   # Every label of the account with its open count, most used first — what
@@ -34,6 +33,11 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
   end
 
   private
+
+  def bar_statuses
+    titles = params[:titles].present? ? Array(params[:titles]).map(&:to_s) : selected_titles
+    titles.present? ? statuses_for(titles) : default_statuses
+  end
 
   def selected_titles
     Array(Current.account.custom_attributes[SELECTION_KEY])
@@ -59,6 +63,19 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
       next unless Current.account.labels.exists?(title: status.title)
 
       { title: status.title, color: status.color, description: status.description, count: label_count(status.title) }
+    end
+  end
+
+  # Every stage of the vertical, closing ones included: what the customer
+  # sheet needs to tell a stage label from any other label.
+  def all_statuses
+    return [] if @vertical_key.blank?
+
+    vertical = Vertical.find_by(key: @vertical_key)
+    return [] unless vertical
+
+    vertical.vertical_statuses.map do |status|
+      status.slice(:title, :color, :description, :closes_conversation)
     end
   end
 

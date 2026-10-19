@@ -195,6 +195,7 @@ Rails.application.routes.draw do
               post :update_last_seen
               post :unread
               post :custom_attributes
+              post :schedule
               post :attach_to_kanban
               post :autopilot
               get :attachments
@@ -677,6 +678,11 @@ Rails.application.routes.draw do
               collection do
                 post :auth
                 get :orders
+              end
+            end
+            resource :belezaki, controller: 'belezaki', only: [] do
+              collection do
+                get :customer
               end
             end
             resource :linear, controller: 'linear', only: [] do

@@ -43,6 +43,31 @@ RSpec.describe 'Vertical statuses API', type: :request do
 
       expect(response.parsed_body['statuses'].pluck('title')).to eq(%w[agendado])
     end
+
+    it 'lists every stage of the vertical, in order, when asked for all of them' do
+      account.update!(custom_attributes: { 'vertical_template' => 'beauty_salon', 'conversation_bar_labels' => %w[agendado] })
+      vertical = Vertical.create!(key: 'beauty_salon', name: 'Salão de beleza')
+      vertical.vertical_statuses.create!(title: 'agendado', position: 2, color: '#14B8A6', description: 'Horário reservado')
+      vertical.vertical_statuses.create!(title: 'novo-contato', position: 1, color: '#94A3B8')
+      vertical.vertical_statuses.create!(title: 'cancelado', position: 3, color: '#EF4444', closes_conversation: true)
+
+      get "/api/v1/accounts/#{account.id}/vertical_statuses", params: { scope: 'all' },
+                                                              headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      statuses = response.parsed_body['statuses']
+      expect(statuses.pluck('title')).to eq(%w[novo-contato agendado cancelado])
+      expect(statuses.pluck('closes_conversation')).to eq([false, false, true])
+      expect(statuses.first).to include('color' => '#94A3B8')
+      expect(statuses.second).to include('description' => 'Horário reservado')
+    end
+
+    it 'has no stages when the account has no vertical' do
+      get "/api/v1/accounts/#{account.id}/vertical_statuses", params: { scope: 'all' },
+                                                              headers: agent.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['statuses']).to eq([])
+    end
   end
 
   describe 'GET /api/v1/accounts/{account.id}/vertical_statuses/catalog' do

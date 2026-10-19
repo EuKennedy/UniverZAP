@@ -104,8 +104,10 @@ describe('#actions', () => {
       ]);
     });
     it('sends correct actions if API is error', async () => {
-      axios.post.mockRejectedValue(errorMessage);
-      await expect(actions.createHook({ commit })).rejects.toThrow(Error);
+      axios.post.mockRejectedValue(new Error(errorMessage.message));
+      await expect(actions.createHook({ commit })).rejects.toThrow(
+        'Incorrect header'
+      );
       expect(commit.mock.calls).toEqual([
         [types.SET_INTEGRATIONS_UI_FLAG, { isCreatingHook: true }],
         [types.SET_INTEGRATIONS_UI_FLAG, { isCreatingHook: false }],

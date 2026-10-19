@@ -54,12 +54,10 @@ class Integrations::App
       GlobalConfigService.load('SLACK_CLIENT_SECRET', nil).present?
     when 'linear'
       account.feature_enabled?('linear_integration') && GlobalConfigService.load('LINEAR_CLIENT_ID', nil).present?
-    when 'shopify'
-      shopify_enabled?(account)
+    when 'shopify', 'notion', 'belezaki'
+      external_app_enabled?(account)
     when 'leadsquared'
       account.feature_enabled?('crm_integration')
-    when 'notion'
-      notion_enabled?(account)
     else
       true
     end
@@ -118,6 +116,15 @@ class Integrations::App
   end
 
   private
+
+  # Apps that need a server-side secret before they can be offered at all.
+  def external_app_enabled?(account)
+    case params[:id]
+    when 'shopify' then shopify_enabled?(account)
+    when 'notion' then notion_enabled?(account)
+    else Ai::Belezaki::AgentClient.api_key.present?
+    end
+  end
 
   def shopify_enabled?(account)
     account.feature_enabled?('shopify_integration') && GlobalConfigService.load('SHOPIFY_CLIENT_ID', nil).present?

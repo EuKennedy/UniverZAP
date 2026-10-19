@@ -134,6 +134,14 @@ export const mutations = {
     chat.priority = priority;
   },
 
+  [types.UPDATE_CONVERSATION_LABELS](_state, { conversationId, labels }) {
+    const conversation = _state.allConversations.find(
+      c => c.id === conversationId
+    );
+    if (conversation) {
+      conversation.labels = labels;
+    }
+  },
   [types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES](
     _state,
     { conversationId, customAttributes }

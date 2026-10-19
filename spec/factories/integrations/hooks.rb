@@ -38,6 +38,11 @@ FactoryBot.define do
       reference_id { 'test-store.myshopify.com' }
     end
 
+    trait :belezaki do
+      app_id { 'belezaki' }
+      settings { { external_id: 'ext-1' } }
+    end
+
     trait :leadsquared do
       app_id { 'leadsquared' }
       settings do

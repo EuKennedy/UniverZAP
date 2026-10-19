@@ -31,6 +31,14 @@
 
 en:
   hello: 'Hello world'
+  belezaki:
+    connect:
+      not_configured: 'The belezaki integration is not configured on this server (shared key missing).'
+      missing_external_id: 'Inform the salon id.'
+      unauthorized: 'belezaki refused the shared key; check the server configuration.'
+      not_found: 'No belezaki salon has this id.'
+      inactive: 'The belezaki subscription of this salon is not active.'
+      unreachable: 'belezaki did not answer; try again in a moment.'
   ad_referral:
     label_description: Conversation that started from a Click-to-WhatsApp ad
     attributes:
@@ -412,6 +420,10 @@ en:
       name: 'Shopify'
       short_description: 'Access order details and customer data from your Shopify store.'
       description: 'Connect your Shopify store to access order details, customer information, and product data directly within your conversations and helps your support team provide faster, more contextual assistance to your customers.'
+    belezaki:
+      name: 'belezaki'
+      short_description: 'See the salon agenda of each customer next to the conversation.'
+      description: 'Connect the salon that already runs on belezaki. The conversation sidebar shows the customer card straight from the salon: next appointment, upcoming ones and recent visits, found by the WhatsApp number.'
     leadsquared:
       name: 'LeadSquared'
       short_description: 'Sync your contacts and conversations with LeadSquared CRM.'
