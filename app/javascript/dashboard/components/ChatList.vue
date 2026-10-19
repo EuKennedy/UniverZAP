@@ -1025,7 +1025,7 @@ function toggleSelectAll(check) {
 // simply stays hidden. Refreshed with the stats, but at most once a minute:
 // the dashboard payload is far heavier than the counters.
 const FIRST_REPLY_REFRESH_MS = 60_000;
-const firstReplySeconds = ref();
+const firstReply = ref();
 let firstReplyFetchedAt = 0;
 async function fetchFirstReplyTime() {
   if (Date.now() - firstReplyFetchedAt < FIRST_REPLY_REFRESH_MS) return;
@@ -1034,9 +1034,14 @@ async function fetchFirstReplyTime() {
     const from = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
     const to = Math.floor(Date.now() / 1000);
     const { data } = await ReportsAPI.getDashboard({ from, to });
-    firstReplySeconds.value = data.queue.median_first_response_seconds;
+    const {
+      median_first_response_seconds: median,
+      replied,
+      created,
+    } = data.queue;
+    firstReply.value = { median, replied, created };
   } catch {
-    firstReplySeconds.value = undefined;
+    firstReply.value = undefined;
   }
 }
 
@@ -1188,7 +1193,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
       :items="kpiItems"
       :active-key="activeListView"
-      :first-reply-seconds="firstReplySeconds"
+      :first-reply="firstReply"
       @select="updateView"
     />
     <VerticalStatusChips

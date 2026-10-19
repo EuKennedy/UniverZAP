@@ -11,9 +11,11 @@ import { formatSeconds } from 'dashboard/routes/dashboard/settings/reports/compo
 const props = defineProps({
   items: { type: Array, required: true },
   activeKey: { type: String, required: true },
-  // Median seconds to the first reply for today's conversations; undefined
-  // while not loaded (line hidden), null when nothing was replied yet.
-  firstReplySeconds: { type: Number, default: undefined },
+  // Today's first-reply figures from the Painel endpoint: { median, replied,
+  // created } — median seconds (null until something is replied), how many of
+  // today's conversations were replied, how many were created. Undefined
+  // while not loaded, which hides the line.
+  firstReply: { type: Object, default: undefined },
 });
 
 const emit = defineEmits(['select']);
@@ -21,9 +23,18 @@ const emit = defineEmits(['select']);
 const { t } = useI18n();
 
 const firstReplyLabel = computed(() =>
-  props.firstReplySeconds === null
+  props.firstReply?.median == null
     ? '—'
-    : formatSeconds(props.firstReplySeconds, t)
+    : formatSeconds(props.firstReply.median, t)
+);
+
+// The actionable number: today's conversations nobody answered yet.
+const firstReplyCount = computed(() =>
+  props.firstReply?.created
+    ? t('CHAT_LIST.KPI_FIRST_REPLY_PENDING', {
+        n: props.firstReply.created - props.firstReply.replied,
+      })
+    : t('CHAT_LIST.KPI_FIRST_REPLY_NONE')
 );
 
 // Aguardando is the fila de risco: a non-zero count is the one number that
@@ -62,8 +73,8 @@ const isRisk = item =>
     </li>
   </ul>
   <p
-    v-if="firstReplySeconds !== undefined"
-    class="flex items-center gap-1 px-3 pt-1.5 pb-0 mb-0 text-xs text-n-slate-11"
+    v-if="firstReply !== undefined"
+    class="flex items-center flex-wrap gap-1 px-3 pt-1.5 pb-0 mb-0 text-xs text-n-slate-11"
     :title="$t('CHAT_LIST.KPI_FIRST_REPLY_HINT')"
   >
     <span class="i-lucide-timer size-3.5" />
@@ -71,5 +82,9 @@ const isRisk = item =>
     <span class="font-medium text-n-slate-12 tabular-nums">
       {{ firstReplyLabel }}
     </span>
+    <span v-if="firstReply?.median != null" class="text-n-slate-10">
+      {{ $t('CHAT_LIST.KPI_FIRST_REPLY_MEDIAN') }}
+    </span>
+    <span class="text-n-slate-10">{{ firstReplyCount }}</span>
   </p>
 </template>

@@ -14,8 +14,11 @@
       "INPUT": "Search for People, Chats, Saved Replies .."
     },
     "FILTER_ALL": "All",
-    "KPI_FIRST_REPLY": "First reply today:",
-    "KPI_FIRST_REPLY_HINT": "Median time to the first reply, conversations created today",
+    "KPI_FIRST_REPLY": "Today · first reply:",
+    "KPI_FIRST_REPLY_MEDIAN": "(median)",
+    "KPI_FIRST_REPLY_PENDING": "· {n} unanswered",
+    "KPI_FIRST_REPLY_NONE": "· no conversations today",
+    "KPI_FIRST_REPLY_HINT": "Median (not average) time between a conversation being created today and its first human reply, counting only the conversations already replied. Half of them were answered faster than this, half slower. Updates every minute.",
     "ASSIGNEE_TYPE_TABS": {
       "me": "Mine",
       "unassigned": "Unassigned",
