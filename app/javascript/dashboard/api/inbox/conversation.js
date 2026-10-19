@@ -127,6 +127,11 @@ class ConversationApi extends ApiClient {
     return axios.post(`${this.url}/${conversationId}/transcript`, { email });
   }
 
+  // UniverZAP: "Agendar" from the customer sheet.
+  schedule({ conversationId, attributes }) {
+    return axios.post(`${this.url}/${conversationId}/schedule`, attributes);
+  }
+
   updateCustomAttributes({ conversationId, customAttributes }) {
     return axios.post(`${this.url}/${conversationId}/custom_attributes`, {
       custom_attributes: customAttributes,

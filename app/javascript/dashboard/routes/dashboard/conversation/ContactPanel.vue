@@ -14,6 +14,7 @@ import ContactConversations from './ContactConversations.vue';
 import ConversationAction from './ConversationAction.vue';
 import ConversationParticipant from './ConversationParticipant.vue';
 import ContactInfo from './contact/ContactInfo.vue';
+import CustomerSheetSection from './contact/CustomerSheetSection.vue';
 import ContactNotes from './contact/ContactNotes.vue';
 import ConversationInfo from './ConversationInfo.vue';
 import CustomAttributes from './customAttributes/CustomAttributes.vue';
@@ -147,7 +148,11 @@ onMounted(() => {
       :title="$t('CONVERSATION.SIDEBAR.CONTACT')"
       @close="closeContactPanel"
     />
-    <ContactInfo :contact="contact" :channel-type="channelType" />
+    <ContactInfo :contact="contact" :channel-type="channelType">
+      <template #details>
+        <CustomerSheetSection :contact="contact" />
+      </template>
+    </ContactInfo>
     <div class="px-2 pb-8 list-group">
       <Draggable
         :list="conversationSidebarItems"

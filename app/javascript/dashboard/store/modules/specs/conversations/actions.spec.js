@@ -606,6 +606,58 @@ describe('#deleteMessage', () => {
   });
 });
 
+describe('#scheduleConversation', () => {
+  it('stores the appointment and the new labels, and syncs the label module', async () => {
+    axios.post.mockResolvedValue({
+      data: {
+        custom_attributes: {
+          servico: 'Corte',
+          data_agendamento: '2026-10-25T14:00:00.000Z',
+        },
+        labels: ['lead-anuncio', 'agendado'],
+      },
+    });
+    await actions.scheduleConversation(
+      { commit, dispatch },
+      {
+        conversationId: 1,
+        attributes: {
+          servico: 'Corte',
+          data_agendamento: '2026-10-25T14:00:00.000Z',
+        },
+      }
+    );
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/v1/conversations/1/schedule',
+      {
+        servico: 'Corte',
+        data_agendamento: '2026-10-25T14:00:00.000Z',
+      }
+    );
+    expect(commit.mock.calls).toEqual([
+      [
+        types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES,
+        {
+          conversationId: 1,
+          customAttributes: {
+            servico: 'Corte',
+            data_agendamento: '2026-10-25T14:00:00.000Z',
+          },
+        },
+      ],
+      [
+        types.UPDATE_CONVERSATION_LABELS,
+        { conversationId: 1, labels: ['lead-anuncio', 'agendado'] },
+      ],
+    ]);
+    expect(dispatch).toHaveBeenCalledWith(
+      'conversationLabels/setConversationLabel',
+      { id: 1, data: ['lead-anuncio', 'agendado'] },
+      { root: true }
+    );
+  });
+});
+
 describe('#addMentions', () => {
   it('does not send mutations if the view is not mentions', () => {
     actions.addMentions(
