@@ -11,6 +11,9 @@ class Conversations::AdReferralParser
     'url' => /\A\**(?:Link do Anúncio|Ad Link):\**\s*(.*)\z/i
   }.freeze
   BODY = /\A\**(?:Descrição|Description):\**\s*(.*)\z/i
+  # WhatsApp fills the headline with the click target's host (api.whatsapp.com)
+  # when the ad has none; that is not a title anyone wants on a report.
+  BARE_HOST = /\A[\w.-]+\.[a-z]{2,}\z/i
 
   def self.ad_message?(content)
     content.to_s.match?(HEADER)
@@ -28,6 +31,7 @@ class Conversations::AdReferralParser
     @lines.each { |line| read(line) }
 
     @result['url'] = @result['url'].to_s[%r{https?://[^\s)]+}] if @result['url']
+    @result['title'] = nil if @result['title'].blank? || @result['title'].match?(BARE_HOST)
     @result['body'] = @body.join("\n").strip
     @result['customer_message'] = Array(@customer).join("\n").strip
     @result

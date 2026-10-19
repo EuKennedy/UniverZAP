@@ -36,6 +36,24 @@ RSpec.describe Conversations::AdReferralService do
     end
   end
 
+  describe '.parse with the production text' do
+    # Exact content WAHA posted on inbox 37 (messages 246285/246243): blank lines
+    # between fields, the headline replaced by the host and the post URL as link.
+    let(:production_content) do
+      "📢 **ANÚNCIO DO FACEBOOK**\n\n**Título:** api.whatsapp.com\n\n**Descrição:**\n\n\n" \
+        "**Link do Anúncio:** [Ver no Facebook](https://www.instagram.com/p/DejcFHFsrFJ/)\n" \
+        "**ID do Anúncio:** 120251719556440201\n\n---\n💬 **MENSAGEM DO CLIENTE:**\nOlá! Posso ter mais informações sobre isso?"
+    end
+
+    it 'reads the ad id, link and customer message and drops a headline that is only a host' do
+      expect(described_class.parse(production_content)).to eq(
+        'source' => 'facebook', 'title' => nil, 'ad_id' => '120251719556440201',
+        'url' => 'https://www.instagram.com/p/DejcFHFsrFJ/', 'body' => '',
+        'customer_message' => 'Olá! Posso ter mais informações sobre isso?'
+      )
+    end
+  end
+
   describe '#perform' do
     it 'stores the parsed ad on the message' do
       message = inbound(pt_br_content)
@@ -96,6 +114,16 @@ RSpec.describe Conversations::AdReferralService do
       expect(second.reload.content_attributes['ad_referral']['ad_id']).to eq('999')
       expect(Rails.configuration.dispatcher).to have_received(:dispatch)
         .with(Events::Types::CONVERSATION_AD_REFERRAL, anything, anything).once
+    end
+
+    it 'stamps without firing the event when silent (backfill)' do
+      allow(Rails.configuration.dispatcher).to receive(:dispatch)
+
+      described_class.new(inbound(pt_br_content), silent: true).perform
+
+      expect(conversation.reload.custom_attributes['anuncio_id']).to eq('120212345678901234')
+      expect(conversation.label_list).to eq([])
+      expect(Rails.configuration.dispatcher).not_to have_received(:dispatch).with(Events::Types::CONVERSATION_AD_REFERRAL, anything, anything)
     end
 
     it 'does nothing for a message without the ad block' do

@@ -27,10 +27,13 @@ class Conversations::AdReferralService
     Conversations::AdReferralParser.new(content).data
   end
 
-  def initialize(message)
+  # silent: stamp and label without firing the event — for backfilling old
+  # conversations, where re-running assignment/priority rules would be wrong.
+  def initialize(message, silent: false)
     @message = message
     @conversation = message.conversation
     @account = message.account
+    @silent = silent
   end
 
   def perform
@@ -57,6 +60,8 @@ class Conversations::AdReferralService
       'anuncio_url' => data['url'], 'anuncio_cliques' => 1
     ))
     stamp_contact
+    return if @silent
+
     Rails.configuration.dispatcher.dispatch(
       Events::Types::CONVERSATION_AD_REFERRAL, Time.zone.now,
       conversation: @conversation, message: @message, ad_referral: data
