@@ -30,6 +30,10 @@ class Integrations::Hook < ApplicationRecord
   validate :validate_settings_json_schema
   validate :ensure_feature_enabled
   validates :app_id, uniqueness: { scope: [:account_id], unless: -> { app.present? && app.params[:allow_multiple_hooks].present? } }
+  # Connecting the salon IS the connection test: the hook only saves once the
+  # salon answered for the id the admin typed, and the answer (name, timezone)
+  # is kept on the hook so the sidebar never needs a second round trip for it.
+  validate :verify_belezaki_salon, on: :create, if: :belezaki?
 
   # TODO: This seems to be only used for slack at the moment
   # We can add a validator when storing the integration settings and toggle this in future
@@ -58,6 +62,10 @@ class Integrations::Hook < ApplicationRecord
 
   def notion?
     app_id == 'notion'
+  end
+
+  def belezaki?
+    app_id == 'belezaki'
   end
 
   def disable
@@ -93,6 +101,14 @@ class Integrations::Hook < ApplicationRecord
     return if app.blank? || app.params[:settings_json_schema].blank?
 
     errors.add(:settings, ': Invalid settings data') unless JSONSchemer.schema(app.params[:settings_json_schema]).valid?(settings)
+  end
+
+  def verify_belezaki_salon
+    given = settings.to_h.stringify_keys
+    salon = Belezaki::SalonProbe.new(given['external_id']).perform
+    self.settings = given.merge('salon_name' => salon['name'], 'timezone' => salon['timezone'])
+  rescue Belezaki::SalonProbe::Failure => e
+    errors.add(:base, I18n.t("belezaki.connect.#{e.code}"))
   end
 
   def trigger_setup_if_crm

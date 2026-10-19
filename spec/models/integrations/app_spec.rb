@@ -87,6 +87,19 @@ RSpec.describe Integrations::App do
       end
     end
 
+    context 'when the app is belezaki' do
+      let(:app_name) { 'belezaki' }
+
+      it 'is offered only once the server holds the shared agent key' do
+        with_modified_env UNIVERZAP_AGENT_API_KEY: 'shared-key' do
+          expect(app.active?(account)).to be true
+        end
+        with_modified_env UNIVERZAP_AGENT_API_KEY: nil do
+          expect(app.active?(account)).to be false
+        end
+      end
+    end
+
     context 'when other apps are queried' do
       let(:app_name) { 'webhook' }
 

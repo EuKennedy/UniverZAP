@@ -679,6 +679,11 @@ Rails.application.routes.draw do
                 get :orders
               end
             end
+            resource :belezaki, controller: 'belezaki', only: [] do
+              collection do
+                get :customer
+              end
+            end
             resource :linear, controller: 'linear', only: [] do
               collection do
                 delete :destroy

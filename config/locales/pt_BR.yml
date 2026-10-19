@@ -22,6 +22,14 @@ pt_BR:
     month_names: [~, janeiro, fevereiro, março, abril, maio, junho, julho, agosto, setembro, outubro, novembro, dezembro]
     formats:
       long: '%d de %B de %Y'
+  belezaki:
+    connect:
+      not_configured: 'A integração com o belezaki não está configurada neste servidor (falta a chave compartilhada).'
+      missing_external_id: 'Informe o id do salão.'
+      unauthorized: 'O belezaki recusou a chave compartilhada; confira a configuração do servidor.'
+      not_found: 'Nenhum salão do belezaki tem esse id.'
+      inactive: 'A assinatura deste salão no belezaki não está ativa.'
+      unreachable: 'O belezaki não respondeu; tente de novo em instantes.'
   ad_referral:
     label_description: Conversa que começou por um anúncio Click-to-WhatsApp
     attributes:
@@ -390,6 +398,10 @@ pt_BR:
       name: 'Shopify'
       short_description: 'Acessar detalhes do pedido e dados de clientes da sua loja Shopify.'
       description: 'Conecte sua loja Shopify para acessar detalhes de pedidos, informações de clientes e dados de produtos diretamente em suas conversas e ajudar sua equipe de suporte a fornecer um atendimento mais rápido e contextual aos seus clientes.'
+    belezaki:
+      name: 'belezaki'
+      short_description: 'Veja a agenda do salão de cada cliente ao lado da conversa.'
+      description: 'Conecte o salão que já roda no belezaki. O painel da conversa passa a mostrar a ficha da cliente direto do salão: próximo horário, horários futuros e últimos atendimentos, encontrados pelo número do WhatsApp.'
     leadsquared:
       name: 'LeadSquared'
       short_description: 'Sincronize seus contatos e conversas com LeadSquared CRM.'
