@@ -14,6 +14,7 @@ import SettingsToggleSection from 'dashboard/components-next/Settings/SettingsTo
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import TagInput from 'dashboard/components-next/taginput/TagInput.vue';
+import Input from 'dashboard/components-next/input/Input.vue';
 import assignmentPoliciesAPI from 'dashboard/api/assignmentPolicies';
 import { useI18n } from 'vue-i18n';
 
@@ -31,6 +32,9 @@ const { t } = useI18n();
 const { isEnterprise } = useConfig();
 
 const selectedAgentIds = ref([]);
+// Open conversations each member may hold before auto assignment skips them;
+// '' means no limit. Keyed by agent id.
+const agentCapacities = ref({});
 const isAgentListUpdating = ref(false);
 const enableAutoAssignment = ref(false);
 const maxAssignmentLimit = ref(null);
@@ -49,6 +53,12 @@ const selectedAgentNames = computed(() =>
   selectedAgentIds.value.map(
     id => agentList.value.find(a => a.id === id)?.name ?? ''
   )
+);
+
+const selectedAgents = computed(() =>
+  selectedAgentIds.value
+    .map(id => agentList.value.find(a => a.id === id))
+    .filter(Boolean)
 );
 
 const agentMenuItems = computed(() =>
@@ -80,16 +90,8 @@ const isFeatureEnabled = feature => {
   );
 };
 
-const hasAdvancedAssignment = computed(() => {
-  return isFeatureEnabled('advanced_assignment');
-});
-
 const hasAssignmentV2 = computed(() => {
   return isFeatureEnabled('assignment_v2');
-});
-
-const showAdvancedAssignmentUI = computed(() => {
-  return hasAdvancedAssignment.value && hasAssignmentV2.value;
 });
 
 const assignmentOrderLabel = computed(() => {
@@ -110,8 +112,8 @@ const assignmentMethodLabel = computed(() => {
   if (order === 'round_robin') {
     return t('INBOX_MGMT.ASSIGNMENT.METHOD.ROUND_ROBIN');
   }
-  if (order === 'balanced') {
-    return t('INBOX_MGMT.ASSIGNMENT.METHOD.BALANCED');
+  if (order === 'least_busy') {
+    return t('INBOX_MGMT.ASSIGNMENT.METHOD.LEAST_BUSY');
   }
   return order;
 });
@@ -153,6 +155,9 @@ const fetchAttachedAgents = async () => {
       data: { payload: inboxMembers },
     } = response;
     selectedAgentIds.value = inboxMembers.map(m => m.id);
+    agentCapacities.value = Object.fromEntries(
+      inboxMembers.map(m => [m.id, m.assignment_capacity ?? ''])
+    );
   } catch (error) {
     //  Handle error
   }
@@ -267,6 +272,10 @@ const updateAgents = async () => {
     await store.dispatch('inboxMembers/create', {
       inboxId: props.inbox.id,
       agentList: selectedAgentIds.value,
+      capacities: selectedAgentIds.value.map(id => ({
+        user_id: id,
+        assignment_capacity: agentCapacities.value[id] || null,
+      })),
     });
     useAlert(t('AGENT_MGMT.EDIT.API.SUCCESS_MESSAGE'));
   } catch (error) {
@@ -310,14 +319,6 @@ const navigateToAssignmentPolicyEdit = () => {
   });
 };
 
-const navigateToBilling = () => {
-  const accountId = route.params.accountId;
-  router.push({
-    name: 'billing_settings_index',
-    params: { accountId },
-  });
-};
-
 const confirmDeletePolicy = () => {
   showDeleteConfirmModal.value = true;
 };
@@ -346,7 +347,7 @@ const setDefaults = () => {
   maxAssignmentLimit.value =
     props.inbox.auto_assignment_config?.max_assignment_limit || null;
   fetchAttachedAgents();
-  if (showAdvancedAssignmentUI.value) {
+  if (hasAssignmentV2.value) {
     fetchAssignmentPolicy();
     fetchAvailablePolicies();
   }
@@ -382,6 +383,27 @@ onMounted(() => {
         />
       </div>
 
+      <div v-if="selectedAgents.length" class="mt-4 flex flex-col gap-2">
+        <p class="text-sm text-n-slate-11 mb-0">
+          {{ $t('INBOX_MGMT.ASSIGNMENT.CAPACITY.HELP') }}
+        </p>
+        <div
+          v-for="agent in selectedAgents"
+          :key="agent.id"
+          class="flex items-center justify-between gap-3"
+        >
+          <span class="text-sm text-n-slate-12 truncate">{{ agent.name }}</span>
+          <Input
+            v-model="agentCapacities[agent.id]"
+            type="number"
+            min="1"
+            size="sm"
+            class="w-32"
+            :placeholder="$t('INBOX_MGMT.ASSIGNMENT.CAPACITY.PLACEHOLDER')"
+          />
+        </div>
+      </div>
+
       <template #extra>
         <div class="grid grid-cols-1 lg:grid-cols-8">
           <div class="col-span-1 lg:col-span-2" />
@@ -414,7 +436,7 @@ onMounted(() => {
           <template v-if="hasAssignmentV2">
             <!-- Policy Card - When policy is attached -->
             <div
-              v-if="showAdvancedAssignmentUI && assignmentPolicy"
+              v-if="assignmentPolicy"
               class="ltr:pr-0 rtl:pl-0 ltr:pl-4 rtl:pr-4 py-4"
             >
               <div class="flex items-start gap-4">
@@ -461,6 +483,28 @@ onMounted(() => {
                         {{ assignmentMethodLabel }}
                       </span>
                     </li>
+                    <li
+                      v-if="assignmentPolicy.sticky_contact"
+                      class="flex items-center gap-2"
+                    >
+                      <span
+                        class="w-1.5 h-1.5 rounded-full bg-n-slate-11 flex-shrink-0"
+                      />
+                      <span class="text-body-main text-n-slate-12">
+                        {{ $t('INBOX_MGMT.ASSIGNMENT.STICKY_CONTACT') }}
+                      </span>
+                    </li>
+                    <li
+                      v-if="assignmentPolicy.require_online === false"
+                      class="flex items-center gap-2"
+                    >
+                      <span
+                        class="w-1.5 h-1.5 rounded-full bg-n-slate-11 flex-shrink-0"
+                      />
+                      <span class="text-body-main text-n-slate-12">
+                        {{ $t('INBOX_MGMT.ASSIGNMENT.OFFLINE_INCLUDED') }}
+                      </span>
+                    </li>
                   </ul>
 
                   <div class="w-full h-px my-4 bg-n-weak" />
@@ -477,14 +521,8 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Default Policy - When no custom policy attached but feature enabled -->
-            <div
-              v-else-if="
-                showAdvancedAssignmentUI &&
-                !assignmentPolicy &&
-                !isLoadingPolicy
-              "
-            >
+            <!-- Default Policy - When no custom policy attached -->
+            <div v-else-if="!isLoadingPolicy">
               <!-- Default Policy Header -->
               <div class="p-4">
                 <div class="flex items-start gap-4">
@@ -573,63 +611,6 @@ onMounted(() => {
                         </span>
                       </li>
                     </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Default Rules Card - Feature not enabled (no advanced_assignment) -->
-            <div
-              v-else-if="!showAdvancedAssignmentUI"
-              class="ltr:pr-0 rtl:pl-0 ltr:pl-4 rtl:pr-4 py-4"
-            >
-              <div class="flex items-start gap-4">
-                <div
-                  class="flex-shrink-0 size-10 rounded-xl bg-n-slate-3 dark:bg-n-slate-4 flex items-center justify-center"
-                >
-                  <Icon icon="i-lucide-zap" class="text-xl text-n-slate-11" />
-                </div>
-                <div class="flex-grow">
-                  <h4 class="text-heading-3 text-n-slate-12 mb-0.5">
-                    {{ $t('INBOX_MGMT.ASSIGNMENT.DEFAULT_RULES_TITLE') }}
-                  </h4>
-                  <p class="text-body-main text-n-slate-11 mb-4">
-                    {{ $t('INBOX_MGMT.ASSIGNMENT.DEFAULT_RULES_DESCRIPTION') }}
-                  </p>
-
-                  <ul class="space-y-2 mb-6">
-                    <li class="flex items-center gap-2">
-                      <span
-                        class="w-1.5 h-1.5 rounded-full bg-n-slate-11 flex-shrink-0"
-                      />
-                      <span class="text-body-main text-n-slate-12">
-                        {{ $t('INBOX_MGMT.ASSIGNMENT.DEFAULT_RULE_1') }}
-                      </span>
-                    </li>
-                    <li class="flex items-center gap-2">
-                      <span
-                        class="w-1.5 h-1.5 rounded-full bg-n-slate-11 flex-shrink-0"
-                      />
-                      <span class="text-body-main text-n-slate-12">
-                        {{ $t('INBOX_MGMT.ASSIGNMENT.DEFAULT_RULE_2') }}
-                      </span>
-                    </li>
-                  </ul>
-
-                  <div class="w-full h-px bg-n-weak my-4" />
-
-                  <!-- Upgrade prompt when advanced_assignment is not enabled -->
-                  <div v-if="!hasAdvancedAssignment">
-                    <p class="text-body-main text-n-slate-11 mb-1">
-                      {{ $t('INBOX_MGMT.ASSIGNMENT.UPGRADE_PROMPT') }}
-                    </p>
-                    <NextButton
-                      :label="$t('INBOX_MGMT.ASSIGNMENT.UPGRADE_TO_BUSINESS')"
-                      icon="i-lucide-arrow-right"
-                      trailing-icon
-                      link
-                      @click="navigateToBilling"
-                    />
                   </div>
                 </div>
               </div>

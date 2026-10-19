@@ -92,9 +92,11 @@ delete_accounts_job:
   class: 'Internal::DeleteAccountsJob'
   queue: scheduled_jobs
 
-# executed every 30 minutes for assignment_v2
+# executed every 5 minutes for assignment_v2 — only inboxes with a policy,
+# so a conversation that arrived while nobody was online is handed out
+# shortly after the first agent shows up.
 periodic_assignment_job:
-  cron: '*/30 * * * *'
+  cron: '*/5 * * * *'
   class: 'AutoAssignment::PeriodicAssignmentJob'
   queue: scheduled_jobs
 

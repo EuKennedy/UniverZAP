@@ -10,6 +10,8 @@
 #  fair_distribution_limit  :integer          default(100), not null
 #  fair_distribution_window :integer          default(3600), not null
 #  name                     :string(255)      not null
+#  require_online           :boolean          default(TRUE), not null
+#  sticky_contact           :boolean          default(FALSE), not null
 #  created_at               :datetime         not null
 #  updated_at               :datetime         not null
 #  account_id               :bigint           not null
@@ -31,7 +33,10 @@ class AssignmentPolicy < ApplicationRecord
 
   enum conversation_priority: { earliest_created: 0, longest_waiting: 1 }
 
-  enum assignment_order: { round_robin: 0 } unless ChatwootApp.enterprise?
+  # least_busy: the member with the fewest open conversations in the inbox
+  # gets the next one. Value 1 is left free so the dormant enterprise enum
+  # ("balanced") never collides with ours.
+  enum assignment_order: { round_robin: 0, least_busy: 2 } unless ChatwootApp.enterprise?
 end
 
 AssignmentPolicy.include_mod_with('Concerns::AssignmentPolicy')

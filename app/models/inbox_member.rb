@@ -2,11 +2,12 @@
 #
 # Table name: inbox_members
 #
-#  id         :integer          not null, primary key
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  inbox_id   :integer          not null
-#  user_id    :integer          not null
+#  id                  :integer          not null, primary key
+#  assignment_capacity :integer
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#  inbox_id            :integer          not null
+#  user_id             :integer          not null
 #
 # Indexes
 #
@@ -18,6 +19,9 @@ class InboxMember < ApplicationRecord
   validates :inbox_id, presence: true
   validates :user_id, presence: true
   validates :user_id, uniqueness: { scope: :inbox_id }
+  # Open conversations this member can hold in the inbox before auto
+  # assignment skips them. Blank means no limit.
+  validates :assignment_capacity, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   belongs_to :user
   belongs_to :inbox

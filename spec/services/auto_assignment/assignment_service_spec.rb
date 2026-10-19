@@ -354,5 +354,107 @@ RSpec.describe AutoAssignment::AssignmentService do
         expect(conversation_with_team.reload.assignee).to be_nil
       end
     end
+
+    context 'with smart assignment' do
+      let(:rate_limiter) { instance_double(AutoAssignment::RateLimiter) }
+
+      before do
+        create(:inbox_member, inbox: inbox, user: agent2)
+        allow(OnlineStatusTracker).to receive(:get_available_users)
+          .and_return({ agent.id.to_s => 'online', agent2.id.to_s => 'online' })
+        allow(AutoAssignment::RateLimiter).to receive(:new).and_return(rate_limiter)
+        allow(rate_limiter).to receive(:within_limit?).and_return(true)
+        allow(rate_limiter).to receive(:track_assignment)
+      end
+
+      context 'when the policy order is least_busy' do
+        before do
+          assignment_policy.update!(assignment_order: :least_busy)
+          create_list(:conversation, 2, inbox: inbox, assignee: agent, status: :open)
+        end
+
+        it 'assigns to the agent with fewer open conversations' do
+          conv = create(:conversation, inbox: inbox, assignee: nil)
+
+          service.perform_bulk_assignment(limit: 1)
+
+          expect(conv.reload.assignee).to eq(agent2)
+        end
+      end
+
+      context 'when a member has an assignment capacity' do
+        before do
+          inbox.inbox_members.find_by(user_id: agent.id).update!(assignment_capacity: 1)
+          create(:conversation, inbox: inbox, assignee: agent, status: :open)
+          round_robin_selector = instance_double(AutoAssignment::RoundRobinSelector)
+          allow(AutoAssignment::RoundRobinSelector).to receive(:new).and_return(round_robin_selector)
+          allow(round_robin_selector).to receive(:select_agent) { |members| members.first&.user }
+        end
+
+        it 'skips the agent who is at capacity' do
+          conv = create(:conversation, inbox: inbox, assignee: nil)
+
+          service.perform_bulk_assignment(limit: 1)
+
+          expect(conv.reload.assignee).to eq(agent2)
+        end
+
+        it 'assigns nobody when every member is at capacity' do
+          inbox.inbox_members.find_by(user_id: agent2.id).update!(assignment_capacity: 1)
+          create(:conversation, inbox: inbox, assignee: agent2, status: :open)
+          conv = create(:conversation, inbox: inbox, assignee: nil)
+
+          expect(service.perform_bulk_assignment(limit: 1)).to eq(0)
+          expect(conv.reload.assignee).to be_nil
+        end
+      end
+
+      context 'when the policy sticks to the previous agent' do
+        let(:contact) { create(:contact, account: account) }
+
+        before do
+          assignment_policy.update!(sticky_contact: true)
+          create(:conversation, inbox: inbox, contact: contact, assignee: agent2, status: :resolved)
+          round_robin_selector = instance_double(AutoAssignment::RoundRobinSelector)
+          allow(AutoAssignment::RoundRobinSelector).to receive(:new).and_return(round_robin_selector)
+          allow(round_robin_selector).to receive(:select_agent).and_return(agent)
+        end
+
+        it 'gives the conversation back to who served the contact before' do
+          conv = create(:conversation, inbox: inbox, contact: contact, assignee: nil)
+
+          service.perform_bulk_assignment(limit: 1)
+
+          expect(conv.reload.assignee).to eq(agent2)
+        end
+
+        it 'falls back to the selector when the previous agent is offline' do
+          allow(OnlineStatusTracker).to receive(:get_available_users).and_return({ agent.id.to_s => 'online' })
+          conv = create(:conversation, inbox: inbox, contact: contact, assignee: nil)
+
+          service.perform_bulk_assignment(limit: 1)
+
+          expect(conv.reload.assignee).to eq(agent)
+        end
+      end
+
+      context 'when the policy does not require online agents' do
+        before do
+          assignment_policy.update!(require_online: false)
+          allow(OnlineStatusTracker).to receive(:get_available_users).and_return({})
+          round_robin_selector = instance_double(AutoAssignment::RoundRobinSelector)
+          allow(AutoAssignment::RoundRobinSelector).to receive(:new).and_return(round_robin_selector)
+          allow(round_robin_selector).to receive(:select_agent).and_return(agent)
+        end
+
+        it 'assigns even though nobody is online' do
+          conv = create(:conversation, inbox: inbox, assignee: nil)
+
+          service.perform_bulk_assignment(limit: 1)
+
+          expect(conv.reload.assignee).to eq(agent)
+        end
+      end
+    end
   end
 end

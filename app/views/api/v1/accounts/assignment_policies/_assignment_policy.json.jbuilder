@@ -6,6 +6,8 @@ json.conversation_priority assignment_policy.conversation_priority
 json.fair_distribution_limit assignment_policy.fair_distribution_limit
 json.fair_distribution_window assignment_policy.fair_distribution_window
 json.enabled assignment_policy.enabled
+json.sticky_contact assignment_policy.sticky_contact
+json.require_online assignment_policy.require_online
 json.assigned_inbox_count assignment_policy.inboxes.count
 json.created_at assignment_policy.created_at.to_i
 json.updated_at assignment_policy.updated_at.to_i

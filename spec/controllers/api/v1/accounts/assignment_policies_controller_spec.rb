@@ -126,6 +126,25 @@ RSpec.describe 'Assignment Policies API', type: :request do
         expect(json_response['conversation_priority']).to eq('longest_waiting')
       end
 
+      it 'creates a least busy policy that sticks to the previous agent and ignores presence' do
+        smart_params = {
+          assignment_policy: {
+            name: 'Salão', assignment_order: 'least_busy', sticky_contact: true, require_online: false
+          }
+        }
+
+        post "/api/v1/accounts/#{account.id}/assignment_policies",
+             headers: admin.create_new_auth_token,
+             params: smart_params,
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        json_response = response.parsed_body
+        expect(json_response['assignment_order']).to eq('least_busy')
+        expect(json_response['sticky_contact']).to be true
+        expect(json_response['require_online']).to be false
+      end
+
       it 'creates policy with minimal required params' do
         minimal_params = { assignment_policy: { name: 'Minimal Policy' } }
 

@@ -168,6 +168,40 @@ RSpec.describe 'Inbox Member API', type: :request do
         expect(inbox.inbox_members&.first&.user).to eq(agent_to_add)
       end
 
+      it 'stores the assignment capacity per member and returns it' do
+        params = {
+          inbox_id: inbox.id,
+          user_ids: [old_agent.id, agent_to_add.id],
+          capacities: [{ user_id: agent_to_add.id, assignment_capacity: 4 }]
+        }
+
+        patch "/api/v1/accounts/#{account.id}/inbox_members",
+              headers: administrator.create_new_auth_token,
+              params: params,
+              as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(inbox.inbox_members.find_by(user_id: agent_to_add.id).assignment_capacity).to eq(4)
+        expect(inbox.inbox_members.find_by(user_id: old_agent.id).assignment_capacity).to be_nil
+
+        payload = response.parsed_body['payload'].index_by { |agent| agent['id'] }
+        expect(payload[agent_to_add.id]['assignment_capacity']).to eq(4)
+        expect(payload[old_agent.id]['assignment_capacity']).to be_nil
+      end
+
+      it 'clears the assignment capacity when sent blank' do
+        inbox.inbox_members.find_by(user_id: old_agent.id).update!(assignment_capacity: 2)
+        params = { inbox_id: inbox.id, user_ids: [old_agent.id], capacities: [{ user_id: old_agent.id, assignment_capacity: '' }] }
+
+        patch "/api/v1/accounts/#{account.id}/inbox_members",
+              headers: administrator.create_new_auth_token,
+              params: params,
+              as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(inbox.inbox_members.find_by(user_id: old_agent.id).assignment_capacity).to be_nil
+      end
+
       it 'renders not found when inbox not found' do
         params = { inbox_id: nil, user_ids: [agent_to_add.id] }
 

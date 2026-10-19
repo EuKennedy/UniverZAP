@@ -865,8 +865,6 @@
       "TITLE": "Atribuição de conversa",
       "DESCRIPTION": "Atribua automaticamente as conversas recebidas aos atendentes disponíveis com base nas políticas de atribuição",
       "ENABLE_AUTO_ASSIGNMENT": "Ativar atribuição automática de conversas",
-      "DEFAULT_RULES_TITLE": "Regras de atribuição padrão",
-      "DEFAULT_RULES_DESCRIPTION": "Utilizando o comportamento de atribuição padrão para todas as conversas",
       "DEFAULT_RULE_1": "Conversas criadas mais antigas primeiro",
       "DEFAULT_RULE_2": "Distribuição em rodízio",
       "CUSTOMIZE_WITH_POLICY": "Personalizar com política de atribuição",
@@ -886,10 +884,14 @@
       },
       "METHOD": {
         "ROUND_ROBIN": "Rodízio",
-        "BALANCED": "Atribuição equilibrada"
+        "LEAST_BUSY": "Menos ocupado primeiro"
       },
-      "UPGRADE_PROMPT": "Políticas de atribuição personalizadas estão disponíveis no plano Business",
-      "UPGRADE_TO_BUSINESS": "Atualizar para o Business",
+      "STICKY_CONTACT": "Quem já foi atendido volta para o mesmo atendente",
+      "OFFLINE_INCLUDED": "Atendentes offline também recebem conversas",
+      "CAPACITY": {
+        "HELP": "Máximo de conversas abertas por atendente nesta caixa. Em branco, sem limite.",
+        "PLACEHOLDER": "Sem limite"
+      },
       "DEFAULT_POLICY_LINKED": "Política padrão vinculada",
       "DEFAULT_POLICY_DESCRIPTION": "Vincule uma política de atribuição personalizada para definir como as conversas serão atribuídas aos atendentes nesta caixa de entrada.",
       "LINK_EXISTING_POLICY": "Vincular política existente",

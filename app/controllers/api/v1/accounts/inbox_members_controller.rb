@@ -11,6 +11,7 @@ class Api::V1::Accounts::InboxMembersController < Api::V1::Accounts::BaseControl
     authorize @inbox, :create?
     ActiveRecord::Base.transaction do
       @inbox.add_members(agents_to_be_added_ids)
+      apply_capacities
     end
     fetch_updated_agents
   end
@@ -33,6 +34,7 @@ class Api::V1::Accounts::InboxMembersController < Api::V1::Accounts::BaseControl
 
   def fetch_updated_agents
     @agents = Current.account.users.where(id: @inbox.members.select(:user_id))
+    @capacities = @inbox.inbox_members.pluck(:user_id, :assignment_capacity).to_h
   end
 
   def update_agents_list
@@ -43,6 +45,15 @@ class Api::V1::Accounts::InboxMembersController < Api::V1::Accounts::BaseControl
     ActiveRecord::Base.transaction do
       @inbox.add_members(agents_to_be_added_ids)
       @inbox.remove_members(agents_to_be_removed_ids)
+      apply_capacities
+    end
+  end
+
+  # capacities: [{ user_id:, assignment_capacity: }] — blank clears the limit.
+  def apply_capacities
+    Array(params[:capacities]).each do |entry|
+      member = @inbox.inbox_members.find_by(user_id: entry[:user_id])
+      member&.update!(assignment_capacity: entry[:assignment_capacity].presence)
     end
   end
 

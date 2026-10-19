@@ -34,7 +34,6 @@ class AutoAssignment::AssignmentService
     scope = inbox.conversations.unassigned.open
 
     # Apply conversation priority using assignment policy if available
-    policy = inbox.assignment_policy
     scope = if policy&.longest_waiting?
               scope.reorder(last_activity_at: :asc, created_at: :asc)
             else
@@ -45,13 +44,49 @@ class AutoAssignment::AssignmentService
   end
 
   def find_available_agent(conversation = nil)
-    agents = filter_agents_by_team(inbox.available_agents, conversation)
+    agents = filter_agents_by_team(candidate_agents, conversation)
     return nil if agents.nil?
 
     agents = filter_agents_by_rate_limit(agents)
+    agents = filter_agents_by_capacity(agents)
     return nil if agents.empty?
 
-    round_robin_selector.select_agent(agents)
+    sticky_agent(agents, conversation) || selector.select_agent(agents)
+  end
+
+  # Presence is the upstream default; a policy can opt out so a team that
+  # answers from the phone without the dashboard open still gets conversations.
+  def candidate_agents
+    return inbox.available_agents if policy.nil? || policy.require_online?
+
+    inbox.inbox_members.includes(:user)
+  end
+
+  def filter_agents_by_capacity(agents)
+    capped = agents.select { |member| member.assignment_capacity.present? }
+    return agents if capped.empty?
+
+    counts = inbox.conversations.open.where(assignee_id: capped.map(&:user_id)).group(:assignee_id).count
+    agents.reject { |member| member.assignment_capacity.present? && counts.fetch(member.user_id, 0) >= member.assignment_capacity }
+  end
+
+  # Sticky: the agent who handled the contact's previous conversation keeps
+  # the relationship, as long as they are still eligible right now.
+  def sticky_agent(agents, conversation)
+    return nil unless policy&.sticky_contact? && conversation&.contact_id
+
+    previous_assignee_id = conversation.contact.conversations
+                                       .where.not(id: conversation.id).where.not(assignee_id: nil)
+                                       .order(created_at: :desc).pick(:assignee_id)
+    agents.find { |member| member.user_id == previous_assignee_id }&.user
+  end
+
+  def selector
+    policy&.least_busy? ? least_busy_selector : round_robin_selector
+  end
+
+  def policy
+    @policy ||= inbox.assignment_policy
   end
 
   def filter_agents_by_team(agents, conversation)
@@ -100,6 +135,10 @@ class AutoAssignment::AssignmentService
 
   def round_robin_selector
     @round_robin_selector ||= AutoAssignment::RoundRobinSelector.new(inbox: inbox)
+  end
+
+  def least_busy_selector
+    @least_busy_selector ||= AutoAssignment::LeastBusySelector.new(inbox: inbox)
   end
 end
 

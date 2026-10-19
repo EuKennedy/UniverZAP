@@ -51,6 +51,24 @@ RSpec.describe AssignmentPolicy do
         expect(assignment_policy.assignment_order).to eq('round_robin')
         expect(assignment_policy.round_robin?).to be true
       end
+
+      it 'can be set to least_busy' do
+        assignment_policy.update!(assignment_order: :least_busy)
+        expect(assignment_policy.assignment_order).to eq('least_busy')
+        expect(assignment_policy.least_busy?).to be true
+      end
+    end
+  end
+
+  describe 'smart assignment defaults' do
+    let(:assignment_policy) { create(:assignment_policy) }
+
+    it 'does not stick to the previous agent by default' do
+      expect(assignment_policy.sticky_contact).to be false
+    end
+
+    it 'only considers online agents by default' do
+      expect(assignment_policy.require_online).to be true
     end
   end
 end

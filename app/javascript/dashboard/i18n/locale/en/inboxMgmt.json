@@ -877,8 +877,6 @@
       "TITLE": "Conversation Assignment",
       "DESCRIPTION": "Automatically assign incoming conversations to available agents based on assignment policies",
       "ENABLE_AUTO_ASSIGNMENT": "Enable automatic conversation assignment",
-      "DEFAULT_RULES_TITLE": "Default assignment rules",
-      "DEFAULT_RULES_DESCRIPTION": "Using the default assignment behavior for all conversations",
       "DEFAULT_RULE_1": "Earliest created conversations first",
       "DEFAULT_RULE_2": "Round robin distribution",
       "CUSTOMIZE_WITH_POLICY": "Customize with assignment policy",
@@ -898,10 +896,14 @@
       },
       "METHOD": {
         "ROUND_ROBIN": "Round robin",
-        "BALANCED": "Balanced assignment"
+        "LEAST_BUSY": "Least busy agent first"
       },
-      "UPGRADE_PROMPT": "Custom assignment policies are available on the Business plan",
-      "UPGRADE_TO_BUSINESS": "Upgrade to Business",
+      "STICKY_CONTACT": "Returning contacts go back to their previous agent",
+      "OFFLINE_INCLUDED": "Offline agents also receive conversations",
+      "CAPACITY": {
+        "HELP": "Maximum open conversations per agent in this inbox. Leave blank for no limit.",
+        "PLACEHOLDER": "No limit"
+      },
       "DEFAULT_POLICY_LINKED": "Default policy linked",
       "DEFAULT_POLICY_DESCRIPTION": "Link a custom assignment policy to customize how conversations are assigned to agents in this inbox.",
       "LINK_EXISTING_POLICY": "Link existing policy",

@@ -781,11 +781,9 @@
             "LABEL": "Rodízio",
             "DESCRIPTION": "Distribuir as conversas de forma uniforme entre os atendentes."
           },
-          "BALANCED": {
-            "LABEL": "Equilibrado",
-            "DESCRIPTION": "Atribuir conversas com base na capacidade disponível.",
-            "PREMIUM_MESSAGE": "Atualize o plano para acessar a atribuição equilibrada e o gerenciamento de capacidade dos atendentes.",
-            "PREMIUM_BADGE": "Premium"
+          "LEAST_BUSY": {
+            "LABEL": "Menos ocupado",
+            "DESCRIPTION": "O atendente com menos conversas abertas na caixa recebe a próxima."
           }
         },
         "ASSIGNMENT_PRIORITY": {
@@ -798,6 +796,14 @@
             "LABEL": "Maior tempo de espera",
             "DESCRIPTION": "A conversa que está aguardando há mais tempo é atribuída primeiro."
           }
+        },
+        "STICKY_CONTACT": {
+          "LABEL": "Manter o mesmo atendente para quem já foi atendido",
+          "DESCRIPTION": "Quando o contato volta, quem atendeu a conversa anterior recebe de novo, desde que esteja disponível."
+        },
+        "REQUIRE_ONLINE": {
+          "LABEL": "Atribuir só para atendentes online",
+          "DESCRIPTION": "Desligue se a equipe responde pelo celular sem manter o painel aberto; aí todos os membros da caixa entram na distribuição."
         },
         "FAIR_DISTRIBUTION": {
           "LABEL": "Política de distribuição justa",

@@ -59,5 +59,28 @@ shared_examples_for 'auto_assignment_handler' do
       conversation.save!
       expect(conversation.reload.assignee).to eq(agent2)
     end
+
+    context 'with assignment v2' do
+      let(:team) { create(:team, account: account) }
+
+      before do
+        account.enable_features!('assignment_v2')
+      end
+
+      it 'redistributes when an unassigned conversation is handed to a team' do
+        conversation.update!(assignee_id: nil)
+
+        expect { conversation.update!(team_id: team.id) }
+          .to have_enqueued_job(AutoAssignment::AssignmentJob).with(inbox_id: inbox.id)
+      end
+
+      it 'leaves an already assigned conversation alone when the team changes' do
+        create(:team_member, team: team, user: agent)
+        conversation.update!(assignee_id: agent.id)
+
+        expect { conversation.update!(team_id: team.id) }
+          .not_to have_enqueued_job(AutoAssignment::AssignmentJob)
+      end
+    end
   end
 end

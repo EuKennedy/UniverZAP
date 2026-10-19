@@ -106,6 +106,8 @@ const formData = computed(() => ({
     selectedPolicy.value?.conversationPriority || EARLIEST_CREATED,
   fairDistributionLimit: selectedPolicy.value?.fairDistributionLimit || 100,
   fairDistributionWindow: selectedPolicy.value?.fairDistributionWindow || 3600,
+  stickyContact: selectedPolicy.value?.stickyContact ?? false,
+  requireOnline: selectedPolicy.value?.requireOnline ?? true,
 }));
 
 const handleDeleteInbox = async inboxId => {

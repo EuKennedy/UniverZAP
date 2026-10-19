@@ -1,13 +1,12 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
-import { useMapGetter } from 'dashboard/composables/store';
 import BaseInfo from 'dashboard/components-next/AssignmentPolicy/components/BaseInfo.vue';
 import RadioCard from 'dashboard/components-next/radioCard/RadioCard.vue';
 import FairDistribution from 'dashboard/components-next/AssignmentPolicy/components/FairDistribution.vue';
 import DataTable from 'dashboard/components-next/AssignmentPolicy/components/DataTable.vue';
 import AddDataDropdown from 'dashboard/components-next/AssignmentPolicy/components/AddDataDropdown.vue';
+import ToggleSwitch from 'dashboard/components-next/switch/Switch.vue';
 import WithLabel from 'v3/components/Form/WithLabel.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import {
@@ -28,6 +27,8 @@ const props = defineProps({
       conversationPriority: EARLIEST_CREATED,
       fairDistributionLimit: DEFAULT_FAIR_DISTRIBUTION_LIMIT,
       fairDistributionWindow: DEFAULT_FAIR_DISTRIBUTION_WINDOW,
+      stickyContact: false,
+      requireOnline: true,
     }),
   },
   mode: {
@@ -66,12 +67,6 @@ const emit = defineEmits([
 ]);
 
 const { t } = useI18n();
-const route = useRoute();
-
-const accountId = computed(() => Number(route.params.accountId));
-const isFeatureEnabledonAccount = useMapGetter(
-  'accounts/isFeatureEnabledonAccount'
-);
 
 const BASE_KEY = 'ASSIGNMENT_POLICY.AGENT_ASSIGNMENT_POLICY';
 
@@ -83,55 +78,39 @@ const state = reactive({
   conversationPriority: EARLIEST_CREATED,
   fairDistributionLimit: DEFAULT_FAIR_DISTRIBUTION_LIMIT,
   fairDistributionWindow: DEFAULT_FAIR_DISTRIBUTION_WINDOW,
+  stickyContact: false,
+  requireOnline: true,
 });
 
 const validationState = ref({
   isValid: false,
 });
 
-const createOption = (
-  type,
-  key,
-  stateKey,
-  disabled = false,
-  disabledMessage = '',
-  disabledLabel = ''
-) => ({
+const createOption = (type, key, stateKey) => ({
   key,
   label: t(`${BASE_KEY}.FORM.${type}.${key.toUpperCase()}.LABEL`),
   description: t(`${BASE_KEY}.FORM.${type}.${key.toUpperCase()}.DESCRIPTION`),
   isActive: state[stateKey] === key,
-  disabled,
-  disabledMessage,
-  disabledLabel,
 });
 
-const assignmentOrderOptions = computed(() => {
-  const hasAdvancedAssignment = isFeatureEnabledonAccount.value(
-    accountId.value,
-    'advanced_assignment'
-  );
+const assignmentOrderOptions = computed(() =>
+  OPTIONS.ORDER.map(key =>
+    createOption('ASSIGNMENT_ORDER', key, 'assignmentOrder')
+  )
+);
 
-  return OPTIONS.ORDER.map(key => {
-    const isBalanced = key === 'balanced';
-    const disabled = isBalanced && !hasAdvancedAssignment;
-    const disabledMessage = disabled
-      ? t(`${BASE_KEY}.FORM.ASSIGNMENT_ORDER.BALANCED.PREMIUM_MESSAGE`)
-      : '';
-    const disabledLabel = disabled
-      ? t(`${BASE_KEY}.FORM.ASSIGNMENT_ORDER.BALANCED.PREMIUM_BADGE`)
-      : '';
-
-    return createOption(
-      'ASSIGNMENT_ORDER',
-      key,
-      'assignmentOrder',
-      disabled,
-      disabledMessage,
-      disabledLabel
-    );
-  });
-});
+const toggleSections = computed(() => [
+  {
+    key: 'stickyContact',
+    label: t(`${BASE_KEY}.FORM.STICKY_CONTACT.LABEL`),
+    description: t(`${BASE_KEY}.FORM.STICKY_CONTACT.DESCRIPTION`),
+  },
+  {
+    key: 'requireOnline',
+    label: t(`${BASE_KEY}.FORM.REQUIRE_ONLINE.LABEL`),
+    description: t(`${BASE_KEY}.FORM.REQUIRE_ONLINE.DESCRIPTION`),
+  },
+]);
 
 const assignmentPriorityOptions = computed(() =>
   OPTIONS.PRIORITY.map(key =>
@@ -170,6 +149,8 @@ const resetForm = () => {
     conversationPriority: EARLIEST_CREATED,
     fairDistributionLimit: DEFAULT_FAIR_DISTRIBUTION_LIMIT,
     fairDistributionWindow: DEFAULT_FAIR_DISTRIBUTION_WINDOW,
+    stickyContact: false,
+    requireOnline: true,
   });
 };
 
@@ -222,13 +203,28 @@ defineExpose({
                 :label="option.label"
                 :description="option.description"
                 :is-active="option.isActive"
-                :disabled="option.disabled"
-                :disabled-label="option.disabledLabel"
-                :disabled-message="option.disabledMessage"
                 @select="state[section.key] = $event"
               />
             </div>
           </WithLabel>
+        </div>
+      </div>
+
+      <div class="pt-4 flex flex-col gap-4">
+        <div
+          v-for="section in toggleSections"
+          :key="section.key"
+          class="flex items-start justify-between gap-4"
+        >
+          <div class="flex flex-col items-start gap-1">
+            <label class="text-sm font-medium text-n-slate-12">
+              {{ section.label }}
+            </label>
+            <p class="mb-0 text-n-slate-11 text-sm">
+              {{ section.description }}
+            </p>
+          </div>
+          <ToggleSwitch v-model="state[section.key]" />
         </div>
       </div>
 

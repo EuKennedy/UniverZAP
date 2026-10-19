@@ -781,11 +781,9 @@
             "LABEL": "Round robin",
             "DESCRIPTION": "Assign conversations evenly among agents."
           },
-          "BALANCED": {
-            "LABEL": "Balanced",
-            "DESCRIPTION": "Assign conversations based on available capacity.",
-            "PREMIUM_MESSAGE": "Upgrade to access balanced assignment and agent capacity management.",
-            "PREMIUM_BADGE": "Premium"
+          "LEAST_BUSY": {
+            "LABEL": "Least busy",
+            "DESCRIPTION": "The agent with the fewest open conversations in the inbox gets the next one."
           }
         },
         "ASSIGNMENT_PRIORITY": {
@@ -798,6 +796,14 @@
             "LABEL": "Longest waiting",
             "DESCRIPTION": "The conversation waiting the longest gets assigned first."
           }
+        },
+        "STICKY_CONTACT": {
+          "LABEL": "Keep the same agent for returning contacts",
+          "DESCRIPTION": "When a contact comes back, the agent who handled their previous conversation gets it again, as long as they are available."
+        },
+        "REQUIRE_ONLINE": {
+          "LABEL": "Only assign to agents who are online",
+          "DESCRIPTION": "Turn off if your team answers from the phone without keeping the dashboard open; every inbox member then takes part."
         },
         "FAIR_DISTRIBUTION": {
           "LABEL": "Fair distribution policy",
