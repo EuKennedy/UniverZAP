@@ -64,7 +64,9 @@
       "LAUNCH_ERROR": "Não foi possível disparar a campanha.",
       "PAUSE": "Pausar",
       "PAUSED": "Campanha pausada.",
-      "PAUSE_ERROR": "Não foi possível pausar a campanha."
+      "PAUSE_ERROR": "Não foi possível pausar a campanha.",
+      "LAUNCH_CONFIRM_RELAUNCH": "Disparar para {count} contatos novos? Os {sent} que já receberam não recebem de novo.",
+      "LAUNCH_NOTHING_NEW": "Todos dessa audiência já receberam esta campanha. Adicione contatos novos para disparar de novo."
     },
     "MESSAGE": {
       "SEQUENCE_HINT": "Cada bloco é enviado em sequência — combine texto e mídia para montar o fluxo.",
@@ -100,7 +102,9 @@
         "NAME": "Nome",
         "PHONE": "Telefone",
         "EMAIL": "Email"
-      }
+      },
+      "TEMPLATES_REFRESH": "Atualizar",
+      "TEMPLATES_REFRESHED": "Templates atualizados da Meta"
     },
     "AUDIENCE": {
       "CONTACT_LABELS": "Etiquetas de contato",

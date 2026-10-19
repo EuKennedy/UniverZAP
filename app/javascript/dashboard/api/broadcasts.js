@@ -26,9 +26,11 @@ class BroadcastsAPI extends ApiClient {
     return axios.get(`${this.url}/${id}/audience_preview`);
   }
 
-  templates(inboxId) {
+  // `refresh` makes the backend sync from Meta before listing, so a template
+  // approved minutes ago shows up without waiting for the scheduled sync.
+  templates(inboxId, { refresh = false } = {}) {
     return axios.get(`${this.url}/templates`, {
-      params: { inbox_id: inboxId },
+      params: { inbox_id: inboxId, refresh },
     });
   }
 

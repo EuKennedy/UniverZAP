@@ -40,6 +40,19 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+
+  # A hung example used to burn the whole 30-minute job timeout in silence:
+  # the progress formatter prints anonymous dots, buffered, and the process is
+  # killed before the summary — so nothing named the culprit, and the red CI
+  # blocked the image for every commit after it. Bounded per example, it fails
+  # in minutes with its full description and the shard runs to the end.
+  # CI only: a breakpoint while debugging locally must never trip it.
+  if ENV['CI']
+    require 'timeout'
+    config.around do |example|
+      Timeout.timeout(ENV.fetch('SPEC_EXAMPLE_TIMEOUT', 180).to_i) { example.run }
+    end
+  end
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_path = Rails.root.join('spec/fixtures')
 

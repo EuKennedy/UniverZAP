@@ -199,6 +199,7 @@ describe('useAutomation', () => {
     const { manifestCustomAttributes, automationTypes } = useAutomation();
     automationTypes.message_created = { conditions: [] };
     automationTypes.conversation_created = { conditions: [] };
+    automationTypes.conversation_ad_referral = { conditions: [] };
     automationTypes.conversation_updated = { conditions: [] };
     automationTypes.conversation_opened = { conditions: [] };
     automationTypes.conversation_resolved = { conditions: [] };

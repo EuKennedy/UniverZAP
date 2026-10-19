@@ -22,7 +22,13 @@ class AutoAssignment::InboxRoundRobinService
 
   def reset_queue
     clear_queue
-    add_agent_to_queue(inbox.inbox_members.map(&:user_id))
+    # Read from the database, not from `inbox.inbox_members`: that association
+    # may already be loaded — and empty — on this same Inbox object (creating a
+    # conversation loads it through the assignment hooks), and the queue would
+    # be rebuilt from a stale list. The guard is a separate problem: LPUSH with
+    # no values is a Redis error, not a no-op, so an empty inbox must not push.
+    member_ids = InboxMember.where(inbox_id: inbox.id).pluck(:user_id)
+    add_agent_to_queue(member_ids) if member_ids.any?
   end
 
   # end of queue management functions

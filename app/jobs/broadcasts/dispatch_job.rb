@@ -17,17 +17,31 @@ class Broadcasts::DispatchJob < ApplicationJob
 
   private
 
+  # Adds every contact the audience resolves to that is not a recipient yet.
+  # It runs on every batch, not only the first: a campaign tested on one
+  # contact and relaunched after the operator added a hundred more has to pick
+  # those hundred up. The old early return on `exists?` skipped them for good,
+  # so the screen kept showing the single test send.
   def build_recipients
-    return if @broadcast.broadcast_recipients.exists?
-
     resolver = Broadcasts::AudienceResolver.new(@broadcast)
     # Numbers typed straight into the composer have no contact row yet; without
     # this the whole cold list resolves to nothing and the broadcast reports
     # zero recipients instead of saying the list never landed.
     resolver.ensure_contacts!
-    contact_ids = resolver.contact_ids
-    return if contact_ids.empty?
+    audience = resolver.contact_ids
+    return if audience.empty?
 
+    # Under a row lock because there is no unique index on
+    # (broadcast_id, contact_id): two overlapping runs — a relaunch while the
+    # previous dispatch is still going — would otherwise compute the same diff
+    # and send the same contact twice.
+    @broadcast.with_lock do
+      fresh = audience - @broadcast.broadcast_recipients.pluck(:contact_id)
+      insert_recipients(fresh) if fresh.any?
+    end
+  end
+
+  def insert_recipients(contact_ids)
     now = Time.current
     rows = contact_ids.map do |contact_id|
       { broadcast_id: @broadcast.id, contact_id: contact_id, status: 0, created_at: now, updated_at: now }

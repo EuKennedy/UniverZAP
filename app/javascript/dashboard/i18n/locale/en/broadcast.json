@@ -64,7 +64,9 @@
       "LAUNCH_ERROR": "Could not launch the campaign.",
       "PAUSE": "Pause",
       "PAUSED": "Campaign paused.",
-      "PAUSE_ERROR": "Could not pause the campaign."
+      "PAUSE_ERROR": "Could not pause the campaign.",
+      "LAUNCH_CONFIRM_RELAUNCH": "Send to {count} new contacts? The {sent} who already received it will not get it again.",
+      "LAUNCH_NOTHING_NEW": "Everyone in this audience has already received this campaign. Add new contacts to send again."
     },
     "MESSAGE": {
       "SEQUENCE_HINT": "Each block is sent in order — mix text and media to build a sequence.",
@@ -100,7 +102,9 @@
         "NAME": "Name",
         "PHONE": "Phone",
         "EMAIL": "Email"
-      }
+      },
+      "TEMPLATES_REFRESH": "Refresh",
+      "TEMPLATES_REFRESHED": "Templates updated from Meta"
     },
     "AUDIENCE": {
       "CONTACT_LABELS": "Contact labels",
