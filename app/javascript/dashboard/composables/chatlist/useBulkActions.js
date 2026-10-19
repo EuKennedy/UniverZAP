@@ -146,7 +146,13 @@ export function useBulkActions() {
     }
   }
 
-  async function onUpdateConversations(status, snoozedUntil) {
+  // `closingLabel`: title of the closing status picked for a bulk resolve on
+  // accounts that have them; the job applies the label before the status.
+  async function onUpdateConversations(
+    status,
+    snoozedUntil,
+    closingLabel = null
+  ) {
     if (selectedConversations.value.length === 0) return;
 
     let conversationIds = selectedConversations.value;
@@ -194,6 +200,7 @@ export function useBulkActions() {
             status,
           },
           snoozed_until: snoozedUntil,
+          ...(closingLabel ? { labels: { add: [closingLabel] } } : {}),
         });
       }
 

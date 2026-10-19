@@ -89,6 +89,22 @@ describe('#ConversationAPI', () => {
       );
     });
 
+    it('#toggleStatus with a closing label', () => {
+      conversationAPI.toggleStatus({
+        conversationId: 12,
+        status: 'resolved',
+        closingLabel: 'cancelado',
+      });
+      expect(axiosMock.post).toHaveBeenCalledWith(
+        `/api/v1/conversations/12/toggle_status`,
+        {
+          status: 'resolved',
+          snoozed_until: null,
+          closing_label: 'cancelado',
+        }
+      );
+    });
+
     it('#assignAgent', () => {
       conversationAPI.assignAgent({ conversationId: 12, agentId: 34 });
       expect(axiosMock.post).toHaveBeenCalledWith(

@@ -7,6 +7,7 @@ import { useStore, useStoreGetters } from 'dashboard/composables/store';
 import { useEmitter } from 'dashboard/composables/emitter';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
 import { useConversationRequiredAttributes } from 'dashboard/composables/useConversationRequiredAttributes';
+import { useClosingLabels } from 'dashboard/composables/useClosingLabels';
 
 import WootDropdownItem from 'shared/components/ui/dropdown/DropdownItem.vue';
 import WootDropdownMenu from 'shared/components/ui/dropdown/DropdownMenu.vue';
@@ -21,6 +22,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
 import ConversationKanbanAttachModal from 'dashboard/components-next/ConversationKanbanAttach/ConversationKanbanAttachModal.vue';
 import ConversationKanbanViewerModal from 'dashboard/components-next/ConversationKanbanAttach/ConversationKanbanViewerModal.vue';
+import ClosingLabelMenu from 'dashboard/components/widgets/conversation/ClosingLabelMenu.vue';
 import { useAthenasAssistant } from 'dashboard/composables/useAthenasAssistant';
 import { useAthenasCredits } from 'dashboard/composables/useAthenasCredits';
 
@@ -28,6 +30,7 @@ const store = useStore();
 const getters = useStoreGetters();
 const { t } = useI18n();
 const { checkMissingAttributes } = useConversationRequiredAttributes();
+const { closingLabels, requiresClosingLabel } = useClosingLabels();
 
 // Athenas saldo chip — replaces the old floating bottom-36 widget so
 // the saldo lives next to "Mover/Visualizar Kanban" instead of
@@ -57,6 +60,13 @@ const resolveAttributesModalRef = ref(null);
 const [showActionsDropdown, toggleDropdown] = useToggle();
 const closeDropdown = () => toggleDropdown(false);
 const openDropdown = () => toggleDropdown(true);
+
+// UniverZAP: on accounts with closing statuses "Resolve" first asks how the
+// conversation ended; the chosen label travels with the resolve request.
+const [showClosingLabelMenu, toggleClosingLabelMenu] = useToggle();
+const closeClosingLabelMenu = () => toggleClosingLabelMenu(false);
+// Set by "resolve and go to next" (⌘⌥E) so the jump happens after the pick.
+const advanceAfterResolve = ref(false);
 
 const currentChat = computed(() => getters.getSelectedChat.value);
 
@@ -209,8 +219,14 @@ const openSnoozeModal = () => {
   ninja.open({ parent: 'snooze_conversation' });
 };
 
-const toggleStatus = (status, snoozedUntil, customAttributes = null) => {
+const toggleStatus = async (
+  status,
+  snoozedUntil,
+  customAttributes = null,
+  closingLabel = null
+) => {
   closeDropdown();
+  closeClosingLabelMenu();
   isLoading.value = true;
 
   const payload = {
@@ -222,11 +238,20 @@ const toggleStatus = (status, snoozedUntil, customAttributes = null) => {
   if (customAttributes) {
     payload.customAttributes = customAttributes;
   }
+  if (closingLabel) {
+    payload.closingLabel = closingLabel;
+  }
 
-  store.dispatch('toggleStatus', payload).then(() => {
+  try {
+    await store.dispatch('toggleStatus', payload);
     useAlert(t('CONVERSATION.CHANGE_STATUS'));
+  } catch (error) {
+    useAlert(
+      error?.response?.data?.error || t('CONVERSATION.CHANGE_STATUS_FAILED')
+    );
+  } finally {
     isLoading.value = false;
-  });
+  }
 };
 
 const handleResolveWithAttributes = ({ attributes, context }) => {
@@ -236,7 +261,8 @@ const handleResolveWithAttributes = ({ attributes, context }) => {
     toggleStatus(
       wootConstants.STATUS_TYPE.RESOLVED,
       context.snoozedUntil,
-      mergedAttributes
+      mergedAttributes,
+      context.closingLabel
     );
   }
 };
@@ -261,7 +287,10 @@ const copyCsatLink = async () => {
   closeDropdown();
 };
 
-const onCmdResolveConversation = () => {
+// Resolves now, or opens the required-attributes modal first. `closingLabel`
+// is the title of the closing status the agent picked (null when the account
+// has none and the one-click resolve still applies).
+const resolveConversation = (closingLabel = null) => {
   const currentCustomAttributes = currentChat.value.custom_attributes || {};
   const { hasMissing, missing } = checkMissingAttributes(
     currentCustomAttributes
@@ -271,14 +300,48 @@ const onCmdResolveConversation = () => {
     const conversationContext = {
       id: currentChat.value.id,
       snoozedUntil: null,
+      closingLabel,
     };
+    closeClosingLabelMenu();
     resolveAttributesModalRef.value?.open(
       missing,
       currentCustomAttributes,
       conversationContext
     );
-  } else {
-    toggleStatus(wootConstants.STATUS_TYPE.RESOLVED);
+    return Promise.resolve();
+  }
+  return toggleStatus(
+    wootConstants.STATUS_TYPE.RESOLVED,
+    null,
+    null,
+    closingLabel
+  );
+};
+
+const goToNextConversation = () => {
+  const { all, activeIndex, lastIndex } = getConversationParams();
+  if (activeIndex < lastIndex) {
+    all[activeIndex + 1].click();
+  } else if (all.length > 1) {
+    all[0].click();
+    document.querySelector('.conversations-list').scrollTop = 0;
+  }
+};
+
+const onCmdResolveConversation = () => {
+  if (requiresClosingLabel.value) {
+    closeDropdown();
+    toggleClosingLabelMenu(true);
+    return;
+  }
+  resolveConversation();
+};
+
+const onClosingLabelSelected = async label => {
+  await resolveConversation(label.title);
+  if (advanceAfterResolve.value) {
+    advanceAfterResolve.value = false;
+    goToNextConversation();
   }
 };
 
@@ -294,14 +357,14 @@ const keyboardEvents = {
   },
   '$mod+Alt+KeyE': {
     action: async event => {
-      const { all, activeIndex, lastIndex } = getConversationParams();
       onCmdResolveConversation();
 
-      if (activeIndex < lastIndex) {
-        all[activeIndex + 1].click();
-      } else if (all.length > 1) {
-        all[0].click();
-        document.querySelector('.conversations-list').scrollTop = 0;
+      // With closing statuses the jump waits for the pick (see
+      // onClosingLabelSelected); otherwise move on right away as before.
+      if (requiresClosingLabel.value) {
+        advanceAfterResolve.value = true;
+      } else {
+        goToNextConversation();
       }
       event.preventDefault();
     },
@@ -524,6 +587,15 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
         </WootDropdownItem>
       </WootDropdownMenu>
     </div>
+    <ClosingLabelMenu
+      v-if="showClosingLabelMenu"
+      v-on-clickaway="closeClosingLabelMenu"
+      :labels="closingLabels"
+      :is-loading="isLoading"
+      class="absolute z-10 top-full mt-0.5 end-0"
+      data-onboarding="conv-closing-label-menu"
+      @select="onClosingLabelSelected"
+    />
     <ConversationResolveAttributesModal
       ref="resolveAttributesModalRef"
       @submit="handleResolveWithAttributes"
