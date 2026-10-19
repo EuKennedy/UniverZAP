@@ -32,6 +32,17 @@ class Kanban::AutomationService
       end
     end
 
+    # A stage label applied by hand (the sheet's "Agendar") lands the card
+    # in the column of the same name, if the board has one.
+    def handle_stage_label_applied(conversation, title)
+      conversation.kanban_tasks.includes(:funnel, :funnel_stage).find_each do |task|
+        stage = stage_named(task.funnel, [title])
+        next if stage.blank? || task.funnel_stage_id == stage.id
+
+        task.update(funnel_stage: stage)
+      end
+    end
+
     def handle_assignee_changed(conversation)
       return if conversation.assignee_id.blank?
 
@@ -79,7 +90,11 @@ class Kanban::AutomationService
     def stage_for_closing_status(funnel, closing_titles)
       return if closing_titles.empty?
 
-      funnel.funnel_stages.ordered.detect { |stage| closing_titles.include?(stage.name.to_s.parameterize) }
+      stage_named(funnel, closing_titles)
+    end
+
+    def stage_named(funnel, titles)
+      funnel.funnel_stages.ordered.detect { |stage| titles.include?(stage.name.to_s.parameterize) }
     end
 
     def won_stage_for(task)

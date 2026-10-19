@@ -6,7 +6,11 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
 
   def index
     @vertical_key = Current.account.custom_attributes['vertical_template']
-    @statuses = selected_titles.present? ? selected_statuses : default_statuses
+    @statuses = if params[:scope] == 'all'
+                  all_statuses
+                else
+                  selected_titles.present? ? selected_statuses : default_statuses
+                end
   end
 
   # Which labels the conversation list's second row shows, chosen by an admin
@@ -45,6 +49,19 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
       next unless Current.account.labels.exists?(title: status.title)
 
       { title: status.title, color: status.color, description: status.description, count: label_count(status.title) }
+    end
+  end
+
+  # Every stage of the vertical, closing ones included: what the customer
+  # sheet needs to tell a stage label from any other label.
+  def all_statuses
+    return [] if @vertical_key.blank?
+
+    vertical = Vertical.find_by(key: @vertical_key)
+    return [] unless vertical
+
+    vertical.vertical_statuses.map do |status|
+      status.slice(:title, :color, :description, :closes_conversation)
     end
   end
 

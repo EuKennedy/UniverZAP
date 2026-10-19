@@ -149,6 +149,12 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     @conversation.save!
   end
 
+  # UniverZAP: "Agendar" from the customer sheet (see Conversations::ScheduleService).
+  def schedule
+    attributes = params.permit(*Conversations::ScheduleService::ATTRIBUTE_KEYS)
+    Conversations::ScheduleService.new(conversation: @conversation, attributes: attributes).perform
+  end
+
   # UniverZAP: attach this conversation (and its contact) to a Kanban stage.
   # Creates a KanbanTask in the requested stage, linked to the conversation
   # and contact. Returns the task so the client can refresh the board.
