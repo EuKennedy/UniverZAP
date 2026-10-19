@@ -695,6 +695,13 @@ AUTOMATIONS.conversation_ad_referral = {
   actions: AUTOMATIONS.conversation_created.actions,
 };
 
+// UniverZAP: a conversation created for a contact who already had a
+// conversation that ended (see Conversations::RecurringCustomerService).
+AUTOMATIONS.conversation_recurring_customer = {
+  conditions: AUTOMATIONS.conversation_created.conditions,
+  actions: AUTOMATIONS.conversation_created.actions,
+};
+
 // UniverZAP: time-based trigger run by AutomationRules::WaitingScanner every
 // 5 minutes — the customer has the last word and no human replied for more
 // than N minutes. The first condition (waiting_minutes) is the threshold.
@@ -747,6 +754,10 @@ export const AUTOMATION_RULE_EVENTS = [
   {
     key: 'conversation_ad_referral',
     value: 'CONVERSATION_AD_REFERRAL',
+  },
+  {
+    key: 'conversation_recurring_customer',
+    value: 'CONVERSATION_RECURRING_CUSTOMER',
   },
   {
     key: 'conversation_waiting',

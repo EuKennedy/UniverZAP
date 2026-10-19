@@ -50,6 +50,10 @@
           "LABEL": "Lead from ad",
           "HINT": "Starts when the message comes from a Click-to-WhatsApp ad (Facebook/Instagram)."
         },
+        "RECURRING_CUSTOMER": {
+          "LABEL": "Returning customer",
+          "HINT": "Starts on the first message of a customer who already had a conversation that ended."
+        },
         "NO_REPLY": {
           "LABEL": "Customer waiting",
           "HINT": "Starts when the customer has waited for an agent longer than the minutes below (checked every 5 minutes)."

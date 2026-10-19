@@ -137,6 +137,7 @@
       "CONVERSATION_RESOLVED": "Conversa Resolvida",
       "CONVERSATION_OPENED": "Conversa Aberta",
       "CONVERSATION_AD_REFERRAL": "Lead de anúncio (Click-to-WhatsApp)",
+      "CONVERSATION_RECURRING_CUSTOMER": "Cliente recorrente (já teve atendimento encerrado)",
       "CONVERSATION_WAITING": "Cliente esperando atendente (minutos)"
     },
     "ACTIONS": {

@@ -138,6 +138,7 @@
       "CONVERSATION_RESOLVED": "Conversation Resolved",
       "CONVERSATION_OPENED": "Conversation Opened",
       "CONVERSATION_AD_REFERRAL": "Lead from ad (Click-to-WhatsApp)",
+      "CONVERSATION_RECURRING_CUSTOMER": "Returning customer (had a conversation that ended)",
       "CONVERSATION_WAITING": "Customer waiting for an agent (minutes)"
     },
     "ACTIONS": {

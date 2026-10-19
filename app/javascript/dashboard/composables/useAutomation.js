@@ -172,6 +172,7 @@ export function useAutomation(startValue = null) {
       'message_created',
       'conversation_created',
       'conversation_ad_referral',
+      'conversation_recurring_customer',
       'conversation_updated',
       'conversation_opened',
     ].forEach(eventToUpdate => {
