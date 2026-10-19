@@ -798,6 +798,15 @@ function updateView(selectedView) {
   } else if (activeListView.value === wootConstants.LIST_VIEW.RESOLVED) {
     activeStatus.value = wootConstants.STATUS_TYPE.OPEN;
   }
+  // Aguardando is the fila de risco: it only earns that name sorted oldest
+  // wait first, so picking it also picks that sort — same enter/exit
+  // symmetry as Resolvidas above, so leaving it doesn't strand every other
+  // view sorted by wait time.
+  if (selectedView === wootConstants.LIST_VIEW.WAITING) {
+    activeSortBy.value = wootConstants.SORT_BY_TYPE.WAITING_SINCE_ASC;
+  } else if (activeListView.value === wootConstants.LIST_VIEW.WAITING) {
+    activeSortBy.value = wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC;
+  }
   activeListView.value = selectedView;
   activeAssigneeTab.value = wootConstants.ASSIGNEE_TYPE.ALL;
   updateUISettings({ conversation_list_view: selectedView });
