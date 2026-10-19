@@ -40,8 +40,11 @@ export default {
     },
     parsedLastMessage() {
       const { content_attributes: contentAttributes } = this.message;
-      const { email: { subject } = {} } = contentAttributes || {};
-      return this.getPlainText(subject || this.message.content);
+      const { email: { subject } = {}, ad_referral: adReferral } =
+        contentAttributes || {};
+      return this.getPlainText(
+        adReferral?.customer_message || subject || this.message.content
+      );
     },
     lastMessageFileType() {
       const [{ file_type: fileType } = {}] = this.message.attachments;

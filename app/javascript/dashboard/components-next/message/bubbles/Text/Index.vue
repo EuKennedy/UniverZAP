@@ -2,9 +2,10 @@
 import { computed, ref } from 'vue';
 import BaseBubble from 'next/message/bubbles/Base.vue';
 import FormattedContent from './FormattedContent.vue';
+import AdReferralCard from './AdReferralCard.vue';
 import AttachmentChips from 'next/message/chips/AttachmentChips.vue';
 import TranslationToggle from 'dashboard/components-next/message/TranslationToggle.vue';
-import { MESSAGE_TYPES } from '../../constants';
+import { MESSAGE_TYPES, ATTACHMENT_TYPES } from '../../constants';
 import { useMessageContext } from '../../provider.js';
 import { useTranslations } from 'dashboard/composables/useTranslations';
 
@@ -16,6 +17,22 @@ const { hasTranslations, translationContent } =
 
 const renderOriginal = ref(false);
 
+const adReferral = computed(() => contentAttributes.value?.adReferral);
+
+const adCreatives = computed(() =>
+  adReferral.value
+    ? attachments.value.filter(
+        attachment => attachment.fileType === ATTACHMENT_TYPES.IMAGE
+      )
+    : []
+);
+
+const footerAttachments = computed(() =>
+  attachments.value.filter(
+    attachment => !adCreatives.value.includes(attachment)
+  )
+);
+
 const renderContent = computed(() => {
   if (renderOriginal.value) {
     return content.value;
@@ -23,6 +40,10 @@ const renderContent = computed(() => {
 
   if (hasTranslations.value) {
     return translationContent.value;
+  }
+
+  if (adReferral.value) {
+    return adReferral.value.customerMessage;
   }
 
   return content.value;
@@ -47,6 +68,11 @@ const handleSeeOriginal = () => {
       <span v-if="isEmpty" class="text-n-slate-11">
         {{ $t('CONVERSATION.NO_CONTENT') }}
       </span>
+      <AdReferralCard
+        v-if="adReferral"
+        :ad-referral="adReferral"
+        :attachments="adCreatives"
+      />
       <FormattedContent v-if="renderContent" :content="renderContent" />
       <TranslationToggle
         v-if="hasTranslations"
@@ -54,7 +80,7 @@ const handleSeeOriginal = () => {
         :showing-original="renderOriginal"
         @toggle="handleSeeOriginal"
       />
-      <AttachmentChips :attachments="attachments" class="gap-2" />
+      <AttachmentChips :attachments="footerAttachments" class="gap-2" />
       <template v-if="isTemplate">
         <div
           v-if="contentAttributes.submittedEmail"

@@ -51,8 +51,11 @@ const isMessagePrivate = computed(() => {
 
 const parsedLastMessage = computed(() => {
   const { content_attributes: contentAttributes } = props.message;
-  const { email: { subject } = {} } = contentAttributes || {};
-  return getPlainText(subject || props.message.content);
+  const { email: { subject } = {}, ad_referral: adReferral } =
+    contentAttributes || {};
+  return getPlainText(
+    adReferral?.customer_message || subject || props.message.content
+  );
 });
 
 const lastMessageFileType = computed(() => {

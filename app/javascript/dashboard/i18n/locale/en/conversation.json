@@ -50,6 +50,10 @@
     "UNKNOWN_FILE_TYPE": "Unknown File",
     "SAVE_CONTACT": "Save Contact",
     "NO_CONTENT": "No content to display",
+    "AD_REFERRAL": {
+      "LABEL": "Ad",
+      "VIEW_AD": "View ad"
+    },
     "SHARED_ATTACHMENT": {
       "CONTACT": "{sender} has shared a contact",
       "LOCATION": "{sender} has shared a location",
