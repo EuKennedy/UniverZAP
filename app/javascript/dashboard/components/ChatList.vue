@@ -15,6 +15,7 @@ import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import VerticalStatusChips from './widgets/VerticalStatusChips.vue';
 import ConversationKpiRow from './widgets/ConversationKpiRow.vue';
+import ConversationDateStrip from './widgets/ConversationDateStrip.vue';
 import ReportsAPI from 'dashboard/api/reports';
 import ConversationListFilter from 'dashboard/components-next/filter/ConversationListFilter.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
@@ -90,6 +91,16 @@ const todayCollapsed = ref(false);
 function toggleToday() {
   todayCollapsed.value = !todayCollapsed.value;
   updateUISettings({ conversation_list_today_collapsed: todayCollapsed.value });
+}
+
+// UniverZAP: the agenda — the day the conversations on screen started on
+// ('YYYY-MM-DD', agent's timezone; null = every day). Not remembered: a
+// reload always opens on the whole queue. The open/folded week is.
+const createdOn = ref(null);
+const datesExpanded = ref(false);
+function toggleDates() {
+  datesExpanded.value = !datesExpanded.value;
+  updateUISettings({ conversation_list_dates_open: datesExpanded.value });
 }
 const showAdvancedFilters = ref(false);
 const listFilter = ref(emptyListFilter());
@@ -349,6 +360,7 @@ const conversationFilters = computed(() => {
       !isGroupsTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)
         ? activeListView.value
         : undefined,
+    createdOn: createdOn.value || undefined,
     // The bucket this page belongs to, so the store files pagination under
     // the same key this list reads it from.
     listKey: listKey.value,
@@ -392,6 +404,26 @@ const pageTitle = computed(() => {
   return t('CHAT_LIST.TAB_HEADING');
 });
 
+const localDayKey = seconds => {
+  const date = new Date(seconds * 1000);
+  const pad = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+// What the agenda counts: the view on screen, without paging or sorting.
+const dateScope = computed(() => {
+  const filters = conversationFilters.value;
+  return {
+    inboxId: filters.inboxId,
+    assigneeType: filters.assigneeType,
+    status: filters.status,
+    labels: filters.labels,
+    teamId: filters.teamId,
+    conversationType: filters.conversationType,
+    attendanceState: filters.attendanceState,
+  };
+});
+
 // The store accumulates every bucket fetched so far, so the list on screen is
 // the client-side mirror of the backend split: Grupos holds ONLY WhatsApp
 // groups, Todos everything else, narrowed by the view of its dropdown.
@@ -428,6 +460,13 @@ const conversationList = computed(() => {
         ? participatingChatsList.value(filters)
         : allChatList.value(filters);
     localConversationList = filterByListKey(chats);
+    // A conversation that starts while a past day is on screen arrives by
+    // websocket into the same store; keep it out of that day.
+    if (createdOn.value) {
+      localConversationList = localConversationList.filter(
+        c => localDayKey(c.created_at) === createdOn.value
+      );
+    }
   } else {
     localConversationList = [...chatLists.value];
   }
@@ -490,6 +529,7 @@ function setFiltersFromUISettings() {
     typeof todayPref === 'boolean'
       ? todayPref
       : window.matchMedia('(max-width: 767px)').matches;
+  datesExpanded.value = !!uiSettings.value.conversation_list_dates_open;
   const { status, order_by: orderBy } = filterBy;
   activeListView.value = Object.values(wootConstants.LIST_VIEW).includes(view)
     ? view
@@ -713,6 +753,12 @@ function resetAndFetchData() {
     return;
   }
   fetchConversations();
+}
+
+// A different day is a different list: start over from its first page.
+function setCreatedOn(day) {
+  createdOn.value = day;
+  resetAndFetchData();
 }
 
 // UniverZAP: the list filter narrows what the list was showing — the status,
@@ -1236,6 +1282,14 @@ watch(conversationFilters, (newVal, oldVal) => {
       </ul>
       <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
     </div>
+    <ConversationDateStrip
+      v-if="!hasAppliedFiltersOrActiveFolders"
+      :model-value="createdOn"
+      :scope="dateScope"
+      :expanded="datesExpanded"
+      @update:model-value="setCreatedOn"
+      @toggle="toggleDates"
+    />
 
     <p
       v-if="!chatListLoading && !conversationList.length"

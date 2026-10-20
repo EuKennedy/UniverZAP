@@ -168,6 +168,7 @@ Rails.application.routes.draw do
             collection do
               get :meta
               get :search
+              get :created_per_day
               post :filter
             end
             scope module: :conversations do

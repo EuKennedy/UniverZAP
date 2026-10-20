@@ -49,8 +49,23 @@ class ConversationFinder
     filter_by_conversation_type if params[:conversation_type]
     filter_by_attendance_state
     filter_by_assignee_type
+    filter_by_created_on
 
     { conversations: conversations, count: counts }
+  end
+
+  # UniverZAP: the agenda strip of the list — how many conversations of the
+  # current view started on each day between params[:from] and params[:to],
+  # days in the agent's timezone. Same scope as #perform, minus the day.
+  def perform_created_per_day
+    set_up
+    apply_group_scope
+    filter_by_conversation_type if params[:conversation_type]
+    filter_by_attendance_state
+    filter_by_assignee_type
+
+    range = time_zone.parse(params[:from]).beginning_of_day..time_zone.parse(params[:to]).end_of_day
+    @conversations.where(created_at: range).group(local_created_day).count.transform_keys(&:iso8601)
   end
 
   def perform_meta_only
@@ -160,6 +175,23 @@ class ConversationFinder
     when 'in_attendance'
       @conversations = @conversations.in_attendance
     end
+  end
+
+  # UniverZAP: only the conversations that started on params[:created_on]
+  # (YYYY-MM-DD in the agent's timezone). Narrows the list, never the badges.
+  def filter_by_created_on
+    return if params[:created_on].blank?
+
+    @conversations = @conversations.where(created_at: time_zone.parse(params[:created_on]).all_day)
+  end
+
+  def time_zone
+    @time_zone ||= ActiveSupport::TimeZone[params[:timezone].to_s] || Time.zone
+  end
+
+  def local_created_day
+    zone = Conversation.connection.quote(time_zone.tzinfo.name)
+    Arel.sql("date(conversations.created_at AT TIME ZONE 'UTC' AT TIME ZONE #{zone})")
   end
 
   def filter_by_query

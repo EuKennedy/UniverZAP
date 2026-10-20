@@ -17,9 +17,14 @@ class ConversationApi extends ApiClient {
     sortBy,
     updatedWithin,
     attendanceState,
+    createdOn,
   }) {
     return axios.get(this.url, {
       params: {
+        created_on: createdOn,
+        timezone: createdOn
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined,
         inbox_id: inboxId,
         team_id: teamId,
         status,
@@ -40,6 +45,35 @@ class ConversationApi extends ApiClient {
       params: {
         page: payload.page,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+    });
+  }
+
+  // UniverZAP: conversations started per day ({ 'YYYY-MM-DD': count }) for the
+  // agenda strip, scoped like the list itself.
+  createdPerDay({
+    from,
+    to,
+    inboxId,
+    status,
+    assigneeType,
+    labels,
+    teamId,
+    conversationType,
+    attendanceState,
+  }) {
+    return axios.get(`${this.url}/created_per_day`, {
+      params: {
+        from,
+        to,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        inbox_id: inboxId,
+        team_id: teamId,
+        status,
+        assignee_type: assigneeType,
+        labels,
+        conversation_type: conversationType,
+        attendance_state: attendanceState,
       },
     });
   }

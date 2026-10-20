@@ -308,6 +308,32 @@ describe ConversationFinder do
       end
     end
 
+    context 'with created_on' do
+      # 02:30 UTC on the 15th is still the 14th in São Paulo (UTC-3).
+      let!(:late_night) do
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, created_at: Time.utc(2026, 10, 15, 2, 30))
+      end
+
+      before do
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, created_at: Time.utc(2026, 10, 15, 13, 0))
+      end
+
+      it 'lists only what started that day in the agent timezone, keeping the badges whole' do
+        params = { assignee_type: 'all', created_on: '2026-10-14', timezone: 'America/Sao_Paulo' }
+        result = described_class.new(user_1, params).perform
+
+        expect(result[:conversations].map(&:id)).to eq([late_night.id])
+        expect(result[:count][:all_count]).to be >= 2
+      end
+
+      it 'counts the conversations started per day' do
+        params = { assignee_type: 'all', from: '2026-10-13', to: '2026-10-15', timezone: 'America/Sao_Paulo' }
+        days = described_class.new(user_1, params).perform_created_per_day
+
+        expect(days).to eq('2026-10-14' => 1, '2026-10-15' => 1)
+      end
+    end
+
     context 'with awaiting_reply' do
       let(:conversation) { create(:conversation, account: account, inbox: inbox, assignee: user_1) }
 
