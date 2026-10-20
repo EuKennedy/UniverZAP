@@ -250,11 +250,17 @@ const assigneeTabItems = computed(() => {
 const isGroupsTab = computed(
   () => activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.GROUPS
 );
+const isStatusTab = computed(
+  () => activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.STATUS
+);
+// Grupos and Status are tabs of their own kind of chat, outside the Todos
+// views (dropdown, KPI cards, label bar).
+const isSegmentTab = computed(() => isGroupsTab.value || isStatusTab.value);
 
 // The bucket on screen: Grupos, or Todos narrowed by its dropdown. Pagination
 // and the end-of-list badge are kept per bucket.
 const listKey = computed(() =>
-  isGroupsTab.value ? wootConstants.ASSIGNEE_TYPE.GROUPS : activeListView.value
+  isSegmentTab.value ? activeAssigneeTab.value : activeListView.value
 );
 
 const showAssigneeInConversationCard = computed(() => {
@@ -290,8 +296,9 @@ const conversationCustomAttributes = useFunctionGetter(
 );
 
 const activeAssigneeTabCount = computed(() => {
-  const countKey = isGroupsTab.value
-    ? 'groupCount'
+  const segmentCountKeys = { groups: 'groupCount', status: 'statusCount' };
+  const countKey = isSegmentTab.value
+    ? segmentCountKeys[activeAssigneeTab.value]
     : VIEW_COUNT_KEYS[activeListView.value];
   return conversationStats.value[countKey] || 0;
 });
@@ -325,12 +332,12 @@ const ATTENDANCE_VIEWS = [
 
 const isMineView = computed(
   () =>
-    !isGroupsTab.value && activeListView.value === wootConstants.LIST_VIEW.ME
+    !isSegmentTab.value && activeListView.value === wootConstants.LIST_VIEW.ME
 );
 
 const isUnassignedView = computed(
   () =>
-    !isGroupsTab.value &&
+    !isSegmentTab.value &&
     activeListView.value === wootConstants.LIST_VIEW.UNASSIGNED
 );
 
@@ -353,11 +360,11 @@ const conversationFilters = computed(() => {
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
     teamId: props.teamId || undefined,
-    conversationType: isGroupsTab.value
-      ? wootConstants.ASSIGNEE_TYPE.GROUPS
+    conversationType: isSegmentTab.value
+      ? activeAssigneeTab.value
       : props.conversationType || undefined,
     attendanceState:
-      !isGroupsTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)
+      !isSegmentTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)
         ? activeListView.value
         : undefined,
     createdOn: createdOn.value || undefined,
@@ -431,7 +438,12 @@ function filterByListKey(conversations) {
   if (isGroupsTab.value) {
     return conversations.filter(c => c.is_group);
   }
-  const nonGroups = conversations.filter(c => !c.is_group);
+  if (isStatusTab.value) {
+    return conversations.filter(c => c.is_status_broadcast);
+  }
+  const nonGroups = conversations.filter(
+    c => !c.is_group && !c.is_status_broadcast
+  );
   switch (activeListView.value) {
     case wootConstants.LIST_VIEW.ME:
       return nonGroups.filter(
@@ -774,7 +786,7 @@ function listContextConditions() {
       listFilterCondition('assignee_id', 'equal_to', [currentUser.value.id])
     );
   }
-  if (!isGroupsTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)) {
+  if (!isSegmentTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)) {
     conditions.push(
       listFilterCondition(
         'first_reply_created_at',
@@ -820,6 +832,7 @@ const listFilterChips = computed(() => describeListFilter(listFilter.value, t));
 // The bucket the applied filter narrows, shown as its first chip.
 const listFilterScope = computed(() => {
   if (isGroupsTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.groups');
+  if (isStatusTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.status');
   return t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${activeListView.value}`);
 });
 
@@ -868,7 +881,7 @@ function updateAssigneeTab(selectedTab) {
 // The dropdown belongs to Todos: picking a view from it also leaves Grupos.
 // The agent's last view is kept, so the list opens where they left it.
 function updateView(selectedView) {
-  if (activeListView.value === selectedView && !isGroupsTab.value) return;
+  if (activeListView.value === selectedView && !isSegmentTab.value) return;
   // Resolvidas is the one view backed by conversation status rather than
   // assignee/attendance, so entering or leaving it is the only time this
   // flips activeStatus — every other transition leaves it untouched.
@@ -1249,7 +1262,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
     </ChatTypeTabs>
     <ConversationKpiRow
-      v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
+      v-if="!hasAppliedFiltersOrActiveFolders && !isSegmentTab"
       :items="kpiItems"
       :active-key="activeListView"
       :first-reply="firstReply"
@@ -1258,7 +1271,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       @toggle="toggleToday"
     />
     <VerticalStatusChips
-      v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
+      v-if="!hasAppliedFiltersOrActiveFolders && !isSegmentTab"
     />
     <div
       v-else-if="hasAppliedListFilter"

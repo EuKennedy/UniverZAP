@@ -6,6 +6,8 @@ export default {
     ALL: 'all',
     // UniverZAP: WhatsApp groups tab (drives the `conversation_type` API param).
     GROUPS: 'groups',
+    // UniverZAP: the contacts' WhatsApp statuses (status@broadcast) tab.
+    STATUS: 'status',
   },
   // UniverZAP: the views of the Todos dropdown. Minhas narrows by assignee;
   // Aguardando / Em atendimento travel as `attendance_state`.

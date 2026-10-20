@@ -115,6 +115,7 @@ describe ConversationFinder do
                                        all_count: 4,
                                        resolved_count: 1,
                                        group_count: 0,
+                                       status_count: 0,
                                        waiting_count: 4,
                                        in_attendance_count: 0
                                      })
@@ -138,6 +139,7 @@ describe ConversationFinder do
                                        all_count: 4,
                                        resolved_count: 1,
                                        group_count: 0,
+                                       status_count: 0,
                                        waiting_count: 4,
                                        in_attendance_count: 0
                                      })
@@ -237,6 +239,7 @@ describe ConversationFinder do
                                        all_count: 4,
                                        resolved_count: 1,
                                        group_count: 0,
+                                       status_count: 0,
                                        waiting_count: 4,
                                        in_attendance_count: 0
                                      })
@@ -370,6 +373,27 @@ describe ConversationFinder do
         result = described_class.new(user_1, params).perform
         expect(result[:conversations].map(&:id)).not_to include(group_conversation.id)
         expect(result[:count][:group_count]).to eq(1)
+      end
+    end
+
+    context 'with whatsapp statuses' do
+      let!(:status_conversation) do
+        contact = create(:contact, account: account, identifier: 'status@broadcast')
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, contact: contact)
+      end
+
+      it 'shows the statuses only on their own tab and keeps them out of every other count', :aggregate_failures do
+        expect(status_conversation.is_status_broadcast).to be(true)
+
+        own = described_class.new(user_1, { assignee_type: 'all', conversation_type: 'status', inbox_id: inbox.id }).perform
+        expect(own[:conversations].map(&:id)).to eq([status_conversation.id])
+
+        regular = described_class.new(user_1, { assignee_type: 'all', inbox_id: inbox.id }).perform
+        expect(regular[:conversations].map(&:id)).not_to include(status_conversation.id)
+        expect(regular[:count]).to include(status_count: 1, all_count: account.conversations.regular.open.count)
+
+        groups = described_class.new(user_1, { assignee_type: 'all', conversation_type: 'groups', inbox_id: inbox.id }).perform
+        expect(groups[:conversations]).to be_empty
       end
     end
   end

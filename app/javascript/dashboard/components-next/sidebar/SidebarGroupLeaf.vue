@@ -34,7 +34,7 @@ const shouldRenderComponent = computed(() => {
       class="flex h-8 items-center gap-2 px-2 py-1 rounded-lg group min-w-0"
       :class="
         active
-          ? 'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15 active'
+          ? 'text-n-slate-12 bg-brand-gradient-soft active'
           : 'hover:bg-gradient-to-r from-transparent via-n-slate-3/70 to-n-slate-3/70'
       "
     >

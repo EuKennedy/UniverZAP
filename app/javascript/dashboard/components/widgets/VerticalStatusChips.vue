@@ -154,7 +154,7 @@ useEmitter('fetch_conversation_stats', () => fetchStatuses());
             class="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full whitespace-nowrap"
             :class="
               isActive(status)
-                ? 'bg-n-teal-3 text-n-teal-11'
+                ? 'bg-brand-gradient-soft text-n-teal-11'
                 : 'bg-n-alpha-1 text-n-slate-11 hover:bg-n-alpha-2'
             "
             @click="navigate"
@@ -208,7 +208,7 @@ useEmitter('fetch_conversation_stats', () => fetchStatuses());
           class="px-2 py-0.5 rounded-md"
           :class="
             scope === 'me'
-              ? 'bg-n-teal-3 text-n-teal-11'
+              ? 'bg-brand-gradient-soft text-n-teal-11'
               : 'bg-n-alpha-1 text-n-slate-11'
           "
           @click="scope = 'me'"
@@ -221,7 +221,7 @@ useEmitter('fetch_conversation_stats', () => fetchStatuses());
           class="px-2 py-0.5 rounded-md"
           :class="
             scope === 'team'
-              ? 'bg-n-teal-3 text-n-teal-11'
+              ? 'bg-brand-gradient-soft text-n-teal-11'
               : 'bg-n-alpha-1 text-n-slate-11'
           "
           @click="scope = 'team'"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_19_160000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_20_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1332,10 +1332,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_160000) do
     t.datetime "pinned_at"
     t.boolean "is_group", default: false, null: false
     t.boolean "awaiting_reply", default: false, null: false
+    t.boolean "is_status_broadcast", default: false, null: false
     t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
     t.index ["account_id", "is_group"], name: "index_conversations_on_account_id_and_is_group"
+    t.index ["account_id", "is_status_broadcast"], name: "index_conversations_on_account_id_and_is_status_broadcast"
     t.index ["account_id"], name: "index_conversations_on_account_id"
     t.index ["ai_assistant_id"], name: "index_conversations_on_ai_assistant_id"
     t.index ["ai_mode"], name: "index_conversations_on_ai_mode"

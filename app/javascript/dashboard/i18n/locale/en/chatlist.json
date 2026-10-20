@@ -57,7 +57,8 @@
       "in_attendance": "In attendance",
       "resolved": "Resolved",
       "all": "All",
-      "groups": "Groups"
+      "groups": "Groups",
+      "status": "Status"
     },
     "CHAT_STATUS_FILTER_ITEMS": {
       "open": {

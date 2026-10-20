@@ -101,7 +101,7 @@ const STYLE_CONFIG = {
   colors: {
     blue: {
       solid:
-        'bg-n-brand text-white hover:enabled:brightness-110 focus-visible:brightness-110 outline-transparent',
+        'bg-n-brand bg-brand-gradient text-[#06131C] hover:enabled:brightness-105 focus-visible:brightness-105 outline-transparent',
       faded:
         'bg-n-brand/10 text-n-blue-11 hover:enabled:bg-n-brand/20 focus-visible:bg-n-brand/20 outline-transparent',
       outline: 'text-n-blue-11 outline-n-brand',

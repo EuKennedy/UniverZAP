@@ -209,7 +209,7 @@ useEmitter('fetch_conversation_stats', () => fetchCounts(false));
           class="flex flex-col items-center w-full py-1 rounded-lg border transition-colors"
           :class="
             item.key === modelValue
-              ? 'bg-n-teal-3 border-n-teal-7 text-n-teal-11'
+              ? 'bg-brand-gradient border-transparent text-[#06131C]'
               : 'bg-n-alpha-1 border-transparent text-n-slate-11 hover:bg-n-alpha-2'
           "
           @click="select(item.key)"
@@ -227,7 +227,10 @@ useEmitter('fetch_conversation_stats', () => fetchCounts(false));
           </span>
           <span
             class="text-[10px] leading-tight tabular-nums"
-            :class="item.count ? 'text-n-slate-12' : 'text-n-slate-9'"
+            :class="{
+              'text-n-slate-12': item.count && item.key !== modelValue,
+              'text-n-slate-9': !item.count && item.key !== modelValue,
+            }"
           >
             {{ item.count }}
           </span>

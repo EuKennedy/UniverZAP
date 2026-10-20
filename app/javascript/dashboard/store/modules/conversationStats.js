@@ -11,6 +11,7 @@ const state = {
   inAttendanceCount: 0,
   // UniverZAP groups tab
   groupCount: 0,
+  statusCount: 0,
   // UniverZAP: "Resolvidas" in the Todos dropdown
   resolvedCount: 0,
 };
@@ -66,6 +67,7 @@ export const mutations = {
       waiting_count: waitingCount,
       in_attendance_count: inAttendanceCount,
       group_count: groupCount,
+      status_count: statusCount,
       resolved_count: resolvedCount,
     } = {}
   ) {
@@ -76,6 +78,7 @@ export const mutations = {
     if (inAttendanceCount !== undefined)
       $state.inAttendanceCount = inAttendanceCount;
     if (groupCount !== undefined) $state.groupCount = groupCount;
+    if (statusCount !== undefined) $state.statusCount = statusCount;
     if (resolvedCount !== undefined) $state.resolvedCount = resolvedCount;
     $state.updatedOn = new Date();
   },
