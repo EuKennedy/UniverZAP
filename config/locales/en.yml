@@ -32,6 +32,9 @@
 en:
   hello: 'Hello world'
   belezaki:
+    catalog:
+      servico: Service
+      profissional: Professional
     connect:
       not_configured: 'The belezaki integration is not configured on this server (shared key missing).'
       missing_external_id: 'Inform the salon id.'

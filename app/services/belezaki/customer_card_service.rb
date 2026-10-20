@@ -65,13 +65,8 @@ class Belezaki::CustomerCardService
     upcoming.find { |row| ACTIVE_STATUSES.include?(row['status']) }
   end
 
-  # Name and timezone were written on the hook by the connect probe; an account
-  # linked only through the login bridge has no hook and no salon block.
   def salon
-    settings = Belezaki::TenantResolver.hook(@account)&.settings
-    return nil if settings.blank?
-
-    { name: settings['salon_name'], timezone: settings['timezone'] }
+    Belezaki::TenantResolver.salon(@account)
   end
 
   def phone

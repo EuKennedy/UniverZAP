@@ -19,6 +19,13 @@ RSpec.describe Integrations::Hook, '#valid?' do
     expect(hook.settings).to eq('external_id' => 'ext-1', 'salon_name' => 'Bella', 'timezone' => 'America/Bahia')
   end
 
+  it 'queues the catalogue sync once the salon is connected' do
+    stub_request(:get, "#{base}/salon").to_return(status: 200, body: '{"name":"Bella"}', headers: json)
+
+    expect { create(:integrations_hook, :belezaki, account: account) }
+      .to have_enqueued_job(Belezaki::CatalogSyncJob).with(account.id)
+  end
+
   it 'refuses an id the salon does not recognise' do
     stub_request(:get, "#{base}/salon")
       .to_return(status: 404, body: '{"message":"Salão não encontrado.","error":"Not Found","statusCode":404}', headers: json)

@@ -683,6 +683,8 @@ Rails.application.routes.draw do
             resource :belezaki, controller: 'belezaki', only: [] do
               collection do
                 get :customer
+                get :catalog
+                post :sync_catalog
               end
             end
             resource :linear, controller: 'linear', only: [] do
