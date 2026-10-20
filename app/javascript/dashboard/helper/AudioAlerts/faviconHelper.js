@@ -1,5 +1,5 @@
 // Bump with the icon files in public/ so browsers drop the cached ones.
-const ICON_VERSION = 'v=2';
+const ICON_VERSION = 'v=3';
 
 export const showBadgeOnFavicon = () => {
   const favicons = document.querySelectorAll('.favicon');
