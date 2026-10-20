@@ -17,6 +17,28 @@ describe RecurringCustomerListener do
     expect(service).to have_received(:perform)
   end
 
+  describe '#message_created' do
+    def message(**attrs)
+      create(:message, account: account, conversation: conversation, content: 'oi', **attrs)
+    end
+
+    it 'runs the service on a message from the contact (the conversation may be reopening)' do
+      incoming = message(message_type: :incoming)
+
+      listener.message_created(Events::Base.new('message_created', Time.zone.now, message: incoming))
+
+      expect(Conversations::RecurringCustomerService).to have_received(:new).with(conversation)
+      expect(service).to have_received(:perform)
+    end
+
+    it 'skips agent replies and private notes' do
+      listener.message_created(Events::Base.new('message_created', Time.zone.now, message: message(message_type: :outgoing)))
+      listener.message_created(Events::Base.new('message_created', Time.zone.now, message: message(message_type: :incoming, private: true)))
+
+      expect(Conversations::RecurringCustomerService).not_to have_received(:new)
+    end
+  end
+
   it 'is wired into the async dispatcher before the automation rules' do
     listeners = AsyncDispatcher.new.listeners.map(&:class)
 

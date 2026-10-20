@@ -3,6 +3,12 @@
 # ContactOriginListener. Idempotent and silent: no event fires, so no
 # automation rule reassigns or reprioritises old conversations.
 #
+# Both shapes of a return count (Conversations::RecurringCustomerService):
+# a second conversation after one that ended, and the same conversation
+# resolved before and reopened by a later message from the contact (the WAHA
+# bridge keeps one conversation per contact). Open conversations get the
+# label; a conversation already resolved again only stamps its contact.
+#
 #   bundle exec rake recorrencia:backfill[5]
 namespace :recorrencia do
   desc 'Label open conversations of returning customers and stamp recorrente / origem_lead on contacts (no events)'
