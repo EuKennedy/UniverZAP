@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=3">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png?v=3">
 <title>UniverZAP · Seu WhatsApp, no controle total</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/brand-assets/lp/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/brand-assets/lp/favicon-16.png" />
+<link rel="icon" type="image/png" sizes="96x96" href="/brand-assets/lp/favicon-96.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/brand-assets/lp/apple-touch-icon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet" />
@@ -109,8 +110,8 @@ header.hide{transform:translateY(-108%)}
 .hd-bg{pointer-events:none;position:absolute;inset:0;opacity:0;transition:opacity .4s;background:var(--nav-bg-solid);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid var(--line-2)}
 header.stuck .hd-bg{opacity:1}header.stuck .hd{height:60px}
 .brand{display:inline-flex;align-items:center;text-decoration:none}
-.brand .logo{height:clamp(26px,5.5vw,30px);width:auto;display:block}
-.logo-l{display:none!important}:root[data-theme="light"] .logo-l{display:block!important}:root[data-theme="light"] .logo-d{display:none!important}
+.brand .logo{--lh:clamp(30px,7.4vw,36px);height:calc(var(--lh)*1.4424);margin:calc(var(--lh)*-.2212);width:auto;display:block}
+.logo-l{display:none!important}:root[data-theme="light"] .logo-d{display:none!important}:root[data-theme="light"] .logo-l{display:block!important}
 .nav{display:none;align-items:center;gap:2px}
 .nav a{position:relative;color:var(--slate);text-decoration:none;font-weight:500;font-size:14.5px;padding:8px 13px;border-radius:10px;transition:color .2s}
 .nav a::after{content:"";position:absolute;left:13px;right:13px;bottom:5px;height:1.5px;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
@@ -335,7 +336,7 @@ h1.hero-h{font-size:clamp(2.9rem,9vw,5.2rem);letter-spacing:-.045em;margin-top:2
 
 footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
 .ft{display:grid;gap:32px;grid-template-columns:1fr}
-.ft-b .logo{height:32px;width:auto;display:block}
+.ft-b .logo{height:55px;margin:-8.4px;width:auto;display:block}
 .ft-b p{color:var(--slate);font-size:14.5px;margin-top:14px;max-width:300px;line-height:1.6}
 .ft-c h4{font-family:var(--disp);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--slate-2);margin-bottom:14px}
 .ft-c a{display:block;color:var(--slate);text-decoration:none;font-size:14.5px;padding:5px 0;transition:color .2s}.ft-c a:hover{color:var(--green)}
@@ -450,7 +451,7 @@ fbq('init','2274850053326427');fbq('track','PageView');
   </div>
   <div class="hd-bg"></div>
   <div class="wrap"><div class="hd">
-    <a href="#top" class="brand" aria-label="UniverZAP"><img class="logo logo-d" src="/brand-assets/logo_dark.png?v=3" alt="UniverZAP" width="1013" height="256"><img class="logo logo-l" src="/brand-assets/logo.png?v=3" alt="UniverZAP" width="1013" height="256"></a>
+    <a href="#top" class="brand" aria-label="UniverZAP"><img class="logo logo-d" src="/brand-assets/lp/logo-dark.png" alt="UniverZAP" width="382" height="132" /><img class="logo logo-l" src="/brand-assets/lp/logo-light.png" alt="" aria-hidden="true" width="382" height="132" /></a>
     <nav class="nav">
       <a href="#como">Como funciona</a><a href="#conexao">Conexão</a><a href="#athenas">Athenas IA</a>
       <a href="#recursos">Recursos</a><a href="#clientes">Clientes</a><a href="#planos">Planos</a><a href="#faq">Dúvidas</a>
@@ -842,7 +843,7 @@ fbq('init','2274850053326427');fbq('track','PageView');
   <div class="wrap">
     <div class="ft">
       <div class="ft-b">
-        <a href="#top" class="brand" aria-label="UniverZAP"><img class="logo logo-d" src="/brand-assets/logo_dark.png?v=3" alt="UniverZAP" width="1013" height="256"><img class="logo logo-l" src="/brand-assets/logo.png?v=3" alt="UniverZAP" width="1013" height="256"></a>
+        <a href="#top" class="brand" aria-label="UniverZAP"><img class="logo logo-d" src="/brand-assets/lp/logo-dark.png" alt="UniverZAP" width="382" height="132" /><img class="logo logo-l" src="/brand-assets/lp/logo-light.png" alt="" aria-hidden="true" width="382" height="132" /></a>
         <p>Seu WhatsApp, no controle total. Atendimento, automação e vendas numa só plataforma.</p>
       </div>
       <div class="ft-c"><h4>Produto</h4><a href="#recursos">Recursos</a><a href="#athenas">Athenas IA</a><a href="#chatflow">Chatflow</a><a href="#conexao">Conexão</a><a href="#casos">Casos de uso</a></div>
