@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <title>UniverZAP</title>
+  <defs>
+    <linearGradient id="uz-bg" x1="72" y1="40" x2="440" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8EF56B"/>
+      <stop offset="0.38" stop-color="#14E67F"/>
+      <stop offset="1" stop-color="#0EB2AE"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#uz-bg)"/>
+  <g stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M206 384A152 152 0 1 0 118 292L94 408L206 384Z" stroke-width="48"/>
+    <path d="M286 228Q320 192 354 228" stroke-width="36"/>
+    <path d="M214 296Q262 340 310 296" stroke-width="38"/>
+  </g>
+  <circle cx="206" cy="222" r="38" fill="#FFFFFF"/>
+</svg>
