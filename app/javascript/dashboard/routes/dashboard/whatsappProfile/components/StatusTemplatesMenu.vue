@@ -108,7 +108,7 @@ onMounted(fetchTemplates);
 
     <div
       v-if="isOpen"
-      class="flex absolute left-0 top-full z-20 flex-col gap-1 p-1 mt-1 w-72 rounded-lg border shadow-lg border-n-weak bg-n-solid-2"
+      class="flex absolute left-0 top-full z-50 flex-col gap-1 p-1 mt-1 w-72 rounded-lg border shadow-lg border-n-weak bg-n-solid-2"
       data-testid="templates-list"
     >
       <p
