@@ -144,7 +144,7 @@ const STYLE_CONFIG = {
     },
     teal: {
       solid:
-        'bg-n-teal-9 text-white hover:enabled:bg-n-teal-10 focus-visible:bg-n-teal-10 outline-transparent',
+        'bg-n-teal-9 bg-brand-gradient text-[#06131C] hover:enabled:brightness-105 focus-visible:brightness-105 outline-transparent',
       faded:
         'bg-n-teal-9/10 text-n-teal-11 hover:enabled:bg-n-teal-9/20 focus-visible:bg-n-teal-9/20 outline-transparent',
       outline:

@@ -294,7 +294,7 @@ useEmitter('fetch_conversation_stats', () => fetchStatuses());
         </button>
         <button
           type="button"
-          class="px-3 py-1 text-xs font-medium rounded-md bg-n-brand text-white hover:bg-n-brand/90 disabled:opacity-60"
+          class="px-3 py-1 text-xs font-medium rounded-md bg-brand-gradient text-[#06131C] hover:brightness-105 disabled:opacity-60"
           :disabled="saving"
           @click="save(picked)"
         >
