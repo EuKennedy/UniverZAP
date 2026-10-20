@@ -426,7 +426,8 @@
       "LINEAR_ISSUES": "Problemas do Linear vinculados",
       "SHOPIFY_ORDERS": "Pedidos do Shopify",
       "SHARED_FILES": "Anexos",
-      "KANBAN_TASKS": "Tarefas do Kanban"
+      "KANBAN_TASKS": "Tarefas do Kanban",
+      "BELEZAKI_CATALOG": "Catálogo do salão (belezaki)"
     },
     "BELEZAKI": {
       "TITLE": "Agenda no belezaki",
@@ -461,6 +462,31 @@
         "no_show": "Faltou",
         "cancelled": "Cancelado",
         "cancelled_client": "Cancelado pela cliente"
+      },
+      "CATALOG": {
+        "TITLE": "Catálogo do salão",
+        "SEARCH": "Buscar serviço ou profissional",
+        "SERVICES": "Serviços",
+        "PROFESSIONALS": "Profissionais",
+        "MINUTES": "{count} min",
+        "PROMO": "Promoção",
+        "ADDON": "Adicional",
+        "PERFORMS_ALL": "Faz todos os serviços",
+        "NO_SCHEDULE": "Sem horário cadastrado",
+        "EMPTY": "Nada encontrado",
+        "ROLE": "Função",
+        "NAME": "Nome",
+        "DURATION": "Duração",
+        "PRICE": "Preço",
+        "WHO": "Quem faz",
+        "HOURS": "Horários",
+        "SYNC": "Sincronizar catálogo",
+        "SYNCED_AT": "Listas da ficha sincronizadas em {date}",
+        "NEVER_SYNCED": "Listas da ficha ainda não sincronizadas",
+        "SYNC_DONE": "Catálogo sincronizado: {services} serviços e {professionals} profissionais nas listas da ficha.",
+        "SYNC_FAILED": "Não deu para sincronizar o catálogo.",
+        "FETCHED_AT": "Lido do belezaki às {time}",
+        "COUNT": "({count})"
       }
     },
     "SHOPIFY": {

@@ -430,7 +430,8 @@
       "LINEAR_ISSUES": "Linked Linear Issues",
       "SHOPIFY_ORDERS": "Shopify Orders",
       "SHARED_FILES": "Attachments",
-      "KANBAN_TASKS": "Kanban tasks"
+      "KANBAN_TASKS": "Kanban tasks",
+      "BELEZAKI_CATALOG": "Salon catalogue (belezaki)"
     },
     "SHARED_FILES": {
       "EMPTY": "No attachments yet",
@@ -476,6 +477,31 @@
         "no_show": "No-show",
         "cancelled": "Cancelled",
         "cancelled_client": "Cancelled by customer"
+      },
+      "CATALOG": {
+        "TITLE": "Salon catalogue",
+        "SEARCH": "Search a service or professional",
+        "SERVICES": "Services",
+        "PROFESSIONALS": "Professionals",
+        "MINUTES": "{count} min",
+        "PROMO": "Promo",
+        "ADDON": "Add-on",
+        "PERFORMS_ALL": "Performs every service",
+        "NO_SCHEDULE": "No working hours set",
+        "EMPTY": "Nothing matches",
+        "ROLE": "Role",
+        "NAME": "Name",
+        "DURATION": "Duration",
+        "PRICE": "Price",
+        "WHO": "Who performs it",
+        "HOURS": "Working hours",
+        "SYNC": "Sync catalogue",
+        "SYNCED_AT": "Sheet lists synced on {date}",
+        "NEVER_SYNCED": "Sheet lists not synced yet",
+        "SYNC_DONE": "Catalogue synced: {services} services and {professionals} professionals now in the sheet lists.",
+        "SYNC_FAILED": "Could not sync the catalogue.",
+        "FETCHED_AT": "Read from belezaki at {time}",
+        "COUNT": "({count})"
       }
     },
     "SHOPIFY": {
