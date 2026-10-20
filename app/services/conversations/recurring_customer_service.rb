@@ -1,6 +1,10 @@
 # Marks the conversation of a customer who is coming back: the contact already
-# had at least one other conversation that ended — resolved, or carrying a
-# label that closes conversations (Label.closing, "Resolver com motivo").
+# had at least one conversation cycle that ended, either
+#   - in ANOTHER conversation — resolved, or carrying a label that closes
+#     conversations (Label.closing, "Resolver com motivo"); or
+#   - in THIS conversation — it was resolved before and the contact wrote
+#     again after that resolution. This is the shape the WAHA bridge produces:
+#     one conversation per contact, reopened on every return.
 #
 # Same shape as Conversations::AdReferralService:
 #   - the conversation gets the `cliente-recorrente` label (created on the
@@ -15,18 +19,33 @@
 class Conversations::RecurringCustomerService
   LABEL = 'cliente-recorrente'.freeze
   ATTRIBUTE = 'recorrente'.freeze
+  RESOLVED_EVENT = 'conversation_resolved'.freeze
+
+  def self.recurring?(conversation)
+    return false if conversation.contact.blank?
+
+    other_conversation_ended?(conversation) || reopened_after_resolution?(conversation)
+  end
 
   # The status is the source of truth; the closing labels cover conversations
   # that were closed with a reason and reopened since.
-  def self.recurring?(conversation)
-    contact = conversation.contact
-    return false if contact.blank?
-
-    previous = contact.conversations.where.not(id: conversation.id)
+  def self.other_conversation_ended?(conversation)
+    previous = conversation.contact.conversations.where.not(id: conversation.id)
     return true if previous.resolved.exists?
 
     closing = conversation.account.labels.closing.pluck(:title)
     closing.any? && previous.tagged_with(closing, on: :labels, any: true).exists?
+  end
+
+  # ReportingEventListener writes a `conversation_resolved` event on every
+  # resolution (a closing label resolves the conversation too), and it
+  # survives the reopening — unlike the status. A resolution older than the
+  # most recent message from the contact means the contact came back.
+  def self.reopened_after_resolution?(conversation)
+    last_contact_message = conversation.messages.incoming.where(private: false).maximum(:created_at)
+    return false if last_contact_message.nil?
+
+    conversation.reporting_events.exists?(name: RESOLVED_EVENT, event_end_time: ...last_contact_message)
   end
 
   # silent: label and stamp without firing the event — for the backfill, where
@@ -40,9 +59,8 @@ class Conversations::RecurringCustomerService
   def perform
     return if @conversation.label_list.include?(LABEL)
     return unless self.class.recurring?(@conversation)
+    return unless label_conversation
 
-    ensure_label
-    @conversation.add_labels([LABEL])
     stamp_contact
     return if @silent
 
@@ -65,6 +83,23 @@ class Conversations::RecurringCustomerService
   end
 
   private
+
+  # The check above runs once per incoming message, and a returning contact
+  # often sends several in a row: each one lands in its own job. The row lock
+  # makes the first job label the conversation and the others see the label,
+  # so the event fires once per cycle. A fresh copy is locked because the
+  # caller's instance may carry unsaved changes (a just-created conversation
+  # does). Returns true when this call labelled.
+  def label_conversation
+    Conversation.transaction do
+      locked = Conversation.lock.find(@conversation.id)
+      next false if locked.label_list.include?(LABEL)
+
+      ensure_label
+      locked.add_labels([LABEL])
+      true
+    end
+  end
 
   # The definition makes the attribute show up in the contact sidebar, in
   # filters and as an automation condition. Created once, never overwritten.
