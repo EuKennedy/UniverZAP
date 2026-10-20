@@ -74,7 +74,15 @@ pt_BR:
         not_a_waha_inbox: 'Esta caixa de entrada não está ligada a uma sessão de WhatsApp da WAHA.'
         media_not_found: 'O arquivo enviado não foi encontrado. Envie de novo e tente outra vez.'
         media_wrong_type: 'O arquivo enviado não é do tipo esperado para esta ação.'
-        invalid_background_color: 'A cor de fundo precisa ser um valor hexadecimal, como #38B42F.'
+        schedule_in_past: 'precisa ser no futuro'
+        status_timeout: 'O WhatsApp demorou demais para responder. Confira no celular antes de reenviar: o status pode ter saído.'
+        status_unexpected_error: 'O status não saiu por um erro inesperado. Tente reenviar em alguns minutos.'
+        status_not_editable: 'Este status já foi publicado e não pode mais ser alterado.'
+        invalid_intent: 'Escolha entre salvar rascunho, agendar ou publicar agora.'
+        nothing_to_retry: 'Não há conexões com falha para reenviar.'
+        suggestion_prompt_required: 'Diga ao assistente sobre o que é o status.'
+        suggestion_no_assistant: 'Nenhum assistente de IA ativo nesta conta. Crie um em Athenas para receber sugestões.'
+        suggestion_empty: 'O assistente não devolveu sugestão. Tente descrever o assunto de outro jeito.'
   auth:
     saml:
       invalid_email: 'Por favor, insira um endereço de e-mail válido'

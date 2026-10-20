@@ -27,7 +27,9 @@
     },
     "STATUS": {
       "TITLE": "Status",
-      "DESCRIPTION": "O status vai para todos os contatos deste número e desaparece depois de 24 horas.",
+      "EDIT_TITLE": "Editar status",
+      "DESCRIPTION": "O status vai para todos os contatos de cada número escolhido e desaparece depois de 24 horas.",
+      "CONNECTIONS": "Publicar em",
       "KIND": {
         "TEXT": "Texto",
         "IMAGE": "Imagem",
@@ -35,20 +37,50 @@
       },
       "TEXT_PLACEHOLDER": "O que você quer contar hoje",
       "BACKGROUND": "Cor de fundo",
+      "FONT": "Fonte",
+      "FONTS": {
+        "SANS": "Limpa",
+        "SERIF": "Serifada",
+        "SCRIPT": "Cursiva",
+        "HANDWRITTEN": "Manuscrita",
+        "CONDENSED": "Condensada",
+        "HEAVY": "Forte"
+      },
       "CAPTION": "Legenda",
       "CAPTION_PLACEHOLDER": "Opcional",
       "CHOOSE_IMAGE": "Escolher imagem",
       "CHOOSE_VIDEO": "Escolher vídeo",
       "REMOVE_FILE": "Remover arquivo",
       "VIDEO_HINT": "O WhatsApp só aceita status em mp4, então convertemos o arquivo antes de publicar quando ele vem em outro formato.",
-      "PUBLISH": "Publicar status",
-      "PUBLISHED": "Status publicado.",
+      "SUGGEST": {
+        "OPEN": "Sugerir com IA",
+        "LABEL": "Sobre o que é o status",
+        "PLACEHOLDER": "ex.: horários livres no sábado para escova",
+        "GENERATE": "Sugerir texto",
+        "IMPROVE": "Melhorar texto"
+      },
+      "WHEN": {
+        "LABEL": "Quando",
+        "NOW": "Agora",
+        "LATER": "Agendar",
+        "AT": "Data e hora"
+      },
+      "PUBLISH": "Publicar agora",
+      "SCHEDULE": "Agendar",
+      "SAVE_DRAFT": "Salvar rascunho",
+      "CANCEL_EDIT": "Cancelar edição",
+      "SAVED": {
+        "DRAFT": "Rascunho salvo.",
+        "SCHEDULE": "Status agendado.",
+        "PUBLISH": "Publicando o status. Acompanhe o resultado no histórico."
+      },
       "CONFIRM": {
         "TITLE": "Publicar este status?",
-        "DESCRIPTION": "Ele vai para todos os contatos deste número e fica visível por 24 horas, e não dá para apagar pelo painel depois.",
-        "PREVIEW": "O que será publicado",
+        "SCHEDULE_TITLE": "Agendar este status?",
+        "DESCRIPTION": "Ele vai para todos os contatos de cada número escolhido e fica visível por 24 horas, e não dá para apagar pelo painel depois.",
         "NO_CAPTION": "Sem legenda",
         "CONFIRM": "Publicar agora",
+        "SCHEDULE": "Agendar",
         "CANCEL": "Voltar"
       }
     },
@@ -56,7 +88,65 @@
       "GENERIC": "Não foi possível falar com o WhatsApp agora.",
       "UPLOAD": "Não foi possível enviar o arquivo.",
       "TEXT_REQUIRED": "Escreva o texto do status antes de publicar.",
-      "FILE_REQUIRED": "Escolha um arquivo antes de publicar."
+      "FILE_REQUIRED": "Escolha um arquivo antes de publicar.",
+      "CONNECTION_REQUIRED": "Escolha pelo menos uma conexão.",
+      "SCHEDULE_REQUIRED": "Escolha uma data e hora no futuro para agendar."
+    },
+    "CROPPER": {
+      "TITLE": "Enquadre a foto de perfil",
+      "DESCRIPTION": "O WhatsApp mostra a foto dentro do círculo. Arraste para mover e use a barra para dar zoom.",
+      "CONFIRM": "Usar esta foto",
+      "CANCEL": "Cancelar",
+      "ZOOM": "Zoom",
+      "HINT": "A foto é salva como um quadrado de 640×640.",
+      "ERROR": "Não foi possível recortar a foto. Tente outro arquivo."
+    },
+    "TEMPLATES": {
+      "OPEN": "Modelos",
+      "SAVE_CURRENT": "Salvar como modelo",
+      "EMPTY": "Nenhum modelo ainda. Escreva um status e salve como modelo para reaproveitar.",
+      "DELETE": "Excluir modelo",
+      "SAVE_TITLE": "Salvar como modelo",
+      "SAVE": "Salvar modelo",
+      "NAME": "Nome do modelo",
+      "NAME_PLACEHOLDER": "ex.: Agenda aberta",
+      "SAVED": "Modelo salvo."
+    },
+    "HISTORY": {
+      "TITLE": "Histórico",
+      "DESCRIPTION": "Rascunhos, agendados e o resultado em cada conexão.",
+      "EMPTY": "Nada por aqui ainda.",
+      "FILTER": {
+        "ALL": "Todos",
+        "SCHEDULED": "Agendados",
+        "DRAFT": "Rascunhos",
+        "SENT": "Publicados"
+      },
+      "STATUS": {
+        "DRAFT": "Rascunho",
+        "SCHEDULED": "Agendado",
+        "PUBLISHING": "Publicando",
+        "PUBLISHED": "Enviado",
+        "PARTIALLY_PUBLISHED": "Enviado em parte",
+        "FAILED": "Falhou"
+      },
+      "SCHEDULED_FOR": "Sai em {date}",
+      "NO_TEXT": {
+        "TEXT": "Sem texto",
+        "IMAGE": "Imagem sem legenda",
+        "VIDEO": "Vídeo sem legenda"
+      },
+      "EDIT": "Editar",
+      "PUBLISH_NOW": "Publicar agora",
+      "PUBLISH_TARGETS": "Ele sai nas conexões escolhidas para este status.",
+      "RETRY": "Reenviar falhas",
+      "CANCEL": "Cancelar",
+      "DELETE": "Excluir",
+      "LOAD_MORE": "Carregar mais",
+      "PUBLISHING": "Publicando o status.",
+      "RETRYING": "Reenviando para as conexões que falharam.",
+      "CANCELED": "Agendamento cancelado.",
+      "DELETED": "Rascunho excluído."
     }
   }
 }

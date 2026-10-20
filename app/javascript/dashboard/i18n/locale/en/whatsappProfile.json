@@ -27,7 +27,9 @@
     },
     "STATUS": {
       "TITLE": "Status",
-      "DESCRIPTION": "A status goes out to every contact of this number and disappears after 24 hours.",
+      "EDIT_TITLE": "Edit status",
+      "DESCRIPTION": "A status goes out to every contact of each chosen number and disappears after 24 hours.",
+      "CONNECTIONS": "Post on",
       "KIND": {
         "TEXT": "Text",
         "IMAGE": "Image",
@@ -35,28 +37,116 @@
       },
       "TEXT_PLACEHOLDER": "What do you want to share today",
       "BACKGROUND": "Background colour",
+      "FONT": "Font",
+      "FONTS": {
+        "SANS": "Clean",
+        "SERIF": "Serif",
+        "SCRIPT": "Script",
+        "HANDWRITTEN": "Handwritten",
+        "CONDENSED": "Condensed",
+        "HEAVY": "Bold"
+      },
       "CAPTION": "Caption",
       "CAPTION_PLACEHOLDER": "Optional",
       "CHOOSE_IMAGE": "Choose image",
       "CHOOSE_VIDEO": "Choose video",
       "REMOVE_FILE": "Remove file",
-      "VIDEO_HINT": "WhatsApp only accepts mp4 for a status, so we convert the file before publishing when it comes in another format.",
-      "PUBLISH": "Publish status",
-      "PUBLISHED": "Status published.",
+      "VIDEO_HINT": "WhatsApp only accepts mp4 for a status, so we convert the file before posting when it comes in another format.",
+      "SUGGEST": {
+        "OPEN": "Suggest with AI",
+        "LABEL": "What is the status about",
+        "PLACEHOLDER": "e.g. open slots on Saturday for blow-dry",
+        "GENERATE": "Suggest text",
+        "IMPROVE": "Improve text"
+      },
+      "WHEN": {
+        "LABEL": "When",
+        "NOW": "Now",
+        "LATER": "Schedule",
+        "AT": "Date and time"
+      },
+      "PUBLISH": "Post now",
+      "SCHEDULE": "Schedule",
+      "SAVE_DRAFT": "Save draft",
+      "CANCEL_EDIT": "Cancel editing",
+      "SAVED": {
+        "DRAFT": "Draft saved.",
+        "SCHEDULE": "Status scheduled.",
+        "PUBLISH": "Posting status. Follow the result in the history."
+      },
       "CONFIRM": {
-        "TITLE": "Publish this status?",
-        "DESCRIPTION": "It goes out to every contact of this number and stays visible for 24 hours, and it cannot be deleted from the dashboard afterwards.",
-        "PREVIEW": "What will be published",
+        "TITLE": "Post this status?",
+        "SCHEDULE_TITLE": "Schedule this status?",
+        "DESCRIPTION": "It goes out to every contact of each chosen number and stays visible for 24 hours, and it cannot be deleted from the dashboard afterwards.",
         "NO_CAPTION": "No caption",
-        "CONFIRM": "Publish now",
+        "CONFIRM": "Post now",
+        "SCHEDULE": "Schedule",
         "CANCEL": "Go back"
       }
     },
     "ERRORS": {
       "GENERIC": "We could not reach WhatsApp right now.",
       "UPLOAD": "The file could not be uploaded.",
-      "TEXT_REQUIRED": "Write the status text before publishing.",
-      "FILE_REQUIRED": "Choose a file before publishing."
+      "TEXT_REQUIRED": "Write the status text before posting.",
+      "FILE_REQUIRED": "Choose a file before posting.",
+      "CONNECTION_REQUIRED": "Choose at least one connection.",
+      "SCHEDULE_REQUIRED": "Pick a future date and time to schedule."
+    },
+    "CROPPER": {
+      "TITLE": "Frame the profile picture",
+      "DESCRIPTION": "WhatsApp shows the picture inside the circle. Drag to move and use the slider to zoom.",
+      "CONFIRM": "Use this picture",
+      "CANCEL": "Cancel",
+      "ZOOM": "Zoom",
+      "HINT": "The picture is saved as a 640×640 square.",
+      "ERROR": "The picture could not be cropped. Try another file."
+    },
+    "TEMPLATES": {
+      "OPEN": "Templates",
+      "SAVE_CURRENT": "Save as template",
+      "EMPTY": "No templates yet. Write a status and save it as a template to reuse it.",
+      "DELETE": "Delete template",
+      "SAVE_TITLE": "Save as template",
+      "SAVE": "Save template",
+      "NAME": "Template name",
+      "NAME_PLACEHOLDER": "e.g. Open slots",
+      "SAVED": "Template saved."
+    },
+    "HISTORY": {
+      "TITLE": "History",
+      "DESCRIPTION": "Drafts, scheduled posts and the result on each connection.",
+      "EMPTY": "Nothing here yet.",
+      "FILTER": {
+        "ALL": "All",
+        "SCHEDULED": "Scheduled",
+        "DRAFT": "Drafts",
+        "SENT": "Posted"
+      },
+      "STATUS": {
+        "DRAFT": "Draft",
+        "SCHEDULED": "Scheduled",
+        "PUBLISHING": "Posting",
+        "PUBLISHED": "Posted",
+        "PARTIALLY_PUBLISHED": "Partly posted",
+        "FAILED": "Failed"
+      },
+      "SCHEDULED_FOR": "Goes out {date}",
+      "NO_TEXT": {
+        "TEXT": "No text",
+        "IMAGE": "Image without caption",
+        "VIDEO": "Video without caption"
+      },
+      "EDIT": "Edit",
+      "PUBLISH_NOW": "Post now",
+      "PUBLISH_TARGETS": "It goes out to the connections chosen for this status.",
+      "RETRY": "Retry failed",
+      "CANCEL": "Cancel",
+      "DELETE": "Delete",
+      "LOAD_MORE": "Load more",
+      "PUBLISHING": "Posting status.",
+      "RETRYING": "Retrying the failed connections.",
+      "CANCELED": "Schedule canceled.",
+      "DELETED": "Draft deleted."
     }
   }
 }

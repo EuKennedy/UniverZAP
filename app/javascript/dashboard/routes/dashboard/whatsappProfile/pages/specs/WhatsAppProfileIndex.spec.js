@@ -43,8 +43,13 @@ const stubs = {
     template: '<div data-testid="profile-card">{{ inboxId }}</div>',
   },
   WhatsAppStatusComposer: {
-    props: ['inboxId'],
-    template: '<div data-testid="status-composer">{{ inboxId }}</div>',
+    props: ['inboxes', 'defaultInboxId', 'editingPost'],
+    template:
+      '<div data-testid="status-composer">{{ defaultInboxId }}|{{ inboxes.length }}</div>',
+  },
+  WhatsAppStatusHistory: {
+    props: ['refreshKey'],
+    template: '<div data-testid="status-history">{{ refreshKey }}</div>',
   },
 };
 
@@ -89,6 +94,8 @@ describe('WhatsAppProfileIndex.vue', () => {
     expect(wrapper.find('[data-testid="profile-card"]').text()).toBe('7');
   });
 
+  // O status pode sair em várias conexões, então recebe todas; a do topo
+  // só define com qual ele começa marcado.
   it('hands the chosen connection to both cards', async () => {
     inboxes.mockResolvedValue({
       data: {
@@ -107,7 +114,8 @@ describe('WhatsAppProfileIndex.vue', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="profile-card"]').text()).toBe('9');
-    expect(wrapper.find('[data-testid="status-composer"]').text()).toBe('9');
+    expect(wrapper.find('[data-testid="status-composer"]').text()).toBe('9|2');
+    expect(wrapper.find('[data-testid="status-history"]').exists()).toBe(true);
   });
 
   it('shows the reason the list could not be loaded', async () => {

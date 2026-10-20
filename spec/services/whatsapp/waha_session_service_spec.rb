@@ -118,13 +118,22 @@ RSpec.describe Whatsapp::WahaSessionService do
 
     # O WhatsApp só aceita status em mp4/libx264, então pedimos a conversão à
     # WAHA em vez de confiar no que o operador subiu do celular.
-    it 'asks WAHA to convert the video and sends no caption' do
+    it 'asks WAHA to convert the video and forwards the caption' do
       stub_request(:post, 'https://waha.test/api/default/status/video').to_return(status: 200, headers: json, body: '{}')
 
-      service.send_status_video(url: 'https://cdn.test/v.mov', mimetype: 'video/quicktime')
+      service.send_status_video(url: 'https://cdn.test/v.mov', mimetype: 'video/quicktime', caption: 'Bastidores')
 
       expect(a_request(:post, 'https://waha.test/api/default/status/video')
-        .with { |req| JSON.parse(req.body).values_at('convert', 'caption') == [true, nil] }).to have_been_made
+        .with { |req| JSON.parse(req.body).values_at('convert', 'caption') == [true, 'Bastidores'] }).to have_been_made
+    end
+
+    it 'sends the chosen font on a text status' do
+      stub_request(:post, 'https://waha.test/api/default/status/text').to_return(status: 200, headers: json, body: '{}')
+
+      service.send_status_text(text: 'Agenda aberta', font: 3)
+
+      expect(a_request(:post, 'https://waha.test/api/default/status/text')
+        .with { |req| JSON.parse(req.body)['font'] == 3 }).to have_been_made
     end
 
     it 'raises WahaError when the session is not connected' do
