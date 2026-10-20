@@ -43,6 +43,15 @@ const tailwindConfig = {
         inter: ['Inter', ...defaultSansFonts],
         interDisplay: ['InterDisplay', ...defaultSansFonts],
       },
+      // UniverZAP: the logo's gradient. `brand-gradient` for filled actions
+      // (dark text: white on this light green does not read), `-soft` for
+      // selected states sitting on the panels.
+      backgroundImage: {
+        'brand-gradient':
+          'linear-gradient(135deg, #8EF56B 0%, #14E67F 45%, #0EB2AE 100%)',
+        'brand-gradient-soft':
+          'linear-gradient(135deg, rgb(142 245 107 / 0.18) 0%, rgb(20 230 127 / 0.14) 45%, rgb(14 178 174 / 0.2) 100%)',
+      },
       fontWeight: {
         420: '420',
         440: '440',

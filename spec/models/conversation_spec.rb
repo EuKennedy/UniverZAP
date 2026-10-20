@@ -45,6 +45,16 @@ RSpec.describe Conversation do
 
       expect(conversation.reload.status).to eq('open')
     end
+
+    it 'drops the closing label, and only it, when the conversation is reopened' do
+      conversation.add_labels(%w[agendado cancelado])
+      expect(conversation.reload.status).to eq('resolved')
+
+      conversation.reload.open!
+
+      expect(conversation.reload.label_list).to eq(%w[agendado])
+      expect(conversation.status).to eq('open')
+    end
   end
 
   describe '.before_create' do
@@ -647,6 +657,8 @@ RSpec.describe Conversation do
         custom_attributes: conversation.custom_attributes,
         first_reply_created_at: nil,
         is_group: false,
+        is_status_broadcast: false,
+        awaiting_reply: false,
         contact_last_seen_at: conversation.contact_last_seen_at.to_i,
         agent_last_seen_at: conversation.agent_last_seen_at.to_i,
         created_at: conversation.created_at.to_i,

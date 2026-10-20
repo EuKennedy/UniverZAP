@@ -6,6 +6,7 @@ import { useIntegrationHook } from 'dashboard/composables/useIntegrationHook';
 import NewHook from './NewHook.vue';
 import SingleIntegrationHooks from './SingleIntegrationHooks.vue';
 import MultipleIntegrationHooks from './MultipleIntegrationHooks.vue';
+import BelezakiCatalogPanel from './belezaki/CatalogPanel.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 
@@ -14,6 +15,7 @@ export default {
     NewHook,
     SingleIntegrationHooks,
     MultipleIntegrationHooks,
+    BelezakiCatalogPanel,
     SettingsLayout,
     BaseSettingsHeader,
   },
@@ -56,6 +58,15 @@ export default {
     },
     showAddButton() {
       return this.showIntegrationHooks && this.isIntegrationMultiple;
+    },
+    // The belezaki page grows a catalogue once the salon is connected: the
+    // generic hook card above handles connect/disconnect, this handles data.
+    showBelezakiCatalog() {
+      return (
+        this.integrationId === 'belezaki' &&
+        this.showIntegrationHooks &&
+        this.integration.hooks?.length > 0
+      );
     },
     deleteTitle() {
       return this.isHookTypeInbox
@@ -141,6 +152,11 @@ export default {
             :integration-id="integrationId"
             @add="openAddHookModal"
             @delete="openDeletePopup"
+          />
+          <BelezakiCatalogPanel
+            v-if="showBelezakiCatalog"
+            :key="integration.hooks[0].id"
+            :hook="integration.hooks[0]"
           />
         </div>
       </div>

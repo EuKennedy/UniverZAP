@@ -7,24 +7,9 @@
 # `Profile`, então a autorização é feita pelo mesmo before_action que os outros
 # controllers de administração desta base usam.
 class Api::V1::Accounts::Whatsapp::ProfileController < Api::V1::Accounts::BaseController
-  # A URL assinada do blob precisa durar mais que o padrão: quem baixa o
-  # arquivo é a WAHA, e um vídeo de status leva mais tempo que uma foto.
-  MEDIA_URL_TTL = 15.minutes
-
-  # O tipo esperado por ação, para o operador receber uma recusa clara em vez
-  # de um 4xx cru da WAHA ao mandar um PDF como foto de perfil.
-  EXPECTED_MEDIA_TYPE = {
-    'update_picture' => 'image',
-    'publish_image_status' => 'image',
-    'publish_video_status' => 'video'
-  }.freeze
-
-  HEX_COLOR = /\A#[0-9a-fA-F]{6}\z/
-
   before_action :ensure_administrator
   before_action :resolve_waha_inbox, except: [:inboxes]
-  before_action :resolve_media_url, only: [:update_picture, :publish_image_status, :publish_video_status]
-  before_action :validate_background_color, only: [:publish_text_status, :publish_video_status]
+  before_action :resolve_media_url, only: [:update_picture]
 
   rescue_from Whatsapp::WahaSessionService::WahaError, with: :render_waha_error
   rescue_from Whatsapp::WahaInboxResolver::NotWahaInboxError, with: :render_not_waha_inbox
@@ -70,21 +55,6 @@ class Api::V1::Accounts::Whatsapp::ProfileController < Api::V1::Accounts::BaseCo
     render json: { success: true }
   end
 
-  def publish_text_status
-    @waha_service.send_status_text(text: params.require(:text).to_s, background_color: background_color)
-    render json: { success: true }
-  end
-
-  def publish_image_status
-    @waha_service.send_status_image(url: @media_url, caption: params[:caption].presence, mimetype: @media_mimetype)
-    render json: { success: true }
-  end
-
-  def publish_video_status
-    @waha_service.send_status_video(url: @media_url, mimetype: @media_mimetype, background_color: background_color)
-    render json: { success: true }
-  end
-
   private
 
   def ensure_administrator
@@ -109,24 +79,12 @@ class Api::V1::Accounts::Whatsapp::ProfileController < Api::V1::Accounts::BaseCo
     return render_unprocessable('inbox.whatsapp.waha.media_not_found') if blob.blank?
     return render_unprocessable('inbox.whatsapp.waha.media_wrong_type') unless expected_media_type?(blob)
 
-    ActiveStorage::Current.url_options = Rails.application.routes.default_url_options if ActiveStorage::Current.url_options.blank?
-    @media_mimetype = blob.content_type
-    @media_url = blob.url(expires_in: MEDIA_URL_TTL)
+    @media_url = Whatsapp::WahaMediaUrl.for(blob)
   end
 
+  # Recusa clara em vez de um 4xx cru da WAHA ao mandar um PDF como foto.
   def expected_media_type?(blob)
-    blob.content_type.to_s.start_with?("#{EXPECTED_MEDIA_TYPE.fetch(action_name)}/")
-  end
-
-  def validate_background_color
-    color = params[:background_color].to_s
-    return if color.blank? || color.match?(HEX_COLOR)
-
-    render_unprocessable('inbox.whatsapp.waha.invalid_background_color')
-  end
-
-  def background_color
-    params[:background_color].presence
+    blob.content_type.to_s.start_with?('image/')
   end
 
   def inbox_payload(inbox)
@@ -147,19 +105,6 @@ class Api::V1::Accounts::Whatsapp::ProfileController < Api::V1::Accounts::BaseCo
   end
 
   def render_waha_error(error)
-    render json: { error: humanized_waha_error(error.message) }, status: :unprocessable_entity
-  end
-
-  # A WahaError carrega método, path e o corpo cru da resposta. Para a tela
-  # interessa o que a WAHA respondeu, então extraímos a mensagem do JSON e só
-  # caímos no texto inteiro quando não há nada estruturado para mostrar.
-  def humanized_waha_error(message)
-    payload = message[/\{.*\}/m]
-    parsed = payload.present? ? JSON.parse(payload) : nil
-    return message unless parsed.is_a?(Hash)
-
-    (parsed['message'] || parsed['error']).to_s.presence || message
-  rescue JSON::ParserError
-    message
+    render json: { error: Whatsapp::WahaErrorMessage.humanize(error.message) }, status: :unprocessable_entity
   end
 end

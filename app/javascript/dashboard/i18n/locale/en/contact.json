@@ -47,7 +47,8 @@
         "REPURCHASE_WEEKS": "Repurchase cycle (weeks)",
         "CONFIRM": "Schedule",
         "SUCCESS": "Appointment saved. The conversation is now in the \"agendado\" stage.",
-        "ERROR": "Could not save the appointment. Please try again."
+        "ERROR": "Could not save the appointment. Please try again.",
+        "PROFESSIONAL_PLACEHOLDER": "Pick a professional"
       }
     },
     "VOICE_INBOX_PICKER": {

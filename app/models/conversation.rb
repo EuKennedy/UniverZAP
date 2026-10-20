@@ -14,6 +14,7 @@
 #  first_reply_created_at :datetime
 #  identifier             :string
 #  is_group               :boolean          default(FALSE), not null
+#  is_status_broadcast    :boolean          default(FALSE), not null
 #  last_activity_at       :datetime         not null
 #  pinned_at              :datetime
 #  priority               :integer
@@ -37,27 +38,28 @@
 #
 # Indexes
 #
-#  conv_acid_inbid_stat_asgnid_idx                    (account_id,inbox_id,status,assignee_id)
-#  index_conversations_on_account_id                  (account_id)
-#  index_conversations_on_account_id_and_display_id   (account_id,display_id) UNIQUE
-#  index_conversations_on_account_id_and_is_group     (account_id,is_group)
-#  index_conversations_on_ai_assistant_id             (ai_assistant_id)
-#  index_conversations_on_ai_mode                     (ai_mode)
-#  index_conversations_on_assignee_id_and_account_id  (assignee_id,account_id)
-#  index_conversations_on_campaign_id                 (campaign_id)
-#  index_conversations_on_contact_id                  (contact_id)
-#  index_conversations_on_contact_inbox_id            (contact_inbox_id)
-#  index_conversations_on_first_reply_created_at      (first_reply_created_at)
-#  index_conversations_on_id_and_account_id           (account_id,id)
-#  index_conversations_on_identifier_and_account_id   (identifier,account_id)
-#  index_conversations_on_inbox_id                    (inbox_id)
-#  index_conversations_on_pinned_at                   (pinned_at)
-#  index_conversations_on_priority                    (priority)
-#  index_conversations_on_status_and_account_id       (status,account_id)
-#  index_conversations_on_status_and_priority         (status,priority)
-#  index_conversations_on_team_id                     (team_id)
-#  index_conversations_on_uuid                        (uuid) UNIQUE
-#  index_conversations_on_waiting_since               (waiting_since)
+#  conv_acid_inbid_stat_asgnid_idx                            (account_id,inbox_id,status,assignee_id)
+#  index_conversations_on_account_id                          (account_id)
+#  index_conversations_on_account_id_and_display_id           (account_id,display_id) UNIQUE
+#  index_conversations_on_account_id_and_is_group             (account_id,is_group)
+#  index_conversations_on_account_id_and_is_status_broadcast  (account_id,is_status_broadcast)
+#  index_conversations_on_ai_assistant_id                     (ai_assistant_id)
+#  index_conversations_on_ai_mode                             (ai_mode)
+#  index_conversations_on_assignee_id_and_account_id          (assignee_id,account_id)
+#  index_conversations_on_campaign_id                         (campaign_id)
+#  index_conversations_on_contact_id                          (contact_id)
+#  index_conversations_on_contact_inbox_id                    (contact_inbox_id)
+#  index_conversations_on_first_reply_created_at              (first_reply_created_at)
+#  index_conversations_on_id_and_account_id                   (account_id,id)
+#  index_conversations_on_identifier_and_account_id           (identifier,account_id)
+#  index_conversations_on_inbox_id                            (inbox_id)
+#  index_conversations_on_pinned_at                           (pinned_at)
+#  index_conversations_on_priority                            (priority)
+#  index_conversations_on_status_and_account_id               (status,account_id)
+#  index_conversations_on_status_and_priority                 (status,priority)
+#  index_conversations_on_team_id                             (team_id)
+#  index_conversations_on_uuid                                (uuid) UNIQUE
+#  index_conversations_on_waiting_since                       (waiting_since)
 #
 # Foreign Keys
 #
@@ -145,11 +147,14 @@ class Conversation < ApplicationRecord
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
   scope :unattended, -> { where(first_reply_created_at: nil).or(where.not(waiting_since: nil)) }
-  # UniverZAP semantics of the Todos dropdown:
-  # - waiting       = no agent reply yet (still awaiting the first response).
-  # - in_attendance = an agent has replied at least once.
-  scope :waiting, -> { where(first_reply_created_at: nil) }
-  scope :in_attendance, -> { where.not(first_reply_created_at: nil) }
+  # UniverZAP: whose turn it is. Every open conversation is in exactly one:
+  # - waiting           = the contact has the last word — our move (new leads
+  #                       and contacts who answered us).
+  # - awaiting_customer = we have the last word — their move. When the
+  #                       contact writes, it goes back to waiting by itself.
+  # "Em atendimento" in the list is both together.
+  scope :waiting, -> { where(awaiting_reply: true) }
+  scope :awaiting_customer, -> { where(awaiting_reply: false) }
   # `awaiting_reply` (the contact has the last word) is kept current by
   # Message#set_conversation_activity but no list shows it today. Unlike
   # waiting_since, any outgoing message — broadcast, API, AI — answers.
@@ -159,6 +164,10 @@ class Conversation < ApplicationRecord
   # backfilled by the migration.
   scope :groups, -> { where(is_group: true) }
   scope :non_groups, -> { where(is_group: false) }
+  # The statuses contacts post arrive through one "status@broadcast" chat: they
+  # get a "Status" tab of their own and stay out of every other tab and count.
+  scope :status_broadcasts, -> { where(is_status_broadcast: true) }
+  scope :regular, -> { where(is_group: false, is_status_broadcast: false) }
   scope :resolvable_not_waiting, lambda { |auto_resolve_after|
     return none if auto_resolve_after.to_i.zero?
 
@@ -344,6 +353,7 @@ class Conversation < ApplicationRecord
 
   def execute_after_update_commit_callbacks
     handle_closing_label_applied
+    clear_closing_labels_on_reopen
     handle_resolved_status_change
     notify_status_change
     create_activity
@@ -364,6 +374,17 @@ class Conversation < ApplicationRecord
 
     closing_titles = account.labels.closing.pluck(:title)
     resolved! if current_labels.intersect?(closing_titles)
+  end
+
+  # A closing label describes the cycle that ended. When the conversation comes
+  # back (the contact wrote again, or an agent reopened it), that cycle is over
+  # and the label goes, so an open conversation never reads as "encerrada" and
+  # never sits in Aguardando looking closed.
+  def clear_closing_labels_on_reopen
+    return unless saved_change_to_status? && status_before_last_save == 'resolved' && !resolved?
+
+    remaining = label_list - account.labels.closing.pluck(:title)
+    update_labels(remaining) if remaining.size < label_list.size
   end
 
   def handle_resolved_status_change
@@ -388,6 +409,7 @@ class Conversation < ApplicationRecord
   # identifier matches. Computed once on create; backfilled for existing rows.
   def set_group_flag
     self.is_group = contact&.identifier.to_s.end_with?('@g.us')
+    self.is_status_broadcast = contact&.identifier.to_s == 'status@broadcast'
     true
   end
 

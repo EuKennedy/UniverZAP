@@ -26,6 +26,7 @@ import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
 import KanbanTasksPanel from './KanbanTasksPanel.vue';
+import BelezakiCatalogCard from 'dashboard/components/widgets/conversation/belezaki/CatalogCard.vue';
 
 const props = defineProps({
   conversationId: {
@@ -56,6 +57,14 @@ const shopifyIntegration = useFunctionGetter(
 const isShopifyFeatureEnabled = computed(
   () => shopifyIntegration.value.enabled
 );
+
+// The salon catalogue is worth a block of its own only once the belezaki
+// app is connected; the sheet above already says how to connect it.
+const belezakiIntegration = useFunctionGetter(
+  'integrations/getIntegration',
+  'belezaki'
+);
+const isBelezakiEnabled = computed(() => belezakiIntegration.value.enabled);
 const { isCloudFeatureEnabled } = useAccount();
 
 const isLinearFeatureEnabled = computed(() =>
@@ -289,6 +298,20 @@ onMounted(() => {
               "
             >
               <ShopifyOrdersList :contact-id="contactId" />
+            </AccordionItem>
+          </div>
+          <div
+            v-else-if="element.name === 'belezaki_catalog' && isBelezakiEnabled"
+          >
+            <AccordionItem
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.BELEZAKI_CATALOG')"
+              :is-open="isContactSidebarItemOpen('is_belezaki_catalog_open')"
+              compact
+              @toggle="
+                value => toggleSidebarUIState('is_belezaki_catalog_open', value)
+              "
+            >
+              <BelezakiCatalogCard />
             </AccordionItem>
           </div>
           <div v-else-if="element.name === 'contact_notes'">

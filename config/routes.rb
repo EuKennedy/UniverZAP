@@ -168,6 +168,7 @@ Rails.application.routes.draw do
             collection do
               get :meta
               get :search
+              get :created_per_day
               post :filter
             end
             scope module: :conversations do
@@ -650,9 +651,15 @@ Rails.application.routes.draw do
             put 'profile/about', to: 'profile#update_about'
             put 'profile/picture', to: 'profile#update_picture'
             delete 'profile/picture', to: 'profile#delete_picture'
-            post 'profile/status/text', to: 'profile#publish_text_status'
-            post 'profile/status/image', to: 'profile#publish_image_status'
-            post 'profile/status/video', to: 'profile#publish_video_status'
+
+            # Status: rascunho, agendamento, publicação em várias conexões e
+            # o histórico de cada entrega. Modelos são o texto reutilizável.
+            resources :status_posts, only: [:index, :create, :update, :destroy] do
+              post :publish, on: :member
+              post :retry, on: :member
+              post :suggest, on: :collection
+            end
+            resources :status_templates, only: [:index, :create, :update, :destroy]
           end
 
           resources :webhooks, only: [:index, :create, :update, :destroy]
@@ -683,6 +690,8 @@ Rails.application.routes.draw do
             resource :belezaki, controller: 'belezaki', only: [] do
               collection do
                 get :customer
+                get :catalog
+                post :sync_catalog
               end
             end
             resource :linear, controller: 'linear', only: [] do

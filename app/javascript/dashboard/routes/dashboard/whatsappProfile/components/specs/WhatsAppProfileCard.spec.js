@@ -3,6 +3,8 @@ import WhatsAppProfileCard from '../WhatsAppProfileCard.vue';
 
 const profile = vi.fn();
 const updateName = vi.fn();
+const updatePicture = vi.fn();
+const openCropper = vi.fn();
 const alerts = vi.fn();
 
 vi.mock('dashboard/api/whatsappProfile', () => ({
@@ -10,13 +12,15 @@ vi.mock('dashboard/api/whatsappProfile', () => ({
     profile: (...args) => profile(...args),
     updateName: (...args) => updateName(...args),
     updateAbout: vi.fn(),
-    updatePicture: vi.fn(),
+    updatePicture: (...args) => updatePicture(...args),
     deletePicture: vi.fn(),
   },
 }));
 
+const uploadFile = vi.fn();
+
 vi.mock('dashboard/helper/uploadHelper', () => ({
-  uploadFile: vi.fn().mockResolvedValue({ blobId: 'blob-1' }),
+  uploadFile: (...args) => uploadFile(...args),
 }));
 
 vi.mock('dashboard/composables', () => ({ useAlert: (...a) => alerts(...a) }));
@@ -42,6 +46,21 @@ const stubs = {
     template: '<textarea :value="modelValue" />',
   },
   Spinner: true,
+  // O recorte em si tem spec próprio; aqui interessa o contrato: abrir com o
+  // arquivo escolhido e devolver o arquivo recortado no confirm.
+  ProfilePictureCropper: {
+    emits: ['confirm'],
+    methods: {
+      open(file) {
+        openCropper(file);
+      },
+      close() {},
+      crop() {
+        this.$emit('confirm', new File(['x'], 'cropped.jpg'));
+      },
+    },
+    template: '<button data-testid="crop-confirm" @click="crop">crop</button>',
+  },
 };
 
 const mountCard = () =>
@@ -62,6 +81,8 @@ describe('WhatsAppProfileCard.vue', () => {
       data: { name: 'Loja da Ana', picture: 'https://cdn.test/p.jpg' },
     });
     updateName.mockResolvedValue({ data: { name: 'Loja da Ana' } });
+    uploadFile.mockResolvedValue({ blobId: 'blob-1' });
+    updatePicture.mockResolvedValue({ data: { success: true } });
   });
 
   it('shows the profile of the selected connection', async () => {
@@ -117,6 +138,27 @@ describe('WhatsAppProfileCard.vue', () => {
 
     expect(wrapper.find('[data-testid="profile-load-error"]').text()).toBe(
       'sessão parada'
+    );
+  });
+
+  // Escolher o arquivo só abre o enquadramento. Mandar a foto crua para o
+  // WhatsApp deixaria ele cortar do jeito dele.
+  it('sends the picture only after it is cropped', async () => {
+    const wrapper = mountCard();
+    await flushPromises();
+    const input = wrapper.find('input[type="file"]');
+    const original = new File(['y'], 'foto.png', { type: 'image/png' });
+    Object.defineProperty(input.element, 'files', { value: [original] });
+
+    await input.trigger('change');
+    expect(openCropper).toHaveBeenCalledWith(original);
+    expect(updatePicture).not.toHaveBeenCalled();
+
+    await wrapper.find('[data-testid="crop-confirm"]').trigger('click');
+    await flushPromises();
+    expect(updatePicture).toHaveBeenCalledWith(5, 'blob-1');
+    expect(alerts).toHaveBeenCalledWith(
+      'WHATSAPP_PROFILE.PROFILE.PICTURE_SAVED'
     );
   });
 });

@@ -42,4 +42,9 @@ export const ASSIGNEE_TYPE_TAB_PERMISSIONS = {
     count: 'groupCount',
     permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
   },
+  // The statuses contacts post (status@broadcast), out of every other tab.
+  status: {
+    count: 'statusCount',
+    permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
+  },
 };

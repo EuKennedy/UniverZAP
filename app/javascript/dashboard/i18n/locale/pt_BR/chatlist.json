@@ -23,6 +23,18 @@
       "TOGGLE": "Mostrar ou recolher o painel do dia",
       "COMPACT": "1ª resposta {time} · {pending} sem resposta"
     },
+    "DATES": {
+      "TITLE": "Iniciadas:",
+      "ALL": "todas as datas",
+      "TODAY": "hoje",
+      "YESTERDAY": "ontem",
+      "STARTED": "· {count} iniciada | · {count} iniciadas",
+      "PREVIOUS": "Dia anterior",
+      "NEXT": "Próximo dia",
+      "CLEAR": "Mostrar todas as datas",
+      "PICK": "Ir para uma data",
+      "TOGGLE": "Mostrar ou recolher a semana"
+    },
     "STATUS_BAR": {
       "PICK": "Escolher as etiquetas da barra",
       "HINT": "A ordem em que você marca é a ordem na barra.",
@@ -42,10 +54,12 @@
       "me": "Minhas",
       "unassigned": "Não atribuídas",
       "waiting": "Aguardando",
+      "awaiting_customer": "Aguardando cliente",
       "in_attendance": "Em atendimento",
       "resolved": "Resolvidas",
       "all": "Todos",
-      "groups": "Grupos"
+      "groups": "Grupos",
+      "status": "Status"
     },
     "CHAT_STATUS_FILTER_ITEMS": {
       "open": {

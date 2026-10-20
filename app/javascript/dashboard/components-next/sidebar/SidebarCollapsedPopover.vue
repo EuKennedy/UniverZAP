@@ -176,7 +176,7 @@ onMounted(async () => {
                       v-else
                       class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
                       :class="{
-                        'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15':
+                        'text-n-slate-12 bg-brand-gradient-soft':
                           isActive(subChild),
                         'text-n-slate-11 hover:bg-n-alpha-2':
                           !isActive(subChild),
@@ -200,8 +200,7 @@ onMounted(async () => {
               <button
                 class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
                 :class="{
-                  'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15':
-                    isActive(child),
+                  'text-n-slate-12 bg-brand-gradient-soft': isActive(child),
                   'text-n-slate-11 hover:bg-n-alpha-2': !isActive(child),
                 }"
                 @click="navigateAndClose(child.to)"

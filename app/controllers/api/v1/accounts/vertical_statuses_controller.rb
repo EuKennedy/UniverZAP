@@ -80,12 +80,12 @@ class Api::V1::Accounts::VerticalStatusesController < Api::V1::Accounts::BaseCon
   end
 
   def label_count(title)
-    Current.account.conversations.non_groups.open.tagged_with(title).count
+    Current.account.conversations.regular.open.tagged_with(title).count
   end
 
   # One query for the whole catalog instead of one per label.
   def open_counts_by_label
-    Current.account.conversations.non_groups.open
+    Current.account.conversations.regular.open
            .joins(:taggings).joins('INNER JOIN tags ON tags.id = taggings.tag_id')
            .where(taggings: { context: 'labels' })
            .group('tags.name').count

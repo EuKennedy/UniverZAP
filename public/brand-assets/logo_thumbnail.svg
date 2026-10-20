@@ -1,8 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <title>UniverZAP</title>
-  <rect width="512" height="512" rx="112" fill="#22C55E"/>
-  <path d="M256 130c-80.6 0-146 60.3-146 134.7 0 26.4 8.4 50.9 22.6 71.9L110 426l98-21c14.7 5.4 30.6 8.4 47 8.4 80.6 0 146-60.3 146-134.7S336.6 130 256 130z" fill="#FFFFFF"/>
-  <ellipse cx="202" cy="258" rx="17.5" ry="17.5" fill="#22C55E"/>
-  <path d="M249 250c-1.4 2.8-2 6.5-1.4 10 1.4 8.5 8.5 14.2 17 12.8 7-1.2 12.8-7 14.2-14" stroke="#22C55E" stroke-width="7" stroke-linecap="round" fill="none"/>
-  <path d="M186 304c15.5 19.8 38 32.5 62 32.5s46.5-12.7 62-32.5" stroke="#22C55E" stroke-width="15.5" stroke-linecap="round" fill="none"/>
+  <defs>
+    <linearGradient id="uz-bg" x1="72" y1="40" x2="440" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8EF56B"/>
+      <stop offset="0.38" stop-color="#14E67F"/>
+      <stop offset="1" stop-color="#0EB2AE"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#uz-bg)"/>
+  <g stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M206 384A152 152 0 1 0 118 292L94 408L206 384Z" stroke-width="34"/>
+    <path d="M286 228Q320 192 354 228" stroke-width="22"/>
+    <path d="M214 296Q262 340 310 296" stroke-width="24"/>
+  </g>
+  <circle cx="206" cy="222" r="27" fill="#FFFFFF"/>
 </svg>

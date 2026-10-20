@@ -38,7 +38,7 @@ const count = computed(() =>
     :rel="href ? 'noopener noreferrer' : undefined"
     :title="label"
     :class="{
-      'text-n-slate-12 bg-n-brand/10 dark:bg-n-brand/15 font-medium':
+      'text-n-slate-12 bg-brand-gradient-soft font-medium':
         isActive && !hasActiveChild,
       'text-n-slate-12 font-medium': hasActiveChild,
       'text-n-slate-11 hover:bg-n-alpha-2': !isActive && !hasActiveChild,

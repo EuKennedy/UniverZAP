@@ -37,30 +37,6 @@ class WhatsAppProfile extends ApiClient {
       params: { inbox_id: inboxId },
     });
   }
-
-  publishTextStatus(inboxId, { text, backgroundColor }) {
-    return axios.post(`${this.url}/status/text`, {
-      inbox_id: inboxId,
-      text,
-      background_color: backgroundColor,
-    });
-  }
-
-  publishImageStatus(inboxId, { blobId, caption }) {
-    return axios.post(`${this.url}/status/image`, {
-      inbox_id: inboxId,
-      blob_id: blobId,
-      caption,
-    });
-  }
-
-  publishVideoStatus(inboxId, { blobId, backgroundColor }) {
-    return axios.post(`${this.url}/status/video`, {
-      inbox_id: inboxId,
-      blob_id: blobId,
-      background_color: backgroundColor,
-    });
-  }
 }
 
 export default new WhatsAppProfile();

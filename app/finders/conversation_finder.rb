@@ -49,8 +49,23 @@ class ConversationFinder
     filter_by_conversation_type if params[:conversation_type]
     filter_by_attendance_state
     filter_by_assignee_type
+    filter_by_created_on
 
     { conversations: conversations, count: counts }
+  end
+
+  # UniverZAP: the agenda strip of the list — how many conversations of the
+  # current view started on each day between params[:from] and params[:to],
+  # days in the agent's timezone. Same scope as #perform, minus the day.
+  def perform_created_per_day
+    set_up
+    apply_group_scope
+    filter_by_conversation_type if params[:conversation_type]
+    filter_by_attendance_state
+    filter_by_assignee_type
+
+    range = time_zone.parse(params[:from]).beginning_of_day..time_zone.parse(params[:to]).end_of_day
+    @conversations.where(created_at: range).group(local_created_day).count.transform_keys(&:iso8601)
   end
 
   def perform_meta_only
@@ -58,14 +73,14 @@ class ConversationFinder
     { count: build_count_payload }
   end
 
-  # UniverZAP: WhatsApp groups live only in the dedicated "Grupos" tab. The
-  # regular tabs exclude them; the Grupos tab (conversation_type=groups) shows
-  # only them. Applied after the badge counts are computed.
+  # UniverZAP: WhatsApp groups and the contacts' statuses live only in their
+  # own tabs (conversation_type=groups / status); the regular tabs exclude
+  # both. Applied after the badge counts are computed.
   def apply_group_scope
-    @conversations = if params[:conversation_type] == 'groups'
-                       @conversations.groups
-                     else
-                       @conversations.non_groups
+    @conversations = case params[:conversation_type]
+                     when 'groups' then @conversations.groups
+                     when 'status' then @conversations.status_broadcasts
+                     else @conversations.regular
                      end
   end
 
@@ -150,16 +165,34 @@ class ConversationFinder
     @conversations
   end
 
-  # UniverZAP: Aguardando / Em atendimento in the Todos dropdown. A param of its
-  # own, so it narrows any conversation_type (mentions, unattended…) instead of
-  # replacing it.
+  # UniverZAP: whose turn it is, in the Todos dropdown — Aguardando (ours),
+  # Aguardando cliente (theirs); Em atendimento (in_attendance) is both, so it
+  # narrows nothing. A param of its own, so it narrows any conversation_type
+  # (mentions, unattended…) instead of replacing it.
   def filter_by_attendance_state
     case params[:attendance_state]
     when 'waiting'
       @conversations = @conversations.waiting
-    when 'in_attendance'
-      @conversations = @conversations.in_attendance
+    when 'awaiting_customer'
+      @conversations = @conversations.awaiting_customer
     end
+  end
+
+  # UniverZAP: only the conversations that started on params[:created_on]
+  # (YYYY-MM-DD in the agent's timezone). Narrows the list, never the badges.
+  def filter_by_created_on
+    return if params[:created_on].blank?
+
+    @conversations = @conversations.where(created_at: time_zone.parse(params[:created_on]).all_day)
+  end
+
+  def time_zone
+    @time_zone ||= ActiveSupport::TimeZone[params[:timezone].to_s] || Time.zone
+  end
+
+  def local_created_day
+    zone = Conversation.connection.quote(time_zone.tzinfo.name)
+    Arel.sql("date(conversations.created_at AT TIME ZONE 'UTC' AT TIME ZONE #{zone})")
   end
 
   def filter_by_query
@@ -203,7 +236,7 @@ class ConversationFinder
   # resolved conversations. Built from the pre-status snapshot, so it never
   # inherits whatever params[:status] the current request carries.
   def count_scope
-    @conversations_before_status.non_groups.where(status: 'open')
+    @conversations_before_status.regular.where(status: 'open')
   end
 
   def set_count_for_all_conversations
@@ -221,17 +254,18 @@ class ConversationFinder
       assigned_count: all_count - unassigned_count,
       unassigned_count: unassigned_count,
       all_count: all_count,
-      resolved_count: @conversations_before_status.non_groups.where(status: 'resolved').count,
+      resolved_count: @conversations_before_status.regular.where(status: 'resolved').count,
       group_count: @conversations_before_status.groups.count,
+      status_count: @conversations_before_status.status_broadcasts.count,
       **attendance_state_counts(all_count)
     }
   end
 
-  # UniverZAP: badges of Aguardando / Em atendimento in the Todos dropdown. One
-  # query: every non-group conversation is exactly one of the two.
+  # UniverZAP: badges of the turn views. One query: every regular open
+  # conversation is either ours or theirs, and Em atendimento is both.
   def attendance_state_counts(all_count)
     waiting_count = count_scope.waiting.count
-    { waiting_count: waiting_count, in_attendance_count: all_count - waiting_count }
+    { waiting_count: waiting_count, awaiting_customer_count: all_count - waiting_count, in_attendance_count: all_count }
   end
 
   def current_page
@@ -247,13 +281,6 @@ class ConversationFinder
 
   def conversations
     @conversations = conversations_base_query
-
-    # UniverZAP: Aguardando is the fila de risco, so a contact who is actually
-    # waiting on us (they have the last word) always outranks a thread where
-    # our own broadcast or template was the last thing said — a months-old
-    # waiting_since must not push the latter above the former. The agent's
-    # chosen sort still applies, just within each of those two halves.
-    @conversations = @conversations.order(awaiting_reply: :desc) if params[:attendance_state] == 'waiting'
 
     sort_by, sort_order = SORT_OPTIONS[params[:sort_by]] || SORT_OPTIONS['last_activity_at_desc']
     @conversations = @conversations.send(sort_by, sort_order)

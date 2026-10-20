@@ -31,7 +31,7 @@ export default {
       }
 
       if (this.type === 'blue' && !Object.keys(this.buttonStyles).length) {
-        className = `${className} bg-n-brand hover:brightness-110`;
+        className = `${className.replace('text-white', 'text-[#06131C]')} bg-n-brand bg-brand-gradient hover:brightness-105`;
       }
       if (this.block) {
         className = `${className} w-full`;

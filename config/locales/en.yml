@@ -32,6 +32,9 @@
 en:
   hello: 'Hello world'
   belezaki:
+    catalog:
+      servico: Service
+      profissional: Professional
     connect:
       not_configured: 'The belezaki integration is not configured on this server (shared key missing).'
       missing_external_id: 'Inform the salon id.'
@@ -80,7 +83,15 @@ en:
         not_a_waha_inbox: 'This inbox is not connected to a WAHA WhatsApp session.'
         media_not_found: 'The uploaded file could not be found. Upload it again and retry.'
         media_wrong_type: 'The uploaded file is not of the expected type for this action.'
-        invalid_background_color: 'The background colour must be a hex value such as #38B42F.'
+        schedule_in_past: 'must be in the future'
+        status_timeout: 'WhatsApp took too long to answer. Check the phone before retrying: the status may have been posted.'
+        status_unexpected_error: 'The status could not be posted because of an unexpected error. Retry in a few minutes.'
+        status_not_editable: 'This status was already posted and can no longer be changed.'
+        invalid_intent: 'Choose whether to save as draft, schedule or post now.'
+        nothing_to_retry: 'There are no failed connections to retry.'
+        suggestion_prompt_required: 'Tell the assistant what the status is about.'
+        suggestion_no_assistant: 'No active AI assistant in this account. Create one under Athenas to get suggestions.'
+        suggestion_empty: 'The assistant did not return a suggestion. Try describing the subject differently.'
   auth:
     saml:
       invalid_email: 'Please enter a valid email address'

@@ -23,6 +23,18 @@
       "TOGGLE": "Show or fold the day panel",
       "COMPACT": "first reply {time} · {pending} unanswered"
     },
+    "DATES": {
+      "TITLE": "Started:",
+      "ALL": "any day",
+      "TODAY": "today",
+      "YESTERDAY": "yesterday",
+      "STARTED": "· {count} started | · {count} started",
+      "PREVIOUS": "Previous day",
+      "NEXT": "Next day",
+      "CLEAR": "Show every day",
+      "PICK": "Go to a date",
+      "TOGGLE": "Show or fold the week"
+    },
     "STATUS_BAR": {
       "PICK": "Choose the labels on the bar",
       "HINT": "The order you tick is the order on the bar.",
@@ -42,10 +54,12 @@
       "me": "Mine",
       "unassigned": "Unassigned",
       "waiting": "Waiting",
+      "awaiting_customer": "Waiting on customer",
       "in_attendance": "In attendance",
       "resolved": "Resolved",
       "all": "All",
-      "groups": "Groups"
+      "groups": "Groups",
+      "status": "Status"
     },
     "CHAT_STATUS_FILTER_ITEMS": {
       "open": {

@@ -768,7 +768,7 @@ onMounted(() => {
                 class="size-5 rounded-md ring-1 mt-0.5 grid place-content-center transition-colors"
                 :class="
                   form.autopilot_enabled
-                    ? 'ring-n-brand bg-n-brand text-white'
+                    ? 'ring-n-brand bg-brand-gradient text-[#06131C]'
                     : 'ring-n-weak'
                 "
               >
@@ -806,7 +806,7 @@ onMounted(() => {
                 class="size-5 rounded-md ring-1 mt-0.5 grid place-content-center transition-colors"
                 :class="
                   form.behavior_flags[toggle.key]
-                    ? 'ring-n-brand bg-n-brand text-white'
+                    ? 'ring-n-brand bg-brand-gradient text-[#06131C]'
                     : 'ring-n-weak'
                 "
               >

@@ -15,6 +15,8 @@ import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import VerticalStatusChips from './widgets/VerticalStatusChips.vue';
 import ConversationKpiRow from './widgets/ConversationKpiRow.vue';
+import ConversationDateStrip from './widgets/ConversationDateStrip.vue';
+import { isOurTurn } from 'dashboard/helper/conversationTurn';
 import ReportsAPI from 'dashboard/api/reports';
 import ConversationListFilter from 'dashboard/components-next/filter/ConversationListFilter.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
@@ -90,6 +92,16 @@ const todayCollapsed = ref(false);
 function toggleToday() {
   todayCollapsed.value = !todayCollapsed.value;
   updateUISettings({ conversation_list_today_collapsed: todayCollapsed.value });
+}
+
+// UniverZAP: the agenda — the day the conversations on screen started on
+// ('YYYY-MM-DD', agent's timezone; null = every day). Not remembered: a
+// reload always opens on the whole queue. The open/folded week is.
+const createdOn = ref(null);
+const datesExpanded = ref(false);
+function toggleDates() {
+  datesExpanded.value = !datesExpanded.value;
+  updateUISettings({ conversation_list_dates_open: datesExpanded.value });
 }
 const showAdvancedFilters = ref(false);
 const listFilter = ref(emptyListFilter());
@@ -191,6 +203,7 @@ const VIEW_COUNT_KEYS = {
   [wootConstants.LIST_VIEW.ALL]: 'allCount',
   [wootConstants.LIST_VIEW.ME]: 'mineCount',
   [wootConstants.LIST_VIEW.WAITING]: 'waitingCount',
+  [wootConstants.LIST_VIEW.AWAITING_CUSTOMER]: 'awaitingCustomerCount',
   [wootConstants.LIST_VIEW.IN_ATTENDANCE]: 'inAttendanceCount',
   // UniverZAP: "Fila, sem dono" and "Resolvidas" quick filters
   [wootConstants.LIST_VIEW.UNASSIGNED]: 'unAssignedCount',
@@ -203,7 +216,7 @@ const VIEW_COUNT_KEYS = {
 // Todos' count, and for a reception Minhas is usually the same number.
 const KPI_VIEWS = [
   wootConstants.LIST_VIEW.WAITING,
-  wootConstants.LIST_VIEW.IN_ATTENDANCE,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
   wootConstants.LIST_VIEW.UNASSIGNED,
   wootConstants.LIST_VIEW.RESOLVED,
 ];
@@ -239,11 +252,17 @@ const assigneeTabItems = computed(() => {
 const isGroupsTab = computed(
   () => activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.GROUPS
 );
+const isStatusTab = computed(
+  () => activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.STATUS
+);
+// Grupos and Status are tabs of their own kind of chat, outside the Todos
+// views (dropdown, KPI cards, label bar).
+const isSegmentTab = computed(() => isGroupsTab.value || isStatusTab.value);
 
 // The bucket on screen: Grupos, or Todos narrowed by its dropdown. Pagination
 // and the end-of-list badge are kept per bucket.
 const listKey = computed(() =>
-  isGroupsTab.value ? wootConstants.ASSIGNEE_TYPE.GROUPS : activeListView.value
+  isSegmentTab.value ? activeAssigneeTab.value : activeListView.value
 );
 
 const showAssigneeInConversationCard = computed(() => {
@@ -279,8 +298,9 @@ const conversationCustomAttributes = useFunctionGetter(
 );
 
 const activeAssigneeTabCount = computed(() => {
-  const countKey = isGroupsTab.value
-    ? 'groupCount'
+  const segmentCountKeys = { groups: 'groupCount', status: 'statusCount' };
+  const countKey = isSegmentTab.value
+    ? segmentCountKeys[activeAssigneeTab.value]
     : VIEW_COUNT_KEYS[activeListView.value];
   return conversationStats.value[countKey] || 0;
 });
@@ -307,19 +327,26 @@ const conversationListPagination = computed(() => {
   return currentPage.value + 1;
 });
 
+// The two halves of Em atendimento, by whose turn it is.
+const TURN_VIEWS = [
+  wootConstants.LIST_VIEW.WAITING,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
+];
+
 const ATTENDANCE_VIEWS = [
   wootConstants.LIST_VIEW.WAITING,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
   wootConstants.LIST_VIEW.IN_ATTENDANCE,
 ];
 
 const isMineView = computed(
   () =>
-    !isGroupsTab.value && activeListView.value === wootConstants.LIST_VIEW.ME
+    !isSegmentTab.value && activeListView.value === wootConstants.LIST_VIEW.ME
 );
 
 const isUnassignedView = computed(
   () =>
-    !isGroupsTab.value &&
+    !isSegmentTab.value &&
     activeListView.value === wootConstants.LIST_VIEW.UNASSIGNED
 );
 
@@ -342,13 +369,14 @@ const conversationFilters = computed(() => {
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
     teamId: props.teamId || undefined,
-    conversationType: isGroupsTab.value
-      ? wootConstants.ASSIGNEE_TYPE.GROUPS
+    conversationType: isSegmentTab.value
+      ? activeAssigneeTab.value
       : props.conversationType || undefined,
     attendanceState:
-      !isGroupsTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)
+      !isSegmentTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)
         ? activeListView.value
         : undefined,
+    createdOn: createdOn.value || undefined,
     // The bucket this page belongs to, so the store files pagination under
     // the same key this list reads it from.
     listKey: listKey.value,
@@ -392,6 +420,26 @@ const pageTitle = computed(() => {
   return t('CHAT_LIST.TAB_HEADING');
 });
 
+const localDayKey = seconds => {
+  const date = new Date(seconds * 1000);
+  const pad = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+// What the agenda counts: the view on screen, without paging or sorting.
+const dateScope = computed(() => {
+  const filters = conversationFilters.value;
+  return {
+    inboxId: filters.inboxId,
+    assigneeType: filters.assigneeType,
+    status: filters.status,
+    labels: filters.labels,
+    teamId: filters.teamId,
+    conversationType: filters.conversationType,
+    attendanceState: filters.attendanceState,
+  };
+});
+
 // The store accumulates every bucket fetched so far, so the list on screen is
 // the client-side mirror of the backend split: Grupos holds ONLY WhatsApp
 // groups, Todos everything else, narrowed by the view of its dropdown.
@@ -399,16 +447,21 @@ function filterByListKey(conversations) {
   if (isGroupsTab.value) {
     return conversations.filter(c => c.is_group);
   }
-  const nonGroups = conversations.filter(c => !c.is_group);
+  if (isStatusTab.value) {
+    return conversations.filter(c => c.is_status_broadcast);
+  }
+  const nonGroups = conversations.filter(
+    c => !c.is_group && !c.is_status_broadcast
+  );
   switch (activeListView.value) {
     case wootConstants.LIST_VIEW.ME:
       return nonGroups.filter(
         c => c.meta?.assignee?.id === currentUser.value?.id
       );
     case wootConstants.LIST_VIEW.WAITING:
-      return nonGroups.filter(c => !c.first_reply_created_at);
-    case wootConstants.LIST_VIEW.IN_ATTENDANCE:
-      return nonGroups.filter(c => !!c.first_reply_created_at);
+      return nonGroups.filter(isOurTurn);
+    case wootConstants.LIST_VIEW.AWAITING_CUSTOMER:
+      return nonGroups.filter(c => !isOurTurn(c));
     case wootConstants.LIST_VIEW.UNASSIGNED:
       return nonGroups.filter(c => !c.meta?.assignee);
     case wootConstants.LIST_VIEW.RESOLVED:
@@ -428,6 +481,13 @@ const conversationList = computed(() => {
         ? participatingChatsList.value(filters)
         : allChatList.value(filters);
     localConversationList = filterByListKey(chats);
+    // A conversation that starts while a past day is on screen arrives by
+    // websocket into the same store; keep it out of that day.
+    if (createdOn.value) {
+      localConversationList = localConversationList.filter(
+        c => localDayKey(c.created_at) === createdOn.value
+      );
+    }
   } else {
     localConversationList = [...chatLists.value];
   }
@@ -490,6 +550,7 @@ function setFiltersFromUISettings() {
     typeof todayPref === 'boolean'
       ? todayPref
       : window.matchMedia('(max-width: 767px)').matches;
+  datesExpanded.value = !!uiSettings.value.conversation_list_dates_open;
   const { status, order_by: orderBy } = filterBy;
   activeListView.value = Object.values(wootConstants.LIST_VIEW).includes(view)
     ? view
@@ -715,6 +776,12 @@ function resetAndFetchData() {
   fetchConversations();
 }
 
+// A different day is a different list: start over from its first page.
+function setCreatedOn(day) {
+  createdOn.value = day;
+  resetAndFetchData();
+}
+
 // UniverZAP: the list filter narrows what the list was showing — the status,
 // the tab (Todos or Grupos, and the Todos dropdown) and the inbox, team or
 // label of the route — so those travel as conditions of their own.
@@ -728,15 +795,11 @@ function listContextConditions() {
       listFilterCondition('assignee_id', 'equal_to', [currentUser.value.id])
     );
   }
-  if (!isGroupsTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)) {
+  if (!isSegmentTab.value && TURN_VIEWS.includes(activeListView.value)) {
     conditions.push(
-      listFilterCondition(
-        'first_reply_created_at',
-        activeListView.value === wootConstants.LIST_VIEW.WAITING
-          ? 'is_not_present'
-          : 'is_present',
-        []
-      )
+      listFilterCondition('awaiting_reply', 'equal_to', [
+        activeListView.value === wootConstants.LIST_VIEW.WAITING,
+      ])
     );
   }
   if (props.conversationInbox) {
@@ -774,6 +837,7 @@ const listFilterChips = computed(() => describeListFilter(listFilter.value, t));
 // The bucket the applied filter narrows, shown as its first chip.
 const listFilterScope = computed(() => {
   if (isGroupsTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.groups');
+  if (isStatusTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.status');
   return t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${activeListView.value}`);
 });
 
@@ -822,7 +886,7 @@ function updateAssigneeTab(selectedTab) {
 // The dropdown belongs to Todos: picking a view from it also leaves Grupos.
 // The agent's last view is kept, so the list opens where they left it.
 function updateView(selectedView) {
-  if (activeListView.value === selectedView && !isGroupsTab.value) return;
+  if (activeListView.value === selectedView && !isSegmentTab.value) return;
   // Resolvidas is the one view backed by conversation status rather than
   // assignee/attendance, so entering or leaving it is the only time this
   // flips activeStatus — every other transition leaves it untouched.
@@ -1203,7 +1267,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
     </ChatTypeTabs>
     <ConversationKpiRow
-      v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
+      v-if="!hasAppliedFiltersOrActiveFolders && !isSegmentTab"
       :items="kpiItems"
       :active-key="activeListView"
       :first-reply="firstReply"
@@ -1212,7 +1276,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       @toggle="toggleToday"
     />
     <VerticalStatusChips
-      v-if="!hasAppliedFiltersOrActiveFolders && !isGroupsTab"
+      v-if="!hasAppliedFiltersOrActiveFolders && !isSegmentTab"
     />
     <div
       v-else-if="hasAppliedListFilter"
@@ -1236,6 +1300,14 @@ watch(conversationFilters, (newVal, oldVal) => {
       </ul>
       <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
     </div>
+    <ConversationDateStrip
+      v-if="!hasAppliedFiltersOrActiveFolders"
+      :model-value="createdOn"
+      :scope="dateScope"
+      :expanded="datesExpanded"
+      @update:model-value="setCreatedOn"
+      @toggle="toggleDates"
+    />
 
     <p
       v-if="!chatListLoading && !conversationList.length"

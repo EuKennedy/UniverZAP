@@ -106,7 +106,7 @@ describe ConversationFinder do
 
       it 'returns the correct meta' do
         result = conversation_finder.perform
-        # UniverZAP adds the Grupos tab, the Todos dropdown (Aguardando /
+        # UniverZAP adds the Grupos and Status tabs, the Todos dropdown (Aguardando / Aguardando cliente /
         # Em atendimento), and Resolvidas alongside the upstream four.
         expect(result[:count]).to eq({
                                        mine_count: 2,
@@ -115,8 +115,10 @@ describe ConversationFinder do
                                        all_count: 4,
                                        resolved_count: 1,
                                        group_count: 0,
-                                       waiting_count: 4,
-                                       in_attendance_count: 0
+                                       status_count: 0,
+                                       waiting_count: 0,
+                                       awaiting_customer_count: 4,
+                                       in_attendance_count: 4
                                      })
       end
     end
@@ -138,8 +140,10 @@ describe ConversationFinder do
                                        all_count: 4,
                                        resolved_count: 1,
                                        group_count: 0,
-                                       waiting_count: 4,
-                                       in_attendance_count: 0
+                                       status_count: 0,
+                                       waiting_count: 0,
+                                       awaiting_customer_count: 4,
+                                       in_attendance_count: 4
                                      })
       end
     end
@@ -237,8 +241,10 @@ describe ConversationFinder do
                                        all_count: 4,
                                        resolved_count: 1,
                                        group_count: 0,
-                                       waiting_count: 4,
-                                       in_attendance_count: 0
+                                       status_count: 0,
+                                       waiting_count: 0,
+                                       awaiting_customer_count: 4,
+                                       in_attendance_count: 4
                                      })
       end
 
@@ -264,47 +270,67 @@ describe ConversationFinder do
     end
 
     context 'with attendance_state' do
-      let!(:replied) do
-        create(:conversation, account: account, inbox: inbox, assignee: user_1, first_reply_created_at: Time.current)
-      end
+      # Whose turn it is: the contact wrote last (ours) or we did (theirs).
+      let!(:ours) { create(:conversation, account: account, inbox: inbox, assignee: user_1, awaiting_reply: true) }
+      let!(:theirs) { create(:conversation, account: account, inbox: inbox, assignee: user_1, awaiting_reply: false) }
 
       def bucket(attendance_state)
         described_class.new(user_1, { assignee_type: 'all', attendance_state: attendance_state }).perform[:conversations].map(&:id)
       end
 
-      it 'splits Aguardando from Em atendimento by the first agent reply' do
-        expect(bucket('in_attendance')).to eq([replied.id])
-        expect(bucket('waiting')).not_to include(replied.id)
-        expect(bucket('waiting').size).to eq(4)
+      it 'splits Aguardando from Aguardando cliente by who has the last word, Em atendimento being both', :aggregate_failures do
+        expect(bucket('waiting')).to include(ours.id)
+        expect(bucket('waiting')).not_to include(theirs.id)
+        expect(bucket('awaiting_customer')).to include(theirs.id)
+        expect(bucket('awaiting_customer')).not_to include(ours.id)
+        expect(bucket('in_attendance')).to include(ours.id, theirs.id)
       end
 
-      it 'counts both views before narrowing the list' do
+      it 'counts the views before narrowing the list' do
         count = described_class.new(user_1, { assignee_type: 'all', attendance_state: 'waiting' }).perform[:count]
 
-        expect(count.slice(:waiting_count, :in_attendance_count)).to eq(waiting_count: 4, in_attendance_count: 1)
+        expect(count[:waiting_count] + count[:awaiting_customer_count]).to eq(count[:all_count])
+        expect(count[:in_attendance_count]).to eq(count[:all_count])
+        expect(count[:waiting_count]).to eq(account.conversations.regular.open.where(awaiting_reply: true).count)
       end
 
       it 'narrows the route conversation_type instead of replacing it' do
-        create(:mention, account: account, user: user_1, conversation: replied)
+        create(:mention, account: account, user: user_1, conversation: theirs)
         params = { assignee_type: 'all', conversation_type: 'mention', attendance_state: 'waiting' }
 
         expect(described_class.new(user_1, params).perform[:conversations]).to be_empty
       end
 
-      # UniverZAP: Aguardando is the fila de risco. A months-old thread where
-      # our own broadcast was the last word must not outrank a contact who
-      # wrote an hour ago and is still waiting on us, however the list is
-      # sorted — so the contact-has-the-last-word flag comes before the sort.
-      it 'puts whoever is waiting on us ahead of threads where we had the last word' do
-        stale = create(:conversation, account: account, inbox: inbox, assignee: user_1,
-                                      waiting_since: 30.days.ago, awaiting_reply: false)
-        live = create(:conversation, account: account, inbox: inbox, assignee: user_1,
-                                     waiting_since: 1.hour.ago, awaiting_reply: true)
+      it 'moves a conversation back to Aguardando when the contact answers' do
+        create(:message, account: account, inbox: inbox, conversation: theirs, message_type: :incoming)
 
-        params = { assignee_type: 'all', attendance_state: 'waiting', sort_by: 'waiting_since_asc' }
-        ids = described_class.new(user_1, params).perform[:conversations].map(&:id)
+        expect(bucket('waiting')).to include(theirs.id)
+      end
+    end
 
-        expect(ids.index(live.id)).to be < ids.index(stale.id)
+    context 'with created_on' do
+      # 02:30 UTC on the 15th is still the 14th in São Paulo (UTC-3).
+      let!(:late_night) do
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, created_at: Time.utc(2026, 10, 15, 2, 30))
+      end
+
+      before do
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, created_at: Time.utc(2026, 10, 15, 13, 0))
+      end
+
+      it 'lists only what started that day in the agent timezone, keeping the badges whole' do
+        params = { assignee_type: 'all', created_on: '2026-10-14', timezone: 'America/Sao_Paulo' }
+        result = described_class.new(user_1, params).perform
+
+        expect(result[:conversations].map(&:id)).to eq([late_night.id])
+        expect(result[:count][:all_count]).to be >= 2
+      end
+
+      it 'counts the conversations started per day' do
+        params = { assignee_type: 'all', from: '2026-10-13', to: '2026-10-15', timezone: 'America/Sao_Paulo' }
+        days = described_class.new(user_1, params).perform_created_per_day
+
+        expect(days).to eq('2026-10-14' => 1, '2026-10-15' => 1)
       end
     end
 
@@ -344,6 +370,27 @@ describe ConversationFinder do
         result = described_class.new(user_1, params).perform
         expect(result[:conversations].map(&:id)).not_to include(group_conversation.id)
         expect(result[:count][:group_count]).to eq(1)
+      end
+    end
+
+    context 'with whatsapp statuses' do
+      let!(:status_conversation) do
+        contact = create(:contact, account: account, identifier: 'status@broadcast')
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, contact: contact)
+      end
+
+      it 'shows the statuses only on their own tab and keeps them out of every other count', :aggregate_failures do
+        expect(status_conversation.is_status_broadcast).to be(true)
+
+        own = described_class.new(user_1, { assignee_type: 'all', conversation_type: 'status', inbox_id: inbox.id }).perform
+        expect(own[:conversations].map(&:id)).to eq([status_conversation.id])
+
+        regular = described_class.new(user_1, { assignee_type: 'all', inbox_id: inbox.id }).perform
+        expect(regular[:conversations].map(&:id)).not_to include(status_conversation.id)
+        expect(regular[:count]).to include(status_count: 1, all_count: account.conversations.regular.open.count)
+
+        groups = described_class.new(user_1, { assignee_type: 'all', conversation_type: 'groups', inbox_id: inbox.id }).perform
+        expect(groups[:conversations]).to be_empty
       end
     end
   end

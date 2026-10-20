@@ -9,8 +9,10 @@ const state = {
   // UniverZAP: the Aguardando / Em atendimento views of the Todos dropdown
   waitingCount: 0,
   inAttendanceCount: 0,
+  awaitingCustomerCount: 0,
   // UniverZAP groups tab
   groupCount: 0,
+  statusCount: 0,
   // UniverZAP: "Resolvidas" in the Todos dropdown
   resolvedCount: 0,
 };
@@ -65,7 +67,9 @@ export const mutations = {
       all_count: allCount,
       waiting_count: waitingCount,
       in_attendance_count: inAttendanceCount,
+      awaiting_customer_count: awaitingCustomerCount,
       group_count: groupCount,
+      status_count: statusCount,
       resolved_count: resolvedCount,
     } = {}
   ) {
@@ -75,7 +79,10 @@ export const mutations = {
     if (waitingCount !== undefined) $state.waitingCount = waitingCount;
     if (inAttendanceCount !== undefined)
       $state.inAttendanceCount = inAttendanceCount;
+    if (awaitingCustomerCount !== undefined)
+      $state.awaitingCustomerCount = awaitingCustomerCount;
     if (groupCount !== undefined) $state.groupCount = groupCount;
+    if (statusCount !== undefined) $state.statusCount = statusCount;
     if (resolvedCount !== undefined) $state.resolvedCount = resolvedCount;
     $state.updatedOn = new Date();
   },

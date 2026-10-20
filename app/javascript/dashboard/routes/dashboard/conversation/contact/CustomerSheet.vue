@@ -54,11 +54,13 @@ const customerType = computed(() =>
   })
 );
 
-const serviceOptions = computed(
-  () =>
-    props.attributeDefinitions.find(d => d.attribute_key === 'servico')
-      ?.attribute_values || []
-);
+const optionsOf = key =>
+  props.attributeDefinitions.find(d => d.attribute_key === key)
+    ?.attribute_values || [];
+const serviceOptions = computed(() => optionsOf('servico'));
+// Free text until the belezaki catalogue sync turns the attribute into a
+// list; then the row and the Agendar dialog offer the salon's own team.
+const professionalOptions = computed(() => optionsOf('profissional'));
 
 const appointment = computed(() =>
   formatAppointment(attributes.value.data_agendamento, locale.value)
@@ -84,7 +86,8 @@ const rows = computed(() => [
     label: t('CONTACT_PANEL.SHEET.PROFESSIONAL'),
     value: attributes.value.profissional || '',
     rawValue: attributes.value.profissional || '',
-    type: 'text',
+    type: professionalOptions.value.length ? 'list' : 'text',
+    options: professionalOptions.value,
   },
   {
     name: 'data_agendamento',
@@ -223,6 +226,7 @@ defineExpose({ closeSchedule });
       ref="scheduleDialog"
       :initial-values="attributes"
       :service-options="serviceOptions"
+      :professional-options="professionalOptions"
       :is-loading="isScheduling"
       @confirm="payload => emit('schedule', payload)"
     />

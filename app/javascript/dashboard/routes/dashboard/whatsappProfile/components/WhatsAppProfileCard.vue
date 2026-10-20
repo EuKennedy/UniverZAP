@@ -18,6 +18,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import TextArea from 'dashboard/components-next/textarea/TextArea.vue';
+import ProfilePictureCropper from './ProfilePictureCropper.vue';
 
 const props = defineProps({
   inboxId: { type: Number, required: true },
@@ -33,6 +34,7 @@ const about = ref('');
 const savingField = ref('');
 const fieldError = ref({ name: '', about: '', picture: '' });
 const fileInput = ref(null);
+const cropperRef = ref(null);
 
 const label = key => t(`WHATSAPP_PROFILE.PROFILE.${key}`);
 const fallback = () => t('WHATSAPP_PROFILE.ERRORS.GENERIC');
@@ -96,10 +98,17 @@ const removePicture = () =>
 
 const openFileDialog = () => fileInput.value?.click();
 
-const handleFileChange = async () => {
+// A foto passa pelo recorte antes de sair: escolher o arquivo só abre o
+// enquadramento, e o envio acontece no "Usar esta foto".
+const handleFileChange = () => {
   const file = fileInput.value?.files?.[0];
+  if (fileInput.value) fileInput.value.value = null;
   if (!file) return;
+  fieldError.value = { ...fieldError.value, picture: '' };
+  cropperRef.value?.open(file);
+};
 
+const uploadCropped = async file => {
   await save(
     'picture',
     async () => {
@@ -109,8 +118,7 @@ const handleFileChange = async () => {
     },
     'PICTURE_SAVED'
   );
-
-  if (fileInput.value) fileInput.value.value = null;
+  cropperRef.value?.close();
 };
 
 watch(() => props.inboxId, fetchProfile, { immediate: true });
@@ -234,5 +242,13 @@ watch(() => props.inboxId, fetchProfile, { immediate: true });
         />
       </div>
     </template>
+
+    <!-- Fora do v-if do carregamento: depois do envio o perfil recarrega, e o
+      diálogo não pode sumir no meio disso. -->
+    <ProfilePictureCropper
+      ref="cropperRef"
+      :is-saving="savingField === 'picture'"
+      @confirm="uploadCropped"
+    />
   </section>
 </template>

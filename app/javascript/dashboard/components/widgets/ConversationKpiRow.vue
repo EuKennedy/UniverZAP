@@ -92,7 +92,7 @@ const compactSummary = computed(() =>
             class="flex flex-col items-start w-full gap-0.5 px-2.5 py-1.5 text-start rounded-lg border transition-colors"
             :class="
               item.key === activeKey
-                ? 'bg-n-teal-3 border-n-teal-7 text-n-teal-11'
+                ? 'bg-brand-gradient-soft border-n-teal-7 text-n-teal-11'
                 : 'bg-n-alpha-1 border-transparent text-n-slate-11 hover:bg-n-alpha-2'
             "
             @click="emit('select', item.key)"

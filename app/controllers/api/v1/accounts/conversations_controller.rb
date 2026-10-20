@@ -4,7 +4,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   include HmacConcern
   include ClosingLabelGuard
 
-  before_action :conversation, except: [:index, :meta, :search, :create, :filter]
+  before_action :conversation, except: [:index, :meta, :search, :create, :filter, :created_per_day]
   before_action :inbox, :contact, :contact_inbox, only: [:create]
 
   ATTACHMENT_RESULTS_PER_PAGE = 100
@@ -18,6 +18,11 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   def meta
     result = conversation_finder.perform_meta_only
     @conversations_count = result[:count]
+  end
+
+  # UniverZAP: { days: { 'YYYY-MM-DD' => count } } for the agenda strip.
+  def created_per_day
+    render json: { days: conversation_finder.perform_created_per_day }
   end
 
   def search

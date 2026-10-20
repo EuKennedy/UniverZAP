@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_19_160000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_20_150000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1332,10 +1332,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_160000) do
     t.datetime "pinned_at"
     t.boolean "is_group", default: false, null: false
     t.boolean "awaiting_reply", default: false, null: false
+    t.boolean "is_status_broadcast", default: false, null: false
     t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
     t.index ["account_id", "is_group"], name: "index_conversations_on_account_id_and_is_group"
+    t.index ["account_id", "is_status_broadcast"], name: "index_conversations_on_account_id_and_is_status_broadcast"
     t.index ["account_id"], name: "index_conversations_on_account_id"
     t.index ["ai_assistant_id"], name: "index_conversations_on_ai_assistant_id"
     t.index ["ai_mode"], name: "index_conversations_on_ai_mode"
@@ -2399,6 +2401,50 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_160000) do
     t.index ["meta_flow_id"], name: "index_whatsapp_flows_on_meta_flow_id", unique: true, where: "(meta_flow_id IS NOT NULL)"
   end
 
+  create_table "whatsapp_status_deliveries", force: :cascade do |t|
+    t.bigint "whatsapp_status_post_id", null: false
+    t.bigint "inbox_id"
+    t.string "inbox_name", null: false
+    t.integer "status", default: 0, null: false
+    t.string "waha_message_id"
+    t.text "error_message"
+    t.datetime "sent_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["inbox_id"], name: "index_whatsapp_status_deliveries_on_inbox_id"
+    t.index ["whatsapp_status_post_id"], name: "index_whatsapp_status_deliveries_on_whatsapp_status_post_id"
+  end
+
+  create_table "whatsapp_status_posts", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "user_id"
+    t.string "kind", default: "text", null: false
+    t.text "body"
+    t.string "background_color"
+    t.integer "font", default: 0, null: false
+    t.integer "status", default: 0, null: false
+    t.jsonb "inbox_ids", default: [], null: false
+    t.datetime "scheduled_at"
+    t.datetime "published_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "status", "scheduled_at"], name: "idx_on_account_id_status_scheduled_at_e293e01cb2"
+    t.index ["account_id"], name: "index_whatsapp_status_posts_on_account_id"
+    t.index ["user_id"], name: "index_whatsapp_status_posts_on_user_id"
+  end
+
+  create_table "whatsapp_status_templates", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.text "body", null: false
+    t.string "background_color"
+    t.integer "font", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "name"], name: "index_whatsapp_status_templates_on_account_id_and_name", unique: true
+    t.index ["account_id"], name: "index_whatsapp_status_templates_on_account_id"
+  end
+
   create_table "working_hours", force: :cascade do |t|
     t.bigint "inbox_id"
     t.bigint "account_id"
@@ -2555,6 +2601,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_19_160000) do
   add_foreign_key "vertical_statuses", "verticals"
   add_foreign_key "whatsapp_flows", "accounts"
   add_foreign_key "whatsapp_flows", "inboxes", on_delete: :cascade
+  add_foreign_key "whatsapp_status_deliveries", "inboxes", on_delete: :nullify
+  add_foreign_key "whatsapp_status_deliveries", "whatsapp_status_posts", on_delete: :cascade
+  add_foreign_key "whatsapp_status_posts", "accounts", on_delete: :cascade
+  add_foreign_key "whatsapp_status_posts", "users", on_delete: :nullify
+  add_foreign_key "whatsapp_status_templates", "accounts", on_delete: :cascade
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").
       after(:insert).
