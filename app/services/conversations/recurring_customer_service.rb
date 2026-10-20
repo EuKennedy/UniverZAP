@@ -29,12 +29,14 @@ class Conversations::RecurringCustomerService
 
   # The status is the source of truth; the closing labels cover conversations
   # that were closed with a reason and reopened since.
+  # A previous conversation counts as ended when it is resolved now or was
+  # resolved before and reopened since — the resolution event survives the
+  # reopening, the closing label does not (reopening clears it).
   def self.other_conversation_ended?(conversation)
     previous = conversation.contact.conversations.where.not(id: conversation.id)
     return true if previous.resolved.exists?
 
-    closing = conversation.account.labels.closing.pluck(:title)
-    closing.any? && previous.tagged_with(closing, on: :labels, any: true).exists?
+    ReportingEvent.exists?(conversation_id: previous.select(:id), name: RESOLVED_EVENT)
   end
 
   # ReportingEventListener writes a `conversation_resolved` event on every

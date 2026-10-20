@@ -36,11 +36,9 @@ RSpec.describe Conversations::RecurringCustomerService do
       expect(described_class.recurring?(conversation)).to be true
     end
 
-    it 'is true when a previous, reopened conversation carries a label that closes conversations' do
-      create(:label, account: account, title: 'cancelado', closes_conversation: true)
+    it 'is true when a previous conversation was resolved and has been reopened since' do
       previous = conversation
-      previous.add_labels(['cancelado'])
-      previous.update!(status: :open)
+      create(:reporting_event, name: 'conversation_resolved', account: account, inbox: inbox, conversation: previous, user: nil)
 
       expect(described_class.recurring?(conversation)).to be true
     end
