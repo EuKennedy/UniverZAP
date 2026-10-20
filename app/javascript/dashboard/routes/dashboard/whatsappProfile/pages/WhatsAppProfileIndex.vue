@@ -20,6 +20,7 @@ import Select from 'dashboard/components-next/select/Select.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import WhatsAppProfileCard from '../components/WhatsAppProfileCard.vue';
 import WhatsAppStatusComposer from '../components/WhatsAppStatusComposer.vue';
+import WhatsAppStatusHistory from '../components/WhatsAppStatusHistory.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -29,6 +30,9 @@ const isLoading = ref(true);
 const loadError = ref('');
 const inboxes = ref([]);
 const selectedInboxId = ref(null);
+const editingPost = ref(null);
+const historyKey = ref(0);
+const composerRef = ref(null);
 
 const hasInboxes = computed(() => inboxes.value.length > 0);
 const hasChoice = computed(() => inboxes.value.length > 1);
@@ -54,6 +58,17 @@ const fetchInboxes = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const editPost = post => {
+  editingPost.value = post;
+  // A página rola dentro do próprio contêiner, não na janela.
+  composerRef.value?.$el?.scrollIntoView?.({ behavior: 'smooth' });
+};
+
+const onSaved = () => {
+  editingPost.value = null;
+  historyKey.value += 1;
 };
 
 const goToConnections = () =>
@@ -143,7 +158,19 @@ onMounted(fetchInboxes);
       class="grid flex-1 gap-6 px-8 py-6 items-start lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]"
     >
       <WhatsAppProfileCard :inbox-id="selectedInboxId" />
-      <WhatsAppStatusComposer :inbox-id="selectedInboxId" />
+      <div class="flex flex-col gap-6 min-w-0">
+        <!-- O status não depende do seletor do topo: ele já começa nessa
+          conexão, mas pode sair em várias de uma vez. -->
+        <WhatsAppStatusComposer
+          ref="composerRef"
+          :inboxes="inboxes"
+          :default-inbox-id="selectedInboxId"
+          :editing-post="editingPost"
+          @saved="onSaved"
+          @cancel-edit="editingPost = null"
+        />
+        <WhatsAppStatusHistory :refresh-key="historyKey" @edit="editPost" />
+      </div>
     </div>
   </div>
 </template>

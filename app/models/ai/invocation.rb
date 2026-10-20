@@ -29,7 +29,7 @@ class Ai::Invocation < ApplicationRecord
   # aqui, e o spec de contrato de cada serviço existe para lembrar disso.
   PHASES = %w[
     main classifier router summary summarize suggest autopilot rewrite chat copilot_chat replay transcription
-    moderation wiki_chat
+    moderation wiki_chat status_suggestion
   ].freeze
   # Fases que NÃO consomem o saldo do tenant. Perguntar como usar o produto é
   # suporte nosso, não uso de IA do cliente: cobrar por isso faria o cliente

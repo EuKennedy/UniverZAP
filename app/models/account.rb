@@ -83,6 +83,8 @@ class Account < ApplicationRecord
   has_many :chatflows, dependent: :destroy
   has_many :whatsapp_flows, dependent: :destroy
   has_many :broadcasts, dependent: :destroy
+  has_many :whatsapp_status_posts, dependent: :destroy
+  has_many :whatsapp_status_templates, dependent: :destroy
   has_many :sales_goals, dependent: :destroy
   has_many :sale_records, dependent: :destroy
   has_many :categories, dependent: :destroy_async, class_name: '::Category'

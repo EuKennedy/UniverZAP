@@ -37,6 +37,13 @@ kanban_automations_overdue_scanner_job:
 # Tasks module — emits per-assignee `task_overdue` Notifications for
 # every Task whose due_date crossed in the last 15min and is not
 # done/cancelled. Cron cadence matches the LOOKBACK exactly.
+# Status do WhatsApp agendados no painel ("Meu WhatsApp"). Minuto a minuto
+# porque quem agenda para as 9h espera ver o story às 9h, não às 9h05.
+whatsapp_status_posts_due_scanner_job:
+  cron: '*/1 * * * *'
+  class: 'Whatsapp::StatusPosts::DueScannerJob'
+  queue: scheduled_jobs
+
 tasks_overdue_scanner_job:
   cron: '*/15 * * * *'
   class: 'Tasks::OverdueScannerJob'
