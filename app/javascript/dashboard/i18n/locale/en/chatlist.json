@@ -54,6 +54,7 @@
       "me": "Mine",
       "unassigned": "Unassigned",
       "waiting": "Waiting",
+      "awaiting_customer": "Waiting on customer",
       "in_attendance": "In attendance",
       "resolved": "Resolved",
       "all": "All",

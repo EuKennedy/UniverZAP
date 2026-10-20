@@ -147,11 +147,14 @@ class Conversation < ApplicationRecord
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
   scope :unattended, -> { where(first_reply_created_at: nil).or(where.not(waiting_since: nil)) }
-  # UniverZAP semantics of the Todos dropdown:
-  # - waiting       = no agent reply yet (still awaiting the first response).
-  # - in_attendance = an agent has replied at least once.
-  scope :waiting, -> { where(first_reply_created_at: nil) }
-  scope :in_attendance, -> { where.not(first_reply_created_at: nil) }
+  # UniverZAP: whose turn it is. Every open conversation is in exactly one:
+  # - waiting           = the contact has the last word — our move (new leads
+  #                       and contacts who answered us).
+  # - awaiting_customer = we have the last word — their move. When the
+  #                       contact writes, it goes back to waiting by itself.
+  # "Em atendimento" in the list is both together.
+  scope :waiting, -> { where(awaiting_reply: true) }
+  scope :awaiting_customer, -> { where(awaiting_reply: false) }
   # `awaiting_reply` (the contact has the last word) is kept current by
   # Message#set_conversation_activity but no list shows it today. Unlike
   # waiting_since, any outgoing message — broadcast, API, AI — answers.

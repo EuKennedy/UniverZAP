@@ -27,16 +27,20 @@ describe('#mutations', () => {
           all: 0,
           me: 0,
           waiting: 0,
+          awaiting_customer: 0,
           in_attendance: 0,
           groups: 0,
+          status: 0,
           appliedFilters: 0,
         },
         hasEndReached: {
           all: false,
           me: false,
           waiting: false,
+          awaiting_customer: false,
           in_attendance: false,
           groups: false,
+          status: false,
           appliedFilters: false,
         },
       });
@@ -75,6 +79,7 @@ describe('#mutations', () => {
         all: true,
         me: true,
         waiting: true,
+        awaiting_customer: true,
         in_attendance: true,
         groups: false,
       });

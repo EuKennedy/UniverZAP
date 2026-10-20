@@ -14,9 +14,9 @@ class Conversations::EventDataPresenter < SimpleDelegator
       custom_attributes: custom_attributes,
       snoozed_until: snoozed_until,
       unread_count: unread_incoming_messages.count,
-      first_reply_created_at: first_reply_created_at, is_group: is_group, is_status_broadcast: is_status_broadcast,
       priority: priority,
       waiting_since: waiting_since.to_i,
+      **univerzap_push_flags,
       **push_timestamps
     }
   end
@@ -27,6 +27,15 @@ class Conversations::EventDataPresenter < SimpleDelegator
   end
 
   private
+
+  # UniverZAP: which tab the conversation lives in (Grupos, Status) and whose
+  # turn it is (Aguardando / Aguardando cliente).
+  def univerzap_push_flags
+    {
+      first_reply_created_at: first_reply_created_at, is_group: is_group,
+      is_status_broadcast: is_status_broadcast, awaiting_reply: awaiting_reply
+    }
+  end
 
   def push_messages
     [messages.where(account_id: account_id).chat.last&.push_event_data].compact

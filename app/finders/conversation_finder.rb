@@ -165,15 +165,16 @@ class ConversationFinder
     @conversations
   end
 
-  # UniverZAP: Aguardando / Em atendimento in the Todos dropdown. A param of its
-  # own, so it narrows any conversation_type (mentions, unattended…) instead of
-  # replacing it.
+  # UniverZAP: whose turn it is, in the Todos dropdown — Aguardando (ours),
+  # Aguardando cliente (theirs); Em atendimento (in_attendance) is both, so it
+  # narrows nothing. A param of its own, so it narrows any conversation_type
+  # (mentions, unattended…) instead of replacing it.
   def filter_by_attendance_state
     case params[:attendance_state]
     when 'waiting'
       @conversations = @conversations.waiting
-    when 'in_attendance'
-      @conversations = @conversations.in_attendance
+    when 'awaiting_customer'
+      @conversations = @conversations.awaiting_customer
     end
   end
 
@@ -260,11 +261,11 @@ class ConversationFinder
     }
   end
 
-  # UniverZAP: badges of Aguardando / Em atendimento in the Todos dropdown. One
-  # query: every non-group conversation is exactly one of the two.
+  # UniverZAP: badges of the turn views. One query: every regular open
+  # conversation is either ours or theirs, and Em atendimento is both.
   def attendance_state_counts(all_count)
     waiting_count = count_scope.waiting.count
-    { waiting_count: waiting_count, in_attendance_count: all_count - waiting_count }
+    { waiting_count: waiting_count, awaiting_customer_count: all_count - waiting_count, in_attendance_count: all_count }
   end
 
   def current_page
@@ -280,13 +281,6 @@ class ConversationFinder
 
   def conversations
     @conversations = conversations_base_query
-
-    # UniverZAP: Aguardando is the fila de risco, so a contact who is actually
-    # waiting on us (they have the last word) always outranks a thread where
-    # our own broadcast or template was the last thing said — a months-old
-    # waiting_since must not push the latter above the former. The agent's
-    # chosen sort still applies, just within each of those two halves.
-    @conversations = @conversations.order(awaiting_reply: :desc) if params[:attendance_state] == 'waiting'
 
     sort_by, sort_order = SORT_OPTIONS[params[:sort_by]] || SORT_OPTIONS['last_activity_at_desc']
     @conversations = @conversations.send(sort_by, sort_order)

@@ -16,6 +16,7 @@ import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import VerticalStatusChips from './widgets/VerticalStatusChips.vue';
 import ConversationKpiRow from './widgets/ConversationKpiRow.vue';
 import ConversationDateStrip from './widgets/ConversationDateStrip.vue';
+import { isOurTurn } from 'dashboard/helper/conversationTurn';
 import ReportsAPI from 'dashboard/api/reports';
 import ConversationListFilter from 'dashboard/components-next/filter/ConversationListFilter.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
@@ -202,6 +203,7 @@ const VIEW_COUNT_KEYS = {
   [wootConstants.LIST_VIEW.ALL]: 'allCount',
   [wootConstants.LIST_VIEW.ME]: 'mineCount',
   [wootConstants.LIST_VIEW.WAITING]: 'waitingCount',
+  [wootConstants.LIST_VIEW.AWAITING_CUSTOMER]: 'awaitingCustomerCount',
   [wootConstants.LIST_VIEW.IN_ATTENDANCE]: 'inAttendanceCount',
   // UniverZAP: "Fila, sem dono" and "Resolvidas" quick filters
   [wootConstants.LIST_VIEW.UNASSIGNED]: 'unAssignedCount',
@@ -214,7 +216,7 @@ const VIEW_COUNT_KEYS = {
 // Todos' count, and for a reception Minhas is usually the same number.
 const KPI_VIEWS = [
   wootConstants.LIST_VIEW.WAITING,
-  wootConstants.LIST_VIEW.IN_ATTENDANCE,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
   wootConstants.LIST_VIEW.UNASSIGNED,
   wootConstants.LIST_VIEW.RESOLVED,
 ];
@@ -325,8 +327,15 @@ const conversationListPagination = computed(() => {
   return currentPage.value + 1;
 });
 
+// The two halves of Em atendimento, by whose turn it is.
+const TURN_VIEWS = [
+  wootConstants.LIST_VIEW.WAITING,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
+];
+
 const ATTENDANCE_VIEWS = [
   wootConstants.LIST_VIEW.WAITING,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
   wootConstants.LIST_VIEW.IN_ATTENDANCE,
 ];
 
@@ -450,9 +459,9 @@ function filterByListKey(conversations) {
         c => c.meta?.assignee?.id === currentUser.value?.id
       );
     case wootConstants.LIST_VIEW.WAITING:
-      return nonGroups.filter(c => !c.first_reply_created_at);
-    case wootConstants.LIST_VIEW.IN_ATTENDANCE:
-      return nonGroups.filter(c => !!c.first_reply_created_at);
+      return nonGroups.filter(isOurTurn);
+    case wootConstants.LIST_VIEW.AWAITING_CUSTOMER:
+      return nonGroups.filter(c => !isOurTurn(c));
     case wootConstants.LIST_VIEW.UNASSIGNED:
       return nonGroups.filter(c => !c.meta?.assignee);
     case wootConstants.LIST_VIEW.RESOLVED:
@@ -786,15 +795,11 @@ function listContextConditions() {
       listFilterCondition('assignee_id', 'equal_to', [currentUser.value.id])
     );
   }
-  if (!isSegmentTab.value && ATTENDANCE_VIEWS.includes(activeListView.value)) {
+  if (!isSegmentTab.value && TURN_VIEWS.includes(activeListView.value)) {
     conditions.push(
-      listFilterCondition(
-        'first_reply_created_at',
-        activeListView.value === wootConstants.LIST_VIEW.WAITING
-          ? 'is_not_present'
-          : 'is_present',
-        []
-      )
+      listFilterCondition('awaiting_reply', 'equal_to', [
+        activeListView.value === wootConstants.LIST_VIEW.WAITING,
+      ])
     );
   }
   if (props.conversationInbox) {

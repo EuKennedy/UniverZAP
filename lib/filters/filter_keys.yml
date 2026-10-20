@@ -137,6 +137,17 @@ conversations:
     data_type: "boolean"
     filter_operators:
       - "equal_to"
+  is_status_broadcast:
+    attribute_type: "standard"
+    data_type: "boolean"
+    filter_operators:
+      - "equal_to"
+  # Whose turn it is: Aguardando (true) / Aguardando cliente (false).
+  awaiting_reply:
+    attribute_type: "standard"
+    data_type: "boolean"
+    filter_operators:
+      - "equal_to"
   first_reply_created_at:
     attribute_type: "standard"
     data_type: "date"

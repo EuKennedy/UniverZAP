@@ -10,11 +10,13 @@ export default {
     STATUS: 'status',
   },
   // UniverZAP: the views of the Todos dropdown. Minhas narrows by assignee;
-  // Aguardando / Em atendimento travel as `attendance_state`.
+  // Aguardando (our move) / Aguardando cliente (their move) / Em atendimento
+  // (both) travel as `attendance_state`.
   LIST_VIEW: {
     ALL: 'all',
     ME: 'me',
     WAITING: 'waiting',
+    AWAITING_CUSTOMER: 'awaiting_customer',
     IN_ATTENDANCE: 'in_attendance',
     UNASSIGNED: 'unassigned',
     RESOLVED: 'resolved',
