@@ -12,6 +12,14 @@ class BelezakiAPI extends ApiClient {
       params: { contact_id: contactId },
     });
   }
+
+  getCatalog() {
+    return axios.get(`${this.url}/catalog`);
+  }
+
+  syncCatalog() {
+    return axios.post(`${this.url}/sync_catalog`);
+  }
 }
 
 export default new BelezakiAPI();

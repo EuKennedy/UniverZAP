@@ -47,7 +47,8 @@
         "REPURCHASE_WEEKS": "Ciclo de recompra (semanas)",
         "CONFIRM": "Agendar",
         "SUCCESS": "Agendamento salvo. A conversa está no estágio \"agendado\".",
-        "ERROR": "Não foi possível salvar o agendamento. Tente de novo."
+        "ERROR": "Não foi possível salvar o agendamento. Tente de novo.",
+        "PROFESSIONAL_PLACEHOLDER": "Escolha a profissional"
       }
     },
     "VOICE_INBOX_PICKER": {

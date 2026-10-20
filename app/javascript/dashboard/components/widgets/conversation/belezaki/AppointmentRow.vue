@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { formatStart, statusClass } from './appointmentFormat';
+import { formatMoney, formatStart, statusClass } from './appointmentFormat';
 
 const props = defineProps({
   appointment: {
@@ -28,6 +28,14 @@ const statusLabel = computed(() => {
   const key = `CONVERSATION_SIDEBAR.BELEZAKI.STATUS.${props.appointment.status}`;
   return te(key) ? t(key) : props.appointment.status;
 });
+
+// Only the lookup route carries a price; the older agenda route does not,
+// and then the line simply ends at the professional.
+const price = computed(() =>
+  props.appointment.price_cents == null
+    ? ''
+    : formatMoney(props.appointment.price_cents, locale.value)
+);
 </script>
 
 <template>
@@ -39,11 +47,20 @@ const statusLabel = computed(() => {
       >
         {{ when }}
       </span>
-      <span
-        class="text-xs px-2 py-0.5 rounded shrink-0"
-        :class="statusClass(appointment.status)"
-      >
-        {{ statusLabel }}
+      <span class="flex items-center gap-1 shrink-0">
+        <span
+          v-if="appointment.needs_deposit"
+          class="text-xs px-2 py-0.5 rounded bg-n-amber-5 text-n-amber-12"
+          data-testid="deposit-pending"
+        >
+          {{ $t('CONVERSATION_SIDEBAR.BELEZAKI.DEPOSIT_PENDING') }}
+        </span>
+        <span
+          class="text-xs px-2 py-0.5 rounded"
+          :class="statusClass(appointment.status)"
+        >
+          {{ statusLabel }}
+        </span>
       </span>
     </div>
     <div class="text-sm text-n-slate-11 truncate">
@@ -56,6 +73,7 @@ const statusLabel = computed(() => {
           })
         }}
       </span>
+      <span v-if="price" class="text-n-slate-12">· {{ price }}</span>
     </div>
   </div>
 </template>

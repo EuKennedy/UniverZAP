@@ -8,6 +8,8 @@ const props = defineProps({
   // Values already on the conversation, used to prefill the form.
   initialValues: { type: Object, default: () => ({}) },
   serviceOptions: { type: Array, default: () => [] },
+  // The salon's team once the belezaki catalogue is synced; free text otherwise.
+  professionalOptions: { type: Array, default: () => [] },
   isLoading: { type: Boolean, default: false },
 });
 
@@ -98,7 +100,25 @@ const labelClass = 'text-xs font-medium text-n-slate-11';
         <span :class="labelClass">
           {{ t('CONTACT_PANEL.SHEET.PROFESSIONAL') }}
         </span>
+        <select
+          v-if="professionalOptions.length"
+          v-model="form.profissional"
+          :class="fieldClass"
+          data-testid="schedule-professional"
+        >
+          <option value="">
+            {{ t('CONTACT_PANEL.SHEET.SCHEDULE.PROFESSIONAL_PLACEHOLDER') }}
+          </option>
+          <option
+            v-for="option in professionalOptions"
+            :key="option"
+            :value="option"
+          >
+            {{ option }}
+          </option>
+        </select>
         <input
+          v-else
           v-model="form.profissional"
           type="text"
           :class="fieldClass"

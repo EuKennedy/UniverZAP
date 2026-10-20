@@ -130,3 +130,10 @@ ai_manager_weekly_scheduler_job:
   cron: '0 4 * * 1'
   class: 'Ai::Manager::WeeklySchedulerJob'
   queue: scheduled_jobs
+
+# belezaki: o catálogo do salão (serviços e profissionais) vira as listas da
+# ficha da cliente. Uma vez por dia, de madrugada, por conta conectada.
+belezaki_catalog_sync_all_job:
+  cron: '30 4 * * *'
+  class: 'Belezaki::CatalogSyncAllJob'
+  queue: scheduled_jobs

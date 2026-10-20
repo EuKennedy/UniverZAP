@@ -34,6 +34,9 @@ class Integrations::Hook < ApplicationRecord
   # salon answered for the id the admin typed, and the answer (name, timezone)
   # is kept on the hook so the sidebar never needs a second round trip for it.
   validate :verify_belezaki_salon, on: :create, if: :belezaki?
+  # The salon's services and professionals become the sheet's lists as soon
+  # as the app is connected; a daily job keeps them current afterwards.
+  after_commit :sync_belezaki_catalog, on: :create, if: :belezaki?
 
   # TODO: This seems to be only used for slack at the moment
   # We can add a validator when storing the integration settings and toggle this in future
@@ -109,6 +112,10 @@ class Integrations::Hook < ApplicationRecord
     self.settings = given.merge('salon_name' => salon['name'], 'timezone' => salon['timezone'])
   rescue Belezaki::SalonProbe::Failure => e
     errors.add(:base, I18n.t("belezaki.connect.#{e.code}"))
+  end
+
+  def sync_belezaki_catalog
+    Belezaki::CatalogSyncJob.perform_later(account_id)
   end
 
   def trigger_setup_if_crm

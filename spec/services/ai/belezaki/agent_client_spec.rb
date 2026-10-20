@@ -109,6 +109,15 @@ RSpec.describe Ai::Belezaki::AgentClient do
 
       expect(client.appointments(phone: '+55319')['appointments']).to eq([])
     end
+
+    it 'looks a client up by phone' do
+      stub_request(:get, "#{base}/clients/lookup")
+        .with(query: { phone: '+5531984956383' })
+        .to_return(status: 200, body: '{"client":{"id":"c1"},"stats":{"visits":2},"upcoming":[],"history":[]}',
+                   headers: { 'Content-Type' => 'application/json' })
+
+      expect(client.client_lookup(phone: '+5531984956383')['stats']).to eq('visits' => 2)
+    end
   end
 
   describe 'retry' do

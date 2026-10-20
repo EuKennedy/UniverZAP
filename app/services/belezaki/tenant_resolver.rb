@@ -15,4 +15,13 @@ class Belezaki::TenantResolver
   def self.external_id(account)
     hook(account)&.settings&.dig('external_id').presence || Ai::Belezaki::TenantResolver.external_id(account)
   end
+
+  # Name and timezone were written on the hook by the connect probe; an account
+  # linked only through the login bridge has no hook and no salon block.
+  def self.salon(account)
+    settings = hook(account)&.settings
+    return nil if settings.blank?
+
+    { name: settings['salon_name'], timezone: settings['timezone'] }
+  end
 end
