@@ -16,6 +16,7 @@ import BuildInfo from './components/BuildInfo.vue';
 import AccountDelete from './components/AccountDelete.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import SectionLayout from './components/SectionLayout.vue';
+import WorkspaceIdentity from './components/WorkspaceIdentity.vue';
 
 export default {
   components: {
@@ -26,6 +27,7 @@ export default {
     AccountDelete,
     AudioTranscription,
     SectionLayout,
+    WorkspaceIdentity,
     WithLabel,
     NextInput,
   },
@@ -237,6 +239,7 @@ export default {
 
       <woot-loading-state v-if="uiFlags.isFetchingItem" />
     </div>
+    <WorkspaceIdentity v-if="!uiFlags.isFetchingItem" />
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">

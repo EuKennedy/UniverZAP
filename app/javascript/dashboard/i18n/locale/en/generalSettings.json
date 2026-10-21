@@ -248,5 +248,76 @@
   "COMMON": {
     "OR": "Or",
     "CLICK_HERE": "click here"
+  },
+  "WORKSPACE_SWITCHER": {
+    "TITLE": "Workspaces",
+    "SUBTITLE": "{count} workspace | {count} workspaces",
+    "OPEN": "Switch workspace",
+    "SHORTCUT": "⌘⇧K",
+    "SEARCH": "Search workspaces",
+    "CURRENT": "Current",
+    "UNREAD": "{count} unread notification | {count} unread notifications",
+    "HINT": "1–9 to switch · ↑↓ to move · ↵ to open · esc to close",
+    "CUSTOMIZE": "Customize cover",
+    "ROLES": {
+      "ADMINISTRATOR": "Administrator",
+      "AGENT": "Agent"
+    },
+    "EMPTY": {
+      "TITLE": "No workspace found",
+      "DESCRIPTION": "Nothing matches “{query}”."
+    }
+  },
+  "WORKSPACE_SETTINGS": {
+    "TITLE": "Workspace identity",
+    "NOTE": "Cover, logo and service vertical. This is how the workspace shows up for the whole team in the account switcher.",
+    "PREVIEW": "Preview",
+    "COVER": {
+      "TITLE": "Cover",
+      "AUTO": "Automatic",
+      "AUTO_HINT": "Generated from the workspace name",
+      "GRADIENTS": "Gradients",
+      "SOLIDS": "Solid colors",
+      "UPLOAD": "Upload image",
+      "REPLACE": "Replace image",
+      "REMOVE": "Remove image",
+      "IMAGE_HINT": "JPG, PNG, GIF or WebP up to 5 MB. Wide images (3:1) look best. The image takes the place of the colors."
+    },
+    "LOGO": {
+      "TITLE": "Logo",
+      "UPLOAD": "Upload logo",
+      "REMOVE": "Remove logo",
+      "HINT": "Square, up to 2 MB. Without a logo, the initials show on the cover colors."
+    },
+    "VERTICAL": {
+      "TITLE": "Service vertical",
+      "NOTE": "The activity of this workspace. Applying a vertical creates its service statuses, fields and automations; nothing that already exists is removed.",
+      "NONE": "No vertical applied yet",
+      "PLACEHOLDER": "Choose the activity",
+      "APPLY": "Apply vertical",
+      "APPLIED": "In use",
+      "CONFIRM": "Applying “{name}” creates the statuses, fields and automations this workspace is missing."
+    },
+    "THEMES": {
+      "BRAND": "UniverZAP",
+      "AURORA": "Aurora",
+      "SUNSET": "Sunset",
+      "OCEAN": "Ocean",
+      "BERRY": "Berry",
+      "EMBER": "Ember",
+      "ORCHID": "Orchid",
+      "GRAPHITE": "Graphite",
+      "SOLID_TEAL": "Teal",
+      "SOLID_IRIS": "Indigo",
+      "SOLID_RUBY": "Ruby",
+      "SOLID_AMBER": "Amber",
+      "SOLID_VIOLET": "Violet",
+      "SOLID_SLATE": "Slate"
+    },
+    "API": {
+      "SUCCESS": "Workspace updated",
+      "ERROR": "Could not update the workspace. Please try again.",
+      "VERTICAL_SUCCESS": "Vertical applied to the workspace"
+    }
   }
 }

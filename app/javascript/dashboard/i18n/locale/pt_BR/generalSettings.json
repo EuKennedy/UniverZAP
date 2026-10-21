@@ -248,5 +248,76 @@
   "COMMON": {
     "OR": "Ou",
     "CLICK_HERE": "clique aqui"
+  },
+  "WORKSPACE_SWITCHER": {
+    "TITLE": "Workspaces",
+    "SUBTITLE": "{count} workspace | {count} workspaces",
+    "OPEN": "Trocar de workspace",
+    "SHORTCUT": "⌘⇧K",
+    "SEARCH": "Buscar workspace",
+    "CURRENT": "Atual",
+    "UNREAD": "{count} notificação não lida | {count} notificações não lidas",
+    "HINT": "1–9 troca · ↑↓ navega · ↵ abre · esc fecha",
+    "CUSTOMIZE": "Personalizar capa",
+    "ROLES": {
+      "ADMINISTRATOR": "Administrador",
+      "AGENT": "Agente"
+    },
+    "EMPTY": {
+      "TITLE": "Nenhum workspace encontrado",
+      "DESCRIPTION": "Nada corresponde a “{query}”."
+    }
+  },
+  "WORKSPACE_SETTINGS": {
+    "TITLE": "Identidade do workspace",
+    "NOTE": "Capa, logo e vertical de atendimento. É assim que o workspace aparece para toda a equipe na troca de conta.",
+    "PREVIEW": "Prévia",
+    "COVER": {
+      "TITLE": "Capa",
+      "AUTO": "Automática",
+      "AUTO_HINT": "Gerada a partir do nome do workspace",
+      "GRADIENTS": "Degradês",
+      "SOLIDS": "Cores sólidas",
+      "UPLOAD": "Enviar imagem",
+      "REPLACE": "Trocar imagem",
+      "REMOVE": "Remover imagem",
+      "IMAGE_HINT": "JPG, PNG, GIF ou WebP de até 5 MB. Imagens largas (3:1) ficam melhores. A imagem toma o lugar das cores."
+    },
+    "LOGO": {
+      "TITLE": "Logo",
+      "UPLOAD": "Enviar logo",
+      "REMOVE": "Remover logo",
+      "HINT": "Quadrado, até 2 MB. Sem logo, as iniciais aparecem nas cores da capa."
+    },
+    "VERTICAL": {
+      "TITLE": "Vertical de atendimento",
+      "NOTE": "A atividade deste workspace. Aplicar uma vertical cria os status de atendimento, campos e automações dela; nada do que já existe é removido.",
+      "NONE": "Nenhuma vertical aplicada ainda",
+      "PLACEHOLDER": "Escolha a atividade",
+      "APPLY": "Aplicar vertical",
+      "APPLIED": "Em uso",
+      "CONFIRM": "Ao aplicar “{name}”, os status, campos e automações que faltam neste workspace serão criados."
+    },
+    "THEMES": {
+      "BRAND": "UniverZAP",
+      "AURORA": "Aurora",
+      "SUNSET": "Pôr do sol",
+      "OCEAN": "Oceano",
+      "BERRY": "Frutas vermelhas",
+      "EMBER": "Brasa",
+      "ORCHID": "Orquídea",
+      "GRAPHITE": "Grafite",
+      "SOLID_TEAL": "Verde-água",
+      "SOLID_IRIS": "Índigo",
+      "SOLID_RUBY": "Rubi",
+      "SOLID_AMBER": "Âmbar",
+      "SOLID_VIOLET": "Violeta",
+      "SOLID_SLATE": "Ardósia"
+    },
+    "API": {
+      "SUCCESS": "Workspace atualizado",
+      "ERROR": "Não foi possível atualizar o workspace. Tente de novo.",
+      "VERTICAL_SUCCESS": "Vertical aplicada ao workspace"
+    }
   }
 }
