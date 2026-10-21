@@ -96,8 +96,15 @@ export default {
       return this.getAccount(this.accountId) || {};
     },
   },
-  mounted() {
-    this.initializeAccount();
+  watch: {
+    // On a page reload this view renders before App.vue has fetched the
+    // account, so the form fills in once the account arrives.
+    'currentAccount.id': {
+      handler(id) {
+        if (id) this.initializeAccount();
+      },
+      immediate: true,
+    },
   },
   methods: {
     async initializeAccount() {
@@ -241,7 +248,7 @@ export default {
     </div>
     <WorkspaceIdentity v-if="!uiFlags.isFetchingItem" />
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
-    <AccountId />
+    <AccountId v-if="currentAccount.id" />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">
       <AccountDelete />
     </div>
