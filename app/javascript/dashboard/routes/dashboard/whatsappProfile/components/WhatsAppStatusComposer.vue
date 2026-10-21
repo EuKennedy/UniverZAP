@@ -19,9 +19,14 @@ import { uploadFile } from 'dashboard/helper/uploadHelper';
 import WhatsAppStatusAPI from 'dashboard/api/whatsappStatus';
 import {
   apiErrorMessage,
+  dateLocale,
+  RECURRENCES,
+  renderVariables,
   STATUS_BACKGROUNDS,
   STATUS_FONTS,
   STATUS_TEXT_LIMIT,
+  STATUS_VARIABLES,
+  SUGGESTION_TONES,
   toLocalInputValue,
 } from '../helpers';
 
@@ -29,6 +34,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
+import Select from 'dashboard/components-next/select/Select.vue';
 import TextArea from 'dashboard/components-next/textarea/TextArea.vue';
 import StatusPreview from './StatusPreview.vue';
 import StatusTemplatesMenu from './StatusTemplatesMenu.vue';
@@ -38,11 +44,13 @@ const props = defineProps({
   defaultInboxId: { type: Number, default: null },
   // Rascunho ou agendado aberto a partir do histórico para editar.
   editingPost: { type: Object, default: null },
+  // Preenche {{empresa}} na prévia; o backend usa o nome da conta de verdade.
+  accountName: { type: String, default: '' },
 });
 
 const emit = defineEmits(['saved', 'cancelEdit']);
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const KINDS = ['text', 'image', 'video'];
 
@@ -62,6 +70,9 @@ const confirmDialogRef = ref(null);
 const showSuggest = ref(false);
 const suggestPrompt = ref('');
 const isSuggesting = ref(false);
+const tone = ref('friendly');
+const suggestions = ref([]);
+const recurrence = ref('none');
 
 const label = key => t(`WHATSAPP_PROFILE.STATUS.${key}`);
 const isText = computed(() => kind.value === 'text');
@@ -81,6 +92,27 @@ const scheduleDate = computed(() =>
 const minSchedule = computed(() => toLocalInputValue(new Date()));
 const primaryLabel = computed(() =>
   when.value === 'later' ? label('SCHEDULE') : label('PUBLISH')
+);
+// A prévia mostra o texto como ele sai na primeira conexão marcada, com as
+// variáveis já preenchidas, porque é isso que o cliente vai ler.
+const previewInboxName = computed(
+  () => selectedInboxes.value[0]?.name || props.inboxes[0]?.name || ''
+);
+const previewBody = computed(() =>
+  renderVariables(
+    body.value,
+    { conexao: previewInboxName.value, empresa: props.accountName },
+    when.value === 'later' && scheduleDate.value
+      ? scheduleDate.value
+      : new Date()
+  )
+);
+const usesVariables = computed(() => /\{\{\s*\w+\s*\}\}/.test(body.value));
+const recurrenceOptions = computed(() =>
+  RECURRENCES.map(value => ({
+    value,
+    label: label(`RECURRENCE.${value.toUpperCase()}`),
+  }))
 );
 const templateSnapshot = computed(() => ({
   body: body.value.trim(),
@@ -105,6 +137,8 @@ const reset = () => {
   formError.value = '';
   showSuggest.value = false;
   suggestPrompt.value = '';
+  suggestions.value = [];
+  recurrence.value = 'none';
   setFile(null);
   if (fileInput.value) fileInput.value.value = null;
 };
@@ -117,6 +151,7 @@ const loadPost = post => {
   font.value = post.font || 0;
   selectedInboxIds.value = [...(post.inbox_ids || [])];
   previewUrl.value = post.media?.url || '';
+  recurrence.value = post.recurrence || 'none';
   if (post.scheduled_at) {
     when.value = 'later';
     scheduleAt.value = toLocalInputValue(new Date(post.scheduled_at));
@@ -145,6 +180,15 @@ const applyTemplate = template => {
   font.value = template.font || 0;
 };
 
+// Variável entra no fim do texto, com espaço, para não colar na última palavra.
+const variableToken = key => `{{${key}}}`;
+const insertVariable = key => {
+  const separator = body.value && !/\s$/.test(body.value) ? ' ' : '';
+  body.value = `${body.value}${separator}${variableToken(key)}`;
+};
+
+// A IA devolve três opções no tom escolhido; nenhuma entra no campo sozinha,
+// o operador escolhe a que combina e ainda pode editar depois.
 const suggest = async () => {
   isSuggesting.value = true;
   formError.value = '';
@@ -153,8 +197,9 @@ const suggest = async () => {
       prompt: suggestPrompt.value.trim(),
       body: body.value.trim(),
       kind: kind.value,
+      tone: tone.value,
     });
-    body.value = data.text;
+    suggestions.value = data.texts?.length ? data.texts : [data.text];
   } catch (error) {
     formError.value = apiErrorMessage(
       error,
@@ -180,6 +225,11 @@ const validationError = () => {
   return '';
 };
 
+const pickSuggestion = text => {
+  body.value = text;
+  suggestions.value = [];
+};
+
 const requestSubmit = () => {
   formError.value = validationError();
   if (!formError.value) confirmDialogRef.value?.open();
@@ -203,6 +253,7 @@ const save = async intent => {
       blobId,
       scheduledAt:
         intent === 'schedule' ? scheduleDate.value.toISOString() : undefined,
+      recurrence: intent === 'schedule' ? recurrence.value : 'none',
       intent,
     });
     confirmDialogRef.value?.close();
@@ -247,8 +298,12 @@ watch(
 </script>
 
 <template>
+  <!-- ⌘/Ctrl+Enter publica (ou agenda) de qualquer campo: abre a mesma
+    confirmação do botão, então o atalho nunca pula a pergunta. -->
   <section
     class="flex flex-col gap-6 p-6 rounded-xl border border-n-weak bg-n-solid-1"
+    @keydown.meta.enter.prevent="requestSubmit"
+    @keydown.ctrl.enter.prevent="requestSubmit"
   >
     <div class="flex flex-wrap gap-3 justify-between items-start">
       <div class="flex flex-col gap-1">
@@ -354,6 +409,23 @@ watch(
           min-height="6rem"
         />
 
+        <div class="flex flex-wrap gap-1.5 items-center -mt-2">
+          <span class="text-[11px] text-n-slate-11">{{
+            label('VARIABLES.LABEL')
+          }}</span>
+          <button
+            v-for="key in STATUS_VARIABLES"
+            :key="key"
+            type="button"
+            class="px-2 py-0.5 font-mono text-[11px] rounded-md border border-n-weak text-n-slate-11 hover:text-n-slate-12 hover:bg-n-alpha-2"
+            :title="label(`VARIABLES.${key.toUpperCase()}`)"
+            :data-testid="`variable-${key}`"
+            @click="insertVariable(key)"
+          >
+            {{ variableToken(key) }}
+          </button>
+        </div>
+
         <div class="flex flex-col gap-2">
           <Button
             v-if="!showSuggest"
@@ -386,6 +458,47 @@ watch(
               data-testid="suggest-button"
               @click="suggest"
             />
+          </div>
+          <div v-if="showSuggest" class="flex flex-wrap gap-1.5 items-center">
+            <span class="text-[11px] text-n-slate-11">{{
+              label('SUGGEST.TONE')
+            }}</span>
+            <button
+              v-for="option in SUGGESTION_TONES"
+              :key="option"
+              type="button"
+              class="px-2.5 py-1 text-[12px] rounded-full border"
+              :class="
+                tone === option
+                  ? 'border-n-brand/60 bg-n-alpha-2 text-n-slate-12'
+                  : 'border-n-weak text-n-slate-11 hover:text-n-slate-12'
+              "
+              :data-testid="`tone-${option}`"
+              @click="tone = option"
+            >
+              {{ label(`SUGGEST.TONES.${option.toUpperCase()}`) }}
+            </button>
+          </div>
+          <div
+            v-if="suggestions.length"
+            class="grid gap-2 sm:grid-cols-3"
+            data-testid="suggestions"
+          >
+            <button
+              v-for="(text, index) in suggestions"
+              :key="index"
+              type="button"
+              class="flex flex-col gap-2 p-3 text-start rounded-xl border transition-colors border-n-weak hover:border-n-brand/60 hover:bg-n-alpha-1"
+              data-testid="suggestion"
+              @click="pickSuggestion(text)"
+            >
+              <span class="text-[13px] leading-snug text-n-slate-12">{{
+                text
+              }}</span>
+              <span class="mt-auto text-[11px] font-medium text-n-brand">
+                {{ label('SUGGEST.USE') }}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -445,15 +558,29 @@ watch(
         </p>
       </div>
 
-      <StatusPreview
-        class="mx-auto"
-        :kind="kind"
-        :body="body"
-        :background-color="backgroundColor"
-        :font="font"
-        :media-url="previewUrl"
-        :placeholder="label('TEXT_PLACEHOLDER')"
-      />
+      <div class="flex flex-col gap-2 items-center mx-auto">
+        <StatusPreview
+          phone
+          :title="previewInboxName"
+          :kind="kind"
+          :body="previewBody"
+          :background-color="backgroundColor"
+          :font="font"
+          :media-url="previewUrl"
+          :placeholder="label('TEXT_PLACEHOLDER')"
+        />
+        <p
+          v-if="usesVariables && previewInboxName"
+          class="m-0 max-w-56 text-[11px] text-center text-n-slate-10"
+          data-testid="variables-hint"
+        >
+          {{
+            t('WHATSAPP_PROFILE.STATUS.VARIABLES.PREVIEW_HINT', {
+              name: previewInboxName,
+            })
+          }}
+        </p>
+      </div>
     </div>
 
     <div class="flex flex-col gap-3 pt-4 border-t border-n-weak">
@@ -480,10 +607,20 @@ watch(
           v-model="scheduleAt"
           type="datetime-local"
           :min="minSchedule"
-          class="px-3 py-1.5 text-[13px] rounded-lg border border-n-weak bg-n-solid-1 text-n-slate-12"
+          class="!mb-0 !w-auto !h-9 px-3 text-sm rounded-lg border-0 outline outline-1 -outline-offset-1 outline-n-weak bg-n-surface-1 text-n-slate-12"
           :aria-label="label('WHEN.AT')"
           data-testid="schedule-at"
         />
+        <Select
+          v-if="when === 'later'"
+          v-model="recurrence"
+          :options="recurrenceOptions"
+          :aria-label="label('RECURRENCE.LABEL')"
+          data-testid="recurrence"
+        />
+        <span class="hidden ms-auto text-[11px] text-n-slate-10 md:inline">
+          {{ label('SHORTCUT') }}
+        </span>
       </div>
 
       <div class="flex flex-wrap gap-3 justify-between items-center">
@@ -547,7 +684,7 @@ watch(
         <StatusPreview
           class="!w-32"
           :kind="kind"
-          :body="body"
+          :body="previewBody"
           :background-color="backgroundColor"
           :font="font"
           :media-url="previewUrl"
@@ -577,12 +714,19 @@ watch(
             <span class="text-n-slate-12">
               {{
                 when === 'later' && scheduleDate
-                  ? scheduleDate.toLocaleString([], {
+                  ? scheduleDate.toLocaleString(dateLocale(locale), {
                       dateStyle: 'short',
                       timeStyle: 'short',
                     })
                   : label('WHEN.NOW')
               }}
+            </span>
+            <span
+              v-if="when === 'later' && recurrence !== 'none'"
+              class="flex gap-1 items-center text-n-slate-11"
+            >
+              <span class="i-lucide-repeat size-3" />
+              {{ label(`RECURRENCE.${recurrence.toUpperCase()}`) }}
             </span>
           </div>
           <span v-if="!isText && !body.trim()" class="text-n-slate-11">

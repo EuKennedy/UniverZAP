@@ -6,16 +6,32 @@
 # seguram a tela, e o resultado de cada número aparece no histórico.
 class Api::V1::Accounts::Whatsapp::StatusPostsController < Api::V1::Accounts::BaseController
   STATUS_BY_INTENT = { 'draft' => :draft, 'schedule' => :scheduled, 'publish' => :publishing }.freeze
-  PER_PAGE = 20
+  PER_PAGE = 10
+  MAX_PER_PAGE = 50
 
   before_action :ensure_administrator
-  before_action :fetch_post, only: [:update, :destroy, :publish, :retry]
+  before_action :fetch_post, only: [:update, :destroy, :publish, :retry, :duplicate]
   before_action :ensure_editable, only: [:update, :destroy, :publish]
 
   def index
-    posts = Current.account.whatsapp_status_posts.includes(:deliveries, media_attachment: :blob)
-                   .order(created_at: :desc).page(params[:page]).per(PER_PAGE)
-    render json: { payload: posts.map { |post| payload(post) }, meta: { has_more: posts.next_page.present? } }
+    posts = filtered_posts.includes(:deliveries, media_attachment: :blob).page(params[:page]).per(per_page)
+    render json: {
+      payload: posts.map { |post| payload(post) },
+      meta: { has_more: posts.next_page.present?, total_count: posts.total_count, total_pages: posts.total_pages,
+              current_page: posts.current_page }
+    }
+  end
+
+  def stats
+    render json: Whatsapp::StatusPosts::Stats.new(Current.account).to_h
+  end
+
+  # Vira rascunho novo com o mesmo conteúdo e mídia: o ponto de partida para
+  # repetir um status que deu certo, sem reescrever nem subir o arquivo de novo.
+  def duplicate
+    copy = @post.copy(user: current_user, status: :draft)
+    copy.save!
+    render json: payload(copy)
   end
 
   def create
@@ -53,10 +69,10 @@ class Api::V1::Accounts::Whatsapp::StatusPostsController < Api::V1::Accounts::Ba
   end
 
   def suggest
-    text = Whatsapp::StatusPosts::SuggestionService.new(
-      account: Current.account, prompt: params[:prompt], current_text: params[:body], kind: params[:kind]
+    texts = Whatsapp::StatusPosts::SuggestionService.new(
+      account: Current.account, prompt: params[:prompt], current_text: params[:body], kind: params[:kind], tone: params[:tone]
     ).perform
-    render json: { text: text }
+    render json: { text: texts.first, texts: texts }
   rescue Ai::ClaudeService::Error => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
@@ -69,6 +85,15 @@ class Api::V1::Accounts::Whatsapp::StatusPostsController < Api::V1::Accounts::Ba
 
   def fetch_post
     @post = Current.account.whatsapp_status_posts.find(params[:id])
+  end
+
+  def filtered_posts
+    Whatsapp::StatusPosts::Filter.new(Current.account.whatsapp_status_posts, params).results
+  end
+
+  def per_page
+    per = params[:per].to_i
+    per.positive? ? [per, MAX_PER_PAGE].min : PER_PAGE
   end
 
   def ensure_editable
@@ -108,7 +133,7 @@ class Api::V1::Accounts::Whatsapp::StatusPostsController < Api::V1::Accounts::Ba
   end
 
   def post_params
-    permitted = params.permit(:kind, :body, :background_color, :font, :scheduled_at, inbox_ids: [])
+    permitted = params.permit(:kind, :body, :background_color, :font, :scheduled_at, :recurrence, inbox_ids: [])
     permitted[:body] = permitted[:body].to_s.strip if permitted.key?(:body)
     permitted
   end
@@ -125,6 +150,7 @@ class Api::V1::Accounts::Whatsapp::StatusPostsController < Api::V1::Accounts::Ba
       body: post.body,
       background_color: post.background_color,
       font: post.font,
+      recurrence: post.recurrence,
       status: post.status,
       inbox_ids: post.inbox_ids,
       scheduled_at: post.scheduled_at&.iso8601,

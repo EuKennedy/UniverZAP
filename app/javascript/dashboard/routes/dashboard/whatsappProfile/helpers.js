@@ -1,3 +1,5 @@
+import { unref } from 'vue';
+
 /**
  * A mensagem de erro na ordem em que ela é útil para quem está na tela: o que
  * o WhatsApp respondeu vem primeiro, depois a validação do servidor, depois a
@@ -120,3 +122,60 @@ export const squareCrop = (
     y: slackY + offset.y * slackY,
   };
 };
+
+/**
+ * As variáveis que o backend preenche por conexão na hora de publicar
+ * (Whatsapp::StatusPosts::Variables). A prévia usa a mesma regra para o
+ * operador ver o texto como ele vai sair na primeira conexão marcada.
+ */
+export const STATUS_VARIABLES = ['conexao', 'empresa', 'dia_semana', 'data'];
+
+const WEEKDAYS = [
+  'domingo',
+  'segunda-feira',
+  'terça-feira',
+  'quarta-feira',
+  'quinta-feira',
+  'sexta-feira',
+  'sábado',
+];
+
+export const renderVariables = (
+  text,
+  { conexao, empresa },
+  at = new Date()
+) => {
+  const values = {
+    conexao,
+    empresa,
+    dia_semana: WEEKDAYS[at.getDay()],
+    data: `${String(at.getDate()).padStart(2, '0')}/${String(at.getMonth() + 1).padStart(2, '0')}`,
+  };
+  return String(text || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) =>
+    values[key] ? values[key] : match
+  );
+};
+
+export const RECURRENCES = ['none', 'daily', 'weekly'];
+export const SUGGESTION_TONES = ['friendly', 'elegant', 'fun', 'urgent'];
+
+/** Os próximos `days` dias a partir de hoje, à meia-noite local. */
+export const nextDays = (days = 7, from = new Date()) =>
+  Array.from({ length: days }, (_, index) => {
+    const day = new Date(from);
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() + index);
+    return day;
+  });
+
+export const isSameDay = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+/**
+ * O idioma do painel (pt_BR) no formato do Intl (pt-BR). Sem isso as datas
+ * saem no idioma do navegador, no meio de uma frase em português.
+ */
+export const dateLocale = locale =>
+  String(unref(locale) || '').replace('_', '-') || undefined;

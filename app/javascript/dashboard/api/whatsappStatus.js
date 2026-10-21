@@ -9,6 +9,7 @@ const toPayload = ({
   body,
   backgroundColor,
   font,
+  recurrence,
   inboxIds,
   blobId,
   scheduledAt,
@@ -18,6 +19,7 @@ const toPayload = ({
   body,
   background_color: backgroundColor,
   font,
+  recurrence,
   inbox_ids: inboxIds,
   blob_id: blobId,
   scheduled_at: scheduledAt,
@@ -29,8 +31,19 @@ class WhatsAppStatus extends ApiClient {
     super('whatsapp/status_posts', { accountScoped: true });
   }
 
-  list(page = 1) {
-    return axios.get(this.url, { params: { page } });
+  // Filtros: { page, per, q, status, kind, inboxId, until }.
+  list({ inboxId, ...filters } = {}) {
+    return axios.get(this.url, {
+      params: { ...filters, inbox_id: inboxId || undefined },
+    });
+  }
+
+  stats() {
+    return axios.get(`${this.url}/stats`);
+  }
+
+  duplicate(id) {
+    return axios.post(`${this.url}/${id}/duplicate`);
   }
 
   save(post) {
@@ -51,8 +64,8 @@ class WhatsAppStatus extends ApiClient {
     return axios.post(`${this.url}/${id}/retry`);
   }
 
-  suggest({ prompt, body, kind }) {
-    return axios.post(`${this.url}/suggest`, { prompt, body, kind });
+  suggest({ prompt, body, kind, tone }) {
+    return axios.post(`${this.url}/suggest`, { prompt, body, kind, tone });
   }
 
   get templatesUrl() {

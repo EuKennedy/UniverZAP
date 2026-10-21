@@ -10,7 +10,12 @@ class Whatsapp::StatusPosts::DueScannerJob < ApplicationJob
       # o mesmo post duas vezes, porque só um consegue tirar ele de `scheduled`.
       claimed = WhatsappStatusPost.where(id: post.id, status: :scheduled)
                                   .update_all(status: WhatsappStatusPost.statuses[:publishing], updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
-      Whatsapp::StatusPosts::PublishJob.perform_later(post.id) if claimed == 1
+      next unless claimed == 1
+
+      # A série segue mesmo que esta publicação falhe: a terça que vem não
+      # depende de a WAHA ter respondido hoje.
+      post.schedule_next_occurrence!
+      Whatsapp::StatusPosts::PublishJob.perform_later(post.id)
     end
   end
 end

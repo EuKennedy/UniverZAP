@@ -34,8 +34,8 @@ class Whatsapp::StatusPosts::Publisher
   end
 
   def deliver(delivery)
-    _inbox, service = @resolver.resolve!(delivery.inbox_id)
-    response = send_to(service)
+    inbox, service = @resolver.resolve!(delivery.inbox_id)
+    response = send_to(service, Whatsapp::StatusPosts::Variables.render(@post.body, account: @post.account, inbox_name: inbox.name))
     delivery.update!(status: :sent, sent_at: Time.current, error_message: nil, waha_message_id: message_id(response))
   rescue Whatsapp::WahaSessionService::WahaError => e
     fail!(delivery, Whatsapp::WahaErrorMessage.humanize(e.message))
@@ -49,14 +49,14 @@ class Whatsapp::StatusPosts::Publisher
     delivery.update!(status: :failed, error_message: message.to_s.truncate(500))
   end
 
-  def send_to(service)
+  def send_to(service, body)
     case @post.kind
     when 'text'
-      service.send_status_text(text: @post.body, background_color: @post.background_color.presence, font: @post.font)
+      service.send_status_text(text: body, background_color: @post.background_color.presence, font: @post.font)
     when 'image'
-      service.send_status_image(url: media_url, caption: @post.body.presence, mimetype: @post.media.blob.content_type)
+      service.send_status_image(url: media_url, caption: body.presence, mimetype: @post.media.blob.content_type)
     when 'video'
-      service.send_status_video(url: media_url, caption: @post.body.presence, mimetype: @post.media.blob.content_type,
+      service.send_status_video(url: media_url, caption: body.presence, mimetype: @post.media.blob.content_type,
                                 background_color: @post.background_color.presence)
     end
   end

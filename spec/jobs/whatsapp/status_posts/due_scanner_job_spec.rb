@@ -18,4 +18,19 @@ RSpec.describe Whatsapp::StatusPosts::DueScannerJob do
     expect(due.reload).to be_status_publishing
     expect(later.reload).to be_status_scheduled
   end
+
+  # A promoção de terça sai toda terça sem ninguém agendar de novo.
+  it 'schedules the next occurrence of a weekly status from the agreed time' do
+    weekly = create(:whatsapp_status_post, account: account, status: :scheduled, inbox_ids: [inbox.id],
+                                           scheduled_at: 10.minutes.from_now, recurrence: 'weekly')
+
+    travel 15.minutes do
+      described_class.perform_now
+    end
+
+    following = account.whatsapp_status_posts.status_scheduled.sole
+    expect(following.scheduled_at).to eq(weekly.scheduled_at + 1.week)
+    expect(following).to have_attributes(body: weekly.body, recurrence: 'weekly', inbox_ids: [inbox.id])
+    expect(weekly.reload).to be_status_publishing
+  end
 end

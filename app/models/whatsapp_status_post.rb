@@ -9,6 +9,7 @@
 #  inbox_ids        :jsonb            not null
 #  kind             :string           default("text"), not null
 #  published_at     :datetime
+#  recurrence       :string           default("none"), not null
 #  scheduled_at     :datetime
 #  status           :integer          default("draft"), not null
 #  created_at       :datetime         not null
@@ -26,9 +27,6 @@
 #
 #  fk_rails_...  (account_id => accounts.id) ON DELETE => cascade
 #  fk_rails_...  (user_id => users.id) ON DELETE => nullify
-#
-# Um status (story) do WhatsApp escrito no painel: rascunho, agendado ou já
-# publicado em uma ou várias conexões WAHA da conta.
 #
 # As conexões ficam em `inbox_ids` enquanto o post ainda pode mudar. As linhas
 # de WhatsappStatusDelivery só nascem na hora de publicar, porque é ali que o
@@ -58,9 +56,14 @@ class WhatsappStatusPost < ApplicationRecord
   enum status: { draft: 0, scheduled: 1, publishing: 2, published: 3, partially_published: 4, failed: 5 }, _prefix: :status
 
   EDITABLE_STATUSES = %w[draft scheduled].freeze
+  # Repetição de um agendado: ao sair, o próximo já nasce agendado. Diário e
+  # semanal cobrem "bom dia" e "promoção de terça", que é o uso do salão.
+  RECURRENCE_INTERVALS = { 'daily' => 1.day, 'weekly' => 1.week }.freeze
+  RECURRENCES = (['none'] + RECURRENCE_INTERVALS.keys).freeze
 
   validates :kind, inclusion: { in: KINDS }
   validates :font, inclusion: { in: FONTS }
+  validates :recurrence, inclusion: { in: RECURRENCES }
   validates :body, length: { maximum: BODY_LIMIT }
   validates :background_color, format: { with: HEX_COLOR }, allow_blank: true
   validates :body, presence: true, if: -> { kind == 'text' && !status_draft? }
@@ -76,6 +79,30 @@ class WhatsappStatusPost < ApplicationRecord
 
   def editable?
     EDITABLE_STATUSES.include?(status)
+  end
+
+  def recurring?
+    RECURRENCE_INTERVALS.key?(recurrence)
+  end
+
+  # Cópia com o mesmo conteúdo e a mesma mídia (o blob é compartilhado, não
+  # duplicado). Base do "Duplicar" e da próxima ocorrência de um recorrente.
+  def copy(**overrides)
+    copy = account.whatsapp_status_posts.new(
+      slice(:user_id, :kind, :body, :background_color, :font, :inbox_ids, :recurrence).merge(overrides)
+    )
+    copy.media = media.blob if media.attached?
+    copy
+  end
+
+  # A próxima ocorrência sai do horário combinado, não da hora em que o job
+  # rodou: um scanner atrasado não empurra a série inteira.
+  def schedule_next_occurrence!
+    return unless recurring? && scheduled_at
+
+    next_at = scheduled_at + RECURRENCE_INTERVALS.fetch(recurrence)
+    next_at += RECURRENCE_INTERVALS.fetch(recurrence) while next_at <= Time.current
+    copy(status: :scheduled, scheduled_at: next_at).tap(&:save!)
   end
 
   def target_inboxes
