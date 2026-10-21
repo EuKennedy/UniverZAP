@@ -124,7 +124,8 @@
         "AUDIENCE": "Labels and lists add people; smart segments narrow them down.",
         "SAFETY": "Pace, window and limits that protect the number.",
         "SCHEDULE": "Leave empty to start when you send."
-      }
+      },
+      "LAUNCH_CONFIRM_COLD": "Includes {count} contact who never talked to the business. | Includes {count} contacts who never talked to the business."
     },
     "MESSAGE": {
       "SEQUENCE_HINT": "Each block is sent in order — mix text and media to build a sequence.",
@@ -182,7 +183,10 @@
       "IMPORT_PLACEHOLDER": "Paste phone numbers — one per line or separated by comma/semicolon.",
       "IMPORT_FILE": "Import CSV / TXT",
       "IMPORT_COUNT": "{count} numbers parsed",
-      "IMPORT_CLEAR": "Clear"
+      "IMPORT_CLEAR": "Clear",
+      "LISTS": "Distribution lists",
+      "LISTS_EMPTY": "No distribution lists yet.",
+      "LISTS_MANAGE": "Manage lists"
     },
     "SCHEDULE": {
       "AT": "Send at",
@@ -374,6 +378,12 @@
       "OPTED_OUT": "1 asked not to receive | {count} asked not to receive",
       "USAGE_TODAY": "Today per connection",
       "USAGE": "{today}/{dailyCap} today · {hour}/{hourlyCap} last hour"
+    },
+    "COLD": {
+      "TITLE": "{count} contact in this audience never talked to the business | {count} contacts in this audience never talked to the business",
+      "BODY": "They came from a WhatsApp group or a cold CSV and are left out of this broadcast unless you confirm.",
+      "INCLUDED": "Confirmed: they are included. Changing the audience asks again.",
+      "CONFIRM": "I confirm: send to this contact who never talked to the business | I confirm: send to these {count} contacts who never talked to the business"
     }
   }
 }

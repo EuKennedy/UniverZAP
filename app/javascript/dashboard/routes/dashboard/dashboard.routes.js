@@ -12,6 +12,7 @@ import { routes as captainRoutes } from './captain/captain.routes';
 import kanbanRoutes from './kanban/kanban.routes';
 import chatflowRoutes from './chatflow/chatflow.routes';
 import broadcastsRoutes from './broadcasts/broadcasts.routes';
+import contactListsRoutes from './contactLists/contactLists.routes';
 import metasRoutes from './metas/metas.routes';
 import athenasRoutes from './athenas/athenas.routes';
 import managerRoutes from './manager/manager.routes';
@@ -41,6 +42,7 @@ export default {
         ...kanbanRoutes.routes,
         ...chatflowRoutes.routes,
         ...broadcastsRoutes.routes,
+        ...contactListsRoutes.routes,
         ...metasRoutes.routes,
         ...athenasRoutes.routes,
         ...managerRoutes.routes,

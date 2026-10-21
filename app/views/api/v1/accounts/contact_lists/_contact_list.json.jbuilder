@@ -9,6 +9,7 @@ json.inbox_id contact_list.inbox_id
 json.group_identifier contact_list.group_identifier
 json.group_name contact_list.metadata['group_name']
 json.label contact_list.metadata['label']
+json.conversation_display_id contact_list.metadata['conversation_id']
 json.members_count contact_list.members_count
 json.left_count counts[:left].to_i
 json.no_phone_count counts[:no_phone].to_i

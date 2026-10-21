@@ -653,6 +653,13 @@ const builtMenu = computed(() => {
       dataOnboarding: 'broadcasts-nav',
       activeOn: ['broadcasts_index', 'broadcasts_show'],
     },
+    {
+      name: 'Contact lists',
+      label: t('SIDEBAR.CONTACT_LISTS'),
+      icon: 'i-lucide-list-checks',
+      to: accountScopedRoute('contact_lists_index'),
+      activeOn: ['contact_lists_index', 'contact_lists_show'],
+    },
     ...(campaignsVisible
       ? [
           {

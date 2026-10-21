@@ -26,6 +26,7 @@ import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
 import KanbanTasksPanel from './KanbanTasksPanel.vue';
+import GroupListCard from './GroupListCard.vue';
 import BelezakiCatalogCard from 'dashboard/components/widgets/conversation/belezaki/CatalogCard.vue';
 
 const props = defineProps({
@@ -152,6 +153,10 @@ onMounted(() => {
         <CustomerSheetSection :contact="contact" />
       </template>
     </ContactInfo>
+    <GroupListCard
+      v-if="currentChat.is_group"
+      :conversation-id="conversationId"
+    />
     <div class="px-2 pb-8 list-group">
       <Draggable
         :list="conversationSidebarItems"
