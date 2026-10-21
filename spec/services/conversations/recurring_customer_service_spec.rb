@@ -179,4 +179,28 @@ RSpec.describe Conversations::RecurringCustomerService do
       expect(contact.reload.custom_attributes['recorrente']).to be true
     end
   end
+
+  describe 'per vertical' do
+    before { conversation(status: :resolved) }
+
+    it 'uses the e-commerce label for a returning e-commerce customer' do
+      account.update!(custom_attributes: { 'vertical_template' => 'ecommerce' })
+      current = conversation
+
+      described_class.new(current).perform
+
+      expect(current.reload.label_list).to eq(['comprou-novamente'])
+      expect(account.labels.find_by(title: 'cliente-recorrente')).to be_nil
+    end
+
+    it 'does nothing for a vertical without a returning-customer label' do
+      account.update!(custom_attributes: { 'vertical_template' => 'food_delivery' })
+      current = conversation
+
+      described_class.new(current).perform
+
+      expect(current.reload.label_list).to eq([])
+      expect(Rails.configuration.dispatcher).not_to have_received(:dispatch).with(Events::Types::CONVERSATION_RECURRING_CUSTOMER, anything, anything)
+    end
+  end
 end

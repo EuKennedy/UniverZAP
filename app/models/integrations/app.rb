@@ -54,13 +54,20 @@ class Integrations::App
       GlobalConfigService.load('SLACK_CLIENT_SECRET', nil).present?
     when 'linear'
       account.feature_enabled?('linear_integration') && GlobalConfigService.load('LINEAR_CLIENT_ID', nil).present?
-    when 'shopify', 'notion', 'belezaki'
+    when 'shopify', 'notion'
       external_app_enabled?(account)
+    when 'belezaki'
+      belezaki_active?(account)
     when 'leadsquared'
       account.feature_enabled?('crm_integration')
     else
       true
     end
+  end
+
+  # A salon agenda: only verticals that schedule like a salon get it.
+  def belezaki_active?(account)
+    external_app_enabled?(account) && VerticalProfile.for(account).belezaki?
   end
 
   def build_linear_action

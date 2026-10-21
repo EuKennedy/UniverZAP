@@ -98,6 +98,22 @@ RSpec.describe Integrations::App do
           expect(app.active?(account)).to be false
         end
       end
+
+      it 'is not offered to an e-commerce account, since it is a salon agenda' do
+        account.update!(custom_attributes: { 'vertical_template' => 'ecommerce' })
+
+        with_modified_env UNIVERZAP_AGENT_API_KEY: 'shared-key' do
+          expect(app.active?(account)).to be false
+        end
+      end
+
+      it 'is offered to a salon account' do
+        account.update!(custom_attributes: { 'vertical_template' => 'beauty_salon' })
+
+        with_modified_env UNIVERZAP_AGENT_API_KEY: 'shared-key' do
+          expect(app.active?(account)).to be true
+        end
+      end
     end
 
     context 'when other apps are queried' do

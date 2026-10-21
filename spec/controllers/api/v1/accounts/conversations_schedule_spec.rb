@@ -36,6 +36,16 @@ RSpec.describe 'Conversation schedule API', type: :request do
       expect(conversation.reload.label_list).to contain_exactly('lead-anuncio', 'agendado')
     end
 
+    it 'is refused for a vertical without scheduling, like e-commerce' do
+      account.update!(custom_attributes: { 'vertical_template' => 'ecommerce' })
+
+      post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/schedule",
+           params: params, headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(conversation.reload.label_list).not_to include('agendado')
+    end
+
     it 'is not found for a conversation of another account' do
       other = create(:conversation, account: create(:account))
 

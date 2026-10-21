@@ -66,4 +66,14 @@ RSpec.describe V2::Reports::AdLeadsBuilder do
     expect(rows.map { |row| row[:customer] }).to eq(%w[new recurring])
     expect(rows.last).to include(leads: 0, replied: 0, resolved: 0, converted: 0)
   end
+
+  it 'counts returning customers by the e-commerce label on an e-commerce account' do
+    account.update!(custom_attributes: { 'vertical_template' => 'ecommerce' })
+    create(:label, account: account, title: 'comprou-novamente')
+    lead(ad_id: '200', title: 'Kit', first_reply_created_at: 1.hour.ago).add_labels(%w[comprou-novamente])
+
+    rows = described_class.new(account: account, params: params.merge(group_by: 'customer')).build
+
+    expect(rows.pluck(:customer, :leads)).to eq([['new', 4], ['recurring', 1]])
+  end
 end

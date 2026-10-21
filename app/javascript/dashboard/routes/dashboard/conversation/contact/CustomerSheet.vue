@@ -28,6 +28,12 @@ const props = defineProps({
   attributeDefinitions: { type: Array, default: () => [] },
   previousConversations: { type: Array, default: () => [] },
   isScheduling: { type: Boolean, default: false },
+  // The account's VerticalProfile: whether "Agendar" exists and which
+  // conversation attributes replace the salon's appointment rows.
+  profile: {
+    type: Object,
+    default: () => ({ schedule_status: 'agendado', sheet_fields: null }),
+  },
 });
 
 const emit = defineEmits(['update', 'schedule']);
@@ -83,7 +89,29 @@ const repurchase = computed(() => {
 
 // Belezaki (next phase) adds "última visita" and "gasto acumulado" here as
 // two more rows once the integration delivers them.
-const rows = computed(() => [
+const schedules = computed(() => Boolean(props.profile.schedule_status));
+
+const ROW_TYPES = { list: 'list', number: 'number', currency: 'number' };
+
+// Verticals without scheduling show their own fields, labelled and typed by
+// the account's attribute definitions.
+const verticalRows = computed(() =>
+  props.profile.sheet_fields.map(key => {
+    const definition =
+      props.attributeDefinitions.find(d => d.attribute_key === key) || {};
+    const value = attributes.value[key] ?? '';
+    return {
+      name: key,
+      label: definition.attribute_display_name || key,
+      value: String(value),
+      rawValue: value,
+      type: ROW_TYPES[definition.attribute_display_type] || 'text',
+      options: definition.attribute_values || [],
+    };
+  })
+);
+
+const salonRows = computed(() => [
   {
     name: 'servico',
     label: t('CONTACT_PANEL.SHEET.SERVICE'),
@@ -115,6 +143,10 @@ const rows = computed(() => [
     type: 'number',
   },
 ]);
+
+const rows = computed(() =>
+  props.profile.sheet_fields ? verticalRows.value : salonRows.value
+);
 
 const copyPhone = async () => {
   await copyTextToClipboard(props.contact.phone_number);
@@ -223,7 +255,7 @@ defineExpose({ closeSchedule });
       />
     </div>
 
-    <div class="flex items-center gap-2 pt-1">
+    <div v-if="schedules" class="flex items-center gap-2 pt-1">
       <NextButton
         :label="t('CONTACT_PANEL.SHEET.SCHEDULE.BUTTON')"
         icon="i-lucide-calendar-plus"
@@ -259,6 +291,7 @@ defineExpose({ closeSchedule });
     </p>
 
     <ScheduleDialog
+      v-if="schedules"
       ref="scheduleDialog"
       :initial-values="attributes"
       :service-options="serviceOptions"
