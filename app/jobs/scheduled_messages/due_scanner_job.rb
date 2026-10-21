@@ -21,5 +21,10 @@ class ScheduledMessages::DueScannerJob < ApplicationJob
                                 .update_all(status: ScheduledMessage.statuses[:sending], updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
       ScheduledMessages::SendJob.perform_later(scheduled.id) if claimed == 1
     end
+
+    # O mesmo relógio solta as Esperas do Chatflow e, uma vez por hora, os
+    # gatilhos por data — em vez de um segundo cron com outra trava.
+    Chatflow::WaitScanner.new.perform
+    Chatflow::DateTriggerScanner.new.perform
   end
 end

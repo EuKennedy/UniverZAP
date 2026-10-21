@@ -98,6 +98,9 @@ en:
         recent_activity: Being served
         no_phone: No number
     copy_name: '%{name} (copy)'
+  chatflow:
+    simulator:
+      contact_name: Simulated customer
   scheduled_messages:
     errors:
       interrupted: Sending was interrupted; check the conversation before trying again

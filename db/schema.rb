@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_21_170000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_21_200000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1191,10 +1191,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_170000) do
     t.jsonb "context", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "resume_at"
+    t.bigint "visited_node_ids", default: [], null: false, array: true
     t.index ["account_id"], name: "index_chatflow_executions_on_account_id"
     t.index ["chatflow_id"], name: "index_chatflow_executions_on_chatflow_id"
     t.index ["conversation_id"], name: "idx_chatflow_exec_one_live_per_conversation", unique: true, where: "(status < 2)"
     t.index ["conversation_id"], name: "index_chatflow_executions_on_conversation_id"
+    t.index ["resume_at"], name: "idx_chatflow_exec_resume_at", where: "(resume_at IS NOT NULL)"
   end
 
   create_table "chatflow_nodes", force: :cascade do |t|

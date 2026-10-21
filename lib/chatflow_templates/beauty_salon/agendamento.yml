@@ -1,0 +1,90 @@
+name: Agendamento pelo WhatsApp
+description: Recebe quem quer marcar horário, pergunta o serviço e o melhor dia, etiqueta e passa para a equipe confirmar. Fora do horário, avisa e anota o pedido.
+category: agendamento
+icon: i-lucide-calendar-check
+trigger_type: keyword
+trigger_config:
+  keywords: [agendar, marcar, horário, horario, agenda]
+start: digitando
+nodes:
+  - key: digitando
+    kind: typing
+    x: 0
+    y: 0
+    config: { seconds: 2 }
+  - key: ola
+    kind: send_message
+    name: Boas-vindas
+    x: 300
+    y: 0
+    config: { text: "Oi, {{ contact.name }}! Que bom que você quer vir ✨" }
+  - key: horario
+    kind: condition
+    name: Estamos abertos?
+    x: 600
+    y: 0
+    config: { match: all, rules: [{ type: business_hours, value: open }] }
+  - key: servico
+    kind: question
+    name: Qual serviço?
+    x: 900
+    y: -120
+    config:
+      text: "Qual serviço você quer fazer? (ex.: corte, escova, unhas)"
+      field_type: text
+      save_to: { scope: conversation, key: servico }
+      error_text: "Me conta em poucas palavras qual serviço você quer 😊"
+      max_attempts: 2
+  - key: dia
+    kind: question
+    name: Melhor dia
+    x: 1200
+    y: -120
+    config:
+      text: "Qual o melhor dia para você? Pode responder no formato 25/10."
+      field_type: date
+      save_to: { scope: conversation, key: data_preferida }
+      error_text: "Não entendi a data. Responda assim: 25/10"
+      max_attempts: 3
+  - key: etiqueta
+    kind: set_label
+    name: Marcar como triagem
+    x: 1500
+    y: -120
+    config: { label_titles: [triagem] }
+  - key: anotado
+    kind: send_message
+    name: Anotado
+    x: 1800
+    y: -120
+    config: { text: "Anotado! Já vou ver os horários livres e te confirmo por aqui 💇‍♀️" }
+  - key: fim
+    kind: end_flow
+    name: Fim
+    x: 2100
+    y: -120
+    config: { actions: {} }
+  - key: fechado
+    kind: send_message
+    name: Fora do horário
+    x: 900
+    y: 160
+    config: { text: "Agora estamos fechados, mas deixe aqui o serviço e o dia que você prefere: respondemos assim que abrirmos 💜" }
+  - key: fim_fechado
+    kind: end_flow
+    name: Fim
+    x: 1200
+    y: 160
+    config: { actions: {} }
+edges:
+  - [digitando, default, ola]
+  - [ola, default, horario]
+  - [horario, "true", servico]
+  - [horario, "false", fechado]
+  - [servico, default, dia]
+  - [servico, invalid, dia]
+  - [dia, default, etiqueta]
+  - [dia, invalid, etiqueta]
+  - [etiqueta, default, anotado]
+  - [anotado, default, fim]
+  - [fechado, default, fim_fechado]

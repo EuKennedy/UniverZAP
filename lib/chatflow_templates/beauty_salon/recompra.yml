@@ -1,0 +1,56 @@
+name: Recompra (volte a agendar)
+description: 30 dias depois do atendimento, lembra a cliente de voltar. Quem responde sim é etiquetada para agendar; quem não responde recebe um último lembrete uma semana depois.
+category: recompra
+icon: i-lucide-repeat
+trigger_type: date
+trigger_config:
+  date: { kind: after_appointment, days: 30, hour: 11 }
+start: lembrete
+nodes:
+  - key: lembrete
+    kind: menu
+    name: Lembrete
+    x: 0
+    y: 0
+    config:
+      text: "Oi, {{ contact.name }}! Já faz um mês da sua última visita. Bora marcar a próxima?"
+      options:
+        - { label: "Quero agendar", value: sim }
+        - { label: "Agora não", value: nao }
+  - key: etiqueta
+    kind: set_label
+    name: Quer agendar
+    x: 350
+    y: -100
+    config: { label_titles: [lembrete-recompra] }
+  - key: ok
+    kind: send_message
+    name: Confirmar
+    x: 650
+    y: -100
+    config: { text: "Perfeito! Já te mando os horários livres desta semana ✨" }
+  - key: espera
+    kind: wait
+    name: Esperar 7 dias
+    x: 350
+    y: 120
+    config: { mode: duration, amount: 7, unit: days, on_reply: stop, respect_window: true }
+  - key: ultimo
+    kind: send_message
+    name: Último lembrete
+    x: 650
+    y: 120
+    config: { text: "Passando só para lembrar: quando quiser voltar, é só responder por aqui 💜" }
+  - key: fim
+    kind: end_flow
+    name: Fim
+    x: 950
+    y: 0
+    config: { actions: {} }
+edges:
+  - [lembrete, sim, etiqueta]
+  - [lembrete, nao, espera]
+  - [etiqueta, default, ok]
+  - [ok, default, fim]
+  - [espera, default, ultimo]
+  - [ultimo, default, fim]
