@@ -27,7 +27,7 @@ RSpec.describe 'Chatflow automation API', type: :request do
     flow.update!(start_node: flow_node(flow, :send_message, 'text' => 'Oi!'))
 
     get "#{base}/options", headers: admin.create_new_auth_token
-    expect(response.parsed_body).to include('lists_available' => false)
+    expect(response.parsed_body).to include('lists_available' => true)
     expect(response.parsed_body['chatflows'].pluck('name')).to include('Teste')
 
     get "#{base}/#{flow.id}/funnel", headers: admin.create_new_auth_token
