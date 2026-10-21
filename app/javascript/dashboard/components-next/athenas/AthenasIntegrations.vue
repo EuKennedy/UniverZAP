@@ -5,10 +5,11 @@
 // THIS agent in THIS account, so nothing configured here leaks to another
 // workspace. CRUD is driven straight off the Athenas API, like the trainings
 // editor, rather than a global store.
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AthenasAPI from 'dashboard/api/athenas';
 import { useAlert } from 'dashboard/composables';
+import { useAccount } from 'dashboard/composables/useAccount';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
@@ -26,6 +27,11 @@ const props = defineProps({
 defineEmits(['calendarConnected']);
 
 const { t } = useI18n();
+const { currentAccount } = useAccount();
+// Belezaki is a salon agenda; other verticals (e-commerce, delivery) never see it.
+const showBelezaki = computed(
+  () => currentAccount.value.vertical_profile?.belezaki !== false
+);
 
 const tools = ref([]);
 const loading = ref(false);
@@ -177,7 +183,7 @@ const performDelete = async () => {
          belezaki this is the one that costs nothing to set up, because the
          services, prices and hours are already entered over there. -->
     <AthenasBelezakiConnect
-      v-if="view === 'list'"
+      v-if="view === 'list' && showBelezaki"
       :assistant-id="assistantId"
       :google-connected="googleConnected"
       @connected="belezakiConnected = $event"
