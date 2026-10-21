@@ -270,4 +270,50 @@ describe('ScheduleDialog', () => {
 
     expect(wrapper.emitted('confirm')).toBeUndefined();
   });
+
+  it('shows the e-commerce fields instead of the appointment, without Agendar', () => {
+    const wrapper = mountSheet({
+      profile: {
+        schedule_status: null,
+        sheet_fields: ['numero_pedido', 'valor_pedido', 'motivo_contato'],
+      },
+      attributeDefinitions: [
+        {
+          attribute_key: 'numero_pedido',
+          attribute_display_name: 'Número do pedido',
+          attribute_display_type: 'text',
+        },
+        {
+          attribute_key: 'valor_pedido',
+          attribute_display_name: 'Valor do pedido',
+          attribute_display_type: 'currency',
+        },
+        {
+          attribute_key: 'motivo_contato',
+          attribute_display_name: 'Motivo do contato',
+          attribute_display_type: 'list',
+          attribute_values: ['Rastreio', 'Troca'],
+        },
+      ],
+      conversation: {
+        id: 7,
+        labels: [],
+        custom_attributes: { numero_pedido: '#1042', valor_pedido: 189.9 },
+      },
+    });
+
+    expect(
+      wrapper.find('[data-testid="sheet-row-numero_pedido"]').text()
+    ).toContain('Número do pedido');
+    expect(
+      wrapper.find('[data-testid="sheet-row-numero_pedido"]').text()
+    ).toContain('#1042');
+    expect(
+      wrapper.find('[data-testid="sheet-row-valor_pedido"]').text()
+    ).toContain('189.9');
+    expect(wrapper.find('[data-testid="sheet-row-servico"]').exists()).toBe(
+      false
+    );
+    expect(wrapper.find('[data-testid="sheet-schedule"]').exists()).toBe(false);
+  });
 });

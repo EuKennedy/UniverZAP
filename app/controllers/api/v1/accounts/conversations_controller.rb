@@ -156,6 +156,8 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
 
   # UniverZAP: "Agendar" from the customer sheet (see Conversations::ScheduleService).
   def schedule
+    return head :unprocessable_entity unless VerticalProfile.for(Current.account).schedules?
+
     attributes = params.permit(*Conversations::ScheduleService::ATTRIBUTE_KEYS)
     Conversations::ScheduleService.new(conversation: @conversation, attributes: attributes).perform
   end

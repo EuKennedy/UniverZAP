@@ -16,6 +16,15 @@ RSpec.describe 'Api::V1::Accounts::Ai::AssistantTemplatesController', type: :req
         .to contain_exactly('salao', 'clinica', 'nails', 'varejo')
     end
 
+    it 'offers only the templates that fit the account vertical' do
+      account.update!(custom_attributes: { 'vertical_template' => 'ecommerce' })
+
+      get "/api/v1/accounts/#{account.id}/ai/assistant_templates",
+          headers: admin.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['templates'].pluck('key')).to eq(['varejo'])
+    end
+
     # The picker needs enough to choose, not the whole prompt.
     it 'keeps the full prompt out of the list' do
       get "/api/v1/accounts/#{account.id}/ai/assistant_templates",

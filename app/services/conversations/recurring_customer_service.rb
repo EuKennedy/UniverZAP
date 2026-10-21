@@ -7,9 +7,12 @@
 #     one conversation per contact, reopened on every return.
 #
 # Same shape as Conversations::AdReferralService:
-#   - the conversation gets the `cliente-recorrente` label (created on the
-#     account if missing) so lists, filters and the dashboard can split new
-#     from returning customers;
+#   - the conversation gets the vertical's returning-customer label
+#     (`cliente-recorrente` for salons, `comprou-novamente` for e-commerce, see
+#     VerticalProfile; created on the account if missing) so lists, filters
+#     and the dashboard can split new from returning customers. The label is
+#     also what keeps the event to once per cycle, so a vertical without one
+#     skips the whole thing;
 #   - the contact gets `recorrente = true` (definition created if missing):
 #     the audience of the repurchase reminder;
 #   - `conversation.recurring_customer` fires once per conversation so an
@@ -17,7 +20,6 @@
 #     message).
 # Idempotent: a conversation that already carries the label is left alone.
 class Conversations::RecurringCustomerService
-  LABEL = 'cliente-recorrente'.freeze
   ATTRIBUTE = 'recorrente'.freeze
   RESOLVED_EVENT = 'conversation_resolved'.freeze
 
@@ -56,10 +58,15 @@ class Conversations::RecurringCustomerService
     @conversation = conversation
     @account = conversation.account
     @silent = silent
+    @label = VerticalProfile.for(@account).recurring_label
+  end
+
+  def self.label_for(account)
+    VerticalProfile.for(account).recurring_label
   end
 
   def perform
-    return if @conversation.label_list.include?(LABEL)
+    return if @label.blank? || @conversation.label_list.include?(@label)
     return unless self.class.recurring?(@conversation)
     return unless label_conversation
 
@@ -95,10 +102,10 @@ class Conversations::RecurringCustomerService
   def label_conversation
     Conversation.transaction do
       locked = Conversation.lock.find(@conversation.id)
-      next false if locked.label_list.include?(LABEL)
+      next false if locked.label_list.include?(@label)
 
       ensure_label
-      locked.add_labels([LABEL])
+      locked.add_labels([@label])
       true
     end
   end
@@ -114,7 +121,7 @@ class Conversations::RecurringCustomerService
   end
 
   def ensure_label
-    @account.labels.find_or_create_by!(title: LABEL) do |label|
+    @account.labels.find_or_create_by!(title: @label) do |label|
       label.color = '#94A3B8'
       label.description = I18n.t('recurring_customer.label_description')
       label.show_on_sidebar = true

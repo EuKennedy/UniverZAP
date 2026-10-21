@@ -14,12 +14,15 @@ namespace :recorrencia do
   desc 'Label open conversations of returning customers and stamp recorrente / origem_lead on contacts (no events)'
   task :backfill, [:account_id] => :environment do |_t, args|
     account = Account.find(args[:account_id])
+    label = Conversations::RecurringCustomerService.label_for(account)
+    abort "Account #{account.id}: its vertical has no returning-customer label" if label.blank?
+
     labelled = 0
     recurring = 0
     origins = Hash.new(0)
 
     account.conversations.where.not(status: :resolved).find_each do |conversation|
-      next if conversation.label_list.include?(Conversations::RecurringCustomerService::LABEL)
+      next if conversation.label_list.include?(label)
       next unless Conversations::RecurringCustomerService.recurring?(conversation)
 
       already = conversation.contact.custom_attributes[Conversations::RecurringCustomerService::ATTRIBUTE] == true
@@ -40,7 +43,7 @@ namespace :recorrencia do
     end
 
     breakdown = origins.map { |origin, count| "#{origin}: #{count}" }.join(', ')
-    puts "Account #{account.id}: #{labelled} open conversations labelled #{Conversations::RecurringCustomerService::LABEL}; " \
+    puts "Account #{account.id}: #{labelled} open conversations labelled #{label}; " \
          "#{recurring} contacts stamped recorrente; origem_lead filled on #{origins.values.sum} contacts (#{breakdown})"
   end
 end

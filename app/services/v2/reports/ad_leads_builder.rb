@@ -15,13 +15,6 @@ class V2::Reports::AdLeadsBuilder
     Arel.sql("MAX(conversations.custom_attributes->>'anuncio_url')")
   ].freeze
   COUNTS = [Arel.sql('COUNT(*)'), REPLIED, RESOLVED].freeze
-  # The label Conversations::RecurringCustomerService writes on a conversation
-  # of a customer who already had a conversation that ended.
-  RECURRING = Arel.sql(<<~SQL.squish)
-    EXISTS (SELECT 1 FROM taggings INNER JOIN tags ON tags.id = taggings.tag_id
-            WHERE taggings.taggable_type = 'Conversation' AND taggings.taggable_id = conversations.id
-              AND taggings.context = 'labels' AND tags.name = '#{Conversations::RecurringCustomerService::LABEL}')
-  SQL
 
   def build
     return customer_rows if params[:group_by] == 'customer'
@@ -53,9 +46,23 @@ class V2::Reports::AdLeadsBuilder
 
   # Always two rows, new first, so the page can show the split even when one
   # side is empty.
+  # The label Conversations::RecurringCustomerService writes, per vertical, on
+  # a conversation of a customer who already had one that ended. A vertical
+  # without it counts everybody as new.
+  def recurring
+    label = Conversations::RecurringCustomerService.label_for(account)
+    return Arel.sql('FALSE') if label.blank?
+
+    Arel.sql(<<~SQL.squish)
+      EXISTS (SELECT 1 FROM taggings INNER JOIN tags ON tags.id = taggings.tag_id
+              WHERE taggings.taggable_type = 'Conversation' AND taggings.taggable_id = conversations.id
+                AND taggings.context = 'labels' AND tags.name = #{ActiveRecord::Base.connection.quote(label)})
+    SQL
+  end
+
   def customer_rows
-    converted = converted_by(base_scope, RECURRING)
-    counts = base_scope.group(RECURRING).pluck(RECURRING, *COUNTS).to_h { |recurring, *row| [recurring, row] }
+    converted = converted_by(base_scope, recurring)
+    counts = base_scope.group(recurring).pluck(recurring, *COUNTS).to_h { |recurring, *row| [recurring, row] }
     [false, true].map do |recurring|
       { customer: recurring ? 'recurring' : 'new', **metrics(counts.fetch(recurring, [0, 0, 0]), converted, recurring) }
     end

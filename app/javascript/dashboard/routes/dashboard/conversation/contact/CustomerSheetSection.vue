@@ -7,6 +7,7 @@ import {
   useStore,
 } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
+import { useAccount } from 'dashboard/composables/useAccount';
 import VerticalStatusesAPI from 'dashboard/api/verticalStatuses';
 import CustomerSheet from './CustomerSheet.vue';
 import BelezakiCustomerCard from 'dashboard/components/widgets/conversation/belezaki/CustomerCard.vue';
@@ -18,6 +19,8 @@ const props = defineProps({
 
 const { t } = useI18n();
 const store = useStore();
+const { currentAccount } = useAccount();
+const profile = computed(() => currentAccount.value.vertical_profile);
 
 const currentChat = useMapGetter('getSelectedChat');
 const attributeDefinitions = useFunctionGetter(
@@ -106,6 +109,7 @@ const onSchedule = async attributes => {
       :attribute-definitions="attributeDefinitions"
       :previous-conversations="previousConversations"
       :is-scheduling="isScheduling"
+      :profile="profile"
       @update="onUpdate"
       @schedule="onSchedule"
     />

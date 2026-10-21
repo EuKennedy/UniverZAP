@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import { useUISettings } from 'dashboard/composables/useUISettings';
+import { useAccount } from 'dashboard/composables/useAccount';
 import ReportsAPI from 'dashboard/api/reports';
 import ReportHeader from './components/ReportHeader.vue';
 import ReportFilters from './components/ReportFilters.vue';
@@ -24,15 +25,17 @@ import FunnelBlock from './components/panel/FunnelBlock.vue';
 import QueueBlock from './components/panel/QueueBlock.vue';
 import AgentsBlock from './components/panel/AgentsBlock.vue';
 
-const CONVERSION_LABEL_KEY = 'panel_conversion_label';
+// Per account: the same person runs a salon (agendado) and a shop
+// (pedido-confirmado), and one choice must not leak into the other.
+const CONVERSION_LABEL_KEY = 'panel_conversion_labels';
 const RISK_MINUTES_KEY = 'panel_risk_minutes';
-const DEFAULT_CONVERSION_LABEL = 'agendado';
 const DEFAULT_RISK_MINUTES = 30;
 const RISK_OPTIONS = [15, 30, 60, 120];
 
 const { t } = useI18n();
 const store = useStore();
 const { uiSettings, updateUISettings } = useUISettings();
+const { accountId, currentAccount } = useAccount();
 
 const report = ref(null);
 const isLoading = ref(false);
@@ -43,8 +46,12 @@ const to = ref(0);
 const labelsLoaded = ref(false);
 
 const labels = computed(() => store.getters['labels/getLabels'] || []);
+// The vertical decides the default (VerticalProfile#conversion_status).
 const conversionLabel = computed(
-  () => uiSettings.value[CONVERSION_LABEL_KEY] ?? DEFAULT_CONVERSION_LABEL
+  () =>
+    uiSettings.value[CONVERSION_LABEL_KEY]?.[accountId.value] ??
+    currentAccount.value.vertical_profile?.conversion_status ??
+    ''
 );
 const riskMinutes = computed(
   () => Number(uiSettings.value[RISK_MINUTES_KEY]) || DEFAULT_RISK_MINUTES
@@ -84,7 +91,12 @@ const onFilterChange = ({ from: since, to: until }) => {
 };
 
 const onConversionLabelChange = event => {
-  updateUISettings({ [CONVERSION_LABEL_KEY]: event.target.value });
+  updateUISettings({
+    [CONVERSION_LABEL_KEY]: {
+      ...uiSettings.value[CONVERSION_LABEL_KEY],
+      [accountId.value]: event.target.value,
+    },
+  });
   fetchReport();
 };
 

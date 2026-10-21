@@ -1,10 +1,11 @@
 # "Agendar" from the customer sheet: writes the appointment onto the
-# conversation, makes `agendado` its stage (the vertical's other open
-# stages go away; everything else stays) and, when the conversation
-# already sits on a Kanban board with a column named "Agendado", moves
-# the card there. Never creates a card.
+# conversation, makes the vertical's scheduling status (`agendado` for salons
+# and clinics, see VerticalProfile) its stage — the vertical's other open
+# stages go away, everything else stays — and, when the conversation already
+# sits on a Kanban board with a column of that name, moves the card there.
+# Never creates a card. Only for verticals that schedule (the controller
+# refuses the others).
 class Conversations::ScheduleService
-  LABEL = 'agendado'.freeze
   ATTRIBUTE_KEYS = %w[servico profissional data_agendamento ciclo_recompra_semanas].freeze
 
   def initialize(conversation:, attributes:)
@@ -14,7 +15,7 @@ class Conversations::ScheduleService
 
   def perform
     @conversation.update!(custom_attributes: merged_attributes, label_list: next_labels)
-    Kanban::AutomationService.handle_stage_label_applied(@conversation, LABEL)
+    Kanban::AutomationService.handle_stage_label_applied(@conversation, profile.schedule_status)
     @conversation
   end
 
@@ -24,8 +25,12 @@ class Conversations::ScheduleService
     @conversation.custom_attributes.merge(@attributes.slice(*ATTRIBUTE_KEYS).compact_blank)
   end
 
+  def profile
+    @profile ||= VerticalProfile.for(@conversation.account)
+  end
+
   def next_labels
-    (@conversation.label_list.to_a - open_stage_titles) | [LABEL]
+    (@conversation.label_list.to_a - open_stage_titles) | [profile.schedule_status]
   end
 
   def open_stage_titles
