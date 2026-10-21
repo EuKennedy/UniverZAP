@@ -6,9 +6,11 @@ RSpec.describe Chatflow::ListBridge do
   let(:account) { create(:account) }
   let(:contact) { create(:contact, account: account) }
   let(:list) { Struct.new(:id, :name, :account_id).new(9, 'VIP', account.id) }
+  # rubocop:disable RSpec/VerifiedDoubles -- as classes de listas ainda não existem nesta branch
   let(:service) { double(add: 1, remove: 1) }
   let(:service_class) { double(new: service) }
   let(:list_class) { double(find_by: list) }
+  # rubocop:enable RSpec/VerifiedDoubles
 
   before do
     stub_const('ContactList', list_class)
