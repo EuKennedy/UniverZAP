@@ -101,7 +101,30 @@
       "LAUNCH_NOTHING_NEW": "Todos dessa audiência já receberam esta campanha. Adicione contatos novos para disparar de novo.",
       "LAUNCH_CONFIRM_SAFETY": "{eligible} vão receber de fato, cerca de {perHour}/hora entre {start}h e {end}h (~{days} dia(s)).",
       "LAUNCH_CONFIRM_SCHEDULED": "Começa em {when}.",
-      "PAUSED_BY_FAILURES": "Pausado automaticamente: vários envios falharam seguidos. Confira a conexão do WhatsApp antes de retomar."
+      "PAUSED_BY_FAILURES": "Pausado automaticamente: vários envios falharam seguidos. Confira a conexão do WhatsApp antes de retomar.",
+      "SUBTITLE": "{inbox} · {ready} de {total} etapas prontas",
+      "READINESS": "Pronto para disparar · {ready}/{total}",
+      "STEPS": {
+        "MODE": "Modo",
+        "INBOX": "Conexão",
+        "MESSAGE": "Mensagem",
+        "AUDIENCE": "Público",
+        "SAFETY": "Proteção",
+        "SCHEDULE": "Quando"
+      },
+      "STEP_STATE": {
+        "DONE": "Pronto",
+        "MISSING": "Falta",
+        "OPTIONAL": "Opcional"
+      },
+      "STEP_HINT": {
+        "MODE": "Texto livre pelo seu WhatsApp, ou templates aprovados da Meta.",
+        "INBOX": "O número por onde as mensagens saem.",
+        "MESSAGE": "Variáveis, palavras alternadas e versões extras deixam cada mensagem única.",
+        "AUDIENCE": "Etiquetas e listas somam pessoas; segmentos inteligentes estreitam.",
+        "SAFETY": "Ritmo, janela e limites que protegem o número.",
+        "SCHEDULE": "Deixe vazio para começar quando disparar."
+      }
     },
     "MESSAGE": {
       "SEQUENCE_HINT": "Cada bloco é enviado em sequência — combine texto e mídia para montar o fluxo.",

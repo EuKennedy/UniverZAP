@@ -101,7 +101,30 @@
       "LAUNCH_NOTHING_NEW": "Everyone in this audience has already received this campaign. Add new contacts to send again.",
       "LAUNCH_CONFIRM_SAFETY": "{eligible} will actually receive it, about {perHour}/hour between {start}h and {end}h (~{days} day(s)).",
       "LAUNCH_CONFIRM_SCHEDULED": "It starts on {when}.",
-      "PAUSED_BY_FAILURES": "Paused automatically: several sends failed in a row. Check the WhatsApp connection before resuming."
+      "PAUSED_BY_FAILURES": "Paused automatically: several sends failed in a row. Check the WhatsApp connection before resuming.",
+      "SUBTITLE": "{inbox} · {ready} of {total} steps ready",
+      "READINESS": "Ready to send · {ready}/{total}",
+      "STEPS": {
+        "MODE": "Mode",
+        "INBOX": "Connection",
+        "MESSAGE": "Message",
+        "AUDIENCE": "Audience",
+        "SAFETY": "Protection",
+        "SCHEDULE": "When"
+      },
+      "STEP_STATE": {
+        "DONE": "Ready",
+        "MISSING": "Missing",
+        "OPTIONAL": "Optional"
+      },
+      "STEP_HINT": {
+        "MODE": "Free text through your WhatsApp, or approved Meta templates.",
+        "INBOX": "The number the messages go out from.",
+        "MESSAGE": "Variables, word variations and extra versions keep each message unique.",
+        "AUDIENCE": "Labels and lists add people; smart segments narrow them down.",
+        "SAFETY": "Pace, window and limits that protect the number.",
+        "SCHEDULE": "Leave empty to start when you send."
+      }
     },
     "MESSAGE": {
       "SEQUENCE_HINT": "Each block is sent in order — mix text and media to build a sequence.",
