@@ -59,7 +59,11 @@ const cards = computed(() => {
       icon: 'i-lucide-shield-check',
       tone: 'bg-n-alpha-2 text-n-slate-11',
       value: data.skipped_7d ?? '–',
-      hint: t('BROADCAST.STATS.OPTED_OUT', { count: data.opted_out ?? 0 }),
+      hint: t(
+        'BROADCAST.STATS.OPTED_OUT',
+        { count: data.opted_out ?? 0 },
+        data.opted_out ?? 0
+      ),
     },
   ];
 });

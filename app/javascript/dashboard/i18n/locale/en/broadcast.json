@@ -33,7 +33,7 @@
       "PROGRESS": "{sent}/{total} sent",
       "EMPTY_TITLE": "No campaigns yet",
       "EMPTY_BODY": "Create your first broadcast to reach a segmented audience on WhatsApp.",
-      "SUMMARY": "{total} campaigns · {running} running · {sequences} sequences on",
+      "SUMMARY": "1 campaign · {running} running · {sequences} sequences on | {total} campaigns · {running} running · {sequences} sequences on",
       "REFRESH": "Refresh",
       "SEARCH": "Search campaigns…",
       "ALL_STATUSES": "All statuses",
@@ -268,11 +268,11 @@
     "PREVIEW": {
       "ELIGIBLE": "will receive",
       "EXCLUDED": {
-        "OPTED_OUT": "{count} asked not to receive — left out",
-        "RECENT_ACTIVITY": "{count} talking to the salon now — left out"
+        "OPTED_OUT": "1 asked not to receive — left out | {count} asked not to receive — left out",
+        "RECENT_ACTIVITY": "1 is talking to the salon now — left out | {count} are talking to the salon now — left out"
       },
       "ESTIMATE": "About {perHour}/hour and up to {perDay}/day, {start}h–{end}h: ~{days} day(s) to reach everyone.",
-      "MISSING": "{count} in the sample have an empty variable",
+      "MISSING": "1 in the sample has an empty variable | {count} in the sample have an empty variable",
       "SAMPLE": "What the first {count} receive",
       "SKIP": {
         "OPTED_OUT": "Opted out",
@@ -325,7 +325,7 @@
       "REPLIES": "Reply rate",
       "REPLIES_HINT": "Broadcasts, last 30 days",
       "PROTECTED": "Held by protection",
-      "OPTED_OUT": "{count} asked not to receive",
+      "OPTED_OUT": "1 asked not to receive | {count} asked not to receive",
       "USAGE_TODAY": "Today per connection",
       "USAGE": "{today}/{dailyCap} today · {hour}/{hourlyCap} last hour"
     }

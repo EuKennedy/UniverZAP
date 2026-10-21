@@ -33,7 +33,7 @@
       "PROGRESS": "{sent}/{total} enviadas",
       "EMPTY_TITLE": "Nenhuma campanha ainda",
       "EMPTY_BODY": "Crie seu primeiro disparo para alcançar um público segmentado no WhatsApp.",
-      "SUMMARY": "{total} campanhas · {running} em andamento · {sequences} sequências ligadas",
+      "SUMMARY": "1 campanha · {running} em andamento · {sequences} sequências ligadas | {total} campanhas · {running} em andamento · {sequences} sequências ligadas",
       "REFRESH": "Atualizar",
       "SEARCH": "Buscar campanhas…",
       "ALL_STATUSES": "Todos os status",
@@ -268,11 +268,11 @@
     "PREVIEW": {
       "ELIGIBLE": "vão receber",
       "EXCLUDED": {
-        "OPTED_OUT": "{count} pediram para não receber — ficam de fora",
-        "RECENT_ACTIVITY": "{count} estão conversando com o salão agora — ficam de fora"
+        "OPTED_OUT": "1 pediu para não receber — fica de fora | {count} pediram para não receber — ficam de fora",
+        "RECENT_ACTIVITY": "1 está conversando com o salão agora — fica de fora | {count} estão conversando com o salão agora — ficam de fora"
       },
       "ESTIMATE": "Cerca de {perHour}/hora e até {perDay}/dia, das {start}h às {end}h: ~{days} dia(s) para chegar em todas.",
-      "MISSING": "{count} da amostra têm variável vazia",
+      "MISSING": "1 da amostra tem variável vazia | {count} da amostra têm variável vazia",
       "SAMPLE": "O que as {count} primeiras recebem",
       "SKIP": {
         "OPTED_OUT": "Pediu para sair",
@@ -325,7 +325,7 @@
       "REPLIES": "Taxa de resposta",
       "REPLIES_HINT": "Disparos, últimos 30 dias",
       "PROTECTED": "Seguradas pela proteção",
-      "OPTED_OUT": "{count} pediram para não receber",
+      "OPTED_OUT": "1 pediu para não receber | {count} pediram para não receber",
       "USAGE_TODAY": "Hoje por conexão",
       "USAGE": "{today}/{dailyCap} hoje · {hour}/{hourlyCap} na última hora"
     }

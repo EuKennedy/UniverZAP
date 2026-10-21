@@ -101,11 +101,15 @@ watch([query, status, pageSize], () => {
 const subtitle = computed(() => {
   const total = (broadcasts.value || []).length;
   if (!total) return t('BROADCAST.LIST.SUBTITLE');
-  return t('BROADCAST.LIST.SUMMARY', {
-    total,
-    running: stats.value?.running ?? 0,
-    sequences: stats.value?.sequences_enabled ?? 0,
-  });
+  return t(
+    'BROADCAST.LIST.SUMMARY',
+    {
+      total,
+      running: stats.value?.running ?? 0,
+      sequences: stats.value?.sequences_enabled ?? 0,
+    },
+    total
+  );
 });
 
 const inboxName = id => (inboxes.value || []).find(i => i.id === id)?.name;
@@ -348,7 +352,7 @@ const controlClass =
             v-model="query"
             type="search"
             :placeholder="t('BROADCAST.LIST.SEARCH')"
-            class="w-full ps-8"
+            class="w-full !ps-8"
             :class="controlClass"
             data-testid="broadcast-search"
           />
@@ -356,6 +360,7 @@ const controlClass =
         <select
           v-model="status"
           :class="controlClass"
+          class="!w-48"
           data-testid="broadcast-status-filter"
         >
           <option value="">{{ t('BROADCAST.LIST.ALL_STATUSES') }}</option>
@@ -741,7 +746,11 @@ const controlClass =
         </div>
         <label class="flex items-center gap-2 text-xs text-n-slate-11">
           {{ t('BROADCAST.LIST.PER_PAGE') }}
-          <select v-model.number="pageSize" :class="controlClass" class="h-7">
+          <select
+            v-model.number="pageSize"
+            :class="controlClass"
+            class="!w-20 h-7"
+          >
             <option v-for="size in PAGE_SIZES" :key="size" :value="size">
               {{ size }}
             </option>

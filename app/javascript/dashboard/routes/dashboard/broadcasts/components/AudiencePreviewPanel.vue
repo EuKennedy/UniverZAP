@@ -44,7 +44,13 @@ const estimate = computed(() => props.preview?.estimate);
         :key="reason"
         class="list-none text-[11px] text-n-amber-11"
       >
-        {{ t(`BROADCAST.PREVIEW.EXCLUDED.${reason.toUpperCase()}`, { count }) }}
+        {{
+          t(
+            `BROADCAST.PREVIEW.EXCLUDED.${reason.toUpperCase()}`,
+            { count },
+            count
+          )
+        }}
       </li>
     </ul>
 
@@ -64,7 +70,7 @@ const estimate = computed(() => props.preview?.estimate);
     </p>
 
     <p v-if="withMissing" class="m-0 text-[11px] text-n-amber-11">
-      {{ t('BROADCAST.PREVIEW.MISSING', { count: withMissing }) }}
+      {{ t('BROADCAST.PREVIEW.MISSING', { count: withMissing }, withMissing) }}
     </p>
 
     <div v-if="preview.sample?.length" class="flex flex-col gap-2">
