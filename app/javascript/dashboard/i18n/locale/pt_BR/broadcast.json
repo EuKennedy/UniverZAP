@@ -32,7 +32,39 @@
       "DELETE_ERROR": "Não foi possível excluir a campanha.",
       "PROGRESS": "{sent}/{total} enviadas",
       "EMPTY_TITLE": "Nenhuma campanha ainda",
-      "EMPTY_BODY": "Crie seu primeiro disparo para alcançar um público segmentado no WhatsApp."
+      "EMPTY_BODY": "Crie seu primeiro disparo para alcançar um público segmentado no WhatsApp.",
+      "SUMMARY": "{total} campanhas · {running} em andamento · {sequences} sequências ligadas",
+      "REFRESH": "Atualizar",
+      "SEARCH": "Buscar campanhas…",
+      "ALL_STATUSES": "Todos os status",
+      "COLUMNS": "Colunas",
+      "VISIBLE_COLUMNS": "Colunas visíveis",
+      "COLUMN": {
+        "NAME": "Campanha",
+        "STATUS": "Status",
+        "INBOX": "Conexão",
+        "PROGRESS": "Enviadas",
+        "REPLIED": "Respostas",
+        "SKIPPED": "Puladas",
+        "FAILED": "Falhas",
+        "CREATED": "Criada em"
+      },
+      "VIEW": {
+        "CARDS": "Cartões",
+        "TABLE": "Tabela"
+      },
+      "RESULTS": "1 resultado | {count} resultados",
+      "CLEAR_FILTERS": "Limpar filtros",
+      "NO_RESULTS_TITLE": "Nenhuma campanha encontrada",
+      "NO_RESULTS_BODY": "Tente outro nome ou status.",
+      "NO_INBOX": "Sem conexão escolhida",
+      "PAUSED_BY_FAILURES": "Pausada por falhas seguidas — confira a conexão",
+      "DUPLICATE": "Duplicar como rascunho",
+      "DELETE": "Excluir",
+      "DUPLICATED": "Cópia criada em rascunho",
+      "DUPLICATE_ERROR": "Não foi possível duplicar a campanha",
+      "SHOWING": "Mostrando {start}–{end} de {total}",
+      "PER_PAGE": "Por página"
     },
     "COMPOSER": {
       "TITLE": "Campanha",
@@ -283,6 +315,19 @@
         "DAYS_BEFORE": "1 dia antes | {count} dias antes",
         "DAYS_AFTER": "1 dia depois | {count} dias depois"
       }
+    },
+    "STATS": {
+      "SENT": "Enviadas (7 dias)",
+      "SENT_HINT": "{count} em andamento agora",
+      "SCHEDULED": "Agendadas",
+      "NEXT": "Próxima: {date}",
+      "NONE_SCHEDULED": "Nada agendado",
+      "REPLIES": "Taxa de resposta",
+      "REPLIES_HINT": "Disparos, últimos 30 dias",
+      "PROTECTED": "Seguradas pela proteção",
+      "OPTED_OUT": "{count} pediram para não receber",
+      "USAGE_TODAY": "Hoje por conexão",
+      "USAGE": "{today}/{dailyCap} hoje · {hour}/{hourlyCap} na última hora"
     }
   }
 }

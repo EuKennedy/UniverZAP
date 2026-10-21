@@ -32,7 +32,39 @@
       "DELETE_ERROR": "Could not delete the campaign.",
       "PROGRESS": "{sent}/{total} sent",
       "EMPTY_TITLE": "No campaigns yet",
-      "EMPTY_BODY": "Create your first broadcast to reach a segmented audience on WhatsApp."
+      "EMPTY_BODY": "Create your first broadcast to reach a segmented audience on WhatsApp.",
+      "SUMMARY": "{total} campaigns · {running} running · {sequences} sequences on",
+      "REFRESH": "Refresh",
+      "SEARCH": "Search campaigns…",
+      "ALL_STATUSES": "All statuses",
+      "COLUMNS": "Columns",
+      "VISIBLE_COLUMNS": "Visible columns",
+      "COLUMN": {
+        "NAME": "Campaign",
+        "STATUS": "Status",
+        "INBOX": "Connection",
+        "PROGRESS": "Sent",
+        "REPLIED": "Replies",
+        "SKIPPED": "Skipped",
+        "FAILED": "Failed",
+        "CREATED": "Created"
+      },
+      "VIEW": {
+        "CARDS": "Cards",
+        "TABLE": "Table"
+      },
+      "RESULTS": "1 result | {count} results",
+      "CLEAR_FILTERS": "Clear filters",
+      "NO_RESULTS_TITLE": "No campaign found",
+      "NO_RESULTS_BODY": "Try another name or status.",
+      "NO_INBOX": "No connection chosen",
+      "PAUSED_BY_FAILURES": "Paused by repeated failures — check the connection",
+      "DUPLICATE": "Duplicate as draft",
+      "DELETE": "Delete",
+      "DUPLICATED": "Copy created as draft",
+      "DUPLICATE_ERROR": "Could not duplicate the campaign",
+      "SHOWING": "Showing {start}–{end} of {total}",
+      "PER_PAGE": "Per page"
     },
     "COMPOSER": {
       "TITLE": "Campaign",
@@ -283,6 +315,19 @@
         "DAYS_BEFORE": "1 day before | {count} days before",
         "DAYS_AFTER": "1 day after | {count} days after"
       }
+    },
+    "STATS": {
+      "SENT": "Sent (7 days)",
+      "SENT_HINT": "{count} running now",
+      "SCHEDULED": "Scheduled",
+      "NEXT": "Next: {date}",
+      "NONE_SCHEDULED": "Nothing scheduled",
+      "REPLIES": "Reply rate",
+      "REPLIES_HINT": "Broadcasts, last 30 days",
+      "PROTECTED": "Held by protection",
+      "OPTED_OUT": "{count} asked not to receive",
+      "USAGE_TODAY": "Today per connection",
+      "USAGE": "{today}/{dailyCap} today · {hour}/{hourlyCap} last hour"
     }
   }
 }

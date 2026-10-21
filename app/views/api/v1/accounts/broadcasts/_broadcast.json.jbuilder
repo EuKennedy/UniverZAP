@@ -1,3 +1,4 @@
+counts = local_assigns[:counts] || Broadcasts::RecipientCounts.for([broadcast.id])[broadcast.id]
 json.id broadcast.id
 json.account_id broadcast.account_id
 json.inbox_id broadcast.inbox_id
@@ -8,11 +9,12 @@ json.message broadcast.message
 json.audience broadcast.audience
 json.throttle broadcast.throttle
 json.scheduled_at broadcast.scheduled_at
-json.recipients_count broadcast.broadcast_recipients.count
-json.sent_count broadcast.broadcast_recipients.where(status: [:sent, :delivered, :read]).count
-json.failed_count broadcast.broadcast_recipients.status_failed.count
-json.skipped_count broadcast.broadcast_recipients.status_skipped.count
-json.replied_count broadcast.broadcast_recipients.where.not(replied_at: nil).count
+json.recipients_count counts[:recipients]
+json.sent_count counts[:sent]
+json.failed_count counts[:failed]
+json.skipped_count counts[:skipped]
+json.pending_count counts[:pending]
+json.replied_count counts[:replied]
 json.pause_reason broadcast.pause_reason
 json.created_at broadcast.created_at.to_i
 json.updated_at broadcast.updated_at.to_i

@@ -54,4 +54,38 @@ RSpec.describe 'Broadcasts smart dispatch API', type: :request do
 
     expect(response.parsed_body).to eq('variations' => %w[A B])
   end
+
+  it 'lista com as contagens de cada disparo' do
+    create(:broadcast_recipient, broadcast: broadcast, contact: quiet, status: :sent, sent_at: Time.current, replied_at: Time.current)
+    create(:broadcast_recipient, broadcast: broadcast, contact: opted, status: :skipped, skip_reason: 'opted_out')
+
+    get base, headers: admin.create_new_auth_token
+
+    expect(response.parsed_body.first).to include('recipients_count' => 2, 'sent_count' => 1, 'replied_count' => 1, 'skipped_count' => 1,
+                                                  'failed_count' => 0, 'pending_count' => 0)
+  end
+
+  it 'mostra os números do topo e o uso de hoje da conexão' do
+    create(:broadcast_recipient, broadcast: broadcast, contact: quiet, status: :sent, sent_at: Time.current, replied_at: Time.current)
+    create(:scheduled_message, conversation: create(:conversation, account: account, inbox: inbox))
+
+    get "#{base}/stats", headers: admin.create_new_auth_token
+
+    body = response.parsed_body
+    expect(body).to include('sent_7d' => 1, 'scheduled' => 1, 'reply_rate_30d' => 100, 'opted_out' => 1)
+    expect(body['connections']).to eq([{ 'inbox_id' => inbox.id, 'name' => inbox.name, 'today' => 1, 'last_hour' => 1,
+                                         'daily_cap' => 150, 'hourly_cap' => 30 }])
+  end
+
+  it 'duplica em rascunho sem destinatários' do
+    broadcast.update!(status: :completed, pause_reason: 'failures')
+    create(:broadcast_recipient, broadcast: broadcast, contact: quiet, status: :sent, sent_at: Time.current)
+
+    post "#{base}/#{broadcast.id}/duplicate", headers: admin.create_new_auth_token
+
+    body = response.parsed_body
+    expect(body).to include('status' => 'draft', 'recipients_count' => 0, 'pause_reason' => nil, 'inbox_id' => inbox.id)
+    expect(body['name']).to include(broadcast.name)
+    expect(body['message']).to eq(broadcast.message)
+  end
 end

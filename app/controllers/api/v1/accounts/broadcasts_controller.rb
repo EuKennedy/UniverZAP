@@ -1,9 +1,26 @@
 class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseController
-  before_action :fetch_broadcast, except: [:index, :create, :templates, :variations]
+  before_action :fetch_broadcast, except: [:index, :create, :templates, :variations, :stats]
   before_action :authorize_action
 
   def index
-    @broadcasts = policy_scope(Current.account.broadcasts).order(created_at: :desc)
+    @broadcasts = policy_scope(Current.account.broadcasts).order(created_at: :desc).to_a
+    @counts = Broadcasts::RecipientCounts.for(@broadcasts.map(&:id))
+  end
+
+  # Números do topo da página + uso de hoje por conexão contra o teto.
+  def stats
+    render json: Broadcasts::Stats.new(Current.account).to_h
+  end
+
+  # Cópia em rascunho: mesma mensagem, público e proteção, sem destinatários.
+  # Relançar a campanha antiga não alcança quem já recebeu; duplicar é como
+  # o operador reaproveita um texto aprovado para outra leva.
+  def duplicate
+    copy = @broadcast.dup
+    copy.assign_attributes(name: I18n.t('broadcasts.copy_name', name: @broadcast.name), status: :draft, scheduled_at: nil, pause_reason: nil)
+    copy.save!
+    @broadcast = copy
+    render :show
   end
 
   def show; end
@@ -130,7 +147,7 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
 
   def authorize_action
     case action_name
-    when 'index', 'create', 'templates', 'variations'
+    when 'index', 'create', 'templates', 'variations', 'stats'
       authorize(Broadcast)
     else
       authorize(@broadcast)

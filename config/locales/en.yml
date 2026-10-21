@@ -55,6 +55,8 @@ en:
       anuncio_url_description: Link to the ad on Facebook
       anuncio_cliques: Ad clicks
       anuncio_cliques_description: How many times the customer came back through an ad
+  broadcasts:
+    copy_name: '%{name} (copy)'
   scheduled_messages:
     errors:
       in_past: must be in the future

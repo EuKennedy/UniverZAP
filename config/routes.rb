@@ -416,9 +416,11 @@ Rails.application.routes.draw do
               post :pause
               get :audience_preview
               get :recipients
+              post :duplicate
             end
             collection do
               get :templates
+              get :stats
               post :variations
             end
           end
