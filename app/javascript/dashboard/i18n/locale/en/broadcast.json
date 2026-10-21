@@ -32,7 +32,39 @@
       "DELETE_ERROR": "Could not delete the campaign.",
       "PROGRESS": "{sent}/{total} sent",
       "EMPTY_TITLE": "No campaigns yet",
-      "EMPTY_BODY": "Create your first broadcast to reach a segmented audience on WhatsApp."
+      "EMPTY_BODY": "Create your first broadcast to reach a segmented audience on WhatsApp.",
+      "SUMMARY": "1 campaign · {running} running · {sequences} sequences on | {total} campaigns · {running} running · {sequences} sequences on",
+      "REFRESH": "Refresh",
+      "SEARCH": "Search campaigns…",
+      "ALL_STATUSES": "All statuses",
+      "COLUMNS": "Columns",
+      "VISIBLE_COLUMNS": "Visible columns",
+      "COLUMN": {
+        "NAME": "Campaign",
+        "STATUS": "Status",
+        "INBOX": "Connection",
+        "PROGRESS": "Sent",
+        "REPLIED": "Replies",
+        "SKIPPED": "Skipped",
+        "FAILED": "Failed",
+        "CREATED": "Created"
+      },
+      "VIEW": {
+        "CARDS": "Cards",
+        "TABLE": "Table"
+      },
+      "RESULTS": "1 result | {count} results",
+      "CLEAR_FILTERS": "Clear filters",
+      "NO_RESULTS_TITLE": "No campaign found",
+      "NO_RESULTS_BODY": "Try another name or status.",
+      "NO_INBOX": "No connection chosen",
+      "PAUSED_BY_FAILURES": "Paused by repeated failures — check the connection",
+      "DUPLICATE": "Duplicate as draft",
+      "DELETE": "Delete",
+      "DUPLICATED": "Copy created as draft",
+      "DUPLICATE_ERROR": "Could not duplicate the campaign",
+      "SHOWING": "Showing {start}–{end} of {total}",
+      "PER_PAGE": "Per page"
     },
     "COMPOSER": {
       "TITLE": "Campaign",
@@ -42,7 +74,7 @@
       "INBOX_EMPTY": "No inbox available for this mode. Connect one to dispatch.",
       "MESSAGE_TITLE": "Message",
       "AUDIENCE_TITLE": "Audience",
-      "THROTTLE_TITLE": "Pacing",
+      "THROTTLE_TITLE": "Anti-block protection",
       "SCHEDULE_TITLE": "Scheduling",
       "AUDIENCE_PREVIEW": "Audience",
       "CONTACTS": "contacts",
@@ -66,7 +98,33 @@
       "PAUSED": "Campaign paused.",
       "PAUSE_ERROR": "Could not pause the campaign.",
       "LAUNCH_CONFIRM_RELAUNCH": "Send to {count} new contacts? The {sent} who already received it will not get it again.",
-      "LAUNCH_NOTHING_NEW": "Everyone in this audience has already received this campaign. Add new contacts to send again."
+      "LAUNCH_NOTHING_NEW": "Everyone in this audience has already received this campaign. Add new contacts to send again.",
+      "LAUNCH_CONFIRM_SAFETY": "{eligible} will actually receive it, about {perHour}/hour between {start}h and {end}h (~{days} day(s)).",
+      "LAUNCH_CONFIRM_SCHEDULED": "It starts on {when}.",
+      "PAUSED_BY_FAILURES": "Paused automatically: several sends failed in a row. Check the WhatsApp connection before resuming.",
+      "SUBTITLE": "{inbox} · {ready} of {total} steps ready",
+      "READINESS": "Ready to send · {ready}/{total}",
+      "STEPS": {
+        "MODE": "Mode",
+        "INBOX": "Connection",
+        "MESSAGE": "Message",
+        "AUDIENCE": "Audience",
+        "SAFETY": "Protection",
+        "SCHEDULE": "When"
+      },
+      "STEP_STATE": {
+        "DONE": "Ready",
+        "MISSING": "Missing",
+        "OPTIONAL": "Optional"
+      },
+      "STEP_HINT": {
+        "MODE": "Free text through your WhatsApp, or approved Meta templates.",
+        "INBOX": "The number the messages go out from.",
+        "MESSAGE": "Variables, word variations and extra versions keep each message unique.",
+        "AUDIENCE": "Labels and lists add people; smart segments narrow them down.",
+        "SAFETY": "Pace, window and limits that protect the number.",
+        "SCHEDULE": "Leave empty to start when you send."
+      }
     },
     "MESSAGE": {
       "SEQUENCE_HINT": "Each block is sent in order — mix text and media to build a sequence.",
@@ -126,14 +184,6 @@
       "IMPORT_COUNT": "{count} numbers parsed",
       "IMPORT_CLEAR": "Clear"
     },
-    "THROTTLE": {
-      "HINT": "Control how fast messages go out to avoid blocks.",
-      "BATCH_MIN": "Batch min",
-      "BATCH_MAX": "Batch max",
-      "DELAY_MIN": "Delay min (s)",
-      "DELAY_MAX": "Delay max (s)",
-      "DAILY_CAP": "Daily cap"
-    },
     "SCHEDULE": {
       "AT": "Send at",
       "HINT": "Leave empty to send as soon as you launch."
@@ -159,8 +209,171 @@
         "SENT": "Sent",
         "DELIVERED": "Delivered",
         "READ": "Read",
-        "FAILED": "Failed"
+        "FAILED": "Failed",
+        "SKIPPED": "Skipped",
+        "REPLIED": "Replied"
+      },
+      "REPORT": {
+        "DELIVERED": "Delivered",
+        "READ": "Read",
+        "REPLIED": "Replied",
+        "SKIPPED": "Skipped (protection)"
+      },
+      "PROCESSED": "{total} recipients · {pending} waiting",
+      "FUNNEL": {
+        "SENT": "Sent",
+        "DELIVERED": "Delivered",
+        "READ": "Read",
+        "REPLIED": "Replied"
+      },
+      "FAILED_COUNT": "1 failed | {count} failed",
+      "SKIPPED_COUNT": "1 held by protection | {count} held by protection",
+      "FILTERS": {
+        "ALL": "All",
+        "SENT": "Sent",
+        "DELIVERED": "Delivered",
+        "READ": "Read",
+        "REPLIED": "Replied",
+        "FAILED": "Failed",
+        "SKIPPED": "Skipped",
+        "PENDING": "Waiting"
+      },
+      "SEARCH": "Search name or phone…",
+      "EXPORT": "Download CSV",
+      "EXPORT_ERROR": "Could not download the report",
+      "NO_MATCH": "No recipient for this filter"
+    },
+    "TABS": {
+      "BROADCASTS": "Broadcasts",
+      "SEQUENCES": "Sequences"
+    },
+    "SMART": {
+      "VARIATIONS_NEED_TEXT": "Write the message before asking for variations",
+      "VARIATIONS_READY": "Versions suggested — review before saving",
+      "VARIATIONS_ERROR": "Could not suggest variations",
+      "TEMPLATE_NAME_PROMPT": "Template name (it also becomes a canned response)",
+      "TEMPLATE_SAVED": "Saved as template",
+      "TEMPLATE_ERROR": "Could not save the template",
+      "SPINTAX_HINT": "Alternate words so no two messages are identical:",
+      "SPINTAX_ON": "variations on",
+      "VARIANTS_TITLE": "Other versions of this text",
+      "SUGGEST_VARIATIONS": "Suggest with AI",
+      "VARIANTS_HINT": "Each contact gets one of the versions, at random.",
+      "ADD_VARIANT": "Add version",
+      "USE_TEMPLATE": "Use a template…",
+      "SAVE_TEMPLATE": "Save as template"
+    },
+    "SEGMENTS": {
+      "TITLE": "Smart segments",
+      "HINT": "These narrow the audience. Alone, they filter all contacts; with labels or lists, they filter what those bring in.",
+      "ORIGIN": "Origin",
+      "ORIGINS": {
+        "ANUNCIO_FACEBOOK": "Came from an ad",
+        "ORGANICO": "Organic"
+      },
+      "RECURRING": "Customer",
+      "RECURRING_OPTIONS": {
+        "ANY": "Any",
+        "YES": "Returning",
+        "NO": "New"
+      },
+      "NO_REPLY_DAYS": "No reply for (days)",
+      "NO_REPLY_PLACEHOLDER": "e.g. 60",
+      "BIRTHDAY": "Birthdays",
+      "BIRTHDAY_OPTIONS": {
+        "ANY": "Any",
+        "TODAY": "Today",
+        "WEEK": "Next 7 days",
+        "MONTH": "This month"
+      },
+      "EXCLUDE_LABELS": "Leave out who has the label"
+    },
+    "SAFETY": {
+      "HINT": "Unofficial number: messages go out one at a time, at random intervals, only during business hours, within hourly and daily limits per connection. Opt-outs and customers being served are skipped, and the broadcast pauses itself if failures repeat.",
+      "WEEKDAYS": "Days",
+      "DAYS": {
+        "D0": "Su",
+        "D1": "Mo",
+        "D2": "Tu",
+        "D3": "We",
+        "D4": "Th",
+        "D5": "Fr",
+        "D6": "Sa"
+      },
+      "WINDOW_START": "From (hour)",
+      "WINDOW_END": "Until (hour)",
+      "HOURLY_CAP": "Per hour (connection)",
+      "DAILY_CAP": "Per day (connection)",
+      "DELAY_MIN": "Min interval (s)",
+      "DELAY_MAX": "Max interval (s)",
+      "QUIET_HOURS": "Skip if talked in the last (h)",
+      "MAX_FAILURES": "Pause after failures in a row",
+      "SMART_TIMING": "Send at the time each contact usually replies",
+      "SMART_TIMING_HINT": "Within the window. Contacts with no pattern get the normal pace; the broadcast may take an extra day."
+    },
+    "PREVIEW": {
+      "ELIGIBLE": "will receive",
+      "EXCLUDED": {
+        "OPTED_OUT": "1 asked not to receive — left out | {count} asked not to receive — left out",
+        "RECENT_ACTIVITY": "1 is talking to the salon now — left out | {count} are talking to the salon now — left out"
+      },
+      "ESTIMATE": "About {perHour}/hour and up to {perDay}/day, {start}h–{end}h: ~{days} day(s) to reach everyone.",
+      "MISSING": "1 in the sample has an empty variable | {count} in the sample have an empty variable",
+      "SAMPLE": "What the first {count} receive",
+      "SKIP": {
+        "OPTED_OUT": "Opted out",
+        "RECENT_ACTIVITY": "Being served",
+        "NO_PHONE": "No number"
+      },
+      "BEST_HOUR": "usually replies at {hour}h"
+    },
+    "SEQUENCES": {
+      "SUBTITLE": "Automatic messages tied to the customer's appointment (the \"Schedule\" in the customer sheet): reminder before, follow-up after. Every sequence starts OFF — turn it on only after reviewing the texts.",
+      "NEW": "New sequence",
+      "NEW_TITLE": "New sequence",
+      "EDIT_TITLE": "Edit sequence",
+      "DIALOG_DESCRIPTION": "Each step goes out relative to the appointment time, always within business hours. Saving does not turn it on.",
+      "SAVE": "Save",
+      "NAME_PLACEHOLDER": "Name, e.g. Reminder and follow-up",
+      "HOURS": "hours",
+      "DAYS": "days",
+      "BEFORE": "before",
+      "AFTER": "after",
+      "OF_APPOINTMENT": "the appointment",
+      "TEXT_PLACEHOLDER": "Hi, just a reminder…",
+      "ADD_STEP": "Add message",
+      "LOAD_ERROR": "Could not load sequences",
+      "SAVED": "Sequence saved",
+      "SAVE_ERROR": "Could not save the sequence",
+      "ENABLE_CONFIRM": "Turn on \"{name}\"? From the next appointments on, these messages go out automatically through the salon's number.",
+      "DISABLE_CONFIRM": "Turn off \"{name}\"? Messages not sent yet are cancelled.",
+      "DELETE_CONFIRM": "Delete \"{name}\"? Messages not sent yet are cancelled.",
+      "EMPTY": "No sequences yet. Create a reminder for the day before the appointment, for example.",
+      "ENABLED": "On",
+      "DISABLED": "Off",
+      "STATS": "{pending} waiting · {sent} sent",
+      "ENABLE": "Turn on",
+      "DISABLE": "Turn off",
+      "EDIT": "Edit",
+      "OFFSET": {
+        "HOURS_BEFORE": "1 hour before | {count} hours before",
+        "HOURS_AFTER": "1 hour after | {count} hours after",
+        "DAYS_BEFORE": "1 day before | {count} days before",
+        "DAYS_AFTER": "1 day after | {count} days after"
       }
+    },
+    "STATS": {
+      "SENT": "Sent (7 days)",
+      "SENT_HINT": "{count} running now",
+      "SCHEDULED": "Scheduled",
+      "NEXT": "Next: {date}",
+      "NONE_SCHEDULED": "Nothing scheduled",
+      "REPLIES": "Reply rate",
+      "REPLIES_HINT": "Broadcasts, last 30 days",
+      "PROTECTED": "Held by protection",
+      "OPTED_OUT": "1 asked not to receive | {count} asked not to receive",
+      "USAGE_TODAY": "Today per connection",
+      "USAGE": "{today}/{dailyCap} today · {hour}/{hourlyCap} last hour"
     }
   }
 }

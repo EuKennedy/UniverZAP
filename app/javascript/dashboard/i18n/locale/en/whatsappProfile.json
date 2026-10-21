@@ -213,6 +213,104 @@
     "AGENDA": {
       "TODAY": "Today",
       "EMPTY_DAY": "Nothing scheduled"
+    },
+    "TABS": {
+      "PUBLISH": "Post",
+      "CAMPAIGNS": "Campaigns",
+      "CALENDAR": "Calendar"
+    },
+    "CAMPAIGNS": {
+      "DESCRIPTION": "Status flows that go out on their own, with reposts and cycles.",
+      "NEW": "New campaign",
+      "SEARCH": "Search campaigns",
+      "ALL_STATUSES": "All statuses",
+      "EMPTY_TITLE": "No campaigns here yet",
+      "EMPTY": "Build a flow once (announcement, reminder, last call) and let the campaign schedule and repost it for you.",
+      "STATUS": {
+        "DRAFT": "Draft",
+        "ACTIVE": "Active",
+        "PAUSED": "Paused",
+        "FINISHED": "Finished"
+      },
+      "CARD": {
+        "STEPS": "no steps | 1 step | {count} steps",
+        "REPOSTS": "{count} repost(s)",
+        "NEXT": "Next: {date}",
+        "NOTHING_SCHEDULED": "Nothing scheduled"
+      },
+      "FOLDERS": {
+        "TITLE": "Folders",
+        "ALL": "All campaigns",
+        "UNFILED": "No folder",
+        "NEW": "New folder",
+        "NAME": "Folder name",
+        "NAME_PLACEHOLDER": "e.g. Promotions",
+        "RENAME": "Rename folder",
+        "DELETE": "Delete folder",
+        "DELETED": "Folder deleted. Its campaigns moved to No folder."
+      },
+      "EDITOR": {
+        "BACK": "Campaigns",
+        "SAVE": "Save",
+        "ACTIVATE": "Activate",
+        "PAUSE": "Pause",
+        "DELETE": "Delete",
+        "SAVED": "Campaign saved.",
+        "ACTIVATED": "Campaign activated. The next statuses are already on the calendar.",
+        "PAUSED": "Campaign paused. Future scheduled statuses left the calendar.",
+        "DELETED": "Campaign deleted. What was already posted stays in the history.",
+        "NAME_REQUIRED": "Give the campaign a name.",
+        "NAME": "Name",
+        "NAME_PLACEHOLDER": "e.g. Blow-dry week",
+        "DESCRIPTION": "Description",
+        "DESCRIPTION_PLACEHOLDER": "Optional: who it is for and the goal",
+        "FOLDER": "Folder",
+        "COLOR": "Calendar colour",
+        "STARTS_ON": "Starts on",
+        "CYCLE": "Repeat the flow",
+        "CYCLE_ONCE": "Only once",
+        "CYCLE_EVERY": "Every {days} days",
+        "ENDS_ON": "Ends on",
+        "ENDS_ON_HINT": "Empty = repeats until paused.",
+        "FLOW": "Posting flow",
+        "FLOW_SUMMARY": "{steps} step(s) · {posts} statuses per cycle",
+        "FLOW_EMPTY": "Add the first step: what goes out, on which day and at what time.",
+        "ADD_STEP": "Add step",
+        "EDIT_STEP": "Edit step",
+        "DUPLICATE_STEP": "Duplicate step",
+        "REMOVE_STEP": "Remove step",
+        "DAY_SHORT": "D{day}",
+        "STEP_WHEN": "Day {day} · {time}",
+        "REPOST_INFO": "Reposts {count}× every {hours}h",
+        "NEXT_POSTS": "Next posts",
+        "NEXT_POSTS_EMPTY": "Nothing to schedule in the next 60 days: check the start date and the steps.",
+        "PUBLISHED_COUNT": "{count} already posted"
+      },
+      "STEP": {
+        "NEW_TITLE": "New step",
+        "EDIT_TITLE": "Edit step",
+        "SAVE": "Save step",
+        "DAY": "Day of the cycle",
+        "DAY_HINT": "Day 0 is the start day; day 2 goes out two days later.",
+        "TIME": "Time",
+        "REPOST": "Repost",
+        "NO_REPOST": "Do not repost",
+        "REPOST_TIMES": "never | once | {count} times",
+        "INTERVAL": "Interval",
+        "EVERY_HOURS": "every {hours}h",
+        "UPLOADING": "Uploading file…"
+      }
+    },
+    "CALENDAR": {
+      "PREVIOUS": "Previous month",
+      "NEXT": "Next month",
+      "TODAY": "Today",
+      "ALL_CAMPAIGNS": "All campaigns",
+      "NO_CAMPAIGN": "One-off",
+      "ADD": "Schedule on this day",
+      "MORE": "+{count} more",
+      "RESCHEDULED": "Status rescheduled.",
+      "HINT": "Click the + of a day to schedule on it. Drag a scheduled status to another day to move it, keeping the time."
     }
   }
 }

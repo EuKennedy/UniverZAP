@@ -14,6 +14,7 @@ class AsyncDispatcher < BaseDispatcher
       AdReferralListener.instance,
       ContactOriginListener.instance,
       RecurringCustomerListener.instance,
+      ScheduledMessageListener.instance,
       ChatflowListener.instance,
       AutomationRuleListener.instance,
       CampaignListener.instance,

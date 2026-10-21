@@ -1,0 +1,9 @@
+json.id message_sequence.id
+json.name message_sequence.name
+json.trigger message_sequence.trigger
+json.enabled message_sequence.enabled
+json.inbox_id message_sequence.inbox_id
+json.steps message_sequence.steps
+json.pending_count message_sequence.scheduled_messages.status_scheduled.count
+json.sent_count message_sequence.scheduled_messages.status_sent.count
+json.updated_at message_sequence.updated_at.iso8601

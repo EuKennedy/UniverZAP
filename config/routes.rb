@@ -417,11 +417,23 @@ Rails.application.routes.draw do
               post :pause
               get :audience_preview
               get :recipients
+              get :export
+              post :duplicate
             end
             collection do
               get :templates
+              get :stats
+              post :variations
             end
           end
+          # Mensagens agendadas para uma conversa (composer e ficha da cliente)
+          # e as sequências presas ao horário agendado (lembrete / pós).
+          resources :scheduled_messages, only: [:index, :create, :update, :destroy] do
+            collection do
+              get :best_time
+            end
+          end
+          resources :message_sequences, only: [:index, :create, :update, :destroy]
           # Formulários nativos do WhatsApp (Flows). Na conta, e não na caixa,
           # porque o builder do Chatflow lista todos; cada Flow sabe a caixa
           # (WABA) a que pertence.
@@ -664,6 +676,14 @@ Rails.application.routes.draw do
               get :stats, on: :collection
             end
             resources :status_templates, only: [:index, :create, :update, :destroy]
+            resources :status_folders, only: [:index, :create, :update, :destroy]
+            resources :status_campaigns, only: [:index, :show, :create, :update, :destroy] do
+              member do
+                post :activate
+                post :pause
+                get :preview
+              end
+            end
           end
 
           resources :webhooks, only: [:index, :create, :update, :destroy]

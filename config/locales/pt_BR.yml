@@ -46,6 +46,42 @@ pt_BR:
       anuncio_url_description: Link do anúncio no Facebook
       anuncio_cliques: Cliques no anúncio
       anuncio_cliques_description: Quantas vezes o cliente voltou por um anúncio
+  broadcasts:
+    report:
+      csv_headers:
+        name: Nome
+        phone: Telefone
+        result: Resultado
+        reason: Motivo
+        error: Erro
+        sent_at: Enviada em
+        replied_at: Respondeu em
+      result:
+        pending: Pendente
+        sent: Enviada
+        delivered: Entregue
+        read: Lida
+        replied: Respondeu
+        failed: Falhou
+        skipped: Pulada
+      skip_reason:
+        opted_out: Pediu para não receber
+        recent_activity: Em atendimento
+        no_phone: Sem número
+    copy_name: '%{name} (cópia)'
+  scheduled_messages:
+    errors:
+      interrupted: O envio foi interrompido; confira a conversa antes de tentar de novo
+      in_past: precisa ser no futuro
+      not_pending: Esta mensagem já foi enviada ou cancelada
+      sequence_steps_required: precisa de pelo menos uma mensagem
+      sequence_too_many_steps: pode ter no máximo %{count} mensagens
+      sequence_step_invalid: toda mensagem precisa de texto e de um tempo antes ou depois do horário (até 30 dias)
+    opt_out:
+      attribute_name: Não receber disparos
+      attribute_description: O contato pediu para não receber disparos, sequências nem mensagens agendadas
+    variations:
+      text_required: Escreva a mensagem antes de pedir variações
   recurring_customer:
     label_description: Conversa de cliente que já teve um atendimento encerrado antes
     attributes:

@@ -5,6 +5,7 @@ import attributesMgmt from './attributesMgmt.json';
 import auditLogs from './auditLogs.json';
 import automation from './automation.json';
 import broadcast from './broadcast.json';
+import scheduledMessages from './scheduledMessages.json';
 import bulkActions from './bulkActions.json';
 import campaign from './campaign.json';
 import cannedMgmt from './cannedMgmt.json';
@@ -62,6 +63,7 @@ export default {
   ...auditLogs,
   ...automation,
   ...broadcast,
+  ...scheduledMessages,
   ...bulkActions,
   ...campaign,
   ...cannedMgmt,

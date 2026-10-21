@@ -8,6 +8,7 @@
 #  font             :integer          default(0), not null
 #  inbox_ids        :jsonb            not null
 #  kind             :string           default("text"), not null
+#  occurrence_key   :string
 #  published_at     :datetime
 #  recurrence       :string           default("none"), not null
 #  scheduled_at     :datetime
@@ -15,17 +16,24 @@
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
 #  account_id       :bigint           not null
+#  campaign_id      :bigint
+#  campaign_step_id :bigint
 #  user_id          :bigint
 #
 # Indexes
 #
-#  idx_on_account_id_status_scheduled_at_e293e01cb2  (account_id,status,scheduled_at)
-#  index_whatsapp_status_posts_on_account_id         (account_id)
-#  index_whatsapp_status_posts_on_user_id            (user_id)
+#  idx_on_account_id_status_scheduled_at_e293e01cb2               (account_id,status,scheduled_at)
+#  index_whatsapp_status_posts_on_account_id                      (account_id)
+#  index_whatsapp_status_posts_on_campaign_id                     (campaign_id)
+#  index_whatsapp_status_posts_on_campaign_id_and_occurrence_key  (campaign_id,occurrence_key) UNIQUE WHERE (occurrence_key IS NOT NULL)
+#  index_whatsapp_status_posts_on_campaign_step_id                (campaign_step_id)
+#  index_whatsapp_status_posts_on_user_id                         (user_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (account_id => accounts.id) ON DELETE => cascade
+#  fk_rails_...  (campaign_id => whatsapp_status_campaigns.id) ON DELETE => nullify
+#  fk_rails_...  (campaign_step_id => whatsapp_status_campaign_steps.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id) ON DELETE => nullify
 #
 # As conexões ficam em `inbox_ids` enquanto o post ainda pode mudar. As linhas
@@ -45,6 +53,8 @@ class WhatsappStatusPost < ApplicationRecord
   belongs_to :account
   belongs_to :user, optional: true
   has_many :deliveries, class_name: 'WhatsappStatusDelivery', dependent: :destroy
+  belongs_to :campaign, class_name: 'WhatsappStatusCampaign', optional: true, inverse_of: :posts
+  belongs_to :campaign_step, class_name: 'WhatsappStatusCampaignStep', optional: true, inverse_of: :posts
   has_one_attached :media
 
   # draft               — guardado para depois, nunca sai sozinho.
@@ -89,7 +99,7 @@ class WhatsappStatusPost < ApplicationRecord
   # duplicado). Base do "Duplicar" e da próxima ocorrência de um recorrente.
   def copy(**overrides)
     copy = account.whatsapp_status_posts.new(
-      slice(:user_id, :kind, :body, :background_color, :font, :inbox_ids, :recurrence).merge(overrides)
+      slice(:user_id, :kind, :body, :background_color, :font, :inbox_ids, :recurrence, :campaign_id, :campaign_step_id).merge(overrides)
     )
     copy.media = media.blob if media.attached?
     copy

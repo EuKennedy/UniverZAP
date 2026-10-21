@@ -179,3 +179,40 @@ export const isSameDay = (a, b) =>
  */
 export const dateLocale = locale =>
   String(unref(locale) || '').replace('_', '-') || undefined;
+
+export const CAMPAIGN_CYCLES = [0, 7, 14, 30];
+export const REPOST_INTERVALS = [6, 12, 24, 48, 72];
+export const MAX_REPOSTS = 6;
+
+export const CAMPAIGN_STATUS_STYLE = {
+  draft: 'bg-n-alpha-2 text-n-slate-11',
+  active: 'bg-n-teal-3 text-n-teal-11',
+  paused: 'bg-n-amber-3 text-n-amber-11',
+  finished: 'bg-n-blue-3 text-n-blue-11',
+};
+
+/** Fuso do navegador, que é o do salão na prática; o backend valida. */
+export const browserTimeZone = () =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
+
+/** Data no formato do <input type="date"> no fuso do navegador. */
+export const toDateInputValue = date => toLocalInputValue(date).slice(0, 10);
+
+/**
+ * As 6 semanas que o calendário mostra para o mês de `reference`, começando
+ * no domingo, como o calendário de parede do salão.
+ */
+export const monthGrid = reference => {
+  const first = new Date(reference.getFullYear(), reference.getMonth(), 1);
+  const start = new Date(first);
+  start.setDate(first.getDate() - first.getDay());
+  return Array.from({ length: 42 }, (_, index) => {
+    const day = new Date(start);
+    day.setDate(start.getDate() + index);
+    return day;
+  });
+};
+
+/** O dia em que um status aparece no calendário (o mesmo critério do backend). */
+export const postDay = post =>
+  new Date(post.scheduled_at || post.published_at || post.created_at);

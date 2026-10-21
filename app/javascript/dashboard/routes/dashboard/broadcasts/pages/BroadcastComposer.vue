@@ -20,6 +20,11 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import BroadcastProgressModal from '../components/BroadcastProgressModal.vue';
+import MessageSmartTools from '../components/MessageSmartTools.vue';
+import AudienceSegments from '../components/AudienceSegments.vue';
+import SafetySettings from '../components/SafetySettings.vue';
+import AudiencePreviewPanel from '../components/AudiencePreviewPanel.vue';
+import ComposerStep from '../components/ComposerStep.vue';
 import {
   buildTemplateParameters,
   findComponentByType,
@@ -57,17 +62,36 @@ const inboxes = useMapGetter('inboxes/getInboxes');
 // A fresh, empty WAHA message block.
 const emptyMessageBlock = () => ({
   text: '',
+  variants: [],
   attachment: null,
   attachment_name: '',
   caption: '',
 });
 
+// Mesmos padrões do backend (Broadcast::THROTTLE_DEFAULTS): uma por vez,
+// 45–150s entre envios, 30/h e 150/dia por conexão, seg–sáb das 9h às 19h.
 const THROTTLE_DEFAULTS = {
-  batch_min: 3,
-  batch_max: 8,
-  delay_min: 20,
-  delay_max: 60,
-  daily_cap: 500,
+  batch_min: 1,
+  batch_max: 1,
+  delay_min: 45,
+  delay_max: 150,
+  hourly_cap: 30,
+  daily_cap: 150,
+  window_start: 9,
+  window_end: 19,
+  weekdays: [1, 2, 3, 4, 5, 6],
+  quiet_hours: 12,
+  max_failures: 3,
+  smart_timing: false,
+};
+
+// Segmentos que estreitam o público (ver AudienceSegments).
+const SEGMENT_DEFAULTS = {
+  origins: [],
+  recurring: '',
+  no_reply_days: '',
+  birthday: '',
+  exclude_label_ids: [],
 };
 
 const broadcast = ref(null);
@@ -77,9 +101,7 @@ const form = reactive({
   mode: 'waha',
   inbox_id: null,
   message: {
-    messages: [
-      { text: '', attachment: null, attachment_name: '', caption: '' },
-    ],
+    messages: [emptyMessageBlock()],
     template: { name: '', language: 'pt_BR', namespace: '' },
   },
   audience: {
@@ -88,6 +110,7 @@ const form = reactive({
     funnel_stage_ids: [],
     contact_ids: [],
     phone_numbers: [],
+    ...SEGMENT_DEFAULTS,
   },
   throttle: { ...THROTTLE_DEFAULTS },
   scheduled_at: '',
@@ -96,6 +119,7 @@ const form = reactive({
 const audienceCount = ref(null);
 // Who a relaunch would actually reach — contacts already sent are skipped.
 const audienceNewCount = ref(null);
+const audiencePreview = ref(null);
 const isPreviewing = ref(false);
 
 // Media upload (WAHA mode) — tracks which message block is currently uploading.
@@ -254,10 +278,21 @@ const hasMessage = computed(() => {
 // found out on their own that they had to save first — launch now saves by
 // itself. 'completed' is allowed so a campaign tested on one contact can go
 // out to the rest: the dispatch only sends to contacts not reached yet.
+// "Deixar de fora" sozinho não escolhe ninguém (o backend devolve público vazio).
 const hasAudience = computed(() =>
-  Object.values(form.audience).some(value =>
-    Array.isArray(value) ? value.length > 0 : Boolean(value)
-  )
+  Object.entries(form.audience)
+    .filter(([key]) => key !== 'exclude_label_ids')
+    .some(([, value]) =>
+      Array.isArray(value) ? value.length > 0 : Boolean(value)
+    )
+);
+
+const activeSegments = computed(
+  () =>
+    Object.keys(SEGMENT_DEFAULTS).filter(key => {
+      const value = form.audience[key];
+      return Array.isArray(value) ? value.length > 0 : Boolean(value);
+    }).length
 );
 
 const canLaunch = computed(
@@ -268,6 +303,46 @@ const canLaunch = computed(
     hasMessage.value
 );
 
+// As etapas do editor, na ordem da tela: alimentam a barra do topo, o número
+// de cada cartão e o checklist "pronto para disparar" do painel lateral.
+const steps = computed(() => [
+  { id: 'mode', key: 'MODE', state: 'done' },
+  { id: 'inbox', key: 'INBOX', state: form.inbox_id ? 'done' : 'missing' },
+  {
+    id: 'message',
+    key: 'MESSAGE',
+    state: hasMessage.value ? 'done' : 'missing',
+  },
+  {
+    id: 'audience',
+    key: 'AUDIENCE',
+    state: hasAudience.value ? 'done' : 'missing',
+  },
+  { id: 'safety', key: 'SAFETY', state: 'done' },
+  {
+    id: 'schedule',
+    key: 'SCHEDULE',
+    state: form.scheduled_at ? 'done' : 'optional',
+  },
+]);
+const stepOf = id => steps.value.find(step => step.id === id);
+const stepNumber = id => steps.value.findIndex(step => step.id === id) + 1;
+const stepLabel = id =>
+  t(`BROADCAST.COMPOSER.STEP_STATE.${stepOf(id).state.toUpperCase()}`);
+// "Quando" é opcional: o placar conta só as etapas obrigatórias.
+const requiredSteps = computed(() =>
+  steps.value.filter(step => step.id !== 'schedule')
+);
+const readyCount = computed(
+  () => requiredSteps.value.filter(step => step.state === 'done').length
+);
+const goToStep = id =>
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+const inboxName = computed(
+  () => (inboxes.value || []).find(i => i.id === form.inbox_id)?.name
+);
+
 const launchHint = computed(() => {
   if (!form.inbox_id) return t('BROADCAST.COMPOSER.LAUNCH_NEEDS_INBOX');
   if (!hasAudience.value) return t('BROADCAST.COMPOSER.LAUNCH_NEEDS_AUDIENCE');
@@ -275,7 +350,9 @@ const launchHint = computed(() => {
   return '';
 });
 
-const isRunning = computed(() => status.value === 'running');
+const isRunning = computed(() =>
+  ['running', 'scheduled'].includes(status.value)
+);
 
 // Live dispatch progress popup — auto-opens after launch, reopenable later.
 const isProgressOpen = ref(false);
@@ -326,6 +403,7 @@ const hydrate = record => {
   if (Array.isArray(msg.messages) && msg.messages.length) {
     form.message.messages = msg.messages.map(part => ({
       text: part.text || '',
+      variants: part.variants || [],
       attachment: part.attachment || null,
       attachment_name: part.attachment_name || '',
       caption: part.caption || '',
@@ -334,6 +412,7 @@ const hydrate = record => {
     form.message.messages = [
       {
         text: msg.text || '',
+        variants: [],
         attachment: msg.attachment || null,
         attachment_name: msg.attachment_name || '',
         caption: msg.caption || '',
@@ -353,6 +432,9 @@ const hydrate = record => {
   form.audience.funnel_stage_ids = aud.funnel_stage_ids || [];
   form.audience.contact_ids = aud.contact_ids || [];
   form.audience.phone_numbers = aud.phone_numbers || [];
+  Object.keys(SEGMENT_DEFAULTS).forEach(key => {
+    form.audience[key] = aud[key] ?? SEGMENT_DEFAULTS[key];
+  });
   form.throttle = { ...THROTTLE_DEFAULTS, ...(record.throttle || {}) };
   form.scheduled_at = toLocalInput(record.scheduled_at);
   selectedTemplateKey.value = form.message.template.name
@@ -630,6 +712,7 @@ const buildPayload = () => {
       ? {
           messages: form.message.messages.filter(isBlockFilled).map(block => ({
             text: block.text,
+            variants: (block.variants || []).filter(v => v.trim()),
             attachment: block.attachment,
             attachment_name: block.attachment_name,
             caption: block.caption,
@@ -662,6 +745,7 @@ const refreshAudience = async () => {
     const { data } = await BroadcastsAPI.audiencePreview(props.broadcastId);
     audienceCount.value = data.count;
     audienceNewCount.value = data.new_count ?? data.count;
+    audiencePreview.value = data;
   } catch (error) {
     useAlert(error?.message || t('BROADCAST.COMPOSER.PREVIEW_ERROR'));
   } finally {
@@ -689,7 +773,9 @@ const save = () => persist();
 // confirm against the count of what was actually saved.
 const confirmLaunch = () => {
   const sent = Number(broadcast.value?.sent_count) || 0;
-  const message =
+  const preview = audiencePreview.value || {};
+  const estimate = preview.estimate || {};
+  const lines = [
     sent > 0
       ? t('BROADCAST.COMPOSER.LAUNCH_CONFIRM_RELAUNCH', {
           count: audienceNewCount.value,
@@ -697,14 +783,34 @@ const confirmLaunch = () => {
         })
       : t('BROADCAST.COMPOSER.LAUNCH_CONFIRM', {
           count: audienceNewCount.value,
-        });
+        }),
+    t('BROADCAST.COMPOSER.LAUNCH_CONFIRM_SAFETY', {
+      eligible: preview.eligible_count ?? audienceNewCount.value,
+      perHour: estimate.per_hour,
+      start: estimate.window_start,
+      end: estimate.window_end,
+      days: estimate.days,
+    }),
+  ];
+  if (form.scheduled_at && new Date(form.scheduled_at) > new Date()) {
+    lines.push(
+      t('BROADCAST.COMPOSER.LAUNCH_CONFIRM_SCHEDULED', {
+        when: new Date(form.scheduled_at).toLocaleString(),
+      })
+    );
+  }
   // eslint-disable-next-line no-alert
-  return window.confirm(message);
+  return window.confirm(lines.join('\n\n'));
 };
 
 const launch = async () => {
   if (!(await persist({ quiet: true }))) return;
-  if (!(Number(audienceNewCount.value) > 0)) {
+  if (
+    !(
+      Number(audiencePreview.value?.eligible_count ?? audienceNewCount.value) >
+      0
+    )
+  ) {
     useAlert(t('BROADCAST.COMPOSER.LAUNCH_NOTHING_NEW'));
     return;
   }
@@ -768,7 +874,7 @@ onBeforeUnmount(stopStatsRefresh);
 <template>
   <div class="flex flex-col w-full h-full overflow-hidden bg-n-background">
     <header
-      class="flex items-center justify-between gap-4 px-8 py-5 border-b border-n-weak shrink-0"
+      class="flex flex-wrap items-center justify-between gap-4 px-8 py-5 border-b border-n-weak shrink-0"
     >
       <div class="flex items-center gap-3 min-w-0">
         <Button
@@ -778,30 +884,84 @@ onBeforeUnmount(stopStatsRefresh);
           icon="i-lucide-arrow-left"
           @click="goBack"
         />
-        <div class="flex flex-col gap-0.5 min-w-0">
-          <h1 class="text-lg font-semibold text-n-slate-12 m-0 truncate">
-            {{ broadcast?.name || t('BROADCAST.COMPOSER.TITLE') }}
-          </h1>
-          <span
-            class="self-start px-2 py-0.5 rounded-full text-[11px] font-medium capitalize"
-            :class="statusTone"
+        <span
+          class="flex items-center justify-center rounded-xl shadow-lg size-11 shrink-0 bg-brand-gradient text-[#06131C] shadow-n-brand/20"
+        >
+          <span class="i-lucide-megaphone size-5" />
+        </span>
+        <div class="flex flex-col min-w-0 gap-0.5">
+          <div class="flex items-center min-w-0 gap-2">
+            <h1
+              class="m-0 text-xl font-bold tracking-tight truncate text-n-slate-12"
+            >
+              {{ broadcast?.name || t('BROADCAST.COMPOSER.TITLE') }}
+            </h1>
+            <span
+              class="px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0"
+              :class="statusTone"
+            >
+              {{ t(`BROADCAST.STATUS.${status.toUpperCase()}`) }}
+            </span>
+          </div>
+          <p
+            class="m-0 text-[13px] truncate text-n-slate-11"
+            data-testid="composer-subtitle"
           >
-            {{ t(`BROADCAST.STATUS.${status.toUpperCase()}`) }}
-          </span>
+            {{
+              t('BROADCAST.COMPOSER.SUBTITLE', {
+                inbox: inboxName || t('BROADCAST.LIST.NO_INBOX'),
+                ready: readyCount,
+                total: requiredSteps.length,
+              })
+            }}
+          </p>
         </div>
       </div>
     </header>
+
+    <nav
+      class="flex flex-wrap items-center gap-1 px-8 py-2.5 border-b border-n-weak bg-n-solid-1 shrink-0"
+      data-testid="composer-steps"
+    >
+      <button
+        v-for="(step, index) in steps"
+        :key="step.id"
+        type="button"
+        class="flex items-center gap-1.5 px-2.5 py-1 text-[13px] rounded-lg transition-colors hover:bg-n-alpha-2"
+        :class="
+          step.state === 'missing' ? 'text-n-slate-11' : 'text-n-slate-12'
+        "
+        @click="goToStep(step.id)"
+      >
+        <span
+          class="flex items-center justify-center text-[10px] font-bold rounded-full size-4"
+          :class="
+            step.state === 'done'
+              ? 'bg-n-teal-9 text-white'
+              : 'bg-n-alpha-3 text-n-slate-11'
+          "
+        >
+          <span v-if="step.state === 'done'" class="i-lucide-check size-2.5" />
+          <template v-else>{{ index + 1 }}</template>
+        </span>
+        {{ t(`BROADCAST.COMPOSER.STEPS.${step.key}`) }}
+      </button>
+    </nav>
 
     <div
       class="flex-1 grid grid-cols-1 xl:grid-cols-[1fr_360px] overflow-hidden"
     >
       <!-- Left: config form -->
-      <div class="overflow-auto px-8 py-6 flex flex-col gap-8">
+      <div class="overflow-auto px-8 py-6 flex flex-col gap-5">
         <!-- Mode -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.MODE_TITLE') }}
-          </h2>
+        <ComposerStep
+          id="mode"
+          :number="stepNumber('mode')"
+          :title="t('BROADCAST.COMPOSER.MODE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.MODE')"
+          :state="stepOf('mode').state"
+          :state-label="stepLabel('mode')"
+        >
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               v-for="m in ['waha', 'official']"
@@ -842,13 +1002,17 @@ onBeforeUnmount(stopStatsRefresh);
               </span>
             </button>
           </div>
-        </section>
+        </ComposerStep>
 
         <!-- Inbox -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.INBOX_TITLE') }}
-          </h2>
+        <ComposerStep
+          id="inbox"
+          :number="stepNumber('inbox')"
+          :title="t('BROADCAST.COMPOSER.INBOX_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.INBOX')"
+          :state="stepOf('inbox').state"
+          :state-label="stepLabel('inbox')"
+        >
           <select
             v-model="form.inbox_id"
             class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
@@ -870,14 +1034,17 @@ onBeforeUnmount(stopStatsRefresh);
           >
             {{ t('BROADCAST.COMPOSER.INBOX_EMPTY') }}
           </p>
-        </section>
+        </ComposerStep>
 
         <!-- Message -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.MESSAGE_TITLE') }}
-          </h2>
-
+        <ComposerStep
+          id="message"
+          :number="stepNumber('message')"
+          :title="t('BROADCAST.COMPOSER.MESSAGE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.MESSAGE')"
+          :state="stepOf('message').state"
+          :state-label="stepLabel('message')"
+        >
           <template v-if="form.mode === 'waha'">
             <p class="text-[11px] text-n-slate-10 m-0 -mt-1">
               {{ t('BROADCAST.MESSAGE.SEQUENCE_HINT') }}
@@ -951,6 +1118,10 @@ onBeforeUnmount(stopStatsRefresh);
                   rows="4"
                   :placeholder="t('BROADCAST.MESSAGE.TEXT_PLACEHOLDER')"
                   class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
+                />
+                <MessageSmartTools
+                  v-model:text="block.text"
+                  v-model:variants="block.variants"
                 />
                 <label
                   class="inline-flex self-start items-center gap-2 px-3 h-9 rounded-lg border border-dashed border-n-weak text-xs text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors"
@@ -1162,17 +1333,55 @@ onBeforeUnmount(stopStatsRefresh);
               }}
             </p>
           </template>
-        </section>
+        </ComposerStep>
 
         <!-- Audience -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.AUDIENCE_TITLE') }}
-          </h2>
-
+        <ComposerStep
+          id="audience"
+          :number="stepNumber('audience')"
+          :title="t('BROADCAST.COMPOSER.AUDIENCE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.AUDIENCE')"
+          :state="stepOf('audience').state"
+          :state-label="stepLabel('audience')"
+        >
           <div
             class="flex flex-col rounded-xl border border-n-weak bg-n-solid-1 divide-y divide-n-weak overflow-hidden"
           >
+            <!-- Segments (narrow the audience) -->
+            <div class="flex flex-col">
+              <button
+                type="button"
+                class="flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors hover:bg-n-alpha-1"
+                @click="toggleSection('segments')"
+              >
+                <Icon
+                  icon="i-lucide-chevron-down"
+                  class="size-4 text-n-slate-11 transition-transform"
+                  :class="openSection === 'segments' ? 'rotate-180' : ''"
+                />
+                <span
+                  class="flex-1 text-left text-sm font-medium text-n-slate-12"
+                >
+                  {{ t('BROADCAST.SEGMENTS.TITLE') }}
+                </span>
+                <span
+                  v-if="activeSegments"
+                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-n-teal-3 text-[11px] font-semibold text-n-teal-11 tabular-nums"
+                >
+                  {{ activeSegments }}
+                </span>
+              </button>
+              <div v-if="openSection === 'segments'" class="px-4 pb-4">
+                <AudienceSegments
+                  :model-value="form.audience"
+                  :labels="labels"
+                  @update:model-value="
+                    value => Object.assign(form.audience, value)
+                  "
+                />
+              </div>
+            </div>
+
             <!-- Contact labels -->
             <div class="flex flex-col">
               <button
@@ -1540,46 +1749,32 @@ onBeforeUnmount(stopStatsRefresh);
               </div>
             </div>
           </div>
-        </section>
+        </ComposerStep>
 
         <!-- Throttle -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.THROTTLE_TITLE') }}
-          </h2>
-          <p class="text-xs text-n-slate-11 m-0">
-            {{ t('BROADCAST.THROTTLE.HINT') }}
-          </p>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <label
-              v-for="field in [
-                'batch_min',
-                'batch_max',
-                'delay_min',
-                'delay_max',
-                'daily_cap',
-              ]"
-              :key="field"
-              class="flex flex-col gap-1.5"
-            >
-              <span class="text-xs font-medium text-n-slate-11">
-                {{ t(`BROADCAST.THROTTLE.${field.toUpperCase()}`) }}
-              </span>
-              <input
-                v-model.number="form.throttle[field]"
-                type="number"
-                min="0"
-                class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
-              />
-            </label>
-          </div>
-        </section>
+        <ComposerStep
+          id="safety"
+          :number="stepNumber('safety')"
+          :title="t('BROADCAST.COMPOSER.THROTTLE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.SAFETY')"
+          :state="stepOf('safety').state"
+          :state-label="stepLabel('safety')"
+        >
+          <SafetySettings
+            :model-value="form.throttle"
+            @update:model-value="value => Object.assign(form.throttle, value)"
+          />
+        </ComposerStep>
 
         <!-- Schedule -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.SCHEDULE_TITLE') }}
-          </h2>
+        <ComposerStep
+          id="schedule"
+          :number="stepNumber('schedule')"
+          :title="t('BROADCAST.COMPOSER.SCHEDULE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.SCHEDULE')"
+          :state="stepOf('schedule').state"
+          :state-label="stepLabel('schedule')"
+        >
           <label class="flex flex-col gap-1.5 max-w-xs">
             <span class="text-xs font-medium text-n-slate-11">
               {{ t('BROADCAST.SCHEDULE.AT') }}
@@ -1593,7 +1788,7 @@ onBeforeUnmount(stopStatsRefresh);
               {{ t('BROADCAST.SCHEDULE.HINT') }}
             </p>
           </label>
-        </section>
+        </ComposerStep>
       </div>
 
       <!-- Right rail: audience + send controls -->
@@ -1625,6 +1820,53 @@ onBeforeUnmount(stopStatsRefresh);
           />
         </div>
 
+        <div
+          class="flex flex-col gap-2 p-4 rounded-2xl border border-n-weak bg-n-alpha-1"
+          data-testid="composer-readiness"
+        >
+          <span class="text-xs font-medium text-n-slate-11">
+            {{
+              t('BROADCAST.COMPOSER.READINESS', {
+                ready: readyCount,
+                total: requiredSteps.length,
+              })
+            }}
+          </span>
+          <button
+            v-for="step in steps"
+            :key="step.id"
+            type="button"
+            class="flex items-center gap-2 text-left text-[13px] rounded-md hover:text-n-slate-12"
+            :class="
+              step.state === 'missing' ? 'text-n-amber-11' : 'text-n-slate-11'
+            "
+            @click="goToStep(step.id)"
+          >
+            <span
+              class="size-3.5 shrink-0"
+              :class="{
+                'i-lucide-circle-check text-n-teal-11': step.state === 'done',
+                'i-lucide-circle-dashed': step.state === 'optional',
+                'i-lucide-circle-alert': step.state === 'missing',
+              }"
+            />
+            {{ t(`BROADCAST.COMPOSER.STEPS.${step.key}`) }}
+          </button>
+        </div>
+
+        <AudiencePreviewPanel
+          v-if="audiencePreview"
+          :preview="audiencePreview"
+        />
+
+        <p
+          v-if="broadcast?.pause_reason === 'failures'"
+          class="m-0 px-3 py-2 rounded-lg bg-n-ruby-3 text-xs text-n-ruby-11"
+          data-testid="paused-by-failures"
+        >
+          {{ t('BROADCAST.COMPOSER.PAUSED_BY_FAILURES') }}
+        </p>
+
         <div v-if="broadcast" class="grid grid-cols-3 gap-2 text-center">
           <div class="flex flex-col gap-0.5 p-3 rounded-xl bg-n-alpha-1">
             <span class="text-lg font-semibold text-n-slate-12 tabular-nums">
@@ -1654,7 +1896,7 @@ onBeforeUnmount(stopStatsRefresh);
 
         <div class="flex flex-col gap-2 mt-auto">
           <Button
-            v-if="['running', 'paused'].includes(status)"
+            v-if="['running', 'paused', 'completed'].includes(status)"
             class="w-full"
             variant="outline"
             color="teal"
@@ -1686,7 +1928,7 @@ onBeforeUnmount(stopStatsRefresh);
             {{ launchHint }}
           </p>
           <Button
-            v-else
+            v-if="isRunning"
             class="w-full"
             color="ruby"
             icon="i-lucide-pause"

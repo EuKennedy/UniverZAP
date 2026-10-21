@@ -50,6 +50,12 @@ const stubs = {
     template:
       '<div data-testid="status-composer">{{ defaultInboxId }}|{{ inboxes.length }}|{{ accountName }}</div>',
   },
+  CampaignsPanel: { template: '<div data-testid="campaigns-panel" />' },
+  StatusCalendar: {
+    emits: ['create'],
+    template:
+      '<button data-testid="calendar-stub" @click="$emit(\'create\', new Date(2099, 0, 2))" />',
+  },
   StatusStatsBar: {
     emits: ['loaded'],
     mounted() {
@@ -156,5 +162,25 @@ describe('WhatsAppProfileIndex.vue', () => {
     );
     expect(wrapper.find('[data-testid="stats-bar"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="new-status"]').exists()).toBe(true);
+  });
+
+  // As abas trocam a área principal; o dia clicado no calendário volta para
+  // Publicar com o compositor já agendado para aquele dia.
+  it('switches tabs and opens the composer from a calendar day', async () => {
+    inboxes.mockResolvedValue({ data: { payload: [{ id: 7, name: 'Loja' }] } });
+    const wrapper = mountPage();
+    await flushPromises();
+
+    await wrapper.find('[data-testid="tab-campaigns"]').trigger('click');
+    expect(wrapper.find('[data-testid="campaigns-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="status-composer"]').exists()).toBe(
+      false
+    );
+
+    await wrapper.find('[data-testid="tab-calendar"]').trigger('click');
+    await wrapper.find('[data-testid="calendar-stub"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="status-composer"]').exists()).toBe(true);
   });
 });
