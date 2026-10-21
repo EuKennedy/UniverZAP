@@ -116,6 +116,7 @@ describe ConversationFinder do
                                        resolved_count: 1,
                                        group_count: 0,
                                        status_count: 0,
+                                       team_count: 0,
                                        waiting_count: 0,
                                        awaiting_customer_count: 4,
                                        in_attendance_count: 4
@@ -141,6 +142,7 @@ describe ConversationFinder do
                                        resolved_count: 1,
                                        group_count: 0,
                                        status_count: 0,
+                                       team_count: 0,
                                        waiting_count: 0,
                                        awaiting_customer_count: 4,
                                        in_attendance_count: 4
@@ -242,6 +244,7 @@ describe ConversationFinder do
                                        resolved_count: 1,
                                        group_count: 0,
                                        status_count: 0,
+                                       team_count: 0,
                                        waiting_count: 0,
                                        awaiting_customer_count: 4,
                                        in_attendance_count: 4
@@ -370,6 +373,25 @@ describe ConversationFinder do
         result = described_class.new(user_1, params).perform
         expect(result[:conversations].map(&:id)).not_to include(group_conversation.id)
         expect(result[:count][:group_count]).to eq(1)
+      end
+    end
+
+    context 'with the team' do
+      let!(:team_chat) do
+        contact = create(:contact, account: account)
+        Contacts::TeamService.new(contact).add
+        create(:conversation, account: account, inbox: inbox, assignee: user_1, contact: contact)
+      end
+
+      it 'shows team chats only on the Equipe tab, born there once the contact is in the team', :aggregate_failures do
+        expect(team_chat.is_team).to be(true)
+
+        own = described_class.new(user_1, { assignee_type: 'all', conversation_type: 'team', inbox_id: inbox.id }).perform
+        expect(own[:conversations].map(&:id)).to eq([team_chat.id])
+
+        regular = described_class.new(user_1, { assignee_type: 'all', inbox_id: inbox.id }).perform
+        expect(regular[:conversations].map(&:id)).not_to include(team_chat.id)
+        expect(regular[:count]).to include(team_count: 1, all_count: account.conversations.regular.open.count)
       end
     end
 

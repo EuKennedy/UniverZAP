@@ -16,6 +16,7 @@ import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import VerticalStatusChips from './widgets/VerticalStatusChips.vue';
 import ConversationKpiRow from './widgets/ConversationKpiRow.vue';
 import ConversationDateStrip from './widgets/ConversationDateStrip.vue';
+import TeamMembersBar from './widgets/TeamMembersBar.vue';
 import { isOurTurn } from 'dashboard/helper/conversationTurn';
 import ReportsAPI from 'dashboard/api/reports';
 import ConversationListFilter from 'dashboard/components-next/filter/ConversationListFilter.vue';
@@ -255,9 +256,14 @@ const isGroupsTab = computed(
 const isStatusTab = computed(
   () => activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.STATUS
 );
+const isTeamTab = computed(
+  () => activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.TEAM
+);
 // Grupos and Status are tabs of their own kind of chat, outside the Todos
 // views (dropdown, KPI cards, label bar).
-const isSegmentTab = computed(() => isGroupsTab.value || isStatusTab.value);
+const isSegmentTab = computed(
+  () => isGroupsTab.value || isStatusTab.value || isTeamTab.value
+);
 
 // The bucket on screen: Grupos, or Todos narrowed by its dropdown. Pagination
 // and the end-of-list badge are kept per bucket.
@@ -298,7 +304,11 @@ const conversationCustomAttributes = useFunctionGetter(
 );
 
 const activeAssigneeTabCount = computed(() => {
-  const segmentCountKeys = { groups: 'groupCount', status: 'statusCount' };
+  const segmentCountKeys = {
+    groups: 'groupCount',
+    status: 'statusCount',
+    team: 'teamCount',
+  };
   const countKey = isSegmentTab.value
     ? segmentCountKeys[activeAssigneeTab.value]
     : VIEW_COUNT_KEYS[activeListView.value];
@@ -450,8 +460,11 @@ function filterByListKey(conversations) {
   if (isStatusTab.value) {
     return conversations.filter(c => c.is_status_broadcast);
   }
+  if (isTeamTab.value) {
+    return conversations.filter(c => c.is_team);
+  }
   const nonGroups = conversations.filter(
-    c => !c.is_group && !c.is_status_broadcast
+    c => !c.is_group && !c.is_status_broadcast && !c.is_team
   );
   switch (activeListView.value) {
     case wootConstants.LIST_VIEW.ME:
@@ -776,6 +789,13 @@ function resetAndFetchData() {
   fetchConversations();
 }
 
+// Someone joined or left the team: their chats changed tab, so refetch the
+// list and the badges.
+function onTeamChanged() {
+  resetAndFetchData();
+  store.dispatch('conversationStats/get', conversationFilters.value);
+}
+
 // A different day is a different list: start over from its first page.
 function setCreatedOn(day) {
   createdOn.value = day;
@@ -838,6 +858,7 @@ const listFilterChips = computed(() => describeListFilter(listFilter.value, t));
 const listFilterScope = computed(() => {
   if (isGroupsTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.groups');
   if (isStatusTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.status');
+  if (isTeamTab.value) return t('CHAT_LIST.ASSIGNEE_TYPE_TABS.team');
   return t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${activeListView.value}`);
 });
 
@@ -1300,6 +1321,10 @@ watch(conversationFilters, (newVal, oldVal) => {
       </ul>
       <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
     </div>
+    <TeamMembersBar
+      v-if="isTeamTab && !hasAppliedFiltersOrActiveFolders"
+      @changed="onTeamChanged"
+    />
     <ConversationDateStrip
       v-if="!hasAppliedFiltersOrActiveFolders"
       :model-value="createdOn"

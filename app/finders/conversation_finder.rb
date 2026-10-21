@@ -73,13 +73,14 @@ class ConversationFinder
     { count: build_count_payload }
   end
 
-  # UniverZAP: WhatsApp groups and the contacts' statuses live only in their
-  # own tabs (conversation_type=groups / status); the regular tabs exclude
-  # both. Applied after the badge counts are computed.
+  # UniverZAP: WhatsApp groups, the contacts' statuses and the team live only
+  # in their own tabs (conversation_type=groups / status / team); the regular
+  # tabs exclude all three. Applied after the badge counts are computed.
   def apply_group_scope
     @conversations = case params[:conversation_type]
                      when 'groups' then @conversations.groups
                      when 'status' then @conversations.status_broadcasts
+                     when 'team' then @conversations.team_chats
                      else @conversations.regular
                      end
   end
@@ -257,6 +258,7 @@ class ConversationFinder
       resolved_count: @conversations_before_status.regular.where(status: 'resolved').count,
       group_count: @conversations_before_status.groups.count,
       status_count: @conversations_before_status.status_broadcasts.count,
+      team_count: @conversations_before_status.team_chats.where(status: 'open').count,
       **attendance_state_counts(all_count)
     }
   end

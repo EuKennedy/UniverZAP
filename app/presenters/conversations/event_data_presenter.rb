@@ -33,7 +33,8 @@ class Conversations::EventDataPresenter < SimpleDelegator
   def univerzap_push_flags
     {
       first_reply_created_at: first_reply_created_at, is_group: is_group,
-      is_status_broadcast: is_status_broadcast, awaiting_reply: awaiting_reply
+      is_status_broadcast: is_status_broadcast, is_team: is_team,
+      awaiting_reply: awaiting_reply
     }
   end
 

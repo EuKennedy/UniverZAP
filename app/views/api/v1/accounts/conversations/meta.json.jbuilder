@@ -8,5 +8,6 @@ json.meta do
   json.awaiting_customer_count @conversations_count[:awaiting_customer_count]
   json.group_count @conversations_count[:group_count]
   json.status_count @conversations_count[:status_count]
+  json.team_count @conversations_count[:team_count]
   json.resolved_count @conversations_count[:resolved_count]
 end

@@ -47,4 +47,9 @@ export const ASSIGNEE_TYPE_TAB_PERMISSIONS = {
     count: 'statusCount',
     permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
   },
+  // The business' own people (Equipe), out of the customer queues.
+  team: {
+    count: 'teamCount',
+    permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
+  },
 };

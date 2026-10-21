@@ -658,6 +658,7 @@ RSpec.describe Conversation do
         first_reply_created_at: nil,
         is_group: false,
         is_status_broadcast: false,
+        is_team: false,
         awaiting_reply: false,
         contact_last_seen_at: conversation.contact_last_seen_at.to_i,
         agent_last_seen_at: conversation.agent_last_seen_at.to_i,
