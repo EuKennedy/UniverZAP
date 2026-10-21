@@ -57,7 +57,15 @@
         "LABEL": "What is the status about",
         "PLACEHOLDER": "e.g. open slots on Saturday for blow-dry",
         "GENERATE": "Suggest text",
-        "IMPROVE": "Improve text"
+        "IMPROVE": "Improve text",
+        "TONE": "Tone:",
+        "TONES": {
+          "FRIENDLY": "Friendly",
+          "ELEGANT": "Elegant",
+          "FUN": "Fun",
+          "URGENT": "Urgent"
+        },
+        "USE": "Use this text"
       },
       "WHEN": {
         "LABEL": "When",
@@ -82,7 +90,23 @@
         "CONFIRM": "Post now",
         "SCHEDULE": "Schedule",
         "CANCEL": "Go back"
-      }
+      },
+      "VARIABLES": {
+        "LABEL": "Variables:",
+        "CONEXAO": "Name of each connection",
+        "EMPRESA": "Business name",
+        "DIA_SEMANA": "Day of the week it goes out",
+        "DATA": "Date it goes out (dd/mm)",
+        "PREVIEW_HINT": "Preview with the variables of {name}. Each connection gets its own."
+      },
+      "RECURRENCE": {
+        "LABEL": "Repeat",
+        "NONE": "Does not repeat",
+        "DAILY": "Every day",
+        "WEEKLY": "Every week"
+      },
+      "SHORTCUT": "⌘/Ctrl + Enter to post",
+      "NOW_SHORT": "now"
     },
     "ERRORS": {
       "GENERIC": "We could not reach WhatsApp right now.",
@@ -115,12 +139,15 @@
     "HISTORY": {
       "TITLE": "History",
       "DESCRIPTION": "Drafts, scheduled posts and the result on each connection.",
-      "EMPTY": "Nothing here yet.",
+      "EMPTY": "Write it above, schedule it for the week or save it as a draft. Everything you post shows up here with the result on each number.",
       "FILTER": {
         "ALL": "All",
         "SCHEDULED": "Scheduled",
         "DRAFT": "Drafts",
-        "SENT": "Posted"
+        "SENT": "Posted",
+        "FAILED": "With failures",
+        "ALL_KINDS": "All types",
+        "ALL_CONNECTIONS": "All connections"
       },
       "STATUS": {
         "DRAFT": "Draft",
@@ -142,11 +169,50 @@
       "RETRY": "Retry failed",
       "CANCEL": "Cancel",
       "DELETE": "Delete",
-      "LOAD_MORE": "Load more",
       "PUBLISHING": "Posting status.",
       "RETRYING": "Retrying the failed connections.",
       "CANCELED": "Schedule canceled.",
-      "DELETED": "Draft deleted."
+      "DELETED": "Draft deleted.",
+      "VIEW": {
+        "LIST": "List",
+        "AGENDA": "Week"
+      },
+      "SEARCH": "Search the text",
+      "FILTER_STATUS": "Status",
+      "FILTER_KIND": "Type",
+      "FILTER_CONNECTION": "Connection",
+      "CLEAR_FILTERS": "Clear filters",
+      "COUNT": "no status | 1 status | {count} statuses",
+      "EMPTY_TITLE": "Your first status starts here",
+      "EMPTY_FILTERED": "Nothing matches these filters",
+      "EMPTY_FILTERED_HINT": "Try another word or clear the filters.",
+      "CREATE_FIRST": "Write a status",
+      "DUPLICATE": "Duplicate",
+      "DUPLICATED": "Copy saved as a draft.",
+      "RANGE": "{first}–{last} of {total}",
+      "PREVIOUS": "Previous page",
+      "NEXT": "Next page"
+    },
+    "STATS": {
+      "PUBLISHED": "Posted · 7 days",
+      "PUBLISHED_HINT": "Connections that received a status",
+      "SCHEDULED": "Scheduled",
+      "NEXT": "Next: {date}",
+      "NONE_SCHEDULED": "Nothing scheduled",
+      "FAILED": "Failures · 7 days",
+      "FAILED_HINT": "Retry from the history",
+      "SUCCESS": "Success · 30 days",
+      "DRAFTS": "{count} draft(s) saved"
+    },
+    "HEADER": {
+      "CONNECTIONS": "no connection | 1 connection | {count} connections",
+      "NOTHING_SCHEDULED": "nothing scheduled",
+      "NEXT": "next status {date}",
+      "NEW_STATUS": "New status"
+    },
+    "AGENDA": {
+      "TODAY": "Today",
+      "EMPTY_DAY": "Nothing scheduled"
     }
   }
 }

@@ -16,7 +16,10 @@ vi.mock('dashboard/composables', () => ({ useAlert: vi.fn() }));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }));
 
 vi.mock('dashboard/composables/useAccount', () => ({
-  useAccount: () => ({ accountScopedRoute: name => ({ name }) }),
+  useAccount: () => ({
+    accountScopedRoute: name => ({ name }),
+    currentAccount: { value: { name: 'Bela Já' } },
+  }),
 }));
 
 // A chave é a asserção: cada texto desta tela responde a uma situação
@@ -43,9 +46,16 @@ const stubs = {
     template: '<div data-testid="profile-card">{{ inboxId }}</div>',
   },
   WhatsAppStatusComposer: {
-    props: ['inboxes', 'defaultInboxId', 'editingPost'],
+    props: ['inboxes', 'defaultInboxId', 'editingPost', 'accountName'],
     template:
-      '<div data-testid="status-composer">{{ defaultInboxId }}|{{ inboxes.length }}</div>',
+      '<div data-testid="status-composer">{{ defaultInboxId }}|{{ inboxes.length }}|{{ accountName }}</div>',
+  },
+  StatusStatsBar: {
+    emits: ['loaded'],
+    mounted() {
+      this.$emit('loaded', { next_scheduled_at: null });
+    },
+    template: '<div data-testid="stats-bar" />',
   },
   WhatsAppStatusHistory: {
     props: ['refreshKey'],
@@ -114,7 +124,9 @@ describe('WhatsAppProfileIndex.vue', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="profile-card"]').text()).toBe('9');
-    expect(wrapper.find('[data-testid="status-composer"]').text()).toBe('9|2');
+    expect(wrapper.find('[data-testid="status-composer"]').text()).toBe(
+      '9|2|Bela Já'
+    );
     expect(wrapper.find('[data-testid="status-history"]').exists()).toBe(true);
   });
 
@@ -129,5 +141,20 @@ describe('WhatsAppProfileIndex.vue', () => {
     expect(wrapper.find('[data-testid="load-error"]').text()).toBe(
       'WAHA fora do ar'
     );
+  });
+
+  // O subtítulo diz quantos números há e quando sai o próximo status: é a
+  // primeira pergunta de quem abre a tela.
+  it('summarizes the connections and the next status in the subtitle', async () => {
+    inboxes.mockResolvedValue({ data: { payload: [{ id: 7, name: 'Loja' }] } });
+
+    const wrapper = mountPage();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="page-subtitle"]').text()).toBe(
+      'WHATSAPP_PROFILE.HEADER.CONNECTIONS · WHATSAPP_PROFILE.HEADER.NOTHING_SCHEDULED'
+    );
+    expect(wrapper.find('[data-testid="stats-bar"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="new-status"]').exists()).toBe(true);
   });
 });

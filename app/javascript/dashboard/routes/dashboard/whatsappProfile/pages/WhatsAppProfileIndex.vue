@@ -10,6 +10,8 @@
  */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+
+import { dateLocale } from '../helpers';
 import { useRouter } from 'vue-router';
 
 import { useAccount } from 'dashboard/composables/useAccount';
@@ -21,10 +23,11 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import WhatsAppProfileCard from '../components/WhatsAppProfileCard.vue';
 import WhatsAppStatusComposer from '../components/WhatsAppStatusComposer.vue';
 import WhatsAppStatusHistory from '../components/WhatsAppStatusHistory.vue';
+import StatusStatsBar from '../components/StatusStatsBar.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const router = useRouter();
-const { accountScopedRoute } = useAccount();
+const { accountScopedRoute, currentAccount } = useAccount();
 
 const isLoading = ref(true);
 const loadError = ref('');
@@ -33,6 +36,29 @@ const selectedInboxId = ref(null);
 const editingPost = ref(null);
 const historyKey = ref(0);
 const composerRef = ref(null);
+const statsKey = ref(0);
+const stats = ref(null);
+const accountName = computed(() => currentAccount.value?.name || '');
+
+// O subtítulo responde a pergunta do dono ao abrir a tela: quantos números
+// estão aqui e quando sai o próximo status.
+const subtitle = computed(() => {
+  const count = inboxes.value.length;
+  const connections = t(
+    'WHATSAPP_PROFILE.HEADER.CONNECTIONS',
+    { count },
+    count
+  );
+  const next = stats.value?.next_scheduled_at;
+  if (!next)
+    return `${connections} · ${t('WHATSAPP_PROFILE.HEADER.NOTHING_SCHEDULED')}`;
+  const date = new Date(next).toLocaleString(dateLocale(locale), {
+    weekday: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${connections} · ${t('WHATSAPP_PROFILE.HEADER.NEXT', { date })}`;
+});
 
 const hasInboxes = computed(() => inboxes.value.length > 0);
 const hasChoice = computed(() => inboxes.value.length > 1);
@@ -60,15 +86,24 @@ const fetchInboxes = async () => {
   }
 };
 
+const scrollToComposer = () =>
+  composerRef.value?.$el?.scrollIntoView?.({ behavior: 'smooth' });
+
 const editPost = post => {
   editingPost.value = post;
   // A página rola dentro do próprio contêiner, não na janela.
-  composerRef.value?.$el?.scrollIntoView?.({ behavior: 'smooth' });
+  scrollToComposer();
 };
 
 const onSaved = () => {
   editingPost.value = null;
   historyKey.value += 1;
+  statsKey.value += 1;
+};
+
+const startNew = () => {
+  editingPost.value = null;
+  scrollToComposer();
 };
 
 const goToConnections = () =>
@@ -82,16 +117,26 @@ onMounted(fetchInboxes);
     <header
       class="flex flex-wrap gap-4 justify-between items-end px-8 py-6 border-b border-n-weak"
     >
-      <div class="flex flex-col gap-1">
-        <h1 class="m-0 text-xl font-semibold text-n-slate-12">
-          {{ t('WHATSAPP_PROFILE.TITLE') }}
-        </h1>
-        <p class="m-0 max-w-xl text-sm text-n-slate-11">
-          {{ t('WHATSAPP_PROFILE.SUBTITLE') }}
-        </p>
+      <div class="flex gap-3 items-center">
+        <span
+          class="flex justify-center items-center rounded-xl shadow-lg size-11 shrink-0 bg-brand-gradient text-[#06131C] shadow-n-brand/20"
+        >
+          <span class="i-lucide-message-circle-heart size-5" />
+        </span>
+        <div class="flex flex-col gap-0.5">
+          <h1 class="m-0 text-xl font-bold tracking-tight text-n-slate-12">
+            {{ t('WHATSAPP_PROFILE.TITLE') }}
+          </h1>
+          <p
+            class="m-0 max-w-xl text-[13px] text-n-slate-11"
+            data-testid="page-subtitle"
+          >
+            {{ hasInboxes ? subtitle : t('WHATSAPP_PROFILE.SUBTITLE') }}
+          </p>
+        </div>
       </div>
 
-      <div v-if="hasInboxes" class="flex flex-col gap-1.5 items-start">
+      <div v-if="hasInboxes" class="flex flex-col gap-1.5 items-start ms-auto">
         <span
           class="text-[11px] font-medium tracking-wide uppercase text-n-slate-11"
         >
@@ -111,7 +156,21 @@ onMounted(fetchInboxes);
           {{ selectedInbox?.name }}
         </span>
       </div>
+      <Button
+        v-if="hasInboxes"
+        icon="i-lucide-plus"
+        :label="t('WHATSAPP_PROFILE.HEADER.NEW_STATUS')"
+        data-testid="new-status"
+        @click="startNew"
+      />
     </header>
+
+    <div v-if="hasInboxes && !isLoading" class="px-8 pt-6">
+      <StatusStatsBar
+        :refresh-key="statsKey"
+        @loaded="data => (stats = data)"
+      />
+    </div>
 
     <div v-if="isLoading" class="flex flex-1 justify-center items-center">
       <Spinner :size="24" />
@@ -166,10 +225,17 @@ onMounted(fetchInboxes);
           :inboxes="inboxes"
           :default-inbox-id="selectedInboxId"
           :editing-post="editingPost"
+          :account-name="accountName"
           @saved="onSaved"
           @cancel-edit="editingPost = null"
         />
-        <WhatsAppStatusHistory :refresh-key="historyKey" @edit="editPost" />
+        <WhatsAppStatusHistory
+          :refresh-key="historyKey"
+          :inboxes="inboxes"
+          @edit="editPost"
+          @create="startNew"
+          @changed="statsKey += 1"
+        />
       </div>
     </div>
   </div>

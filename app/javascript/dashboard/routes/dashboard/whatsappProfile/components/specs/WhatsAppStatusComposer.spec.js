@@ -222,13 +222,15 @@ describe('WhatsAppStatusComposer.vue', () => {
     );
   });
 
-  it('fills the text with the AI suggestion', async () => {
+  // A IA devolve três opções; nenhuma entra sozinha no campo.
+  it('offers three AI suggestions in the chosen tone and uses the picked one', async () => {
     suggest.mockResolvedValue({
-      data: { text: 'Sábado com horários livres!' },
+      data: { text: 'A', texts: ['Opção A', 'Opção B', 'Opção C'] },
     });
     const wrapper = mountComposer();
 
     await wrapper.find('[data-testid="suggest-toggle"]').trigger('click');
+    await wrapper.find('[data-testid="tone-urgent"]').trigger('click');
     await wrapper
       .find('[data-testid="suggest-prompt"]')
       .setValue('agenda de sábado');
@@ -239,10 +241,61 @@ describe('WhatsAppStatusComposer.vue', () => {
       prompt: 'agenda de sábado',
       body: '',
       kind: 'text',
+      tone: 'urgent',
     });
+    const options = wrapper.findAll('[data-testid="suggestion"]');
+    expect(options).toHaveLength(3);
+    expect(wrapper.find('[data-testid="status-text"]').element.value).toBe('');
+
+    await options[1].trigger('click');
     expect(wrapper.find('[data-testid="status-text"]').element.value).toBe(
-      'Sábado com horários livres!'
+      'Opção B'
     );
+    expect(wrapper.find('[data-testid="suggestions"]').exists()).toBe(false);
+  });
+
+  // A prévia mostra o texto como sai na primeira conexão marcada.
+  it('inserts variables and previews them filled for the first connection', async () => {
+    const wrapper = mountComposer({ accountName: 'Bela Já' });
+    await writeText(wrapper, 'Hoje na');
+    await wrapper.find('[data-testid="variable-conexao"]').trigger('click');
+
+    expect(wrapper.find('[data-testid="status-text"]').element.value).toBe(
+      'Hoje na {{conexao}}'
+    );
+    expect(wrapper.find('[data-testid="status-preview"]').text()).toContain(
+      'Hoje na Loja'
+    );
+    expect(wrapper.find('[data-testid="variables-hint"]').exists()).toBe(true);
+  });
+
+  it('schedules a weekly status', async () => {
+    const wrapper = mountComposer();
+    await writeText(wrapper, 'Promoção de terça');
+    await wrapper.find('[data-testid="when-later"]').trigger('click');
+    await wrapper
+      .find('[data-testid="schedule-at"]')
+      .setValue('2099-01-06T09:00');
+    await wrapper.find('[data-testid="recurrence"] select').setValue('weekly');
+    await clickPublish(wrapper);
+    await confirm(wrapper);
+
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({ intent: 'schedule', recurrence: 'weekly' })
+    );
+  });
+
+  // O atalho abre a mesma confirmação do botão: nunca publica direto.
+  it('opens the confirmation with Ctrl+Enter', async () => {
+    const wrapper = mountComposer();
+    await writeText(wrapper, 'Promoção hoje');
+
+    await wrapper
+      .find('section')
+      .trigger('keydown', { key: 'Enter', ctrlKey: true });
+
+    expect(wrapper.find('[data-testid="confirm-dialog"]').exists()).toBe(true);
+    expect(save).not.toHaveBeenCalled();
   });
 
   it('applies a template to the text and the look', async () => {

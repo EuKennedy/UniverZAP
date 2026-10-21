@@ -657,7 +657,9 @@ Rails.application.routes.draw do
             resources :status_posts, only: [:index, :create, :update, :destroy] do
               post :publish, on: :member
               post :retry, on: :member
+              post :duplicate, on: :member
               post :suggest, on: :collection
+              get :stats, on: :collection
             end
             resources :status_templates, only: [:index, :create, :update, :destroy]
           end

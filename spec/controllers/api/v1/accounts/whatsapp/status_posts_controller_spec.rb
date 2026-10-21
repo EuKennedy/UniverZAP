@@ -114,11 +114,11 @@ RSpec.describe 'Api::V1::Accounts::Whatsapp::StatusPostsController', type: :requ
   describe 'POST /status_posts/suggest' do
     it 'returns the assistant suggestion' do
       allow(Whatsapp::StatusPosts::SuggestionService).to receive(:new).and_return(instance_double(Whatsapp::StatusPosts::SuggestionService,
-                                                                                                  perform: 'Sábado tem horário!'))
+                                                                                                  perform: ['Sábado tem horário!', 'B']))
 
       post "#{base}/suggest", params: { prompt: 'agenda de sábado', kind: 'text' }, headers: headers, as: :json
 
-      expect(response.parsed_body['text']).to eq('Sábado tem horário!')
+      expect(response.parsed_body).to include('text' => 'Sábado tem horário!', 'texts' => ['Sábado tem horário!', 'B'])
     end
 
     it 'says when the account has no active assistant' do
@@ -127,6 +127,53 @@ RSpec.describe 'Api::V1::Accounts::Whatsapp::StatusPostsController', type: :requ
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(response.parsed_body['error']).to eq(I18n.t('inbox.whatsapp.waha.suggestion_no_assistant'))
+    end
+  end
+
+  describe 'GET /status_posts filters' do
+    it 'searches the text and narrows by status group, kind and connection' do
+      other_inbox = create(:channel_api, account: account,
+                                         additional_attributes: { 'source' => 'waha', 'session_name' => 'u1-outra' }).reload.inbox
+      promo = create(:whatsapp_status_post, account: account, body: 'Promoção de terça', inbox_ids: [waha_inbox.id])
+      create(:whatsapp_status_post, account: account, body: 'Promoção de sábado', inbox_ids: [other_inbox.id])
+      scheduled = create(:whatsapp_status_post, account: account, status: :scheduled, body: 'Agenda aberta',
+                                                inbox_ids: [waha_inbox.id], scheduled_at: 1.day.from_now)
+
+      get base, params: { q: 'terça' }, headers: headers
+      expect(response.parsed_body['payload'].pluck('id')).to eq([promo.id])
+
+      get base, params: { status: 'scheduled', inbox_id: waha_inbox.id }, headers: headers
+      expect(response.parsed_body['payload'].pluck('id')).to eq([scheduled.id])
+
+      get base, params: { per: 1 }, headers: headers
+      expect(response.parsed_body['meta']).to include('total_count' => 3, 'total_pages' => 3, 'current_page' => 1)
+    end
+  end
+
+  describe 'GET /status_posts/stats' do
+    it 'returns the counters of the account' do
+      create(:whatsapp_status_post, account: account)
+
+      get "#{base}/stats", headers: headers
+
+      expect(response.parsed_body).to include('drafts' => 1, 'scheduled' => 0)
+    end
+  end
+
+  describe 'POST /status_posts/:id/duplicate' do
+    it 'creates a new draft with the same content and media, even from a posted status' do
+      original = build(:whatsapp_status_post, account: account, kind: 'image', status: :publishing, body: 'Chegou',
+                                              inbox_ids: [waha_inbox.id])
+      original.media = image_blob
+      original.save!
+      original.update!(status: :published)
+
+      post "#{base}/#{original.id}/duplicate", headers: headers
+
+      copy = WhatsappStatusPost.find(response.parsed_body['id'])
+      expect(copy).to have_attributes(status: 'draft', body: 'Chegou', kind: 'image', inbox_ids: [waha_inbox.id])
+      expect(copy.media.blob).to eq(image_blob)
+      expect(original.reload).to be_status_published
     end
   end
 end

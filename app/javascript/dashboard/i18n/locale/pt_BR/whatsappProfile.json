@@ -57,7 +57,15 @@
         "LABEL": "Sobre o que é o status",
         "PLACEHOLDER": "ex.: horários livres no sábado para escova",
         "GENERATE": "Sugerir texto",
-        "IMPROVE": "Melhorar texto"
+        "IMPROVE": "Melhorar texto",
+        "TONE": "Tom:",
+        "TONES": {
+          "FRIENDLY": "Próximo",
+          "ELEGANT": "Elegante",
+          "FUN": "Divertido",
+          "URGENT": "Urgente"
+        },
+        "USE": "Usar este texto"
       },
       "WHEN": {
         "LABEL": "Quando",
@@ -82,7 +90,23 @@
         "CONFIRM": "Publicar agora",
         "SCHEDULE": "Agendar",
         "CANCEL": "Voltar"
-      }
+      },
+      "VARIABLES": {
+        "LABEL": "Variáveis:",
+        "CONEXAO": "Nome de cada conexão",
+        "EMPRESA": "Nome da empresa",
+        "DIA_SEMANA": "Dia da semana em que sai",
+        "DATA": "Data em que sai (dd/mm)",
+        "PREVIEW_HINT": "Prévia com as variáveis de {name}. Cada conexão recebe as suas."
+      },
+      "RECURRENCE": {
+        "LABEL": "Repetir",
+        "NONE": "Não repete",
+        "DAILY": "Todo dia",
+        "WEEKLY": "Toda semana"
+      },
+      "SHORTCUT": "⌘/Ctrl + Enter para publicar",
+      "NOW_SHORT": "agora"
     },
     "ERRORS": {
       "GENERIC": "Não foi possível falar com o WhatsApp agora.",
@@ -115,12 +139,15 @@
     "HISTORY": {
       "TITLE": "Histórico",
       "DESCRIPTION": "Rascunhos, agendados e o resultado em cada conexão.",
-      "EMPTY": "Nada por aqui ainda.",
+      "EMPTY": "Escreva acima, agende para a semana ou guarde como rascunho. Tudo o que for publicado aparece aqui com o resultado em cada número.",
       "FILTER": {
         "ALL": "Todos",
         "SCHEDULED": "Agendados",
         "DRAFT": "Rascunhos",
-        "SENT": "Publicados"
+        "SENT": "Publicados",
+        "FAILED": "Com falha",
+        "ALL_KINDS": "Todos os tipos",
+        "ALL_CONNECTIONS": "Todas as conexões"
       },
       "STATUS": {
         "DRAFT": "Rascunho",
@@ -142,11 +169,50 @@
       "RETRY": "Reenviar falhas",
       "CANCEL": "Cancelar",
       "DELETE": "Excluir",
-      "LOAD_MORE": "Carregar mais",
       "PUBLISHING": "Publicando o status.",
       "RETRYING": "Reenviando para as conexões que falharam.",
       "CANCELED": "Agendamento cancelado.",
-      "DELETED": "Rascunho excluído."
+      "DELETED": "Rascunho excluído.",
+      "VIEW": {
+        "LIST": "Lista",
+        "AGENDA": "Semana"
+      },
+      "SEARCH": "Buscar no texto",
+      "FILTER_STATUS": "Status",
+      "FILTER_KIND": "Tipo",
+      "FILTER_CONNECTION": "Conexão",
+      "CLEAR_FILTERS": "Limpar filtros",
+      "COUNT": "nenhum status | 1 status | {count} status",
+      "EMPTY_TITLE": "Seu primeiro status começa aqui",
+      "EMPTY_FILTERED": "Nada com esses filtros",
+      "EMPTY_FILTERED_HINT": "Tente outra palavra ou limpe os filtros.",
+      "CREATE_FIRST": "Escrever um status",
+      "DUPLICATE": "Duplicar",
+      "DUPLICATED": "Cópia salva como rascunho.",
+      "RANGE": "{first}–{last} de {total}",
+      "PREVIOUS": "Página anterior",
+      "NEXT": "Próxima página"
+    },
+    "STATS": {
+      "PUBLISHED": "Publicados · 7 dias",
+      "PUBLISHED_HINT": "Conexões que receberam status",
+      "SCHEDULED": "Agendados",
+      "NEXT": "Próximo: {date}",
+      "NONE_SCHEDULED": "Nada agendado",
+      "FAILED": "Falhas · 7 dias",
+      "FAILED_HINT": "Reenvie pelo histórico",
+      "SUCCESS": "Sucesso · 30 dias",
+      "DRAFTS": "{count} rascunho(s) guardado(s)"
+    },
+    "HEADER": {
+      "CONNECTIONS": "nenhuma conexão | 1 conexão | {count} conexões",
+      "NOTHING_SCHEDULED": "nada agendado",
+      "NEXT": "próximo status {date}",
+      "NEW_STATUS": "Novo status"
+    },
+    "AGENDA": {
+      "TODAY": "Hoje",
+      "EMPTY_DAY": "Nada agendado"
     }
   }
 }
