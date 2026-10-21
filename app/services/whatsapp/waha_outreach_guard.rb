@@ -14,10 +14,11 @@ class Whatsapp::WahaOutreachGuard
   # próximo erro arma de novo. O ciclo do capping pode durar semanas.
   FALLBACK = { TIMELOCK => 6.hours, CAPPING => 24.hours }.freeze
   MAX_BLOCK = 35.days
+  CODE_PATTERN = /error (#{TIMELOCK}|#{CAPPING})\b/
 
   # "server returned error 463" vem no corpo da resposta da WAHA.
   def self.code_in(text)
-    text.to_s[/error (#{TIMELOCK}|#{CAPPING})\b/, 1]&.to_i
+    text.to_s[CODE_PATTERN, 1]&.to_i
   end
 
   def initialize(inbox)
