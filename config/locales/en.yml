@@ -431,6 +431,10 @@ en:
       name: 'Shopify'
       short_description: 'Access order details and customer data from your Shopify store.'
       description: 'Connect your Shopify store to access order details, customer information, and product data directly within your conversations and helps your support team provide faster, more contextual assistance to your customers.'
+    woocommerce:
+      name: 'WooCommerce'
+      short_description: 'Orders from your WooCommerce store next to each conversation.'
+      description: 'Connect the WooCommerce store of an e-commerce workspace. Orders arrive by webhook, the customer is found by WhatsApp number or e-mail, the customer sheet shows the order and the spend, and the conversation stage follows the order status.'
     belezaki:
       name: 'belezaki'
       short_description: 'See the salon agenda of each customer next to the conversation.'

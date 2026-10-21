@@ -11,6 +11,7 @@ import { useAccount } from 'dashboard/composables/useAccount';
 import VerticalStatusesAPI from 'dashboard/api/verticalStatuses';
 import CustomerSheet from './CustomerSheet.vue';
 import BelezakiCustomerCard from 'dashboard/components/widgets/conversation/belezaki/CustomerCard.vue';
+import StoreOrdersCard from 'dashboard/components-next/store/StoreOrdersCard.vue';
 
 // Store wiring for the customer sheet shown in the conversation's right panel.
 const props = defineProps({
@@ -21,6 +22,8 @@ const { t } = useI18n();
 const store = useStore();
 const { currentAccount } = useAccount();
 const profile = computed(() => currentAccount.value.vertical_profile);
+// E-commerce workspaces read the customer's orders from their store.
+const showStoreOrders = computed(() => !!profile.value?.store_connector);
 
 const currentChat = useMapGetter('getSelectedChat');
 const attributeDefinitions = useFunctionGetter(
@@ -112,6 +115,10 @@ const onSchedule = async attributes => {
       :profile="profile"
       @update="onUpdate"
       @schedule="onSchedule"
+    />
+    <StoreOrdersCard
+      v-if="showStoreOrders && contact.id"
+      :contact-id="contact.id"
     />
     <BelezakiCustomerCard
       v-if="showBelezaki && contact.id"

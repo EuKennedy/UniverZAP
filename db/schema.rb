@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_21_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_21_200000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -2117,6 +2117,53 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_100000) do
     t.index ["account_id"], name: "index_sla_policies_on_account_id"
   end
 
+  create_table "store_connections", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "platform", default: "woocommerce", null: false
+    t.string "store_url", null: false
+    t.string "consumer_key", null: false
+    t.string "consumer_secret", null: false
+    t.string "webhook_secret", null: false
+    t.string "webhook_token", null: false
+    t.jsonb "webhook_ids", default: [], null: false
+    t.integer "status", default: 0, null: false
+    t.string "last_error"
+    t.datetime "last_synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_store_connections_on_account_id", unique: true
+    t.index ["webhook_token"], name: "index_store_connections_on_webhook_token", unique: true
+  end
+
+  create_table "store_orders", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "store_connection_id", null: false
+    t.bigint "contact_id"
+    t.string "external_id", null: false
+    t.string "number"
+    t.string "status", null: false
+    t.string "currency", default: "BRL"
+    t.decimal "total", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "payment_method"
+    t.string "payment_method_title"
+    t.string "payment_url"
+    t.string "customer_name"
+    t.string "customer_phone"
+    t.string "customer_email"
+    t.jsonb "items", default: [], null: false
+    t.jsonb "tracking", default: {}, null: false
+    t.datetime "placed_at"
+    t.datetime "paid_at"
+    t.datetime "store_updated_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_store_orders_on_account_id"
+    t.index ["contact_id", "placed_at"], name: "index_store_orders_on_contact_id_and_placed_at"
+    t.index ["contact_id"], name: "index_store_orders_on_contact_id"
+    t.index ["store_connection_id", "external_id"], name: "index_store_orders_on_store_connection_id_and_external_id", unique: true
+    t.index ["store_connection_id"], name: "index_store_orders_on_store_connection_id"
+  end
+
   create_table "taggings", id: :serial, force: :cascade do |t|
     t.integer "tag_id"
     t.string "taggable_type"
@@ -2586,6 +2633,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_100000) do
   add_foreign_key "sale_records", "users"
   add_foreign_key "sales_goals", "accounts"
   add_foreign_key "sales_goals", "users"
+  add_foreign_key "store_connections", "accounts"
+  add_foreign_key "store_orders", "accounts"
+  add_foreign_key "store_orders", "contacts", on_delete: :nullify
+  add_foreign_key "store_orders", "store_connections"
   add_foreign_key "task_activities", "tasks"
   add_foreign_key "task_activities", "users"
   add_foreign_key "task_assignees", "tasks"

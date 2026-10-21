@@ -802,7 +802,6 @@
         "SUCCESS_MESSAGE": "The document has been successfully deleted",
         "ERROR_MESSAGE": "There was an error deleting the document, please try again."
       },
-
       "OPTIONS": {
         "VIEW_RELATED_RESPONSES": "View Related Responses",
         "DELETE_DOCUMENT": "Delete Document"
@@ -1062,5 +1061,75 @@
         "SUBTITLE": "Connecting an inbox allows the assistant to handle initial questions from your customers before transferring them to you."
       }
     }
+  },
+  "WOOCOMMERCE": {
+    "TITLE": "WooCommerce",
+    "SUBTITLE": "Orders from your store next to each conversation",
+    "STORE": "Store",
+    "SYNC": "Sync now",
+    "SYNC_STARTED": "Sync started. New orders show up in a few minutes.",
+    "SYNC_PENDING": "importing…",
+    "DISCONNECT": "Disconnect",
+    "DISCONNECT_CONFIRM": "Remove the store and its orders from this workspace?",
+    "DISCONNECT_YES": "Yes, disconnect",
+    "CANCEL": "Cancel",
+    "CONNECTED": "Store connected. Importing the last 90 days of orders.",
+    "DISCONNECTED": "Store disconnected",
+    "ERROR": "Could not connect the store. Check the URL and the keys.",
+    "STATUS": {
+      "CONNECTED": "Connected",
+      "FAILING": "Needs attention"
+    },
+    "STATS": {
+      "ORDERS": "Imported orders",
+      "LINKED": "Linked to contacts",
+      "SYNCED": "Last sync"
+    },
+    "WHAT_HAPPENS": {
+      "TITLE": "What happens now",
+      "WEBHOOKS": "Every new or changed order arrives here in seconds; every 15 minutes we also catch up anything the store did not send.",
+      "MATCH": "The customer is found by WhatsApp number or e-mail. New customers become contacts.",
+      "LABELS": "The open conversation follows the order: aguardando-pagamento, pedido-confirmado, enviado, pagamento-recusado, reembolso."
+    },
+    "STEPS": {
+      "ONE": "In WordPress, open WooCommerce › Settings › Advanced › REST API.",
+      "TWO": "Click \"Add key\", pick an admin user and choose Read/Write permission.",
+      "THREE": "Copy the Consumer key and the Consumer secret.",
+      "FOUR": "Paste them below with the store address (https)."
+    },
+    "CONNECT": {
+      "TITLE": "Connect your store",
+      "NOTE": "No plugin needed. With the REST keys we read the orders and register the order webhooks on the store for you.",
+      "URL": "Store address",
+      "KEY": "Consumer key",
+      "SECRET": "Consumer secret",
+      "SUBMIT": "Connect store"
+    }
+  },
+  "STORE_ORDERS": {
+    "TITLE": "Store orders",
+    "SPENT": "Spent",
+    "ORDERS": "Orders",
+    "TICKET": "Avg. ticket",
+    "LAST": "Last order",
+    "EMPTY": "No orders from this customer yet.",
+    "ORDER_NUMBER": "Order #{number}",
+    "TOTAL": "Total",
+    "COPY_TRACKING": "Copy tracking code",
+    "TRACKING_COPIED": "Tracking code copied",
+    "PAYMENT_LINK": "Payment link",
+    "OPEN_IN_STORE": "Open in WooCommerce",
+    "STATUS": {
+      "PENDING": "Awaiting payment",
+      "ON_HOLD": "On hold",
+      "PROCESSING": "Paid",
+      "COMPLETED": "Shipped",
+      "FAILED": "Payment failed",
+      "CANCELLED": "Cancelled",
+      "REFUNDED": "Refunded"
+    },
+    "META": "{date} · {method}",
+    "ITEM": "{quantity}× {name}",
+    "CARRIER": "· {carrier}"
   }
 }

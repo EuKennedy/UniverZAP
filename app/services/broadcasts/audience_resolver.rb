@@ -2,8 +2,6 @@
 # Each filter is optional; the final audience is the UNION of every filter that
 # is present. Only contacts with a phone number are eligible (WAHA send mode).
 class Broadcasts::AudienceResolver
-  DEFAULT_COUNTRY_CODE = '55'.freeze
-
   def initialize(broadcast)
     @broadcast = broadcast
     @account = broadcast.account
@@ -86,34 +84,10 @@ class Broadcasts::AudienceResolver
     @normalized_phone_numbers ||= Array(@filters['phone_numbers']).filter_map { |n| normalize_phone(n) }.uniq
   end
 
-  # Reuses the normalizer the WhatsApp webhook already applies, so a number
-  # typed here ends up in the same shape the provider will send back. Inventing
-  # a second convention is how the reply to a broadcast opens its own separate
-  # conversation instead of landing in the one the dispatch created.
+  # Same shape the WhatsApp webhook stores, so the reply to a broadcast lands in
+  # the conversation the dispatch created.
   def normalize_phone(raw)
-    digits = raw.to_s.gsub(/\D/, '')
-    return if digits.length < 10
-
-    digits = "#{DEFAULT_COUNTRY_CODE}#{digits}" if local_number?(raw, digits)
-    return "+#{digits}" unless brazilian_mobile?(digits)
-
-    "+#{Whatsapp::PhoneNormalizers::BrazilPhoneNormalizer.new.normalize(digits)}"
-  end
-
-  # A leading + means the number already carries its country code. Adding 55 to
-  # everything short turned a US number into a Brazilian one, so the + is the
-  # contract: international numbers are typed with it.
-  def local_number?(raw, digits)
-    digits.length <= 11 && !raw.to_s.strip.start_with?('+')
-  end
-
-  # The normalizer inserts the ninth digit whenever the result is not 13 long,
-  # which turns a 10-digit landline into somebody else's mobile. Only a number
-  # that already looks like a Brazilian mobile is handed to it.
-  def brazilian_mobile?(digits)
-    return false unless digits.start_with?(DEFAULT_COUNTRY_CODE)
-
-    digits.length == 13 || (digits.length == 12 && digits[4].to_i >= 6)
+    Contacts::PhoneNormalizer.normalize(raw)
   end
 
   def with_phone(ids)

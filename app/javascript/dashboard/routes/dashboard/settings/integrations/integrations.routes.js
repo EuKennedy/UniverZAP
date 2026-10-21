@@ -9,6 +9,7 @@ import Slack from './Slack.vue';
 import Linear from './Linear.vue';
 import Notion from './Notion.vue';
 import Shopify from './Shopify.vue';
+import Woocommerce from './Woocommerce.vue';
 
 export default {
   routes: [
@@ -87,6 +88,15 @@ export default {
             permissions: ['administrator'],
           },
           props: route => ({ error: route.query.error }),
+        },
+        // UniverZAP: the store of an e-commerce workspace.
+        {
+          path: 'woocommerce',
+          name: 'settings_integrations_woocommerce',
+          component: Woocommerce,
+          meta: {
+            permissions: ['administrator'],
+          },
         },
         {
           path: ':integration_id',

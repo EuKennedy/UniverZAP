@@ -3,7 +3,8 @@
 # whether the customer sheet offers "Agendar" (and which status it applies),
 # which conversation attributes the sheet shows instead of the salon's
 # appointment fields, which ready-made AI agents fit and whether the Belezaki
-# integration (a salon agenda) makes sense at all. Status names come from
+# integration (a salon agenda) or a store connector (WooCommerce) makes sense
+# at all. Status names come from
 # lib/vertical_templates/templates/<key>.yml.
 #
 # An account without a vertical keeps the original salon behaviour, which is
@@ -37,7 +38,8 @@ class VerticalProfile
       schedule_status: nil,
       sheet_fields: %w[numero_pedido valor_pedido codigo_rastreio motivo_contato],
       agent_templates: %w[varejo],
-      belezaki: false
+      belezaki: false,
+      store_connector: true
     },
     'food_delivery' => {
       conversion_status: 'pedido-confirmado',
@@ -82,6 +84,9 @@ class VerticalProfile
 
   def belezaki? = @profile[:belezaki]
 
+  # Connecting a shop (WooCommerce) and reading its orders: e-commerce only.
+  def store_connector? = @profile.fetch(:store_connector, false)
+
   # Empty means "no preference": the picker shows every template.
   def agent_templates = @profile[:agent_templates]
 
@@ -93,7 +98,8 @@ class VerticalProfile
       schedule_status: schedule_status,
       sheet_fields: sheet_fields,
       agent_templates: agent_templates,
-      belezaki: belezaki?
+      belezaki: belezaki?,
+      store_connector: store_connector?
     }
   end
 end

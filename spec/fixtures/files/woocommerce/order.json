@@ -1,0 +1,26 @@
+{
+  "id": 1042,
+  "number": "1042",
+  "status": "processing",
+  "currency": "BRL",
+  "total": "189.90",
+  "payment_method": "woo-mercado-pago-pix",
+  "payment_method_title": "Pix",
+  "payment_url": "https://loja.lizzon.com.br/checkout/order-pay/1042/?pay_for_order=true&key=wc_order_abc",
+  "date_created_gmt": "2026-10-20T13:00:00",
+  "date_paid_gmt": "2026-10-20T13:05:00",
+  "date_modified_gmt": "2026-10-20T13:05:00",
+  "billing": {
+    "first_name": "Rosana",
+    "last_name": "Rita",
+    "email": "Rosana@Example.com",
+    "phone": "(31) 98765-4321"
+  },
+  "line_items": [
+    { "name": "Booster Ativador 500ml", "quantity": 2, "total": "159.80", "sku": "BST-500", "image": { "src": "https://loja.lizzon.com.br/wp-content/uploads/booster.jpg" } },
+    { "name": "Frete", "quantity": 1, "total": "30.10", "sku": "" }
+  ],
+  "meta_data": [
+    { "id": 1, "key": "_wc_shipment_tracking_items", "value": [ { "tracking_provider": "Correios", "tracking_number": "QB123456789BR", "custom_tracking_link": "" } ] }
+  ]
+}

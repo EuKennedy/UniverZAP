@@ -56,12 +56,19 @@ class Integrations::App
       account.feature_enabled?('linear_integration') && GlobalConfigService.load('LINEAR_CLIENT_ID', nil).present?
     when 'shopify', 'notion'
       external_app_enabled?(account)
-    when 'belezaki'
-      belezaki_active?(account)
     when 'leadsquared'
       account.feature_enabled?('crm_integration')
     else
-      true
+      vertical_app_active?(account)
+    end
+  end
+
+  # Apps that only make sense for some verticals (VerticalProfile).
+  def vertical_app_active?(account)
+    case params[:id]
+    when 'belezaki' then belezaki_active?(account)
+    when 'woocommerce' then VerticalProfile.for(account).store_connector?
+    else true
     end
   end
 
@@ -89,6 +96,8 @@ class Integrations::App
       account.webhooks.exists?
     when 'dashboard_apps'
       account.dashboard_apps.exists?
+    when 'woocommerce'
+      account.store_connection.present?
     else
       account.hooks.exists?(app_id: id)
     end

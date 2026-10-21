@@ -1061,5 +1061,75 @@
         "SUBTITLE": "Conectar uma caixa de entrada permite ao assistente lidar com perguntas iniciais de seus clientes antes de transferi-las para você."
       }
     }
+  },
+  "WOOCOMMERCE": {
+    "TITLE": "WooCommerce",
+    "SUBTITLE": "Pedidos da sua loja ao lado de cada conversa",
+    "STORE": "Loja",
+    "SYNC": "Sincronizar agora",
+    "SYNC_STARTED": "Sincronização iniciada. Os pedidos novos aparecem em alguns minutos.",
+    "SYNC_PENDING": "importando…",
+    "DISCONNECT": "Desconectar",
+    "DISCONNECT_CONFIRM": "Remover a loja e os pedidos dela deste workspace?",
+    "DISCONNECT_YES": "Sim, desconectar",
+    "CANCEL": "Cancelar",
+    "CONNECTED": "Loja conectada. Importando os pedidos dos últimos 90 dias.",
+    "DISCONNECTED": "Loja desconectada",
+    "ERROR": "Não foi possível conectar a loja. Confira o endereço e as chaves.",
+    "STATUS": {
+      "CONNECTED": "Conectada",
+      "FAILING": "Precisa de atenção"
+    },
+    "STATS": {
+      "ORDERS": "Pedidos importados",
+      "LINKED": "Ligados a contatos",
+      "SYNCED": "Última sincronização"
+    },
+    "WHAT_HAPPENS": {
+      "TITLE": "O que acontece agora",
+      "WEBHOOKS": "Cada pedido novo ou alterado chega aqui em segundos; a cada 15 minutos também buscamos o que a loja não tiver enviado.",
+      "MATCH": "A cliente é encontrada pelo WhatsApp ou pelo e-mail. Cliente nova vira contato.",
+      "LABELS": "A conversa aberta acompanha o pedido: aguardando-pagamento, pedido-confirmado, enviado, pagamento-recusado, reembolso."
+    },
+    "STEPS": {
+      "ONE": "No WordPress, abra WooCommerce › Configurações › Avançado › API REST.",
+      "TWO": "Clique em \"Adicionar chave\", escolha um usuário administrador e a permissão Leitura/Escrita.",
+      "THREE": "Copie a Chave do consumidor e o Segredo do consumidor.",
+      "FOUR": "Cole abaixo junto com o endereço da loja (https)."
+    },
+    "CONNECT": {
+      "TITLE": "Conecte sua loja",
+      "NOTE": "Sem plugin. Com as chaves da API REST lemos os pedidos e cadastramos sozinhos os webhooks de pedido na loja.",
+      "URL": "Endereço da loja",
+      "KEY": "Chave do consumidor",
+      "SECRET": "Segredo do consumidor",
+      "SUBMIT": "Conectar loja"
+    }
+  },
+  "STORE_ORDERS": {
+    "TITLE": "Pedidos da loja",
+    "SPENT": "Total gasto",
+    "ORDERS": "Pedidos",
+    "TICKET": "Ticket médio",
+    "LAST": "Último pedido",
+    "EMPTY": "Nenhum pedido desta cliente ainda.",
+    "ORDER_NUMBER": "Pedido #{number}",
+    "TOTAL": "Total",
+    "COPY_TRACKING": "Copiar código de rastreio",
+    "TRACKING_COPIED": "Código de rastreio copiado",
+    "PAYMENT_LINK": "Link de pagamento",
+    "OPEN_IN_STORE": "Abrir no WooCommerce",
+    "STATUS": {
+      "PENDING": "Aguardando pagamento",
+      "ON_HOLD": "Em espera",
+      "PROCESSING": "Pago",
+      "COMPLETED": "Enviado",
+      "FAILED": "Pagamento recusado",
+      "CANCELLED": "Cancelado",
+      "REFUNDED": "Reembolsado"
+    },
+    "META": "{date} · {method}",
+    "ITEM": "{quantity}× {name}",
+    "CARRIER": "· {carrier}"
   }
 }

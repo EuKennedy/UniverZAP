@@ -241,6 +241,13 @@ shopify:
   hook_type: account
   allow_multiple_hooks: false
 
+woocommerce:
+  id: woocommerce
+  logo: woocommerce.png
+  i18n_key: woocommerce
+  hook_type: account
+  allow_multiple_hooks: false
+
 leadsquared:
   id: leadsquared
   feature_flag: crm_integration

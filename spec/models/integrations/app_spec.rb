@@ -116,6 +116,25 @@ RSpec.describe Integrations::App do
       end
     end
 
+    context 'when the app is woocommerce' do
+      let(:app_name) { 'woocommerce' }
+
+      it 'is offered only to e-commerce workspaces' do
+        account.update!(custom_attributes: { 'vertical_template' => 'ecommerce' })
+        expect(app.active?(account)).to be true
+
+        account.update!(custom_attributes: { 'vertical_template' => 'beauty_salon' })
+        expect(app.active?(account)).to be false
+      end
+
+      it 'is enabled once the store is connected' do
+        expect(app.enabled?(account)).to be false
+
+        StoreConnection.create!(account: account, store_url: 'https://loja.x', consumer_key: 'ck', consumer_secret: 'cs')
+        expect(app.enabled?(account.reload)).to be true
+      end
+    end
+
     context 'when other apps are queried' do
       let(:app_name) { 'webhook' }
 
