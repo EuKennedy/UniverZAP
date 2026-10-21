@@ -1,9 +1,26 @@
 class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseController
-  before_action :fetch_broadcast, except: [:index, :create, :templates]
+  before_action :fetch_broadcast, except: [:index, :create, :templates, :variations, :stats]
   before_action :authorize_action
 
   def index
-    @broadcasts = policy_scope(Current.account.broadcasts).order(created_at: :desc)
+    @broadcasts = policy_scope(Current.account.broadcasts).order(created_at: :desc).to_a
+    @counts = Broadcasts::RecipientCounts.for(@broadcasts.map(&:id))
+  end
+
+  # Números do topo da página + uso de hoje por conexão contra o teto.
+  def stats
+    render json: Broadcasts::Stats.new(Current.account).to_h
+  end
+
+  # Cópia em rascunho: mesma mensagem, público e proteção, sem destinatários.
+  # Relançar a campanha antiga não alcança quem já recebeu; duplicar é como
+  # o operador reaproveita um texto aprovado para outra leva.
+  def duplicate
+    copy = @broadcast.dup
+    copy.assign_attributes(name: I18n.t('broadcasts.copy_name', name: @broadcast.name), status: :draft, scheduled_at: nil, pause_reason: nil)
+    copy.save!
+    @broadcast = copy
+    render :show
   end
 
   def show; end
@@ -24,29 +41,37 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
     head :ok
   end
 
-  # Flip the broadcast live and kick off the adaptive dispatch loop.
+  # Flip the broadcast live and kick off the adaptive dispatch loop. With a
+  # future scheduled_at it waits as `scheduled` and the job starts it then.
   def launch
-    @broadcast.status_running!
-    Broadcasts::DispatchJob.perform_later(@broadcast.id)
+    if @broadcast.scheduled_at.present? && @broadcast.scheduled_at > Time.current
+      @broadcast.update!(status: :scheduled, pause_reason: nil)
+      Broadcasts::DispatchJob.start(@broadcast, wait_until: @broadcast.scheduled_at)
+    else
+      @broadcast.update!(status: :running, pause_reason: nil)
+      Broadcasts::DispatchJob.start(@broadcast)
+    end
     render :show
   end
 
   def pause
-    @broadcast.status_paused!
+    @broadcast.update!(status: :paused, pause_reason: 'manual')
     render :show
   end
 
+  # Who would receive it, who the guard leaves out, the exact text of a
+  # sample and how long the cadence takes — before anything is sent.
+  # `new_count` is who a relaunch would actually reach: contacts already
+  # recipients are never sent again.
   def audience_preview
-    resolver = Broadcasts::AudienceResolver.new(@broadcast)
-    ids = resolver.contact_ids
-    # Typed numbers with no contact yet are still recipients — the dispatch
-    # creates them. Counting only existing contacts would under-report the list.
-    cold = resolver.missing_phone_numbers.length
-    # `new_count` is who a relaunch would actually reach: contacts already
-    # recipients are never sent again. Subtracting totals on the screen goes
-    # wrong as soon as the audience both lost and gained people.
-    already = @broadcast.broadcast_recipients.pluck(:contact_id)
-    render json: { count: ids.length + cold, new_count: (ids - already).length + cold }
+    render json: Broadcasts::AudiencePreviewService.new(@broadcast).perform
+  end
+
+  # 2–3 versões do texto pela IA da conta, para o operador revisar.
+  def variations
+    render json: { variations: Broadcasts::VariationSuggestionService.new(account: Current.account, text: params[:text]).perform }
+  rescue Ai::ClaudeService::Error => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   # Approved Meta templates for a Cloud API inbox, for the official-mode picker.
@@ -64,10 +89,11 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
   # Per-recipient progress log for the live tracking popup. Returns the rolling
   # counts plus the most-recent recipients with their delivery status.
   def recipients
-    list = @broadcast.broadcast_recipients.includes(:contact)
+    list = @broadcast.broadcast_recipients.includes(:contact, :message)
                      .order(Arel.sql('sent_at DESC NULLS LAST'), id: :desc).limit(200)
     render json: {
       status: @broadcast.status,
+      pause_reason: @broadcast.pause_reason,
       counts: recipient_counts,
       recipients: list.map { |recipient| recipient_payload(recipient) }
     }
@@ -75,14 +101,25 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
 
   private
 
+  # Report: delivery and read come from the WhatsApp ack on the message the
+  # recipient got (Message#status), replies from ScheduledMessageListener.
   def recipient_counts
     rel = @broadcast.broadcast_recipients
+    sent = rel.where(status: %i[sent delivered read])
+    acks = Message.unscope(:order).where(id: sent.select(:message_id)).group(:status).count
     {
-      total: rel.count,
-      sent: rel.where(status: %i[sent delivered read]).count,
-      failed: rel.status_failed.count,
-      pending: rel.status_pending.count
-    }
+      total: rel.count, sent: sent.count, pending: rel.status_pending.count,
+      replied: sent.where.not(replied_at: nil).count,
+      failed: rel.status_failed.count + acks['failed'].to_i
+    }.merge(delivery_counts(acks), skipped_counts(rel))
+  end
+
+  def delivery_counts(acks)
+    { delivered: acks.slice('delivered', 'read').values.sum, read: acks['read'].to_i }
+  end
+
+  def skipped_counts(rel)
+    { skipped: rel.status_skipped.count, skipped_by_reason: rel.status_skipped.group(:skip_reason).count }
   end
 
   def recipient_payload(recipient)
@@ -91,7 +128,11 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
       name: recipient.contact&.name,
       phone: recipient.contact&.phone_number,
       status: recipient.status,
+      delivery: recipient.message&.status,
       sent_at: recipient.sent_at&.to_i,
+      replied_at: recipient.replied_at&.to_i,
+      send_after: recipient.send_after&.to_i,
+      skip_reason: recipient.skip_reason,
       error: recipient.error
     }
   end
@@ -106,7 +147,7 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
 
   def authorize_action
     case action_name
-    when 'index', 'create', 'templates'
+    when 'index', 'create', 'templates', 'variations', 'stats'
       authorize(Broadcast)
     else
       authorize(@broadcast)

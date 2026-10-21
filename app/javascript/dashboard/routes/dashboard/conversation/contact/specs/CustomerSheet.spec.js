@@ -69,6 +69,7 @@ const mountSheet = (props = {}) =>
       plugins: [i18n],
       stubs: {
         ScheduleDialog: true,
+        ScheduleMessageDialog: true,
         NextButton: { template: '<button><slot/></button>' },
       },
     },

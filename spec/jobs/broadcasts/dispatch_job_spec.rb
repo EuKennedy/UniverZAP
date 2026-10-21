@@ -10,6 +10,9 @@ RSpec.describe Broadcasts::DispatchJob do
     create(:broadcast, account: account, status: :running, audience: { 'contact_ids' => [first.id] })
   end
 
+  # Dentro do horário comercial: fora dele o job só se reagenda.
+  around { |example| travel_to(ActiveSupport::TimeZone['America/Sao_Paulo'].parse('2026-10-20 10:00')) { example.run } }
+
   # Fake send: marks the recipient sent, the way a real dispatch leaves it.
   before do
     allow(Broadcasts::RecipientSenderService).to receive(:new) do |recipient|

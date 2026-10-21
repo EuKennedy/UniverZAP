@@ -795,6 +795,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_150000) do
     t.datetime "sent_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "message_id"
+    t.datetime "replied_at"
+    t.datetime "send_after"
+    t.string "skip_reason"
     t.index ["broadcast_id", "status"], name: "index_broadcast_recipients_on_broadcast_id_and_status"
     t.index ["broadcast_id"], name: "index_broadcast_recipients_on_broadcast_id"
     t.index ["contact_id"], name: "index_broadcast_recipients_on_contact_id"
@@ -812,6 +816,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_150000) do
     t.datetime "scheduled_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "pause_reason"
     t.index ["account_id"], name: "index_broadcasts_on_account_id"
     t.index ["inbox_id"], name: "index_broadcasts_on_inbox_id"
   end
@@ -1864,6 +1869,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_150000) do
     t.index ["user_id"], name: "index_mentions_on_user_id"
   end
 
+  create_table "message_sequences", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "inbox_id"
+    t.string "name", null: false
+    t.string "trigger", default: "appointment", null: false
+    t.boolean "enabled", default: false, null: false
+    t.jsonb "steps", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_message_sequences_on_account_id"
+    t.index ["inbox_id"], name: "index_message_sequences_on_inbox_id"
+  end
+
   create_table "messages", id: :serial, force: :cascade do |t|
     t.text "content"
     t.integer "account_id", null: false
@@ -2085,6 +2103,34 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_150000) do
     t.index ["account_id", "user_id"], name: "index_sales_goals_on_account_id_and_user_id"
     t.index ["account_id"], name: "index_sales_goals_on_account_id"
     t.index ["user_id"], name: "index_sales_goals_on_user_id"
+  end
+
+  create_table "scheduled_messages", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "inbox_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "created_by_id"
+    t.bigint "message_sequence_id"
+    t.integer "sequence_step"
+    t.text "content", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "send_at", null: false
+    t.datetime "sent_at"
+    t.bigint "message_id"
+    t.boolean "cancel_if_reply", default: true, null: false
+    t.boolean "respect_window", default: false, null: false
+    t.string "cancel_reason"
+    t.string "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_scheduled_messages_on_account_id"
+    t.index ["contact_id"], name: "index_scheduled_messages_on_contact_id"
+    t.index ["conversation_id"], name: "index_scheduled_messages_on_conversation_id"
+    t.index ["created_by_id"], name: "index_scheduled_messages_on_created_by_id"
+    t.index ["inbox_id"], name: "index_scheduled_messages_on_inbox_id"
+    t.index ["message_sequence_id"], name: "index_scheduled_messages_on_message_sequence_id"
+    t.index ["status", "send_at"], name: "index_scheduled_messages_on_status_and_send_at"
   end
 
   create_table "sla_events", force: :cascade do |t|

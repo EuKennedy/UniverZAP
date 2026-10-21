@@ -1,0 +1,13 @@
+json.id scheduled_message.id
+json.conversation_id scheduled_message.conversation.display_id
+json.content scheduled_message.content
+json.status scheduled_message.status
+json.send_at scheduled_message.send_at&.iso8601
+json.sent_at scheduled_message.sent_at&.iso8601
+json.cancel_if_reply scheduled_message.cancel_if_reply
+json.cancel_reason scheduled_message.cancel_reason
+json.error scheduled_message.error
+json.message_sequence_id scheduled_message.message_sequence_id
+json.sequence_name scheduled_message.message_sequence&.name
+json.created_by_name scheduled_message.created_by&.available_name
+json.updated_at scheduled_message.updated_at.iso8601

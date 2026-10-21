@@ -26,8 +26,8 @@ class Broadcasts::RecipientSenderService
   # renders in Chatwoot AND ships via the WAHA connector.
   def send_waha
     conversation = find_or_create_conversation
-    send_message(conversation)
-    @recipient.update!(status: :sent, sent_at: Time.current, conversation_id: conversation.display_id)
+    first = send_message(conversation).first
+    @recipient.update!(status: :sent, sent_at: Time.current, conversation_id: conversation.display_id, message_id: first&.id)
   end
 
   # Official (Meta Cloud API): send an approved template, then persist it so the
@@ -134,7 +134,7 @@ class Broadcasts::RecipientSenderService
   # sent in order. Legacy single-message campaigns (flat text/attachment) still
   # work via the fallback.
   def send_message(conversation)
-    broadcast_messages.each { |m| build_one(conversation, m) }
+    broadcast_messages.filter_map { |m| build_one(conversation, m) }
   end
 
   def broadcast_messages
@@ -143,14 +143,24 @@ class Broadcasts::RecipientSenderService
     list.is_a?(Array) && list.any? ? list : [msg]
   end
 
+  # The text goes through the renderer: one of the versions the operator
+  # wrote, spintax resolved and {primeiro_nome}/{servico}… filled, so the
+  # number never ships the very same message to everyone.
   def build_one(conversation, message_part)
     attachment = message_part['attachment']
-    content = attachment.present? ? message_part['caption'] : message_part['text']
+    raw = attachment.present? ? message_part['caption'] : message_part['text']
+    content = render(conversation, raw, attachment.present? ? [] : message_part['variants'])
     return if content.blank? && attachment.blank?
 
     params = { content: content, message_type: 'outgoing' }
     params[:attachments] = [attachment] if attachment.present?
     Messages::MessageBuilder.new(nil, conversation, params).perform
+  end
+
+  def render(conversation, text, variants)
+    return text if text.blank?
+
+    Broadcasts::MessageRenderer.new(contact: @contact, conversation: conversation, seed: @recipient.id).render(text, variants: variants)
   end
 
   def mark_failed(message)

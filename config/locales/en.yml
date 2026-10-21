@@ -55,6 +55,21 @@ en:
       anuncio_url_description: Link to the ad on Facebook
       anuncio_cliques: Ad clicks
       anuncio_cliques_description: How many times the customer came back through an ad
+  broadcasts:
+    copy_name: '%{name} (copy)'
+  scheduled_messages:
+    errors:
+      interrupted: Sending was interrupted; check the conversation before trying again
+      in_past: must be in the future
+      not_pending: This message was already sent or cancelled
+      sequence_steps_required: needs at least one message
+      sequence_too_many_steps: can have at most %{count} messages
+      sequence_step_invalid: every message needs a text and a time before or after the appointment (up to 30 days)
+    opt_out:
+      attribute_name: Opted out of broadcasts
+      attribute_description: The contact asked not to receive broadcasts, sequences or scheduled messages
+    variations:
+      text_required: Write the message before asking for variations
   recurring_customer:
     label_description: Conversation of a customer who already had a conversation that ended
     attributes:

@@ -51,6 +51,13 @@ whatsapp_status_campaigns_planner_job:
   class: 'Whatsapp::StatusCampaigns::PlannerJob'
   queue: scheduled_jobs
 
+# Mensagens agendadas na conversa e passos de sequência. Minuto a minuto pelo
+# mesmo motivo dos status: quem agenda para as 9h espera que saia às 9h.
+scheduled_messages_due_scanner_job:
+  cron: '*/1 * * * *'
+  class: 'ScheduledMessages::DueScannerJob'
+  queue: scheduled_jobs
+
 tasks_overdue_scanner_job:
   cron: '*/15 * * * *'
   class: 'Tasks::OverdueScannerJob'

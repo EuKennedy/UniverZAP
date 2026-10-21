@@ -39,6 +39,18 @@ class BroadcastPolicy < ApplicationPolicy
     @account_user.present?
   end
 
+  def variations?
+    @account_user.administrator?
+  end
+
+  def stats?
+    @account_user.present?
+  end
+
+  def duplicate?
+    @account_user.administrator?
+  end
+
   class Scope < Scope
     def resolve
       scope.where(account_id: account&.id)

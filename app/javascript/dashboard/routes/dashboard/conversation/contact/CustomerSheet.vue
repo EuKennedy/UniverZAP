@@ -6,6 +6,8 @@ import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import CustomerSheetRow from './CustomerSheetRow.vue';
 import ScheduleDialog from './ScheduleDialog.vue';
+import ScheduleMessageDialog from 'dashboard/components/widgets/conversation/scheduledMessages/ScheduleMessageDialog.vue';
+import { useScheduledMessages } from 'dashboard/composables/useScheduledMessages';
 import {
   customerTypeOf,
   formatAppointment,
@@ -33,6 +35,15 @@ const emit = defineEmits(['update', 'schedule']);
 const { t, locale } = useI18n();
 
 const scheduleDialog = ref(null);
+const scheduleMessageDialog = ref(null);
+
+// Mesma lista do indicador acima do composer: o que se agenda aqui aparece lá.
+const { pending: pendingMessages } = useScheduledMessages(
+  computed(() => props.conversation.id)
+);
+const optedOut = computed(() =>
+  [true, 'true'].includes(props.contact.custom_attributes?.opt_out_disparos)
+);
 
 const attributes = computed(() => props.conversation.custom_attributes || {});
 const labels = computed(() => props.conversation.labels || []);
@@ -111,6 +122,7 @@ const copyPhone = async () => {
 };
 
 const openSchedule = () => scheduleDialog.value?.open();
+const openScheduleMessage = () => scheduleMessageDialog.value?.open();
 const closeSchedule = () => scheduleDialog.value?.close();
 
 defineExpose({ closeSchedule });
@@ -220,7 +232,31 @@ defineExpose({ closeSchedule });
         data-testid="sheet-schedule"
         @click="openSchedule"
       />
+      <NextButton
+        v-if="conversation.id"
+        :label="t('SCHEDULED_MESSAGES.SHEET.BUTTON')"
+        icon="i-lucide-calendar-clock"
+        sm
+        slate
+        faded
+        data-testid="sheet-schedule-message"
+        @click="openScheduleMessage"
+      />
     </div>
+    <p
+      v-if="pendingMessages.length"
+      class="m-0 text-[11px] text-n-teal-11"
+      data-testid="sheet-pending-messages"
+    >
+      {{ t('SCHEDULED_MESSAGES.SHEET.PENDING', pendingMessages.length) }}
+    </p>
+    <p
+      v-if="optedOut"
+      class="m-0 text-[11px] text-n-amber-11"
+      data-testid="sheet-opted-out"
+    >
+      {{ t('SCHEDULED_MESSAGES.SHEET.OPTED_OUT') }}
+    </p>
 
     <ScheduleDialog
       ref="scheduleDialog"
@@ -229,6 +265,13 @@ defineExpose({ closeSchedule });
       :professional-options="professionalOptions"
       :is-loading="isScheduling"
       @confirm="payload => emit('schedule', payload)"
+    />
+    <ScheduleMessageDialog
+      v-if="conversation.id"
+      ref="scheduleMessageDialog"
+      :conversation-id="conversation.id"
+      :contact="contact"
+      :conversation="conversation"
     />
   </div>
 </template>

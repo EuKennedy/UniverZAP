@@ -32,7 +32,39 @@
       "DELETE_ERROR": "Não foi possível excluir a campanha.",
       "PROGRESS": "{sent}/{total} enviadas",
       "EMPTY_TITLE": "Nenhuma campanha ainda",
-      "EMPTY_BODY": "Crie seu primeiro disparo para alcançar um público segmentado no WhatsApp."
+      "EMPTY_BODY": "Crie seu primeiro disparo para alcançar um público segmentado no WhatsApp.",
+      "SUMMARY": "1 campanha · {running} em andamento · {sequences} sequências ligadas | {total} campanhas · {running} em andamento · {sequences} sequências ligadas",
+      "REFRESH": "Atualizar",
+      "SEARCH": "Buscar campanhas…",
+      "ALL_STATUSES": "Todos os status",
+      "COLUMNS": "Colunas",
+      "VISIBLE_COLUMNS": "Colunas visíveis",
+      "COLUMN": {
+        "NAME": "Campanha",
+        "STATUS": "Status",
+        "INBOX": "Conexão",
+        "PROGRESS": "Enviadas",
+        "REPLIED": "Respostas",
+        "SKIPPED": "Puladas",
+        "FAILED": "Falhas",
+        "CREATED": "Criada em"
+      },
+      "VIEW": {
+        "CARDS": "Cartões",
+        "TABLE": "Tabela"
+      },
+      "RESULTS": "1 resultado | {count} resultados",
+      "CLEAR_FILTERS": "Limpar filtros",
+      "NO_RESULTS_TITLE": "Nenhuma campanha encontrada",
+      "NO_RESULTS_BODY": "Tente outro nome ou status.",
+      "NO_INBOX": "Sem conexão escolhida",
+      "PAUSED_BY_FAILURES": "Pausada por falhas seguidas — confira a conexão",
+      "DUPLICATE": "Duplicar como rascunho",
+      "DELETE": "Excluir",
+      "DUPLICATED": "Cópia criada em rascunho",
+      "DUPLICATE_ERROR": "Não foi possível duplicar a campanha",
+      "SHOWING": "Mostrando {start}–{end} de {total}",
+      "PER_PAGE": "Por página"
     },
     "COMPOSER": {
       "TITLE": "Campanha",
@@ -42,7 +74,7 @@
       "INBOX_EMPTY": "Nenhuma caixa de entrada disponível para este modo. Conecte uma para disparar.",
       "MESSAGE_TITLE": "Mensagem",
       "AUDIENCE_TITLE": "Público",
-      "THROTTLE_TITLE": "Ritmo",
+      "THROTTLE_TITLE": "Proteção anti-bloqueio",
       "SCHEDULE_TITLE": "Agendamento",
       "AUDIENCE_PREVIEW": "Audiência",
       "CONTACTS": "contatos",
@@ -66,7 +98,10 @@
       "PAUSED": "Campanha pausada.",
       "PAUSE_ERROR": "Não foi possível pausar a campanha.",
       "LAUNCH_CONFIRM_RELAUNCH": "Disparar para {count} contatos novos? Os {sent} que já receberam não recebem de novo.",
-      "LAUNCH_NOTHING_NEW": "Todos dessa audiência já receberam esta campanha. Adicione contatos novos para disparar de novo."
+      "LAUNCH_NOTHING_NEW": "Todos dessa audiência já receberam esta campanha. Adicione contatos novos para disparar de novo.",
+      "LAUNCH_CONFIRM_SAFETY": "{eligible} vão receber de fato, cerca de {perHour}/hora entre {start}h e {end}h (~{days} dia(s)).",
+      "LAUNCH_CONFIRM_SCHEDULED": "Começa em {when}.",
+      "PAUSED_BY_FAILURES": "Pausado automaticamente: vários envios falharam seguidos. Confira a conexão do WhatsApp antes de retomar."
     },
     "MESSAGE": {
       "SEQUENCE_HINT": "Cada bloco é enviado em sequência — combine texto e mídia para montar o fluxo.",
@@ -126,14 +161,6 @@
       "IMPORT_COUNT": "{count} números reconhecidos",
       "IMPORT_CLEAR": "Limpar"
     },
-    "THROTTLE": {
-      "HINT": "Controle a velocidade de envio para evitar bloqueios.",
-      "BATCH_MIN": "Lote mín.",
-      "BATCH_MAX": "Lote máx.",
-      "DELAY_MIN": "Intervalo mín. (s)",
-      "DELAY_MAX": "Intervalo máx. (s)",
-      "DAILY_CAP": "Limite diário"
-    },
     "SCHEDULE": {
       "AT": "Enviar em",
       "HINT": "Deixe em branco para enviar assim que disparar."
@@ -159,8 +186,148 @@
         "SENT": "Enviada",
         "DELIVERED": "Entregue",
         "READ": "Lida",
-        "FAILED": "Falhou"
+        "FAILED": "Falhou",
+        "SKIPPED": "Pulada",
+        "REPLIED": "Respondeu"
+      },
+      "REPORT": {
+        "DELIVERED": "Entregues",
+        "READ": "Lidas",
+        "REPLIED": "Responderam",
+        "SKIPPED": "Puladas (proteção)"
       }
+    },
+    "TABS": {
+      "BROADCASTS": "Disparos",
+      "SEQUENCES": "Sequências"
+    },
+    "SMART": {
+      "VARIATIONS_NEED_TEXT": "Escreva a mensagem antes de pedir variações",
+      "VARIATIONS_READY": "Versões sugeridas — revise antes de salvar",
+      "VARIATIONS_ERROR": "Não foi possível sugerir variações",
+      "TEMPLATE_NAME_PROMPT": "Nome do modelo (vira também uma resposta pronta)",
+      "TEMPLATE_SAVED": "Salvo como modelo",
+      "TEMPLATE_ERROR": "Não foi possível salvar o modelo",
+      "SPINTAX_HINT": "Alterne palavras para nenhuma mensagem sair idêntica:",
+      "SPINTAX_ON": "variações ativas",
+      "VARIANTS_TITLE": "Outras versões deste texto",
+      "SUGGEST_VARIATIONS": "Sugerir com IA",
+      "VARIANTS_HINT": "Cada contato recebe uma das versões, sorteada.",
+      "ADD_VARIANT": "Adicionar versão",
+      "USE_TEMPLATE": "Usar um modelo…",
+      "SAVE_TEMPLATE": "Salvar como modelo"
+    },
+    "SEGMENTS": {
+      "TITLE": "Segmentos inteligentes",
+      "HINT": "Estreitam o público. Sozinhos, filtram todos os contatos; junto de etiquetas ou listas, filtram o que elas trouxeram.",
+      "ORIGIN": "Origem",
+      "ORIGINS": {
+        "ANUNCIO_FACEBOOK": "Veio de anúncio",
+        "ORGANICO": "Orgânico"
+      },
+      "RECURRING": "Cliente",
+      "RECURRING_OPTIONS": {
+        "ANY": "Todas",
+        "YES": "Recorrente",
+        "NO": "Nova"
+      },
+      "NO_REPLY_DAYS": "Sem responder há (dias)",
+      "NO_REPLY_PLACEHOLDER": "ex.: 60",
+      "BIRTHDAY": "Aniversariantes",
+      "BIRTHDAY_OPTIONS": {
+        "ANY": "Todas",
+        "TODAY": "Hoje",
+        "WEEK": "Próximos 7 dias",
+        "MONTH": "Este mês"
+      },
+      "EXCLUDE_LABELS": "Deixar de fora quem tem a etiqueta"
+    },
+    "SAFETY": {
+      "HINT": "Número não oficial: as mensagens saem uma por vez, com intervalo aleatório, só no horário comercial e dentro dos limites por hora e por dia de cada conexão. Quem pediu para não receber ou está em atendimento é pulado, e o disparo pausa sozinho se as falhas se repetirem.",
+      "WEEKDAYS": "Dias",
+      "DAYS": {
+        "D0": "D",
+        "D1": "S",
+        "D2": "T",
+        "D3": "Q",
+        "D4": "Q",
+        "D5": "S",
+        "D6": "S"
+      },
+      "WINDOW_START": "Das (hora)",
+      "WINDOW_END": "Até (hora)",
+      "HOURLY_CAP": "Por hora (conexão)",
+      "DAILY_CAP": "Por dia (conexão)",
+      "DELAY_MIN": "Intervalo mín. (s)",
+      "DELAY_MAX": "Intervalo máx. (s)",
+      "QUIET_HOURS": "Pular quem falou nas últimas (h)",
+      "MAX_FAILURES": "Pausar após falhas seguidas",
+      "SMART_TIMING": "Enviar no horário em que cada contato costuma responder",
+      "SMART_TIMING_HINT": "Dentro da janela. Quem não tem padrão segue o ritmo normal; o disparo pode levar um dia a mais."
+    },
+    "PREVIEW": {
+      "ELIGIBLE": "vão receber",
+      "EXCLUDED": {
+        "OPTED_OUT": "1 pediu para não receber — fica de fora | {count} pediram para não receber — ficam de fora",
+        "RECENT_ACTIVITY": "1 está conversando com o salão agora — fica de fora | {count} estão conversando com o salão agora — ficam de fora"
+      },
+      "ESTIMATE": "Cerca de {perHour}/hora e até {perDay}/dia, das {start}h às {end}h: ~{days} dia(s) para chegar em todas.",
+      "MISSING": "1 da amostra tem variável vazia | {count} da amostra têm variável vazia",
+      "SAMPLE": "O que as {count} primeiras recebem",
+      "SKIP": {
+        "OPTED_OUT": "Pediu para sair",
+        "RECENT_ACTIVITY": "Em atendimento",
+        "NO_PHONE": "Sem número"
+      },
+      "BEST_HOUR": "costuma responder às {hour}h"
+    },
+    "SEQUENCES": {
+      "SUBTITLE": "Mensagens automáticas presas ao horário agendado da cliente (o \"Agendar\" da ficha): lembrete antes, pós-atendimento depois. Toda sequência nasce DESLIGADA — ligue só depois de revisar os textos.",
+      "NEW": "Nova sequência",
+      "NEW_TITLE": "Nova sequência",
+      "EDIT_TITLE": "Editar sequência",
+      "DIALOG_DESCRIPTION": "Cada passo sai em relação ao horário agendado, sempre no horário comercial. Salvar não liga a sequência.",
+      "SAVE": "Salvar",
+      "NAME_PLACEHOLDER": "Nome, ex.: Lembrete e pós-atendimento",
+      "HOURS": "horas",
+      "DAYS": "dias",
+      "BEFORE": "antes",
+      "AFTER": "depois",
+      "OF_APPOINTMENT": "do horário",
+      "TEXT_PLACEHOLDER": "Oi, passando para lembrar…",
+      "ADD_STEP": "Adicionar mensagem",
+      "LOAD_ERROR": "Não foi possível carregar as sequências",
+      "SAVED": "Sequência salva",
+      "SAVE_ERROR": "Não foi possível salvar a sequência",
+      "ENABLE_CONFIRM": "Ligar \"{name}\"? A partir dos próximos agendamentos, estas mensagens saem automaticamente pelo número do salão.",
+      "DISABLE_CONFIRM": "Desligar \"{name}\"? As mensagens que ainda não saíram são canceladas.",
+      "DELETE_CONFIRM": "Excluir \"{name}\"? As mensagens que ainda não saíram são canceladas.",
+      "EMPTY": "Nenhuma sequência ainda. Crie, por exemplo, um lembrete para o dia anterior ao horário.",
+      "ENABLED": "Ligada",
+      "DISABLED": "Desligada",
+      "STATS": "{pending} aguardando · {sent} enviadas",
+      "ENABLE": "Ligar",
+      "DISABLE": "Desligar",
+      "EDIT": "Editar",
+      "OFFSET": {
+        "HOURS_BEFORE": "1 hora antes | {count} horas antes",
+        "HOURS_AFTER": "1 hora depois | {count} horas depois",
+        "DAYS_BEFORE": "1 dia antes | {count} dias antes",
+        "DAYS_AFTER": "1 dia depois | {count} dias depois"
+      }
+    },
+    "STATS": {
+      "SENT": "Enviadas (7 dias)",
+      "SENT_HINT": "{count} em andamento agora",
+      "SCHEDULED": "Agendadas",
+      "NEXT": "Próxima: {date}",
+      "NONE_SCHEDULED": "Nada agendado",
+      "REPLIES": "Taxa de resposta",
+      "REPLIES_HINT": "Disparos, últimos 30 dias",
+      "PROTECTED": "Seguradas pela proteção",
+      "OPTED_OUT": "1 pediu para não receber | {count} pediram para não receber",
+      "USAGE_TODAY": "Hoje por conexão",
+      "USAGE": "{today}/{dailyCap} hoje · {hour}/{hourlyCap} na última hora"
     }
   }
 }
