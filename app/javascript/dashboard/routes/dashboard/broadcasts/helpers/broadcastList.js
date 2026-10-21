@@ -83,3 +83,42 @@ export const usageTone = (used, cap) => {
   if (ratio >= 0.6) return 'bg-n-amber-9';
   return 'bg-n-teal-9';
 };
+
+// Barra em doze avos: Tailwind sem estilo inline.
+const WIDTHS = [
+  'w-0',
+  'w-1/12',
+  'w-2/12',
+  'w-3/12',
+  'w-4/12',
+  'w-5/12',
+  'w-6/12',
+  'w-7/12',
+  'w-8/12',
+  'w-9/12',
+  'w-10/12',
+  'w-11/12',
+  'w-full',
+];
+export const widthClass = ratio =>
+  WIDTHS[Math.min(12, Math.max(0, Math.round((Number(ratio) || 0) * 12)))];
+
+// Enviadas → entregues → lidas → responderam, cada etapa sobre as enviadas.
+export const funnelOf = counts => {
+  const sent = Number(counts.sent) || 0;
+  return ['sent', 'delivered', 'read', 'replied'].map(key => {
+    const value = Number(counts[key]) || 0;
+    return { key, value, ratio: sent ? value / sent : 0 };
+  });
+};
+
+export const REPORT_FILTERS = [
+  'all',
+  'sent',
+  'delivered',
+  'read',
+  'replied',
+  'failed',
+  'skipped',
+  'pending',
+];

@@ -89,8 +89,7 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
   # Per-recipient progress log for the live tracking popup. Returns the rolling
   # counts plus the most-recent recipients with their delivery status.
   def recipients
-    list = @broadcast.broadcast_recipients.includes(:contact, :message)
-                     .order(Arel.sql('sent_at DESC NULLS LAST'), id: :desc).limit(200)
+    list = recipient_report.scope.limit(200)
     render json: {
       status: @broadcast.status,
       pause_reason: @broadcast.pause_reason,
@@ -99,7 +98,18 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
     }
   end
 
+  # Todos os destinatários do filtro atual em CSV (nome, telefone, resultado,
+  # motivo, erro, enviada em, respondeu em), no fuso do salão.
+  def export
+    send_data recipient_report.to_csv, type: 'text/csv; charset=utf-8',
+                                       filename: "disparo-#{@broadcast.id}-#{Time.current.strftime('%Y%m%d-%H%M')}.csv"
+  end
+
   private
+
+  def recipient_report
+    Broadcasts::RecipientReport.new(@broadcast, filter: params[:filter], query: params[:q])
+  end
 
   # Report: delivery and read come from the WhatsApp ack on the message the
   # recipient got (Message#status), replies from ScheduledMessageListener.

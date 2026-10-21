@@ -1,11 +1,13 @@
 import {
   defaultColumns,
+  funnelOf,
   filterBroadcasts,
   pageWindow,
   paginate,
   progressOf,
   replyRateOf,
   usageTone,
+  widthClass,
 } from '../broadcastList';
 
 const list = [
@@ -72,5 +74,26 @@ describe('broadcastList helpers', () => {
   it('colunas padrão deixam a data de criação de fora', () => {
     expect(defaultColumns()).not.toContain('created');
     expect(defaultColumns()).toContain('replied');
+  });
+
+  it('funil calcula cada etapa sobre as enviadas', () => {
+    expect(
+      funnelOf({ sent: 10, delivered: 8, read: 5, replied: 2 }).map(s => [
+        s.key,
+        s.ratio,
+      ])
+    ).toEqual([
+      ['sent', 1],
+      ['delivered', 0.8],
+      ['read', 0.5],
+      ['replied', 0.2],
+    ]);
+    expect(funnelOf({}).every(s => s.ratio === 0)).toBe(true);
+  });
+
+  it('largura da barra em doze avos sem estilo inline', () => {
+    expect(widthClass(0)).toBe('w-0');
+    expect(widthClass(0.5)).toBe('w-6/12');
+    expect(widthClass(1.4)).toBe('w-full');
   });
 });

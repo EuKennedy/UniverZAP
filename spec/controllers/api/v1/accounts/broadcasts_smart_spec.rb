@@ -88,4 +88,17 @@ RSpec.describe 'Broadcasts smart dispatch API', type: :request do
     expect(body['name']).to include(broadcast.name)
     expect(body['message']).to eq(broadcast.message)
   end
+
+  it 'filtra o relatório e exporta CSV' do
+    create(:broadcast_recipient, broadcast: broadcast, contact: quiet, status: :sent, sent_at: Time.current)
+    create(:broadcast_recipient, broadcast: broadcast, contact: opted, status: :skipped, skip_reason: 'opted_out')
+
+    get "#{base}/#{broadcast.id}/recipients", params: { filter: 'skipped' }, headers: admin.create_new_auth_token
+    expect(response.parsed_body['recipients'].pluck('name')).to eq([opted.name])
+
+    get "#{base}/#{broadcast.id}/export", params: { filter: 'sent' }, headers: admin.create_new_auth_token
+    expect(response.media_type).to eq('text/csv')
+    expect(response.body.lines.size).to eq(2)
+    expect(response.body).to include('Carla Dias')
+  end
 end

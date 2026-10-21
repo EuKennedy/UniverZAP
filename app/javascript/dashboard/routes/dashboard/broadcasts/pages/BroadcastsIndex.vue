@@ -23,6 +23,7 @@ import {
   paginate,
   progressOf,
   replyRateOf,
+  widthClass,
 } from '../helpers/broadcastList';
 
 const { t, locale } = useI18n();
@@ -136,22 +137,7 @@ const formatDate = seconds =>
     year: '2-digit',
   }).format(new Date(seconds * 1000));
 
-const progressWidth = item =>
-  [
-    'w-0',
-    'w-1/12',
-    'w-2/12',
-    'w-3/12',
-    'w-4/12',
-    'w-5/12',
-    'w-6/12',
-    'w-7/12',
-    'w-8/12',
-    'w-9/12',
-    'w-10/12',
-    'w-11/12',
-    'w-full',
-  ][Math.round((progressOf(item) / 100) * 12)];
+const progressWidth = item => widthClass(progressOf(item) / 100);
 
 const percentLabel = item => `${progressOf(item)}%`;
 const sentLabel = item =>

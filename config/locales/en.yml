@@ -56,6 +56,27 @@ en:
       anuncio_cliques: Ad clicks
       anuncio_cliques_description: How many times the customer came back through an ad
   broadcasts:
+    report:
+      csv_headers:
+        name: Name
+        phone: Phone
+        result: Result
+        reason: Reason
+        error: Error
+        sent_at: Sent at
+        replied_at: Replied at
+      result:
+        pending: Pending
+        sent: Sent
+        delivered: Delivered
+        read: Read
+        replied: Replied
+        failed: Failed
+        skipped: Skipped
+      skip_reason:
+        opted_out: Asked not to receive
+        recent_activity: Being served
+        no_phone: No number
     copy_name: '%{name} (copy)'
   scheduled_messages:
     errors:

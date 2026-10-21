@@ -218,7 +218,30 @@
         "READ": "Lidas",
         "REPLIED": "Responderam",
         "SKIPPED": "Puladas (proteção)"
-      }
+      },
+      "PROCESSED": "{total} destinatários · {pending} aguardando",
+      "FUNNEL": {
+        "SENT": "Enviadas",
+        "DELIVERED": "Entregues",
+        "READ": "Lidas",
+        "REPLIED": "Responderam"
+      },
+      "FAILED_COUNT": "1 falha | {count} falhas",
+      "SKIPPED_COUNT": "1 segurada pela proteção | {count} seguradas pela proteção",
+      "FILTERS": {
+        "ALL": "Todas",
+        "SENT": "Enviadas",
+        "DELIVERED": "Entregues",
+        "READ": "Lidas",
+        "REPLIED": "Responderam",
+        "FAILED": "Falhas",
+        "SKIPPED": "Puladas",
+        "PENDING": "Aguardando"
+      },
+      "SEARCH": "Buscar nome ou telefone…",
+      "EXPORT": "Baixar CSV",
+      "EXPORT_ERROR": "Não foi possível baixar o relatório",
+      "NO_MATCH": "Nenhum destinatário neste filtro"
     },
     "TABS": {
       "BROADCASTS": "Disparos",

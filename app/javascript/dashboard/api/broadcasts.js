@@ -34,8 +34,16 @@ class BroadcastsAPI extends ApiClient {
     });
   }
 
-  recipients(id) {
-    return axios.get(`${this.url}/${id}/recipients`);
+  recipients(id, { filter = 'all', q = '' } = {}) {
+    return axios.get(`${this.url}/${id}/recipients`, { params: { filter, q } });
+  }
+
+  // CSV de todos os destinatários do filtro atual (não só os 200 da tela).
+  exportRecipients(id, { filter = 'all', q = '' } = {}) {
+    return axios.get(`${this.url}/${id}/export`, {
+      params: { filter, q },
+      responseType: 'blob',
+    });
   }
 
   stats() {
