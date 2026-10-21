@@ -11,5 +11,8 @@ json.scheduled_at broadcast.scheduled_at
 json.recipients_count broadcast.broadcast_recipients.count
 json.sent_count broadcast.broadcast_recipients.where(status: [:sent, :delivered, :read]).count
 json.failed_count broadcast.broadcast_recipients.status_failed.count
+json.skipped_count broadcast.broadcast_recipients.status_skipped.count
+json.replied_count broadcast.broadcast_recipients.where.not(replied_at: nil).count
+json.pause_reason broadcast.pause_reason
 json.created_at broadcast.created_at.to_i
 json.updated_at broadcast.updated_at.to_i

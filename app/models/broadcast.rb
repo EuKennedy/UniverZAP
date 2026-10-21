@@ -12,6 +12,7 @@
 #  audience     :jsonb            default({})
 #  throttle     :jsonb            default({})
 #  scheduled_at :datetime
+#  pause_reason :string
 #  created_at   :datetime         not null
 #  updated_at   :datetime         not null
 #
@@ -47,24 +48,43 @@ class Broadcast < ApplicationRecord
     audience || {}
   end
 
-  def batch_min
-    throttle_value('batch_min', 3)
+  # Cadência anti-bloqueio (número não oficial). Os padrões são conservadores
+  # de propósito: uma mensagem por vez, com intervalo aleatório, só no horário
+  # comercial do salão e com teto por conexão — não por disparo — para que dois
+  # disparos simultâneos não somem o dobro no mesmo número.
+  THROTTLE_DEFAULTS = {
+    'batch_min' => 1, 'batch_max' => 1,
+    'delay_min' => 45, 'delay_max' => 150,
+    'hourly_cap' => 30, 'daily_cap' => 150,
+    'window_start' => 9, 'window_end' => 19,
+    'quiet_hours' => 12, 'max_failures' => 3
+  }.freeze
+  # Teto que o formulário não fura: um disparo antigo salvo com 500/dia ou
+  # rajada de 8 continua funcionando, só que dentro destes limites.
+  HARD_LIMITS = {
+    'batch_max' => 1..3, 'batch_min' => 1..3, 'delay_min' => 20..3600, 'delay_max' => 20..3600,
+    'hourly_cap' => 1..60, 'daily_cap' => 1..300, 'window_start' => 0..23, 'window_end' => 1..24,
+    'quiet_hours' => 0..168, 'max_failures' => 1..20
+  }.freeze
+  # Segunda a sábado (0 = domingo).
+  DEFAULT_WEEKDAYS = [1, 2, 3, 4, 5, 6].freeze
+
+  THROTTLE_DEFAULTS.each_key do |key|
+    define_method(key) { throttle_value(key, THROTTLE_DEFAULTS[key]) }
   end
 
-  def batch_max
-    throttle_value('batch_max', 8)
+  def weekdays
+    days = Array((throttle || {})['weekdays']).map(&:to_i) & (0..6).to_a
+    days.presence || DEFAULT_WEEKDAYS
   end
 
-  def delay_min
-    throttle_value('delay_min', 20)
+  # Cada contato recebe no horário em que costuma responder (dentro da janela).
+  def smart_timing?
+    ActiveModel::Type::Boolean.new.cast((throttle || {})['smart_timing']) || false
   end
 
-  def delay_max
-    throttle_value('delay_max', 60)
-  end
-
-  def daily_cap
-    throttle_value('daily_cap', 500)
+  def send_window
+    Broadcasts::SendWindow.new(account: account, start_hour: window_start, end_hour: window_end, weekdays: weekdays)
   end
 
   private
@@ -100,6 +120,8 @@ class Broadcast < ApplicationRecord
 
   def throttle_value(key, fallback)
     value = (throttle || {})[key]
-    value.presence ? value.to_i : fallback
+    value = value.presence ? value.to_i : fallback
+    range = HARD_LIMITS[key]
+    range ? value.clamp(range) : value
   end
 end
