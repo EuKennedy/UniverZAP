@@ -24,7 +24,7 @@ class ContactLists::CsvImportService
   def perform
     Contacts::BroadcastConsent.ensure_definition!(@account) if @cold
     ids = rows.filter_map { |name, phone| contact_for(name, phone)&.id }
-    @result['added'] = ContactLists::MemberService.new(@list).add(ids.uniq)
+    @result['added'] = ContactLists::MemberService.new(@list).add(ids.uniq, notify: true)
     @list.update!(metadata: @list.metadata.merge('last_import' => @result.merge('at' => Time.current.to_i)))
     @result
   end

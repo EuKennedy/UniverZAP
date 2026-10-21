@@ -6,23 +6,30 @@
 #   ContactLists::MemberService.new(list).remove([contact.id])
 #
 # Só aceita contatos da conta da lista. Quem tinha saído (status left) volta a
-# ficar ativo ao ser adicionado de novo. Devolve quantos mudaram.
+# ficar ativo ao ser adicionado de novo. Devolve quantos mudaram; quem
+# entrou fica em `added_ids`.
+#
+# `notify: true` dispara o gatilho "entrou na lista" do Chatflow
+# (ContactLists::EntryNotifier). As telas, o CSV e a extração usam; o bloco do
+# Chatflow não, porque dispara o gatilho ele mesmo.
 class ContactLists::MemberService
+  attr_reader :added_ids
+
   def initialize(list)
     @list = list
+    @added_ids = []
   end
 
-  def add(contact_ids, joined_at: Time.current)
+  def add(contact_ids, joined_at: Time.current, notify: false)
     ids = @list.account.contacts.where(id: Array(contact_ids).map(&:to_i)).pluck(:id)
     return 0 if ids.empty?
 
     existing = @list.members.where(contact_id: ids)
-    back = { status: :active, left_at: nil, joined_at: joined_at, updated_at: Time.current }
-    reactivated = existing.status_left.update_all(back) # rubocop:disable Rails/SkipsModelValidations
-    fresh = ids - existing.pluck(:contact_id)
-    insert(fresh, joined_at)
+    @added_ids = reactivate(existing.status_left, joined_at) + (ids - existing.pluck(:contact_id))
+    insert(ids - existing.pluck(:contact_id), joined_at)
     @list.recount!
-    reactivated + fresh.length
+    ContactLists::EntryNotifier.call(@list, @added_ids) if notify
+    @added_ids.length
   end
 
   def remove(contact_ids)
@@ -39,6 +46,13 @@ class ContactLists::MemberService
   end
 
   private
+
+  def reactivate(scope, joined_at)
+    left_ids = scope.pluck(:contact_id)
+    back = { status: :active, left_at: nil, joined_at: joined_at, updated_at: Time.current }
+    scope.update_all(back) # rubocop:disable Rails/SkipsModelValidations
+    left_ids
+  end
 
   def insert(contact_ids, joined_at)
     return if contact_ids.empty?

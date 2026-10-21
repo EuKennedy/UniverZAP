@@ -116,6 +116,19 @@ RSpec.describe ContactLists::GroupExtractionService do
     expect(list.members_count).to eq(2)
   end
 
+  it 'avisa o Chatflow de quem entrou e já é cliente, não dos contatos novos do grupo' do
+    stub_const('Chatflow::TriggerDispatcher', Class.new { def self.list_entered(_list, _contact); end })
+    dispatcher = Chatflow::TriggerDispatcher
+    allow(dispatcher).to receive(:list_entered)
+    old = create(:contact, account: account, phone_number: '+5531988881111')
+    stub_participants([{ id: '5531988881111@c.us', role: 'participant' }, { id: '5531988882222@c.us', role: 'participant' }])
+
+    extract
+
+    expect(dispatcher).to have_received(:list_entered).with(list, old).once
+    expect(dispatcher).to have_received(:list_entered).once
+  end
+
   it 'o job marca a lista como falha quando a WAHA erra' do
     stub_request(:get, "#{waha}/groups/#{group_id}/participants/v2").to_return(status: 500, body: 'boom')
     stub_request(:get, "#{waha}/groups/#{group_id}/participants").to_return(status: 500, body: 'boom')

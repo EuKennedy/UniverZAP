@@ -48,7 +48,7 @@ class Api::V1::Accounts::ContactListsController < Api::V1::Accounts::BaseControl
   end
 
   def add_members
-    added = ContactLists::MemberService.new(@contact_list).add(params[:contact_ids])
+    added = ContactLists::MemberService.new(@contact_list).add(params[:contact_ids], notify: true)
     render json: { added: added, members_count: @contact_list.members_count }
   end
 
@@ -123,7 +123,7 @@ class Api::V1::Accounts::ContactListsController < Api::V1::Accounts::BaseControl
     titles = Current.account.labels.where(id: Array(params.dig(:contact_list, :label_ids)).map(&:to_i)).pluck(:title)
     @contact_list.update!(metadata: { 'filter' => { 'labels' => titles } })
     ids = titles.any? ? Current.account.contacts.tagged_with(titles, any: true).pluck(:id) : []
-    ContactLists::MemberService.new(@contact_list).add(ids)
+    ContactLists::MemberService.new(@contact_list).add(ids, notify: true)
   end
 
   def creation_source

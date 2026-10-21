@@ -24,6 +24,7 @@ class ContactLists::GroupExtractionService
     @list = list
     @account = list.account
     @stats = Hash.new(0)
+    @joined_contact_ids = []
   end
 
   def perform
@@ -34,7 +35,9 @@ class ContactLists::GroupExtractionService
     seen = participants.map { |participant| upsert_member(participant, now).id }
     mark_left(seen, now)
     tag_contacts
-    finish(now, participants.length)
+    result = finish(now, participants.length)
+    ContactLists::EntryNotifier.call(@list, @joined_contact_ids)
+    result
   end
 
   private
@@ -96,8 +99,10 @@ class ContactLists::GroupExtractionService
     member
   end
 
-  # "Entrou" só conta numa atualização; na primeira extração todos são novos.
+  # "Entrou" só conta no resumo numa atualização (na primeira extração todos
+  # são novos); o gatilho do Chatflow vale para as duas.
   def count(member, joined)
+    @joined_contact_ids << member.contact_id if joined && member.contact_id
     @stats[:joined] += 1 if joined && @list.refreshed_at.present?
     @stats[:no_phone] += 1 if member.contact&.phone_number.blank?
   end

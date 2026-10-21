@@ -12,14 +12,16 @@ class ContactLists::MergeService
   def perform
     raise ArgumentError, I18n.t('contact_lists.errors.merge_needs_two') if @lists.size < 2
 
-    ContactList.transaction do
-      merged = @account.contact_lists.create!(name: @name.presence || default_name, description: @description, source: 'manual',
-                                              metadata: { 'merged_from' => @lists.map(&:id) })
+    merged = ContactList.transaction do
+      list = @account.contact_lists.create!(name: @name.presence || default_name, description: @description, source: 'manual',
+                                            metadata: { 'merged_from' => @lists.map(&:id) })
       ids = ContactListMember.where(contact_list_id: @lists.select(:id)).status_active.where.not(contact_id: nil).distinct.pluck(:contact_id)
-      ContactLists::MemberService.new(merged).add(ids)
-      ContactLists::DeduplicateService.new(merged).perform
-      merged.reload
+      ContactLists::MemberService.new(list).add(ids)
+      ContactLists::DeduplicateService.new(list).perform
+      list.reload
     end
+    ContactLists::EntryNotifier.call(merged, merged.members.status_active.pluck(:contact_id))
+    merged
   end
 
   private
