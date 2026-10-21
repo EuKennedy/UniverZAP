@@ -16,6 +16,7 @@ const state = {
   teamCount: 0,
   // UniverZAP: "Resolvidas" in the Todos dropdown
   resolvedCount: 0,
+  scheduledCount: 0,
 };
 
 export const getters = {
@@ -73,6 +74,7 @@ export const mutations = {
       status_count: statusCount,
       team_count: teamCount,
       resolved_count: resolvedCount,
+      scheduled_count: scheduledCount,
     } = {}
   ) {
     $state.mineCount = mineCount;
@@ -87,6 +89,7 @@ export const mutations = {
     if (statusCount !== undefined) $state.statusCount = statusCount;
     if (teamCount !== undefined) $state.teamCount = teamCount;
     if (resolvedCount !== undefined) $state.resolvedCount = resolvedCount;
+    if (scheduledCount !== undefined) $state.scheduledCount = scheduledCount;
     $state.updatedOn = new Date();
   },
 };

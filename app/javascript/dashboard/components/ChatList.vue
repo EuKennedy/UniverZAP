@@ -26,6 +26,7 @@ import TeleportWithDirection from 'dashboard/components-next/TeleportWithDirecti
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
 
 import { useUISettings } from 'dashboard/composables/useUISettings';
+import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
 import { useBulkActions } from 'dashboard/composables/chatlist/useBulkActions';
 import { useFilter } from 'shared/composables/useFilter';
@@ -135,6 +136,9 @@ const inboxesList = useMapGetter('inboxes/getInboxes');
 const campaigns = useMapGetter('campaigns/getAllCampaigns');
 const labels = useMapGetter('labels/getLabels');
 const currentAccountId = useMapGetter('getCurrentAccountId');
+// The account record (accounts/getAccount), which carries vertical_profile;
+// getCurrentAccount is the profile's slimmer copy without it.
+const { currentAccount } = useAccount();
 // We can't useFunctionGetter here since it needs to be called on setup?
 const getTeamFn = useMapGetter('teams/getTeam');
 const getConversationById = useMapGetter('getConversationById');
@@ -209,7 +213,14 @@ const VIEW_COUNT_KEYS = {
   // UniverZAP: "Fila, sem dono" and "Resolvidas" quick filters
   [wootConstants.LIST_VIEW.UNASSIGNED]: 'unAssignedCount',
   [wootConstants.LIST_VIEW.RESOLVED]: 'resolvedCount',
+  // UniverZAP: "Agendadas" — resolved as customer won (Resolver > Agendado),
+  // kept apart from the plain Resolvidas. Only for verticals that schedule.
+  [wootConstants.LIST_VIEW.SCHEDULED]: 'scheduledCount',
 };
+
+const scheduleStatus = computed(
+  () => currentAccount.value?.vertical_profile?.schedule_status || null
+);
 
 // Shown as KPI cards below the Todos/Grupos tabs, in addition to living in
 // the Todos dropdown — same state, just the day's triage at a glance instead
@@ -220,14 +231,20 @@ const KPI_VIEWS = [
   wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
   wootConstants.LIST_VIEW.UNASSIGNED,
   wootConstants.LIST_VIEW.RESOLVED,
+  wootConstants.LIST_VIEW.SCHEDULED,
 ];
 
 const viewItems = computed(() =>
-  Object.entries(VIEW_COUNT_KEYS).map(([key, countKey]) => ({
-    key,
-    name: t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${key}`),
-    count: conversationStats.value[countKey] || 0,
-  }))
+  Object.entries(VIEW_COUNT_KEYS)
+    .filter(
+      ([key]) =>
+        key !== wootConstants.LIST_VIEW.SCHEDULED || scheduleStatus.value
+    )
+    .map(([key, countKey]) => ({
+      key,
+      name: t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${key}`),
+      count: conversationStats.value[countKey] || 0,
+    }))
 );
 
 const kpiItems = computed(() =>
@@ -343,10 +360,19 @@ const TURN_VIEWS = [
   wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
 ];
 
+// The two halves of the resolved list, by whether the customer was won.
+const RESOLVED_VIEWS = [
+  wootConstants.LIST_VIEW.RESOLVED,
+  wootConstants.LIST_VIEW.SCHEDULED,
+];
+
+// Views that travel as `attendance_state` so the backend narrows the list
+// (and the agenda strip) the same way the client does below.
 const ATTENDANCE_VIEWS = [
   wootConstants.LIST_VIEW.WAITING,
   wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
   wootConstants.LIST_VIEW.IN_ATTENDANCE,
+  ...RESOLVED_VIEWS,
 ];
 
 const isMineView = computed(
@@ -450,6 +476,11 @@ const dateScope = computed(() => {
   };
 });
 
+// Customer won: carries the vertical's scheduling status. Without one the
+// account has no Agendadas and every resolved conversation is a plain one.
+const isScheduled = c =>
+  !!scheduleStatus.value && (c.labels || []).includes(scheduleStatus.value);
+
 // The store accumulates every bucket fetched so far, so the list on screen is
 // the client-side mirror of the backend split: Grupos holds ONLY WhatsApp
 // groups, Todos everything else, narrowed by the view of its dropdown.
@@ -478,7 +509,9 @@ function filterByListKey(conversations) {
     case wootConstants.LIST_VIEW.UNASSIGNED:
       return nonGroups.filter(c => !c.meta?.assignee);
     case wootConstants.LIST_VIEW.RESOLVED:
-      return nonGroups.filter(c => c.status === 'resolved');
+      return nonGroups.filter(c => c.status === 'resolved' && !isScheduled(c));
+    case wootConstants.LIST_VIEW.SCHEDULED:
+      return nonGroups.filter(c => c.status === 'resolved' && isScheduled(c));
     default:
       return nonGroups;
   }
@@ -570,10 +603,9 @@ function setFiltersFromUISettings() {
     : wootConstants.LIST_VIEW.ALL;
   // Resolvidas is backed by status, not by the persisted status filter: a
   // restored Resolvidas view with status "open" would list nothing and spin.
-  activeStatus.value =
-    activeListView.value === wootConstants.LIST_VIEW.RESOLVED
-      ? wootConstants.STATUS_TYPE.RESOLVED
-      : status || wootConstants.STATUS_TYPE.OPEN;
+  activeStatus.value = RESOLVED_VIEWS.includes(activeListView.value)
+    ? wootConstants.STATUS_TYPE.RESOLVED
+    : status || wootConstants.STATUS_TYPE.OPEN;
   // The view persists across reloads via conversation_list_view, but an
   // explicit order_by (picked from the sort filter) doesn't carry the
   // Aguardando-is-the-fila-de-risco default with it — without this, reopening
@@ -911,9 +943,9 @@ function updateView(selectedView) {
   // Resolvidas is the one view backed by conversation status rather than
   // assignee/attendance, so entering or leaving it is the only time this
   // flips activeStatus — every other transition leaves it untouched.
-  if (selectedView === wootConstants.LIST_VIEW.RESOLVED) {
+  if (RESOLVED_VIEWS.includes(selectedView)) {
     activeStatus.value = wootConstants.STATUS_TYPE.RESOLVED;
-  } else if (activeListView.value === wootConstants.LIST_VIEW.RESOLVED) {
+  } else if (RESOLVED_VIEWS.includes(activeListView.value)) {
     activeStatus.value = wootConstants.STATUS_TYPE.OPEN;
   }
   // Aguardando is the fila de risco: it only earns that name sorted oldest

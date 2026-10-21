@@ -86,7 +86,8 @@ const compactSummary = computed(() =>
 
     <template v-if="!collapsed">
       <ul class="grid grid-cols-2 gap-1.5 mb-0 list-none">
-        <li v-for="item in items" :key="item.key">
+        <!-- An odd count leaves the last card alone on its row: let it take the width. -->
+        <li v-for="item in items" :key="item.key" class="odd:last:col-span-2">
           <button
             type="button"
             class="flex flex-col items-start w-full gap-0.5 px-2.5 py-1.5 text-start rounded-lg border transition-colors"

@@ -63,6 +63,7 @@
       "waiting": "Waiting",
       "awaiting_customer": "Waiting on customer",
       "in_attendance": "In attendance",
+      "scheduled": "Scheduled",
       "resolved": "Resolved",
       "all": "All",
       "groups": "Groups",

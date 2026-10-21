@@ -22,6 +22,9 @@ export default {
     IN_ATTENDANCE: 'in_attendance',
     UNASSIGNED: 'unassigned',
     RESOLVED: 'resolved',
+    // UniverZAP: resolved conversations carrying the vertical's scheduling
+    // status (customer won), apart from the plain Resolvidas.
+    SCHEDULED: 'scheduled',
   },
   STATUS_TYPE: {
     OPEN: 'open',
