@@ -55,8 +55,18 @@ class Chatflow < ApplicationRecord
   #                    trigger_config['no_reply_minutes'] without a human reply.
   # recurring_customer — fires on the first inbound message of a conversation whose
   #                    contact already had a conversation that ended.
-  enum trigger_type: { on_first_message: 0, keyword: 1, any_message: 2, webhook: 3, ad_referral: 4, no_reply: 5, recurring_customer: 6 },
+  # label_added      — uma das etiquetas de trigger_config['label_ids'] entrou na conversa.
+  # broadcast_reply  — a primeira resposta do contato a um disparo (todos, ou os
+  #                    de trigger_config['broadcast_ids']).
+  # date             — aniversário, X dias depois do agendamento, de um estágio
+  #                    ou do atendimento encerrado (trigger_config['date']).
+  #                    Varrido de hora em hora, só dentro da janela de envio.
+  # list_entered     — o contato entrou numa lista de distribuição.
+  enum trigger_type: { on_first_message: 0, keyword: 1, any_message: 2, webhook: 3, ad_referral: 4, no_reply: 5, recurring_customer: 6,
+                       label_added: 7, broadcast_reply: 8, date: 9, list_entered: 10 },
        _prefix: :trigger
+
+  DATE_KINDS = %w[birthday after_appointment after_stage after_resolution].freeze
 
   validates :name, presence: true, length: { maximum: 255 }
   validates :description, length: { maximum: 5000 }, allow_blank: true
@@ -83,12 +93,46 @@ class Chatflow < ApplicationRecord
     Array(trigger_config['keywords']).map { |k| k.to_s.downcase.strip }.reject(&:blank?)
   end
 
+  def trigger_label_ids
+    ids_from(trigger_config['label_ids'])
+  end
+
+  def trigger_broadcast_ids
+    ids_from(trigger_config['broadcast_ids'])
+  end
+
+  def trigger_list_ids
+    ids_from(trigger_config['list_ids'])
+  end
+
+  # { 'kind' => 'birthday', 'attribute_key' => 'data_nascimento', 'days' => 0, 'label_id' => nil, 'hour' => 10 }
+  def date_config
+    raw = trigger_config['date'].to_h
+    {
+      'kind' => DATE_KINDS.include?(raw['kind']) ? raw['kind'] : 'birthday',
+      'attribute_key' => raw['attribute_key'].presence || 'data_nascimento',
+      'days' => raw['days'].to_i.clamp(0, 365),
+      'label_id' => raw['label_id'].presence&.to_i,
+      'hour' => (raw['hour'].presence || 10).to_i.clamp(0, 23)
+    }
+  end
+
+  # Pausar quando um atendente responde no meio do fluxo. Ligado por padrão: o
+  # robô falando por cima de uma pessoa é o pior atendimento possível.
+  def pause_on_agent_reply?
+    trigger_config['pause_on_agent_reply'] != false
+  end
+
   # Digits-only tester number used to gate a flow that is in test mode.
   def test_digits
     test_phone.to_s.gsub(/\D/, '')
   end
 
   private
+
+  def ids_from(value)
+    Array(value).map(&:to_i).reject(&:zero?)
+  end
 
   def inbox_belongs_to_account
     return if inbox.blank? || account.blank?

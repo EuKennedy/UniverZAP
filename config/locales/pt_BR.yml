@@ -69,6 +69,9 @@ pt_BR:
         recent_activity: Em atendimento
         no_phone: Sem número
     copy_name: '%{name} (cópia)'
+  chatflow:
+    simulator:
+      contact_name: Cliente simulada
   scheduled_messages:
     errors:
       interrupted: O envio foi interrompido; confira a conversa antes de tentar de novo

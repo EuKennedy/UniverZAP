@@ -1,0 +1,64 @@
+name: Pós-atendimento
+description: No dia seguinte ao horário agendado, pergunta como foi. Quem amou recebe o pedido de avaliação; quem não gostou vai direto para a equipe.
+category: relacionamento
+icon: i-lucide-heart-handshake
+trigger_type: date
+trigger_config:
+  date: { kind: after_appointment, days: 1, hour: 10 }
+start: digitando
+nodes:
+  - key: digitando
+    kind: typing
+    x: 0
+    y: 0
+    config: { seconds: 3 }
+  - key: pergunta
+    kind: menu
+    name: Como foi?
+    x: 300
+    y: 0
+    config:
+      text: "Oi, {{ contact.name }}! Como foi seu atendimento ontem?"
+      options:
+        - { label: "Amei 😍", value: amei }
+        - { label: "Foi bom", value: bom }
+        - { label: "Não gostei", value: ruim }
+  - key: avaliacao
+    kind: send_message
+    name: Pedir avaliação
+    x: 650
+    y: -140
+    config: { text: "Que alegria! Se puder, deixa uma avaliação para a gente no Google — ajuda muito 💜" }
+  - key: obrigada
+    kind: send_message
+    name: Obrigada
+    x: 650
+    y: 20
+    config: { text: "Obrigada pelo retorno! Qualquer coisa, é só chamar por aqui." }
+  - key: atencao
+    kind: set_label
+    name: Atenção
+    x: 650
+    y: 180
+    config: { label_titles: [escalado] }
+  - key: desculpa
+    kind: send_message
+    name: Pedir desculpas
+    x: 950
+    y: 180
+    config: { text: "Sinto muito 😔 Vou passar para a responsável agora mesmo para entender o que aconteceu." }
+  - key: fim
+    kind: end_flow
+    name: Fim
+    x: 1250
+    y: 20
+    config: { actions: {} }
+edges:
+  - [digitando, default, pergunta]
+  - [pergunta, amei, avaliacao]
+  - [pergunta, bom, obrigada]
+  - [pergunta, ruim, atencao]
+  - [avaliacao, default, fim]
+  - [obrigada, default, fim]
+  - [atencao, default, desculpa]
+  - [desculpa, default, fim]

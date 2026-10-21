@@ -185,6 +185,10 @@ Rails.application.routes.draw do
               resource :direct_uploads, only: [:create]
               resource :draft_messages, only: [:show, :update, :destroy]
               resources :kanban_tasks, only: [:index]
+              resource :chatflow_state, only: [:show], controller: 'chatflow_state' do
+                post :pause
+                post :resume
+              end
             end
             member do
               post :mute
@@ -397,12 +401,19 @@ Rails.application.routes.draw do
           # conversations; bot messages are created through MessageBuilder so
           # they render inside Chatwoot AND dispatch to WhatsApp via WAHA.
           resources :chatflows do
+            collection do
+              get :templates
+              post :from_template
+              get :options
+            end
             member do
               post :activate
               post :archive
               post :test
               post :stop_test
               post :run
+              get :funnel
+              post :simulate
             end
             resources :chatflow_nodes, only: [:create, :update, :destroy], path: 'nodes'
             resources :chatflow_edges, only: [:create, :destroy], path: 'edges'
