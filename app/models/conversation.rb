@@ -15,6 +15,7 @@
 #  identifier             :string
 #  is_group               :boolean          default(FALSE), not null
 #  is_status_broadcast    :boolean          default(FALSE), not null
+#  is_team                :boolean          default(FALSE), not null
 #  last_activity_at       :datetime         not null
 #  pinned_at              :datetime
 #  priority               :integer
@@ -43,6 +44,7 @@
 #  index_conversations_on_account_id_and_display_id           (account_id,display_id) UNIQUE
 #  index_conversations_on_account_id_and_is_group             (account_id,is_group)
 #  index_conversations_on_account_id_and_is_status_broadcast  (account_id,is_status_broadcast)
+#  index_conversations_on_account_id_and_is_team              (account_id,is_team)
 #  index_conversations_on_ai_assistant_id                     (ai_assistant_id)
 #  index_conversations_on_ai_mode                             (ai_mode)
 #  index_conversations_on_assignee_id_and_account_id          (assignee_id,account_id)
@@ -167,7 +169,10 @@ class Conversation < ApplicationRecord
   # The statuses contacts post arrive through one "status@broadcast" chat: they
   # get a "Status" tab of their own and stay out of every other tab and count.
   scope :status_broadcasts, -> { where(is_status_broadcast: true) }
-  scope :regular, -> { where(is_group: false, is_status_broadcast: false) }
+  # The contacts picked as the team (people of the business itself) talk in a
+  # tab of their own, so internal chats never sit in the customer queues.
+  scope :team_chats, -> { where(is_team: true) }
+  scope :regular, -> { where(is_group: false, is_status_broadcast: false, is_team: false) }
   scope :resolvable_not_waiting, lambda { |auto_resolve_after|
     return none if auto_resolve_after.to_i.zero?
 
@@ -411,6 +416,7 @@ class Conversation < ApplicationRecord
   def set_group_flag
     self.is_group = contact&.identifier.to_s.end_with?('@g.us')
     self.is_status_broadcast = contact&.identifier.to_s == 'status@broadcast'
+    self.is_team = contact&.custom_attributes&.dig(Contacts::TeamService::ATTRIBUTE) == true
     true
   end
 

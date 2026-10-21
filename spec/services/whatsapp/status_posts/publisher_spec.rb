@@ -80,4 +80,17 @@ RSpec.describe Whatsapp::StatusPosts::Publisher do
       body['caption'] == 'Bastidores' && body['convert'] == true && body.dig('file', 'url').include?('/rails/active_storage/')
     end).to have_been_made
   end
+
+  it 'fills the variables with the name of each connection' do
+    stub_request(:post, %r{https://waha\.test/api/u1-.+/status/text}).to_return(status: 200, headers: json, body: '{}')
+    post = create(:whatsapp_status_post, account: account, status: :publishing, body: 'Hoje na {{conexao}}!',
+                                         inbox_ids: [loja.id, filial.id])
+
+    described_class.new(post).perform
+
+    expect(a_request(:post, 'https://waha.test/api/u1-loja/status/text').with { |r| JSON.parse(r.body)['text'] == 'Hoje na Loja!' })
+      .to have_been_made
+    expect(a_request(:post, 'https://waha.test/api/u1-filial/status/text').with { |r| JSON.parse(r.body)['text'] == 'Hoje na Filial!' })
+      .to have_been_made
+  end
 end

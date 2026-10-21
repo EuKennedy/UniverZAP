@@ -5,6 +5,7 @@ const list = vi.fn();
 const retry = vi.fn();
 const remove = vi.fn();
 const publishNow = vi.fn();
+const duplicate = vi.fn();
 
 vi.mock('dashboard/api/whatsappStatus', () => ({
   default: {
@@ -12,6 +13,7 @@ vi.mock('dashboard/api/whatsappStatus', () => ({
     retry: (...a) => retry(...a),
     remove: (...a) => remove(...a),
     publishNow: (...a) => publishNow(...a),
+    duplicate: (...a) => duplicate(...a),
   },
 }));
 
@@ -26,6 +28,9 @@ const stubs = {
   },
   Spinner: true,
   StatusPreview: true,
+  StatusAgenda: {
+    template: '<div data-testid="agenda-stub" />',
+  },
   Dialog: {
     emits: ['confirm'],
     data: () => ({ isOpen: false }),
@@ -139,26 +144,78 @@ describe('WhatsAppStatusHistory.vue', () => {
     expect(publishNow).toHaveBeenCalledWith(6);
   });
 
-  it('filters scheduled posts', async () => {
+  // A busca e os filtros vão para o servidor: valem para o histórico inteiro,
+  // e não só para a página que está aberta.
+  it('sends search and filters to the server and starts again on page 1', async () => {
+    vi.useFakeTimers();
     list.mockResolvedValue({
-      data: {
-        payload: [
-          post({ id: 1 }),
-          post({
-            id: 2,
-            status: 'scheduled',
-            scheduled_at: '2099-01-01T09:00:00Z',
-          }),
-        ],
-        meta: {},
-      },
+      data: { payload: [post()], meta: { total_count: 25, total_pages: 3 } },
     });
 
     const wrapper = mountHistory();
     await flushPromises();
-    await wrapper.find('[data-testid="filter-scheduled"]').trigger('click');
+    await wrapper.find('[data-testid="page-2"]').trigger('click');
+    await flushPromises();
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
 
-    expect(wrapper.findAll('[data-testid="history-item"]')).toHaveLength(1);
+    await wrapper
+      .find('[data-testid="filter-status"] select')
+      .setValue('failed');
+    await flushPromises();
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 1, status: 'failed' })
+    );
+
+    await wrapper.find('[data-testid="history-search"]').setValue('terça');
+    await vi.advanceTimersByTimeAsync(350);
+    await flushPromises();
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: 'terça', status: 'failed' })
+    );
+    vi.useRealTimers();
+  });
+
+  it('offers to clear the filters when nothing matches', async () => {
+    list.mockResolvedValue({ data: { payload: [], meta: { total_count: 0 } } });
+
+    const wrapper = mountHistory();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="create-first"]').exists()).toBe(true);
+
+    await wrapper.find('[data-testid="filter-kind"] select').setValue('video');
+    await flushPromises();
+    expect(wrapper.find('[data-testid="create-first"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="history-empty"]').text()).toContain(
+      'WHATSAPP_PROFILE.HISTORY.EMPTY_FILTERED'
+    );
+  });
+
+  // Duplicar já abre a cópia no compositor para ajustar antes de mandar.
+  it('duplicates any status and opens the copy for editing', async () => {
+    list.mockResolvedValue({ data: { payload: [post({ id: 3 })], meta: {} } });
+    duplicate.mockResolvedValue({ data: { id: 30, status: 'draft' } });
+
+    const wrapper = mountHistory();
+    await flushPromises();
+    await wrapper.find('[data-testid="history-duplicate"]').trigger('click');
+    await flushPromises();
+
+    expect(duplicate).toHaveBeenCalledWith(3);
+    expect(wrapper.emitted('edit')[0][0]).toEqual({ id: 30, status: 'draft' });
+    expect(wrapper.emitted('changed')).toBeTruthy();
+  });
+
+  it('switches to the week view', async () => {
+    list.mockResolvedValue({ data: { payload: [post()], meta: {} } });
+
+    const wrapper = mountHistory();
+    await flushPromises();
+    await wrapper.find('[data-testid="view-agenda"]').trigger('click');
+
+    expect(wrapper.find('[data-testid="agenda-stub"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="history-toolbar"]').exists()).toBe(
+      false
+    );
   });
 
   // Enquanto algo está saindo, a tela tem que mostrar quando terminar sem o

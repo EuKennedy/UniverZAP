@@ -8,6 +8,8 @@ export default {
     GROUPS: 'groups',
     // UniverZAP: the contacts' WhatsApp statuses (status@broadcast) tab.
     STATUS: 'status',
+    // UniverZAP: the business' own people, picked by an admin.
+    TEAM: 'team',
   },
   // UniverZAP: the views of the Todos dropdown. Minhas narrows by assignee;
   // Aguardando (our move) / Aguardando cliente (their move) / Em atendimento

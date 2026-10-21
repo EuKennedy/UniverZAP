@@ -31,6 +31,7 @@ describe('#mutations', () => {
           in_attendance: 0,
           groups: 0,
           status: 0,
+          team: 0,
           appliedFilters: 0,
         },
         hasEndReached: {
@@ -41,6 +42,7 @@ describe('#mutations', () => {
           in_attendance: false,
           groups: false,
           status: false,
+          team: false,
           appliedFilters: false,
         },
       });
