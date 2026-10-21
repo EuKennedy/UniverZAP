@@ -15,6 +15,10 @@ describe AutomationRuleListener do
     Current.user = user
   end
 
+  # Current is not reset between examples; a leftover user turns status
+  # changes in later specs into activity messages.
+  after { Current.reset }
+
   describe 'conversation_updated with label conditions and actions' do
     context 'when label is added and automation rule has label condition' do
       let(:automation_rule) do
