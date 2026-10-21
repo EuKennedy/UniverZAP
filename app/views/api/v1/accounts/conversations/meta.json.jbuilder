@@ -10,4 +10,5 @@ json.meta do
   json.status_count @conversations_count[:status_count]
   json.team_count @conversations_count[:team_count]
   json.resolved_count @conversations_count[:resolved_count]
+  json.scheduled_count @conversations_count[:scheduled_count]
 end

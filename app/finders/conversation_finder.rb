@@ -176,7 +176,19 @@ class ConversationFinder
       @conversations = @conversations.waiting
     when 'awaiting_customer'
       @conversations = @conversations.awaiting_customer
+    # UniverZAP: the two halves of the resolved list — Agendadas (customer
+    # won, carries the vertical's scheduling status; see
+    # Conversations::ScheduleService) and the plain Resolvidas without it.
+    # A vertical that doesn't schedule has no such split.
+    when 'scheduled'
+      @conversations = @conversations.tagged_with(schedule_status, on: :labels) if schedule_status
+    when 'resolved'
+      @conversations = @conversations.tagged_with(schedule_status, on: :labels, exclude: true) if schedule_status
     end
+  end
+
+  def schedule_status
+    VerticalProfile.for(current_account).schedule_status
   end
 
   # UniverZAP: only the conversations that started on params[:created_on]
@@ -255,12 +267,21 @@ class ConversationFinder
       assigned_count: all_count - unassigned_count,
       unassigned_count: unassigned_count,
       all_count: all_count,
-      resolved_count: @conversations_before_status.regular.where(status: 'resolved').count,
+      **resolution_counts,
       group_count: @conversations_before_status.groups.count,
       status_count: @conversations_before_status.status_broadcasts.count,
       team_count: @conversations_before_status.team_chats.where(status: 'open').count,
       **attendance_state_counts(all_count)
     }
+  end
+
+  # UniverZAP: badges of Resolvidas and Agendadas — the resolved conversations
+  # split by the scheduling status, so a customer won never counts as a plain
+  # resolve.
+  def resolution_counts
+    resolved = @conversations_before_status.regular.where(status: 'resolved')
+    scheduled = schedule_status ? resolved.tagged_with(schedule_status, on: :labels).count : 0
+    { resolved_count: resolved.count - scheduled, scheduled_count: scheduled }
   end
 
   # UniverZAP: badges of the turn views. One query: every regular open
