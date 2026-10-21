@@ -19,12 +19,21 @@ class Chatflow::TriggerDispatcher
   end
 
   def self.list_entered(list, contact)
-    return if list.blank? || contact.blank?
+    return if list.blank? || contact.blank? || cold_contact?(contact)
 
     flows = candidates(contact.account, nil, any_inbox: true).trigger_list_entered.select do |flow|
       flow.trigger_list_ids.empty? || flow.trigger_list_ids.include?(list.id)
     end
     flows.find { |flow| start_on_latest(flow, contact, 'trigger' => 'list_entered', 'list_id' => list.id) }
+  end
+
+  # Contato que nunca falou com o salão (veio de grupo ou de CSV frio) não
+  # recebe mensagem de fluxo por ter entrado numa lista: mesmo risco de
+  # bloqueio e de LGPD que o disparo só aceita com confirmação explícita.
+  def self.cold_contact?(contact)
+    return false unless defined?(Contacts::BroadcastConsent)
+
+    Contacts::BroadcastConsent.unconsented_ids(contact.account, [contact.id]).any?
   end
 
   def self.start_on_latest(flow, contact, context)

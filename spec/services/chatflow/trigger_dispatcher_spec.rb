@@ -55,6 +55,16 @@ RSpec.describe Chatflow::TriggerDispatcher do
       expect(bot_said(older)).to be_empty
     end
 
+    it 'não começa para contato frio (nunca falou com o salão)' do
+      flow_with(:list_entered, {})
+      consent = Class.new { def self.unconsented_ids(_account, ids) = ids }
+      stub_const('Contacts::BroadcastConsent', consent)
+
+      described_class.list_entered(list, conversation.contact)
+
+      expect(bot_said(conversation)).to be_empty
+    end
+
     it 'filtra pela lista escolhida' do
       flow_with(:list_entered, 'list_ids' => [3])
       described_class.list_entered(list, conversation.contact)
