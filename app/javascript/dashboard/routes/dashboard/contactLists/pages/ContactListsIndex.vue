@@ -238,7 +238,7 @@ const controlClass =
           variant="outline"
           color="slate"
           icon="i-lucide-combine"
-          :label="t('CONTACT_LISTS.MERGE')"
+          :label="t('CONTACT_LISTS.MERGE.TITLE')"
           :disabled="lists.length < 2"
           data-testid="lists-merge"
           @click="mergeDialog?.open()"
@@ -476,7 +476,11 @@ const controlClass =
               class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-n-alpha-2 text-n-slate-11"
             >
               {{
-                t('CONTACT_LISTS.LIST.LEFT_COUNT', { count: list.left_count })
+                t(
+                  'CONTACT_LISTS.LIST.LEFT_COUNT',
+                  { count: list.left_count },
+                  list.left_count
+                )
               }}
             </span>
           </div>
@@ -556,9 +560,11 @@ const controlClass =
                           })
                         : '',
                       list.left_count
-                        ? t('CONTACT_LISTS.LIST.LEFT_COUNT', {
-                            count: list.left_count,
-                          })
+                        ? t(
+                            'CONTACT_LISTS.LIST.LEFT_COUNT',
+                            { count: list.left_count },
+                            list.left_count
+                          )
                         : '',
                     ]
                       .filter(Boolean)

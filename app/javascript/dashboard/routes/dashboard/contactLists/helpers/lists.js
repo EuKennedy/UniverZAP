@@ -99,7 +99,10 @@ export const relativeTime = (seconds, locale = 'pt-BR', now = Date.now()) => {
     ['hour', 3600],
     ['minute', 60],
   ];
-  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  // O vue-i18n usa "pt_BR"; o Intl só aceita a tag BCP 47 ("pt-BR").
+  const formatter = new Intl.RelativeTimeFormat(locale.replace('_', '-'), {
+    numeric: 'auto',
+  });
   const found = units.find(([, size]) => Math.abs(diff) >= size);
   if (!found) return formatter.format(0, 'minute');
   const [unit, size] = found;

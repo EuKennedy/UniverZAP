@@ -314,7 +314,7 @@ const controlClass =
                 {{ t('CONTACT_LISTS.DETAIL.LABEL', { label: list.label }) }}
               </span>
               <span
-                v-if="lastRun && list.refreshed_at"
+                v-if="lastRun && (lastRun.joined || lastRun.left)"
                 class="text-[11px] text-n-slate-10"
               >
                 {{
@@ -567,7 +567,7 @@ const controlClass =
                   />
                   <span class="font-medium truncate text-n-slate-12">
                     {{
-                      member.name || t('CONTACT_LISTS.DETAIL.NO_PHONE_VALUE')
+                      member.name || t('CONTACT_LISTS.DETAIL.UNKNOWN_MEMBER')
                     }}
                   </span>
                 </div>

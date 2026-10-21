@@ -4,7 +4,6 @@
     "SUBTITLE": "Fixed snapshots of contacts — from a WhatsApp group, a CSV, picked by hand or by label — ready to be a broadcast audience.",
     "NEW": "New list",
     "EXTRACT_GROUP": "Extract from group",
-    "MERGE": "Merge lists",
     "REFRESH": "Refresh",
     "SEARCH": "Search lists…",
     "ALL_SOURCES": "All sources",
@@ -36,7 +35,7 @@
       "CREATED": "Created {when}",
       "IMPORTING": "Extracting participants…",
       "FAILED": "Extraction failed",
-      "LEFT_COUNT": "{count} left",
+      "LEFT_COUNT": "{count} left | {count} left",
       "NO_PHONE_COUNT": "{count} without phone",
       "EMPTY_TITLE": "No lists yet",
       "EMPTY_BODY": "Extract the participants of a WhatsApp group, import a CSV of phone numbers or build a list by hand.",
@@ -156,7 +155,8 @@
       "FAILED_BANNER": "The last extraction failed: {error}",
       "COLD_BANNER": "{count} people here never talked to the business. Broadcasts only reach them when the campaign confirms it.",
       "LABEL": "Label {label}",
-      "GROUP_LINK": "Open group conversation"
+      "GROUP_LINK": "Open group conversation",
+      "UNKNOWN_MEMBER": "Participant without a number"
     },
     "BADGE": {
       "LEFT": "Left",

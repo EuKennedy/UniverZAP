@@ -4,7 +4,6 @@
     "SUBTITLE": "Fotos fixas de contatos — de um grupo do WhatsApp, de um CSV, escolhidos à mão ou por etiqueta — prontas para virar público de disparo.",
     "NEW": "Nova lista",
     "EXTRACT_GROUP": "Extrair de grupo",
-    "MERGE": "Mesclar listas",
     "REFRESH": "Atualizar",
     "SEARCH": "Buscar listas…",
     "ALL_SOURCES": "Todas as origens",
@@ -36,7 +35,7 @@
       "CREATED": "Criada {when}",
       "IMPORTING": "Extraindo participantes…",
       "FAILED": "A extração falhou",
-      "LEFT_COUNT": "{count} saíram",
+      "LEFT_COUNT": "{count} saiu | {count} saíram",
       "NO_PHONE_COUNT": "{count} sem telefone",
       "EMPTY_TITLE": "Nenhuma lista ainda",
       "EMPTY_BODY": "Extraia os participantes de um grupo do WhatsApp, importe um CSV de telefones ou monte uma lista à mão.",
@@ -156,7 +155,8 @@
       "FAILED_BANNER": "A última extração falhou: {error}",
       "COLD_BANNER": "{count} pessoas daqui nunca falaram com o salão. O disparo só chega nelas quando a campanha confirma.",
       "LABEL": "Etiqueta {label}",
-      "GROUP_LINK": "Abrir conversa do grupo"
+      "GROUP_LINK": "Abrir conversa do grupo",
+      "UNKNOWN_MEMBER": "Participante sem número"
     },
     "BADGE": {
       "LEFT": "Saiu",

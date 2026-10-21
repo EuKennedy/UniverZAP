@@ -541,19 +541,6 @@ const refreshTemplates = async () => {
   }
 };
 
-onMounted(async () => {
-  store.dispatch('labels/get');
-  store.dispatch('funnels/get');
-  store.dispatch('inboxes/get');
-  try {
-    const data = await store.dispatch('broadcasts/show', props.broadcastId);
-    hydrate(data);
-    await loadTemplates();
-  } catch (error) {
-    useAlert(error?.message || t('BROADCAST.COMPOSER.LOAD_ERROR'));
-  }
-});
-
 const selectedTemplate = computed(() =>
   templates.value.find(tpl => templateKey(tpl) === selectedTemplateKey.value)
 );
@@ -756,6 +743,22 @@ const refreshAudience = async () => {
     isPreviewing.value = false;
   }
 };
+
+onMounted(async () => {
+  store.dispatch('labels/get');
+  store.dispatch('funnels/get');
+  store.dispatch('inboxes/get');
+  try {
+    const data = await store.dispatch('broadcasts/show', props.broadcastId);
+    hydrate(data);
+    // A prévia só lê; com público salvo, já mostra quem nunca falou com o
+    // salão (a confirmação depende dela).
+    if (hasAudience.value) refreshAudience();
+    await loadTemplates();
+  } catch (error) {
+    useAlert(error?.message || t('BROADCAST.COMPOSER.LOAD_ERROR'));
+  }
+});
 
 const persist = async ({ quiet = false } = {}) => {
   try {
