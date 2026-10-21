@@ -18,7 +18,9 @@ class Ai::FollowUpBroadcastService
   # Conservative next to the default broadcast throttle. A follow-up goes to
   # people who did NOT buy, so a burst of them is exactly the pattern WhatsApp
   # reads as spam.
-  THROTTLE = { 'batch_min' => 2, 'batch_max' => 5, 'delay_min' => 45, 'delay_max' => 120 }.freeze
+  # One message at a time like every broadcast now, with a longer gap than the
+  # default (Broadcast::THROTTLE_DEFAULTS waits 45–150 s).
+  THROTTLE = { 'batch_min' => 1, 'batch_max' => 1, 'delay_min' => 60, 'delay_max' => 180 }.freeze
 
   def initialize(assistant:, opportunity_ids:, message:, inbox: nil)
     @assistant = assistant
