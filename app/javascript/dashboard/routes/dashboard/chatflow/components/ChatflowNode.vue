@@ -3,122 +3,61 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Handle, Position } from '@vue-flow/core';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import {
+  KIND_META,
+  TONE_CLASSES,
+  nodeHandles,
+  nodeSummary,
+} from '../helpers/nodeKinds';
+import { rateTone } from '../helpers/funnel';
 
 // Custom Vue Flow node: one card = one "etapa". The target handle (left) is
 // where an incoming edge lands. Source handles (right) are the connection
 // POINTS the operator drags to the next card — a single `default` point for
-// linear steps, or one point per option on a SAC menu so each choice routes
-// independently. The handle `id` is persisted as the edge `source_handle`.
+// linear steps, or one named point per exit (menu options, se/senão, A/B,
+// pergunta válida/inválida…). The handle `id` is persisted as the edge
+// `source_handle`; the list of exits lives in helpers/nodeKinds.js.
 const props = defineProps({
   data: { type: Object, required: true },
   selected: { type: Boolean, default: false },
+  // Funil desta etapa (entraram/avançaram/esperando/saíram), quando ligado.
+  funnel: { type: Object, default: null },
+  // Simulação: a etapa por onde a conversa simulada passou / onde parou.
+  simulation: { type: String, default: null },
+  context: { type: Object, default: () => ({}) },
 });
 
 const emit = defineEmits(['delete']);
 
 const { t } = useI18n();
 
-const KIND_META = {
-  send_message: { icon: 'i-lucide-message-square', tone: 'teal' },
-  send_audio: { icon: 'i-lucide-mic', tone: 'violet' },
-  send_media: { icon: 'i-lucide-image', tone: 'blue' },
-  menu: { icon: 'i-lucide-list-tree', tone: 'amber' },
-  confirmation: { icon: 'i-lucide-circle-check-big', tone: 'teal' },
-  send_flow: { icon: 'i-lucide-clipboard-list', tone: 'amber' },
-  set_label: { icon: 'i-lucide-tag', tone: 'iris' },
-  assign_agent: { icon: 'i-lucide-user-check', tone: 'blue' },
-  add_to_kanban: { icon: 'i-lucide-kanban-square', tone: 'iris' },
-  webhook: { icon: 'i-lucide-webhook', tone: 'violet' },
-  end_flow: { icon: 'i-lucide-flag', tone: 'ruby' },
-};
-
 const kind = computed(() => props.data.kind);
 const meta = computed(() => KIND_META[kind.value] || KIND_META.send_message);
-const isMenu = computed(() => kind.value === 'menu');
-const isEnd = computed(() => kind.value === 'end_flow');
-const isConfirmation = computed(() => kind.value === 'confirmation');
-const isSendFlow = computed(() => kind.value === 'send_flow');
-
-// Duas saídas fixas, nomeadas e coloridas. Fixas porque a etapa tem exatamente
-// dois destinos: deixar o operador renomeá-las quebraria a ligação já desenhada
-// no canvas no dia em que ele trocasse uma letra.
-const CONFIRMATION_BRANCHES = computed(() => [
-  {
-    handle: 'resolved',
-    label: t('CHATFLOW.NODE.CONFIRMATION_RESOLVED'),
-    dot: '!bg-n-teal-9',
-  },
-  {
-    handle: 'unresolved',
-    label: t('CHATFLOW.NODE.CONFIRMATION_UNRESOLVED'),
-    dot: '!bg-n-ruby-9',
-  },
-]);
-
-// Formulário: sai por "respondeu" quando a resposta chega, e por "digitou"
-// quando o cliente escreve em vez de preencher. A segunda é opcional — sem
-// ligação, o fluxo continua esperando o formulário.
-const FLOW_BRANCHES = computed(() => [
-  {
-    handle: 'default',
-    label: t('CHATFLOW.NODE.FLOW_ANSWERED'),
-    dot: '!bg-n-teal-9',
-  },
-  {
-    handle: 'fallback',
-    label: t('CHATFLOW.NODE.FLOW_TYPED'),
-    dot: '!bg-n-amber-9',
-  },
-]);
-
-const options = computed(() =>
-  isMenu.value ? props.data.config?.options || [] : []
-);
+const handles = computed(() => nodeHandles(props.data, t));
+const named = computed(() => handles.value.some(h => h.label !== null));
 
 const title = computed(
   () => props.data.name || t(`CHATFLOW.NODE.KIND.${kind.value.toUpperCase()}`)
 );
 
-const summary = computed(() => {
-  const config = props.data.config || {};
-  if (isMenu.value) return config.text || t('CHATFLOW.NODE.MENU_EMPTY');
-  if (isConfirmation.value)
-    return config.text || t('CHATFLOW.NODE.CONFIRMATION_EMPTY');
-  if (kind.value === 'send_message') return config.text || '';
-  if (isSendFlow.value) return config.text || t('CHATFLOW.NODE.FLOW_SUMMARY');
-  if (kind.value === 'send_audio') return t('CHATFLOW.NODE.AUDIO_SUMMARY');
-  if (kind.value === 'send_media')
-    return config.caption || t('CHATFLOW.NODE.MEDIA_SUMMARY');
-  if (kind.value === 'set_label') return t('CHATFLOW.NODE.LABEL_SUMMARY');
-  if (kind.value === 'assign_agent') return t('CHATFLOW.NODE.ASSIGN_SUMMARY');
-  if (kind.value === 'add_to_kanban') return t('CHATFLOW.NODE.KANBAN_SUMMARY');
-  if (kind.value === 'webhook')
-    return config.url || t('CHATFLOW.NODE.WEBHOOK_SUMMARY');
-  if (isEnd.value) return t('CHATFLOW.NODE.END_SUMMARY');
-  return '';
-});
+const summary = computed(() => nodeSummary(props.data, t, props.context));
 
-const toneClass = computed(
-  () =>
-    ({
-      teal: 'bg-n-teal-3 text-n-teal-11',
-      violet: 'bg-n-violet-3 text-n-violet-11',
-      blue: 'bg-n-blue-3 text-n-blue-11',
-      amber: 'bg-n-amber-3 text-n-amber-11',
-      iris: 'bg-n-iris-3 text-n-iris-11',
-      ruby: 'bg-n-ruby-3 text-n-ruby-11',
-    })[meta.value.tone]
-);
+const ringClass = computed(() => {
+  if (props.selected)
+    return 'border-n-teal-7 shadow-md ring-1 ring-n-teal-6/40';
+  if (props.simulation === 'current')
+    return 'border-n-amber-8 shadow-md ring-2 ring-n-amber-7/50';
+  if (props.simulation === 'visited')
+    return 'border-n-teal-8 ring-1 ring-n-teal-7/40';
+  return 'border-n-weak hover:border-n-slate-6';
+});
 </script>
 
 <template>
   <div
     class="group relative w-64 rounded-2xl border bg-n-solid-1 shadow-sm transition-all"
-    :class="
-      selected
-        ? 'border-n-teal-7 shadow-md ring-1 ring-n-teal-6/40'
-        : 'border-n-weak hover:border-n-slate-6'
-    "
+    :class="ringClass"
+    :data-testid="`chatflow-node-${kind}`"
   >
     <!-- Delete affordance (hover) -->
     <button
@@ -131,6 +70,22 @@ const toneClass = computed(
       <Icon icon="i-lucide-trash-2" class="size-3.5" />
     </button>
 
+    <!-- Funil: quantos entraram e quantos seguiram. -->
+    <div
+      v-if="funnel"
+      class="absolute -top-3 left-3 z-10 flex items-center gap-1.5 px-2 h-6 rounded-full bg-n-solid-2 ring-1 ring-n-weak shadow-sm text-[11px] font-medium tabular-nums"
+      data-testid="node-funnel"
+    >
+      <Icon icon="i-lucide-users" class="size-3 text-n-slate-10" />
+      <span class="text-n-slate-12">{{ funnel.entered }}</span>
+      <span v-if="funnel.rate !== null" :class="rateTone(funnel.rate)">
+        {{ t('CHATFLOW.FUNNEL.RATE', { rate: funnel.rate }) }}
+      </span>
+      <span v-if="funnel.waiting" class="text-n-amber-11">
+        {{ t('CHATFLOW.FUNNEL.WAITING_SHORT', { count: funnel.waiting }) }}
+      </span>
+    </div>
+
     <!-- Entry point -->
     <Handle
       type="target"
@@ -141,7 +96,7 @@ const toneClass = computed(
     <div class="flex items-center gap-2.5 px-3.5 pt-3.5">
       <span
         class="flex items-center justify-center size-8 rounded-lg shrink-0"
-        :class="toneClass"
+        :class="TONE_CLASSES[meta.tone]"
       >
         <Icon :icon="meta.icon" class="size-4" />
       </span>
@@ -161,86 +116,38 @@ const toneClass = computed(
     >
       {{ summary }}
     </p>
+    <div v-else class="pb-3" />
 
-    <!-- SAC menu: one connection point per selectable option -->
-    <div v-if="isMenu" class="flex flex-col border-t border-n-weak">
+    <!-- Saídas nomeadas: uma porta por destino, com o nome à vista. Sem o
+      rótulo, as bolinhas ficam idênticas e ligar a errada é questão de tempo. -->
+    <div v-if="named" class="flex flex-col border-t border-n-weak">
       <div
-        v-for="(opt, index) in options"
-        :key="opt.value || index"
+        v-for="(exit, index) in handles"
+        :key="exit.handle"
         class="relative flex items-center gap-2 px-3.5 py-2 text-xs text-n-slate-12 border-b border-n-weak last:border-b-0"
+        :data-testid="`node-exit-${exit.handle}`"
       >
         <span
+          v-if="kind === 'menu'"
           class="flex items-center justify-center size-5 rounded-md bg-n-alpha-2 text-[10px] font-bold text-n-slate-11"
         >
           {{ index + 1 }}
         </span>
-        <span class="truncate">{{
-          opt.label || t('CHATFLOW.NODE.OPTION_EMPTY')
-        }}</span>
+        <span v-else class="size-2 rounded-full" :class="exit.dot" />
+        <span class="truncate">{{ exit.label }}</span>
         <Handle
-          :id="String(opt.value)"
-          type="source"
-          :position="Position.Right"
-          class="!size-3 !bg-n-amber-8 !border-2 !border-n-solid-1"
-        />
-      </div>
-    </div>
-
-    <!-- Confirmação: uma porta por ramo, com o nome à vista. Sem o rótulo, as
-      duas bolinhas ficam idênticas e ligar a errada é questão de tempo. -->
-    <div
-      v-else-if="isConfirmation"
-      class="flex flex-col border-t border-n-weak"
-    >
-      <div
-        v-for="branch in CONFIRMATION_BRANCHES"
-        :key="branch.handle"
-        class="relative flex items-center gap-2 px-3.5 py-2 text-xs border-b text-n-slate-12 border-n-weak last:border-b-0"
-      >
-        <span
-          class="size-2 rounded-full"
-          :class="branch.dot.replace('!', '')"
-        />
-        <span class="truncate">
-          {{ branch.label }}
-        </span>
-        <Handle
-          :id="branch.handle"
+          :id="exit.handle"
           type="source"
           :position="Position.Right"
           class="!size-3 !border-2 !border-n-solid-1"
-          :class="branch.dot"
-        />
-      </div>
-    </div>
-
-    <!-- Formulário: duas portas nomeadas, como a Confirmação. -->
-    <div v-else-if="isSendFlow" class="flex flex-col border-t border-n-weak">
-      <div
-        v-for="branch in FLOW_BRANCHES"
-        :key="branch.handle"
-        class="relative flex items-center gap-2 px-3.5 py-2 text-xs border-b text-n-slate-12 border-n-weak last:border-b-0"
-      >
-        <span
-          class="size-2 rounded-full"
-          :class="branch.dot.replace('!', '')"
-        />
-        <span class="truncate">
-          {{ branch.label }}
-        </span>
-        <Handle
-          :id="branch.handle"
-          type="source"
-          :position="Position.Right"
-          class="!size-3 !border-2 !border-n-solid-1"
-          :class="branch.dot"
+          :class="exit.handleClass"
         />
       </div>
     </div>
 
     <!-- Linear nodes: single forward point -->
     <Handle
-      v-else-if="!isEnd"
+      v-else-if="handles.length"
       id="default"
       type="source"
       :position="Position.Right"

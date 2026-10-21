@@ -8,12 +8,18 @@
 # along their `default` edge until the engine hits a menu (wait for input) or
 # a terminal/dead-end node (complete). MAX_STEPS guards against cyclic graphs.
 class Chatflow::EngineService
-  MAX_STEPS = 25
+  include Chatflow::TriggerChecks
+  include Chatflow::ReplyHandling
 
-  def initialize(message)
+  MAX_STEPS = 25
+  # Quantos "Ir para outro fluxo" seguidos antes de desistir: dois fluxos que
+  # apontam um para o outro não podem virar um robô que fala para sempre.
+  MAX_GOTO_DEPTH = 5
+
+  def initialize(message, conversation: nil)
     @message = message
-    @conversation = message.conversation
-    @account = message.account
+    @conversation = conversation || message&.conversation
+    @account = @conversation&.account
   end
 
   def perform
@@ -30,20 +36,46 @@ class Chatflow::EngineService
 
   # Start a specific flow on a conversation regardless of trigger — used by
   # the webhook trigger endpoint (POST /chatflows/:id/run).
-  def self.force_start(chatflow, conversation)
-    return if chatflow.start_node.blank?
-    return if ChatflowExecution.live.exists?(conversation_id: conversation.id)
+  def self.force_start(chatflow, conversation, context: {})
+    new(nil, conversation: conversation).start(chatflow, context: context)
+  end
 
-    service = allocate
-    service.instance_variable_set(:@conversation, conversation)
-    service.instance_variable_set(:@account, conversation.account)
+  # O relógio de uma Espera/Digitando venceu: segue pela saída normal. A trava
+  # é o `claim_timer!` — se o cliente respondeu no mesmo instante e a resposta
+  # já soltou a etapa, o timer não faz nada.
+  def self.resume(execution)
+    return unless execution.status_waiting_input? && execution.claim_timer!
+
+    execution.reload
+    service = new(nil, conversation: execution.conversation)
+    service.send(:follow, execution, execution.current_node, 'default')
+  end
+
+  # Começa `chatflow` nesta conversa a partir da etapa inicial. Não começa se já
+  # há um fluxo vivo ou pausado: um atendente que assumiu não pode ser
+  # atropelado por um gatilho que chegou depois.
+  def start(chatflow, context: {})
+    return if chatflow&.start_node.blank?
+    return if ChatflowExecution.live.exists?(conversation_id: @conversation.id)
+    return if Chatflow::BotControl.paused?(@conversation)
+
     execution = ChatflowExecution.create!(
-      account: conversation.account, chatflow: chatflow,
-      conversation: conversation, current_node: chatflow.start_node, status: :active
+      account: @account, chatflow: chatflow, conversation: @conversation,
+      current_node: chatflow.start_node, status: :active, context: context
     )
-    service.send(:run_chain, execution, chatflow.start_node)
+    run_chain(execution, chatflow.start_node)
+    execution
   rescue ActiveRecord::RecordNotUnique
-    nil
+    nil # a concurrent inbound already opened the live execution
+  end
+
+  # Para gatilhos que não vêm de mensagem (etiqueta, data, lista): mesmas
+  # regras de elegibilidade do gatilho por mensagem — modo de teste só com o
+  # número do testador, e nunca por cima do piloto automático da IA.
+  def start_from_event(chatflow, context: {})
+    return if autopilot_engaged? || !flow_eligible?(chatflow)
+
+    start(chatflow, context: context)
   end
 
   private
@@ -57,16 +89,7 @@ class Chatflow::EngineService
   def start_triggered_flow
     return if autopilot_engaged?
 
-    chatflow = matching_chatflow
-    return if chatflow&.start_node.blank?
-
-    execution = ChatflowExecution.create!(
-      account: @account, chatflow: chatflow, conversation: @conversation,
-      current_node: chatflow.start_node, status: :active
-    )
-    run_chain(execution, chatflow.start_node)
-  rescue ActiveRecord::RecordNotUnique
-    nil # a concurrent inbound already opened the live execution
+    start(matching_chatflow)
   end
 
   # Honour the operator's "IA neste chat" switch — never let a flow talk over
@@ -95,122 +118,6 @@ class Chatflow::EngineService
     @conversation.contact&.phone_number.to_s.gsub(/\D/, '').include?(digits)
   end
 
-  # webhook flows are started externally (POST /chatflows/:id/run), so an
-  # inbound message never auto-matches them.
-  def trigger_matches?(chatflow)
-    case chatflow.trigger_type
-    when 'on_first_message' then first_message_trigger?(chatflow)
-    when 'keyword' then keyword_hit?(chatflow)
-    when 'any_message' then true
-    when 'ad_referral' then ad_message?
-    # Once per conversation, decided from the data (a previous conversation that
-    # ended), not from the label: the conversation.created job may still be running.
-    when 'recurring_customer' then first_inbound_message? && Conversations::RecurringCustomerService.recurring?(@conversation)
-    else false
-    end
-  end
-
-  # The parsed attribute is written by AdReferralListener, which may still be
-  # running when this job starts; the raw text is the same signal either way.
-  def ad_message?
-    @message.content_attributes['ad_referral'].present? ||
-      Conversations::AdReferralService.ad_message?(@message.content)
-  end
-
-  # The first-message trigger fires on the conversation's first inbound
-  # message. A `cooldown` restart rule lets it fire again once enough hours
-  # have passed since the last run — for recurring touchpoints.
-  def first_message_trigger?(chatflow)
-    return true if first_inbound_message?
-
-    restart = chatflow.trigger_config['restart'] || {}
-    return false unless restart['mode'] == 'cooldown'
-
-    cooldown_elapsed?(chatflow, restart['hours'])
-  end
-
-  def cooldown_elapsed?(chatflow, hours)
-    window = (hours.to_i.positive? ? hours.to_i : 24).hours
-    last_run = chatflow.executions.where(conversation_id: @conversation.id).maximum(:updated_at)
-    last_run.nil? || last_run < window.ago
-  end
-
-  def first_inbound_message?
-    @conversation.messages.incoming.where.not(id: @message.id).none?
-  end
-
-  def keyword_hit?(chatflow)
-    body = @message.content.to_s.downcase
-    chatflow.keywords.any? { |keyword| body.include?(keyword) }
-  end
-
-  # --- advancing a waiting flow -------------------------------------------
-
-  def advance_from_reply(execution)
-    node = execution.current_node
-    return complete(execution) if node.blank?
-    return advance_from_confirmation(execution, node) if node.kind_confirmation?
-    return advance_from_flow(execution, node) if node.kind_send_flow?
-
-    option = Chatflow::ReplyMatcher.new(node, @message.content).match
-    return reprompt(execution, node) if option.nil?
-
-    record_selection(execution, node, option)
-    follow(execution, node, option['value'])
-  end
-
-  # A Confirmação casa por LISTA de palavras-chave e tem uma saída para quando
-  # nada casa — diferente do menu, que repergunta para sempre. Um cliente que
-  # escreveu um desabafo em vez de "sim" ficaria preso recebendo a mesma
-  # pergunta até o fim dos tempos.
-  def advance_from_confirmation(execution, node)
-    handle = Chatflow::ConfirmationMatcher.new(node, @message.content).match
-    return confirmation_retry(execution, node) if handle.nil?
-
-    record_selection(execution, node, 'value' => handle, 'label' => handle)
-    follow(execution, node, handle)
-  end
-
-  # A resposta do formulário (deste formulário, não de um antigo) segue pela
-  # saída normal. Texto digitado sai pelo `fallback` quando ele está ligado;
-  # sem ligação, o fluxo continua esperando o formulário — o cliente ainda pode
-  # preenchê-lo, e encerrar aqui o deixaria sem nada.
-  def advance_from_flow(execution, node)
-    response = @message.content_attributes['flow_response']
-    if response.present? && response['flow_id'].to_s == node.config['whatsapp_flow_id'].to_s
-      record_selection(execution, node, 'value' => 'default', 'label' => 'respondeu')
-      return follow(execution, node, 'default')
-    end
-    return unless node.outgoing_edges.exists?(source_handle: ChatflowNode::FALLBACK)
-
-    record_selection(execution, node, 'value' => ChatflowNode::FALLBACK, 'label' => 'digitou')
-    follow(execution, node, ChatflowNode::FALLBACK)
-  end
-
-  # Duas tentativas e sai pela porta de NÃO RESOLVIDO. Errar para o lado de
-  # mandar para um humano é o erro barato; o contrário abandona um cliente que
-  # continua com problema dentro de um robô que não o entende.
-  def confirmation_retry(execution, node)
-    tries = confirmation_tries(execution, node) + 1
-    record_confirmation_tries(execution, node, tries)
-
-    if tries > ChatflowNode::MAX_CONFIRMATION_RETRIES
-      record_selection(execution, node, 'value' => ChatflowNode::UNRESOLVED, 'label' => 'sem resposta')
-      return follow(execution, node, ChatflowNode::UNRESOLVED)
-    end
-
-    Chatflow::NodeRunnerService.new(execution, node).resend_confirmation
-  end
-
-  def confirmation_tries(execution, node)
-    execution.context.dig('confirmation_tries', node.id.to_s).to_i
-  end
-
-  def record_confirmation_tries(execution, node, tries)
-    counters = execution.context['confirmation_tries'].to_h.merge(node.id.to_s => tries)
-    execution.update!(context: execution.context.merge('confirmation_tries' => counters))
-  end
-
   # Sai do nó pelo handle escolhido. Handle sem ligação desenhada termina a
   # execução em vez de travar: o operador que não ligou aquela ponta decidiu,
   # por omissão, que o fluxo acaba ali.
@@ -235,21 +142,55 @@ class Chatflow::EngineService
   # --- graph walk ----------------------------------------------------------
 
   def run_chain(execution, node)
-    steps = 0
-    while node.present? && steps < MAX_STEPS
-      result = Chatflow::NodeRunnerService.new(execution, node).run
-      steps += 1
+    MAX_STEPS.times do
+      return complete(execution) if node.blank?
 
-      return execution.update!(status: :waiting_input, current_node: node) if result == :wait
-      return complete(execution) if result == :stop
-
-      node = advance_to_next(execution, node)
+      node = run_step(execution, node)
+      return if node == :halted
     end
-    complete(execution) if node.blank? || steps >= MAX_STEPS
+    complete(execution)
   end
 
-  def advance_to_next(execution, node)
-    edge = node.outgoing_edges.find_by(source_handle: 'default')
+  # Roda uma etapa e devolve a próxima (ou :halted quando a corrida para ali).
+  def run_step(execution, node)
+    execution.visit!(node)
+    result = Chatflow::NodeRunnerService.new(execution, node).run
+    case result
+    when :wait then halt { execution.update!(status: :waiting_input, current_node: node) }
+    when :stop then halt { complete(execution) }
+    when :goto then halt { goto_flow(execution, node) }
+    when String
+      record_branch(execution, node, result)
+      advance_to_next(execution, node, result)
+    else
+      advance_to_next(execution, node)
+    end
+  end
+
+  def halt
+    yield
+    :halted
+  end
+
+  def record_branch(execution, node, handle)
+    record_selection(execution, node, 'value' => handle, 'label' => handle)
+  end
+
+  # Encerra este fluxo e começa o outro na mesma conversa. Só vai para fluxo
+  # ativo — ou rascunho quando ESTE está em modo de teste —, para um rascunho
+  # nunca falar com cliente de verdade por tabela.
+  def goto_flow(execution, node)
+    target = @account.chatflows.find_by(id: node.config['chatflow_id'])
+    depth = execution.context['goto_depth'].to_i + 1
+    complete(execution)
+    return if target.blank? || target.id == execution.chatflow_id || depth > MAX_GOTO_DEPTH
+    return unless target.status_active? || execution.chatflow.test_mode
+
+    start(target, context: { 'goto_depth' => depth, 'from_chatflow_id' => execution.chatflow_id })
+  end
+
+  def advance_to_next(execution, node, handle = 'default')
+    edge = node.outgoing_edges.find_by(source_handle: handle)
     return nil if edge.blank?
 
     next_node = node_in_flow(execution, edge.target_node_id)
@@ -262,6 +203,6 @@ class Chatflow::EngineService
   end
 
   def complete(execution)
-    execution.update!(status: :completed, current_node: nil)
+    execution.update!(status: :completed, current_node: nil, resume_at: nil)
   end
 end

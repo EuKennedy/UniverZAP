@@ -16,5 +16,6 @@ json.skipped_count counts[:skipped]
 json.pending_count counts[:pending]
 json.replied_count counts[:replied]
 json.pause_reason broadcast.pause_reason
+json.cold_contacts_confirmed_at broadcast.cold_contacts_confirmed_at&.to_i
 json.created_at broadcast.created_at.to_i
 json.updated_at broadcast.updated_at.to_i

@@ -22,6 +22,8 @@ import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import BroadcastProgressModal from '../components/BroadcastProgressModal.vue';
 import MessageSmartTools from '../components/MessageSmartTools.vue';
 import AudienceSegments from '../components/AudienceSegments.vue';
+import AudienceListsPicker from '../components/AudienceListsPicker.vue';
+import ColdContactsConfirm from '../components/ColdContactsConfirm.vue';
 import SafetySettings from '../components/SafetySettings.vue';
 import AudiencePreviewPanel from '../components/AudiencePreviewPanel.vue';
 import ComposerStep from '../components/ComposerStep.vue';
@@ -110,6 +112,7 @@ const form = reactive({
     funnel_stage_ids: [],
     contact_ids: [],
     phone_numbers: [],
+    contact_list_ids: [],
     ...SEGMENT_DEFAULTS,
   },
   throttle: { ...THROTTLE_DEFAULTS },
@@ -432,6 +435,7 @@ const hydrate = record => {
   form.audience.funnel_stage_ids = aud.funnel_stage_ids || [];
   form.audience.contact_ids = aud.contact_ids || [];
   form.audience.phone_numbers = aud.phone_numbers || [];
+  form.audience.contact_list_ids = aud.contact_list_ids || [];
   Object.keys(SEGMENT_DEFAULTS).forEach(key => {
     form.audience[key] = aud[key] ?? SEGMENT_DEFAULTS[key];
   });
@@ -536,19 +540,6 @@ const refreshTemplates = async () => {
     isRefreshingTemplates.value = false;
   }
 };
-
-onMounted(async () => {
-  store.dispatch('labels/get');
-  store.dispatch('funnels/get');
-  store.dispatch('inboxes/get');
-  try {
-    const data = await store.dispatch('broadcasts/show', props.broadcastId);
-    hydrate(data);
-    await loadTemplates();
-  } catch (error) {
-    useAlert(error?.message || t('BROADCAST.COMPOSER.LOAD_ERROR'));
-  }
-});
 
 const selectedTemplate = computed(() =>
   templates.value.find(tpl => templateKey(tpl) === selectedTemplateKey.value)
@@ -753,6 +744,22 @@ const refreshAudience = async () => {
   }
 };
 
+onMounted(async () => {
+  store.dispatch('labels/get');
+  store.dispatch('funnels/get');
+  store.dispatch('inboxes/get');
+  try {
+    const data = await store.dispatch('broadcasts/show', props.broadcastId);
+    hydrate(data);
+    // A prévia só lê; com público salvo, já mostra quem nunca falou com o
+    // salão (a confirmação depende dela).
+    if (hasAudience.value) refreshAudience();
+    await loadTemplates();
+  } catch (error) {
+    useAlert(error?.message || t('BROADCAST.COMPOSER.LOAD_ERROR'));
+  }
+});
+
 const persist = async ({ quiet = false } = {}) => {
   try {
     const data = await store.dispatch('broadcasts/update', buildPayload());
@@ -767,6 +774,25 @@ const persist = async ({ quiet = false } = {}) => {
 };
 
 const save = () => persist();
+
+// "Estes contatos nunca falaram com o salão": grava a confirmação junto com o
+// público atual (o backend apaga a confirmação se o público mudar depois).
+const isConfirmingCold = ref(false);
+const setColdConfirmation = async confirmed => {
+  isConfirmingCold.value = true;
+  try {
+    const data = await store.dispatch('broadcasts/update', {
+      ...buildPayload(),
+      confirm_cold_contacts: confirmed,
+    });
+    hydrate(data);
+    await refreshAudience();
+  } catch (error) {
+    useAlert(error?.message || t('BROADCAST.COMPOSER.SAVE_ERROR'));
+  } finally {
+    isConfirmingCold.value = false;
+  }
+};
 
 // The dispatch reads what is persisted on the server, so firing without
 // saving used to send the PREVIOUS audience and message. Save first, then
@@ -792,6 +818,15 @@ const confirmLaunch = () => {
       days: estimate.days,
     }),
   ];
+  if (preview.cold_contacts_confirmed && preview.unconsented_count) {
+    lines.push(
+      t(
+        'BROADCAST.COMPOSER.LAUNCH_CONFIRM_COLD',
+        { count: preview.unconsented_count },
+        preview.unconsented_count
+      )
+    );
+  }
   if (form.scheduled_at && new Date(form.scheduled_at) > new Date()) {
     lines.push(
       t('BROADCAST.COMPOSER.LAUNCH_CONFIRM_SCHEDULED', {
@@ -1347,6 +1382,36 @@ onBeforeUnmount(stopStatsRefresh);
           <div
             class="flex flex-col rounded-xl border border-n-weak bg-n-solid-1 divide-y divide-n-weak overflow-hidden"
           >
+            <!-- Distribution lists -->
+            <div class="flex flex-col">
+              <button
+                type="button"
+                class="flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors hover:bg-n-alpha-1"
+                data-testid="audience-section-lists"
+                @click="toggleSection('lists')"
+              >
+                <Icon
+                  icon="i-lucide-chevron-down"
+                  class="size-4 text-n-slate-11 transition-transform"
+                  :class="openSection === 'lists' ? 'rotate-180' : ''"
+                />
+                <span
+                  class="flex-1 text-left text-sm font-medium text-n-slate-12"
+                >
+                  {{ t('BROADCAST.AUDIENCE.LISTS') }}
+                </span>
+                <span
+                  v-if="form.audience.contact_list_ids.length"
+                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-n-teal-3 text-[11px] font-semibold text-n-teal-11 tabular-nums"
+                >
+                  {{ form.audience.contact_list_ids.length }}
+                </span>
+              </button>
+              <div v-if="openSection === 'lists'" class="px-4 pb-4">
+                <AudienceListsPicker v-model="form.audience.contact_list_ids" />
+              </div>
+            </div>
+
             <!-- Segments (narrow the audience) -->
             <div class="flex flex-col">
               <button
@@ -1749,6 +1814,12 @@ onBeforeUnmount(stopStatsRefresh);
               </div>
             </div>
           </div>
+          <ColdContactsConfirm
+            :count="audiencePreview?.unconsented_count || 0"
+            :confirmed="Boolean(audiencePreview?.cold_contacts_confirmed)"
+            :disabled="isConfirmingCold"
+            @change="setColdConfirmation"
+          />
         </ComposerStep>
 
         <!-- Throttle -->

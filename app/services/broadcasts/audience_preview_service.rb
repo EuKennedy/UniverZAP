@@ -4,6 +4,8 @@
 # atendimento agora), uma amostra com o texto EXATO que cada um receberia
 # (versão sorteada + spintax + variáveis), quem tem variável vazia e uma
 # estimativa de quanto tempo a cadência leva para chegar em todos.
+# `unconsented_count` é quem nunca falou com o salão (veio de grupo/CSV frio):
+# fora do público até o disparo ter a confirmação gravada.
 class Broadcasts::AudiencePreviewService
   SAMPLE_SIZE = 20
 
@@ -24,6 +26,8 @@ class Broadcasts::AudiencePreviewService
     {
       count: ids.length + cold, new_count: fresh.length + cold, eligible_count: eligible,
       excluded: blocked.transform_values(&:length),
+      unconsented_count: resolver.unconsented_contact_ids.length,
+      cold_contacts_confirmed: @broadcast.cold_contacts_confirmed?,
       sample: sample(fresh, blocked),
       estimate: estimate(eligible)
     }

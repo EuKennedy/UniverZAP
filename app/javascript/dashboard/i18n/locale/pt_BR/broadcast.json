@@ -124,7 +124,8 @@
         "AUDIENCE": "Etiquetas e listas somam pessoas; segmentos inteligentes estreitam.",
         "SAFETY": "Ritmo, janela e limites que protegem o número.",
         "SCHEDULE": "Deixe vazio para começar quando disparar."
-      }
+      },
+      "LAUNCH_CONFIRM_COLD": "Inclui {count} contato que nunca falou com o salão. | Inclui {count} contatos que nunca falaram com o salão."
     },
     "MESSAGE": {
       "SEQUENCE_HINT": "Cada bloco é enviado em sequência — combine texto e mídia para montar o fluxo.",
@@ -182,7 +183,10 @@
       "IMPORT_PLACEHOLDER": "Cole os números — um por linha ou separados por vírgula/ponto e vírgula.",
       "IMPORT_FILE": "Importar CSV / TXT",
       "IMPORT_COUNT": "{count} números reconhecidos",
-      "IMPORT_CLEAR": "Limpar"
+      "IMPORT_CLEAR": "Limpar",
+      "LISTS": "Listas de distribuição",
+      "LISTS_EMPTY": "Ainda não há listas de distribuição.",
+      "LISTS_MANAGE": "Gerenciar listas"
     },
     "SCHEDULE": {
       "AT": "Enviar em",
@@ -374,6 +378,12 @@
       "OPTED_OUT": "1 pediu para não receber | {count} pediram para não receber",
       "USAGE_TODAY": "Hoje por conexão",
       "USAGE": "{today}/{dailyCap} hoje · {hour}/{hourlyCap} na última hora"
+    },
+    "COLD": {
+      "TITLE": "{count} contato deste público nunca falou com o salão | {count} contatos deste público nunca falaram com o salão",
+      "BODY": "Vieram de um grupo do WhatsApp ou de um CSV frio e ficam de fora deste disparo, a menos que você confirme.",
+      "INCLUDED": "Confirmado: eles entram. Se o público mudar, a confirmação é pedida de novo.",
+      "CONFIRM": "Confirmo: enviar para este contato que nunca falou com o salão | Confirmo: enviar para estes {count} contatos que nunca falaram com o salão"
     }
   }
 }

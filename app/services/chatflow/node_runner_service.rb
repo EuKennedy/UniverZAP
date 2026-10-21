@@ -8,7 +8,14 @@
 #   :continue — follow the node's `default` edge to the next node
 #   :wait     — pause on a menu node until the customer replies
 #   :stop     — terminal node; complete the execution
+#   :goto     — hand the conversation over to another flow (goto_flow)
+#   'handle'  — a String: follow that edge right away (condition, random split)
+#
+# Durante uma simulação (Chatflow::Simulator), nada sai da conta: mensagens
+# viram linhas no roteiro do simulador e webhook/formulário não são chamados.
 class Chatflow::NodeRunnerService
+  include Chatflow::AutomationBlocks
+
   def initialize(execution, node)
     @execution = execution
     @node = node
@@ -26,7 +33,14 @@ class Chatflow::NodeRunnerService
     'assign_agent' => :assign_agent_node,
     'add_to_kanban' => :add_to_kanban_node,
     'webhook' => :webhook_node,
-    'end_flow' => :end_flow_node
+    'end_flow' => :end_flow_node,
+    'question' => :question_node,
+    'condition' => :condition_node,
+    'wait' => :wait_node,
+    'random_split' => :random_split_node,
+    'goto_flow' => :goto_flow_node,
+    'typing' => :typing_node,
+    'list_action' => :list_action_node
   }.freeze
 
   def run
@@ -47,6 +61,12 @@ class Chatflow::NodeRunnerService
     fallback = @node.confirmation_fallback_text
     send_message(content: fallback) if fallback.present?
     send_message(content: config_text)
+  end
+
+  # Resposta inválida numa Pergunta: a mensagem de erro do operador, ou a
+  # pergunta de novo quando ele não escreveu uma.
+  def resend_question_error
+    send_message(content: @node.config['error_text'].presence || config_text)
   end
 
   private
@@ -79,6 +99,8 @@ class Chatflow::NodeRunnerService
   # exatamente como a Meta pede para testar. Fora disso a etapa é pulada em vez
   # de travar a execução num formulário que nunca vai chegar.
   def send_flow_node
+    return simulated(:skipped_flow) if simulation
+
     flow = @conversation.account.whatsapp_flows.find_by(id: @node.config['whatsapp_flow_id'])
     return :continue unless sendable_flow?(flow)
 
@@ -140,31 +162,6 @@ class Chatflow::NodeRunnerService
     @node.config['title'].presence ||
       @conversation.contact&.name.presence ||
       "Conversa ##{@conversation.display_id}"
-  end
-
-  def webhook_node
-    url = @node.config['url'].to_s
-    return :continue if url.blank?
-
-    method = %w[post get put].include?(@node.config['method']) ? @node.config['method'] : 'post'
-    HTTParty.public_send(method, url, body: webhook_payload.to_json,
-                                      headers: { 'Content-Type' => 'application/json' }, timeout: 8)
-    :continue
-  rescue StandardError => e
-    Rails.logger.warn("[Chatflow webhook] #{e.message}")
-    :continue
-  end
-
-  def webhook_payload
-    {
-      conversation_id: @conversation.display_id,
-      inbox_id: @conversation.inbox_id,
-      flow_id: @execution.chatflow_id,
-      contact: {
-        name: @conversation.contact&.name,
-        phone_number: @conversation.contact&.phone_number
-      }
-    }
   end
 
   # Terminal node. Runs optional finish actions (resolve the conversation,
@@ -243,6 +240,8 @@ class Chatflow::NodeRunnerService
   end
 
   def send_message(content:, attachments: nil, content_type: nil, content_attributes: nil)
+    return simulation.bot_message(signed(content), node: @node, attachment: attachments.present?) if simulation
+
     params = { content: signed(content), message_type: 'outgoing' }
     params[:attachments] = attachments if attachments.present?
     params[:content_type] = content_type if content_type.present?

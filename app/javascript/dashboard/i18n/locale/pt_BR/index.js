@@ -15,6 +15,7 @@ import companies from './companies.json';
 import components from './components.json';
 import contact from './contact.json';
 import contactFilters from './contactFilters.json';
+import contactLists from './contactLists.json';
 import contentTemplates from './contentTemplates.json';
 import conversation from './conversation.json';
 import csatMgmt from './csatMgmt.json';
@@ -74,6 +75,7 @@ export default {
   ...components,
   ...contact,
   ...contactFilters,
+  ...contactLists,
   ...contentTemplates,
   ...conversation,
   ...csatMgmt,

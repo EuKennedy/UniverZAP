@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_21_200000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_21_210000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -817,6 +817,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "pause_reason"
+    t.datetime "cold_contacts_confirmed_at"
+    t.bigint "cold_contacts_confirmed_by_id"
     t.index ["account_id"], name: "index_broadcasts_on_account_id"
     t.index ["inbox_id"], name: "index_broadcasts_on_inbox_id"
   end
@@ -1189,10 +1191,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_200000) do
     t.jsonb "context", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "resume_at"
+    t.bigint "visited_node_ids", default: [], null: false, array: true
     t.index ["account_id"], name: "index_chatflow_executions_on_account_id"
     t.index ["chatflow_id"], name: "index_chatflow_executions_on_chatflow_id"
     t.index ["conversation_id"], name: "idx_chatflow_exec_one_live_per_conversation", unique: true, where: "(status < 2)"
     t.index ["conversation_id"], name: "index_chatflow_executions_on_conversation_id"
+    t.index ["resume_at"], name: "idx_chatflow_exec_resume_at", where: "(resume_at IS NOT NULL)"
   end
 
   create_table "chatflow_nodes", force: :cascade do |t|
@@ -1259,6 +1264,41 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_200000) do
     t.index ["inbox_id"], name: "index_contact_inboxes_on_inbox_id"
     t.index ["pubsub_token"], name: "index_contact_inboxes_on_pubsub_token", unique: true
     t.index ["source_id"], name: "index_contact_inboxes_on_source_id"
+  end
+
+  create_table "contact_list_members", force: :cascade do |t|
+    t.bigint "contact_list_id", null: false
+    t.bigint "contact_id"
+    t.string "wa_id"
+    t.string "display_name"
+    t.string "role"
+    t.integer "status", default: 0, null: false
+    t.datetime "joined_at"
+    t.datetime "left_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_contact_list_members_on_contact_id"
+    t.index ["contact_list_id", "contact_id"], name: "index_contact_list_members_on_list_and_contact", unique: true, where: "(contact_id IS NOT NULL)"
+    t.index ["contact_list_id", "status"], name: "index_contact_list_members_on_contact_list_id_and_status"
+    t.index ["contact_list_id", "wa_id"], name: "index_contact_list_members_on_list_and_wa_id", unique: true, where: "(wa_id IS NOT NULL)"
+  end
+
+  create_table "contact_lists", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "source", default: "manual", null: false
+    t.bigint "inbox_id"
+    t.string "group_identifier"
+    t.integer "members_count", default: 0, null: false
+    t.string "status", default: "ready", null: false
+    t.string "last_error"
+    t.datetime "refreshed_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "group_identifier"], name: "index_contact_lists_on_account_id_and_group_identifier"
+    t.index ["account_id"], name: "index_contact_lists_on_account_id"
   end
 
   create_table "contacts", id: :serial, force: :cascade do |t|

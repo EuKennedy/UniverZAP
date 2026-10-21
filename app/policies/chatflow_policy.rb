@@ -42,6 +42,28 @@ class ChatflowPolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
+  # Modelos prontos e opções do editor (listas, outros fluxos, disparos).
+  def templates?
+    @account_user.present?
+  end
+
+  def from_template?
+    @account_user.administrator?
+  end
+
+  def options?
+    @account_user.present?
+  end
+
+  def funnel?
+    @account_user.present?
+  end
+
+  # Simular não envia nada (transação desfeita), mas é ferramenta de quem edita.
+  def simulate?
+    @account_user.administrator?
+  end
+
   class Scope < Scope
     def resolve
       scope.where(account_id: account&.id)

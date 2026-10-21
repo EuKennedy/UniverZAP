@@ -563,7 +563,14 @@
       "CONVERTED": "Convertidas",
       "EMPTY": "Nenhum lead de anúncio no período.",
       "AD_ID": "ID {id}",
-      "VIEW_AD_LINK": "Ver anúncio"
+      "VIEW_AD_LINK": "Ver anúncio",
+      "UNNAMED_AD": "Anúncio sem nome",
+      "CAMPAIGN": "Campanha: {name}",
+      "RENAME": "Dar nome ao anúncio",
+      "NAME_PLACEHOLDER": "Nome do anúncio (ex.: Unhas de gel · Guajajaras 730)",
+      "CAMPAIGN_PLACEHOLDER": "Campanha (opcional)",
+      "SAVE_NAME": "Salvar",
+      "CANCEL": "Cancelar"
     },
     "QUEUE": {
       "TITLE": "Fila e velocidade",

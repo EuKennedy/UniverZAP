@@ -1,0 +1,56 @@
+name: Rastreio de pedido
+description: Pergunta o número do pedido, guarda na conversa e passa para a equipe com tudo anotado. Ligue um webhook para consultar a transportadora automaticamente.
+category: pos_venda
+icon: i-lucide-truck
+trigger_type: keyword
+trigger_config:
+  keywords: [rastreio, rastrear, pedido, entrega, encomenda]
+start: digitando
+nodes:
+  - key: digitando
+    kind: typing
+    x: 0
+    y: 0
+    config: { seconds: 2 }
+  - key: numero
+    kind: question
+    name: Número do pedido
+    x: 300
+    y: 0
+    config:
+      text: "Oi, {{ contact.name }}! Me passa o número do seu pedido que eu localizo para você 📦"
+      field_type: number
+      save_to: { scope: conversation, key: numero_pedido }
+      error_text: "Preciso só dos números do pedido (ex.: 10234)."
+      max_attempts: 3
+  - key: consulta
+    kind: webhook
+    name: Consultar pedido
+    x: 600
+    y: -100
+    config: { method: post }
+  - key: aguarde
+    kind: send_message
+    name: Já vou ver
+    x: 900
+    y: -100
+    config: { text: "Recebi! Já estou consultando a transportadora e te respondo em instantes." }
+  - key: humano
+    kind: send_message
+    name: Passar para a equipe
+    x: 600
+    y: 140
+    config: { text: "Sem problemas, vou chamar alguém da equipe para te ajudar." }
+  - key: fim
+    kind: end_flow
+    name: Fim
+    x: 1200
+    y: 0
+    config: { actions: {} }
+edges:
+  - [digitando, default, numero]
+  - [numero, default, consulta]
+  - [numero, invalid, humano]
+  - [consulta, default, aguarde]
+  - [aguarde, default, fim]
+  - [humano, default, fim]

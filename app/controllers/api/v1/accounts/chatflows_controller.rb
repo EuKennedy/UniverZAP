@@ -1,9 +1,53 @@
 class Api::V1::Accounts::ChatflowsController < Api::V1::Accounts::BaseController
-  before_action :fetch_chatflow, except: [:index, :create]
+  before_action :fetch_chatflow, except: [:index, :create, :templates, :from_template, :options]
   before_action :authorize_action
 
   def index
     @chatflows = policy_scope(Current.account.chatflows).order(created_at: :desc)
+    @stats = execution_stats
+  end
+
+  # Biblioteca de modelos prontos do vertical da conta.
+  def templates
+    render json: { templates: Chatflow::TemplateLibrary.available(Current.account).map(&:summary) }
+  end
+
+  # Instala um modelo: fluxo em RASCUNHO, para o dono revisar antes de ligar.
+  def from_template
+    template = Chatflow::TemplateLibrary.find(params[:key])
+    return render json: { error: 'template_not_found' }, status: :not_found if template.nil?
+
+    @chatflow = Chatflow::TemplateLibrary.new(account: Current.account, template: template).install!
+    @nodes = @chatflow.nodes.order(:id)
+    @edges = @chatflow.edges.order(:id)
+    render :show
+  end
+
+  # O que os editores dos blocos novos precisam escolher: listas de
+  # distribuição (quando o recurso existe), outros fluxos e disparos.
+  def options
+    render json: {
+      lists_available: Chatflow::ListBridge.available?,
+      lists: Chatflow::ListBridge.lists_for(Current.account),
+      chatflows: Current.account.chatflows.where.not(status: :archived).order(:name).map { |f| f.slice(:id, :name, :status) },
+      broadcasts: Current.account.broadcasts.order(created_at: :desc).limit(50).map { |b| b.slice(:id, :name, :status) }
+    }
+  end
+
+  def funnel
+    days = params[:days].to_i.clamp(1, 365)
+    days = 30 if params[:days].blank?
+    render json: Chatflow::FunnelReport.new(@chatflow, since: days.days.ago).perform
+  end
+
+  # Roda o fluxo numa conversa de mentira dentro de uma transação desfeita:
+  # nada é gravado e nada sai para o WhatsApp.
+  def simulate
+    result = Chatflow::Simulator.new(
+      @chatflow, inputs: params[:inputs], seed: params[:seed],
+                 contact: params.fetch(:contact, {}).permit(:name, custom_attributes: {}).to_h
+    ).perform
+    render json: result
   end
 
   def show
@@ -80,7 +124,7 @@ class Api::V1::Accounts::ChatflowsController < Api::V1::Accounts::BaseController
 
   def authorize_action
     case action_name
-    when 'index', 'create'
+    when 'index', 'create', 'templates', 'from_template', 'options'
       authorize(Chatflow)
     else
       authorize(@chatflow)
@@ -94,8 +138,20 @@ class Api::V1::Accounts::ChatflowsController < Api::V1::Accounts::BaseController
       # que só listava `keywords` descartava o resto em SILÊNCIO. A regra de
       # reinício existia na tela e o motor sabia lê-la — ela só nunca chegava ao
       # banco. Configuração que não faz nada é pior que configuração que não existe.
-      trigger_config: [:sender_name, :position_x, :position_y, { keywords: [], restart: [:mode, :hours] }]
+      trigger_config: [:sender_name, :position_x, :position_y, :no_reply_minutes, :pause_on_agent_reply,
+                       { keywords: [], restart: [:mode, :hours], label_ids: [], broadcast_ids: [], list_ids: [],
+                         date: [:kind, :attribute_key, :days, :label_id, :hour] }]
     )
+  end
+
+  def execution_stats
+    counts = ChatflowExecution.where(account_id: Current.account.id, created_at: 30.days.ago..)
+                              .group(:chatflow_id, :status).count
+    counts.each_with_object(Hash.new { |h, k| h[k] = { 'started' => 0, 'completed' => 0, 'live' => 0 } }) do |((id, status), n), acc|
+      acc[id]['started'] += n
+      acc[id]['completed'] += n if status == 'completed'
+      acc[id]['live'] += n if %w[active waiting_input paused].include?(status)
+    end
   end
 
   def render_summary

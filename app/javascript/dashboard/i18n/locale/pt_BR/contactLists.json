@@ -1,0 +1,202 @@
+{
+  "CONTACT_LISTS": {
+    "TITLE": "Listas de distribuição",
+    "SUBTITLE": "Fotos fixas de contatos — de um grupo do WhatsApp, de um CSV, escolhidos à mão ou por etiqueta — prontas para virar público de disparo.",
+    "NEW": "Nova lista",
+    "EXTRACT_GROUP": "Extrair de grupo",
+    "REFRESH": "Atualizar",
+    "SEARCH": "Buscar listas…",
+    "ALL_SOURCES": "Todas as origens",
+    "SOURCE": {
+      "GROUP": "Grupo do WhatsApp",
+      "CSV": "CSV",
+      "MANUAL": "Manual",
+      "FILTER": "Filtro de etiqueta"
+    },
+    "VIEW": {
+      "CARDS": "Cartões",
+      "TABLE": "Tabela"
+    },
+    "STATS": {
+      "LISTS": "Listas",
+      "LISTS_HINT": "{count} de grupos",
+      "CONTACTS": "Pessoas nas listas",
+      "CONTACTS_HINT": "membros ativos",
+      "SENDABLE": "Alcançáveis",
+      "SENDABLE_HINT": "com telefone e consentimento",
+      "COLD": "Nunca falaram com o salão",
+      "COLD_HINT": "só com confirmação explícita",
+      "NO_PHONE": "Sem telefone",
+      "NO_PHONE_HINT": "nunca recebem disparo"
+    },
+    "LIST": {
+      "MEMBERS": "nenhum membro | {count} membro | {count} membros",
+      "UPDATED": "Atualizada {when}",
+      "CREATED": "Criada {when}",
+      "IMPORTING": "Extraindo participantes…",
+      "FAILED": "A extração falhou",
+      "LEFT_COUNT": "{count} saiu | {count} saíram",
+      "NO_PHONE_COUNT": "{count} sem telefone",
+      "EMPTY_TITLE": "Nenhuma lista ainda",
+      "EMPTY_BODY": "Extraia os participantes de um grupo do WhatsApp, importe um CSV de telefones ou monte uma lista à mão.",
+      "NO_RESULTS_TITLE": "Nenhuma lista encontrada",
+      "NO_RESULTS_BODY": "Tente outra busca ou origem.",
+      "CLEAR_FILTERS": "Limpar filtros",
+      "RESULTS": "{count} listas encontradas",
+      "DELETE": "Excluir",
+      "DELETE_CONFIRM": "Excluir a lista \"{name}\"? Os contatos continuam na sua base.",
+      "DELETE_SUCCESS": "Lista excluída",
+      "DELETE_ERROR": "Não foi possível excluir a lista",
+      "LOAD_ERROR": "Não foi possível carregar as listas",
+      "COLUMN": {
+        "NAME": "Lista",
+        "SOURCE": "Origem",
+        "MEMBERS": "Membros",
+        "ISSUES": "Atenção",
+        "UPDATED": "Atualizada"
+      }
+    },
+    "CREATE": {
+      "TITLE": "Nova lista de distribuição",
+      "NAME": "Nome",
+      "NAME_PLACEHOLDER": "ex.: Clientes VIP",
+      "DESCRIPTION": "Descrição",
+      "DESCRIPTION_PLACEHOLDER": "Para que serve esta lista?",
+      "SOURCE": "Começar por",
+      "SOURCE_HINT": {
+        "MANUAL": "Lista vazia — adicione contatos depois.",
+        "CSV": "Em seguida, importe um CSV ou cole os telefones.",
+        "FILTER": "Foto dos contatos que têm estas etiquetas hoje."
+      },
+      "LABELS": "Etiquetas",
+      "LABELS_EMPTY": "Ainda não há etiquetas nesta conta.",
+      "SUBMIT": "Criar lista",
+      "CANCEL": "Cancelar",
+      "SUCCESS": "Lista criada",
+      "ERROR": "Não foi possível criar a lista"
+    },
+    "GROUPS": {
+      "TITLE": "Extrair de um grupo do WhatsApp",
+      "HINT": "Os participantes são lidos do grupo pelo número conectado. Nada é enviado.",
+      "SEARCH": "Buscar grupos…",
+      "EMPTY": "Ainda não há conversas de grupo do WhatsApp num número conectado.",
+      "EXTRACT": "Extrair participantes",
+      "REFRESH": "Atualizar lista",
+      "HAS_LIST": "Lista com {count} membros",
+      "STARTED": "Extraindo os participantes — a lista se preenche em instantes.",
+      "ERROR": "Não foi possível extrair os participantes",
+      "CONSENT_NOTE": "Contatos novos vindos de grupo nunca falaram com o salão: o disparo só chega neles depois de uma confirmação explícita."
+    },
+    "MERGE": {
+      "TITLE": "Mesclar listas",
+      "HINT": "Escolha duas ou mais listas. Uma lista nova é criada com todos os ativos delas, uma vez cada; as originais ficam como estão.",
+      "NAME": "Nome da lista nova",
+      "SELECTED": "{count} listas escolhidas",
+      "SUBMIT": "Mesclar",
+      "SUCCESS": "Listas mescladas",
+      "NEED_TWO": "Escolha pelo menos duas listas",
+      "CANCEL": "Cancelar"
+    },
+    "DETAIL": {
+      "BACK": "Listas",
+      "SEARCH": "Buscar por nome ou telefone…",
+      "FILTER": {
+        "ALL": "Todos",
+        "ACTIVE": "Ativos",
+        "NEW": "Novos",
+        "LEFT": "Saíram",
+        "NO_PHONE": "Sem telefone",
+        "COLD": "Nunca falaram"
+      },
+      "SUMMARY": {
+        "ACTIVE": "Ativos",
+        "SENDABLE": "Alcançáveis",
+        "COLD": "Nunca falaram",
+        "NO_PHONE": "Sem telefone",
+        "LEFT": "Saíram do grupo"
+      },
+      "SUMMARY_HINT": {
+        "ACTIVE": "membros hoje",
+        "SENDABLE": "recebem disparo",
+        "COLD": "pedem confirmação",
+        "NO_PHONE": "nunca recebem",
+        "LEFT": "ficam no histórico"
+      },
+      "REFRESH_GROUP": "Atualizar a partir do grupo",
+      "LAST_RUN": "Última atualização: {joined} entraram, {left} saíram",
+      "IMPORT_CSV": "Importar CSV",
+      "ADD_CONTACTS": "Adicionar contatos",
+      "DEDUPLICATE": "Remover duplicados",
+      "DEDUPLICATED": "Nenhum duplicado encontrado | {count} duplicado removido | {count} duplicados removidos",
+      "EXPORT": "Exportar CSV",
+      "USE_IN_BROADCAST": "Usar em disparo",
+      "BROADCAST_NAME": "Disparo — {name}",
+      "EDIT": "Editar",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "SAVED": "Lista atualizada",
+      "ERROR": "Algo deu errado",
+      "NO_MEMBERS": "Ninguém por aqui",
+      "NO_MEMBERS_BODY": "Adicione contatos, importe um CSV ou mude o filtro.",
+      "REMOVE": "Tirar da lista",
+      "REMOVE_CONFIRM": "Tirar {name} desta lista?",
+      "REMOVED": "Retirado da lista",
+      "PAGE": "Página {page} de {pages}",
+      "PREV": "Anterior",
+      "NEXT": "Próxima",
+      "COLUMN": {
+        "CONTACT": "Contato",
+        "PHONE": "Telefone",
+        "STATUS": "Situação",
+        "JOINED": "Entrou"
+      },
+      "NO_PHONE_VALUE": "Sem telefone",
+      "IMPORTING_BANNER": "Lendo os participantes do grupo pelo WhatsApp… esta página se atualiza sozinha.",
+      "FAILED_BANNER": "A última extração falhou: {error}",
+      "COLD_BANNER": "{count} pessoas daqui nunca falaram com o salão. O disparo só chega nelas quando a campanha confirma.",
+      "LABEL": "Etiqueta {label}",
+      "GROUP_LINK": "Abrir conversa do grupo",
+      "UNKNOWN_MEMBER": "Participante sem número"
+    },
+    "BADGE": {
+      "LEFT": "Saiu",
+      "NEW": "Novo",
+      "NO_PHONE": "Sem telefone",
+      "COLD": "Nunca falou",
+      "ADMIN": "Admin"
+    },
+    "IMPORT": {
+      "TITLE": "Importar telefones",
+      "HINT": "CSV com vírgula ou ponto e vírgula, com ou sem cabeçalho. Em cada linha, o telefone e o nome são encontrados sozinhos. Contatos existentes são reaproveitados.",
+      "PLACEHOLDER": "Ana Lima;(31) 98888-1111\n31977772222",
+      "FILE": "Escolher CSV / TXT",
+      "COLD": "Os contatos novos nunca falaram com o salão",
+      "COLD_HINT": "Eles nascem sem consentimento: o disparo pede confirmação antes de chegar neles.",
+      "PREVIEW": "Primeiras linhas",
+      "SUBMIT": "Importar",
+      "CANCEL": "Cancelar",
+      "RESULT": "{added} adicionados · {created} contatos novos · {invalid} linhas inválidas",
+      "ERROR": "Não foi possível importar o arquivo"
+    },
+    "ADD": {
+      "TITLE": "Adicionar contatos",
+      "SEARCH": "Buscar contatos por nome ou telefone…",
+      "EMPTY": "Nenhum contato encontrado.",
+      "SELECTED": "{count} escolhidos",
+      "SUBMIT": "Adicionar",
+      "CANCEL": "Cancelar",
+      "ADDED": "Ninguém novo foi adicionado | {count} contato adicionado | {count} contatos adicionados"
+    },
+    "PANEL": {
+      "TITLE": "Lista de distribuição",
+      "BODY": "Transforme os participantes deste grupo numa lista para disparo.",
+      "EXTRACT": "Extrair participantes",
+      "REFRESH": "Atualizar a partir do grupo",
+      "OPEN": "Abrir lista",
+      "MEMBERS": "nenhum membro | {count} membro | {count} membros",
+      "IMPORTING": "Extraindo…",
+      "FAILED": "A última extração falhou",
+      "STARTED": "Extraindo os participantes…"
+    }
+  }
+}

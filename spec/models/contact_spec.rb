@@ -9,6 +9,20 @@ RSpec.describe Contact do
     it { is_expected.to validate_presence_of(:account_id) }
   end
 
+  context 'when the WAHA bridge saves a contact that only has a LID' do
+    let(:account) { create(:account) }
+
+    it 'asks WAHA for the phone number after the commit' do
+      expect { create(:contact, account: account, identifier: '159519548166205@lid', phone_number: nil) }
+        .to have_enqueued_job(Whatsapp::WahaResolveLidJob)
+    end
+
+    it 'does nothing for contacts that already have a phone number' do
+      expect { create(:contact, account: account, identifier: '159519548166205@lid', phone_number: '+5511999990000') }
+        .not_to have_enqueued_job(Whatsapp::WahaResolveLidJob)
+    end
+  end
+
   context 'with associations' do
     it { is_expected.to belong_to(:account) }
     it { is_expected.to have_many(:conversations).dependent(:destroy_async) }

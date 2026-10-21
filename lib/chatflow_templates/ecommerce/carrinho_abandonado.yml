@@ -1,0 +1,62 @@
+name: Carrinho abandonado
+description: Quando a conversa recebe a etiqueta carrinho-abandonado, espera 1 hora e testa duas ofertas (A/B). Se a cliente responder, o fluxo para e a equipe assume.
+category: recuperacao
+icon: i-lucide-shopping-cart
+trigger_type: label_added
+trigger_config:
+  label_titles: [carrinho-abandonado]
+start: espera
+nodes:
+  - key: espera
+    kind: wait
+    name: Esperar 1 hora
+    x: 0
+    y: 0
+    config: { mode: duration, amount: 1, unit: hours, on_reply: stop, respect_window: true }
+  - key: ab
+    kind: random_split
+    name: Teste A/B da oferta
+    x: 300
+    y: 0
+    config:
+      branches:
+        - { value: a, label: Cupom, percent: 50 }
+        - { value: b, label: Frete grátis, percent: 50 }
+  - key: cupom
+    kind: send_message
+    name: Oferta A — cupom
+    x: 650
+    y: -120
+    config: { text: "Oi, {{ contact.name }}! Vi que ficou algo no seu carrinho. Use o cupom VOLTEI5 e ganhe 5% de desconto 🛍️" }
+  - key: frete
+    kind: send_message
+    name: Oferta B — frete
+    x: 650
+    y: 120
+    config: { text: "Oi, {{ contact.name }}! Seu carrinho está te esperando — finalizando hoje o frete é por nossa conta 🚚" }
+  - key: espera_dia
+    kind: wait
+    name: Esperar 1 dia
+    x: 950
+    y: 0
+    config: { mode: duration, amount: 1, unit: days, on_reply: stop, respect_window: true }
+  - key: ultimo
+    kind: send_message
+    name: Último aviso
+    x: 1250
+    y: 0
+    config: { text: "Última chamada: os itens do seu carrinho estão quase acabando. Posso ajudar a finalizar?" }
+  - key: fim
+    kind: end_flow
+    name: Fim
+    x: 1550
+    y: 0
+    config: { actions: {} }
+edges:
+  - [espera, default, ab]
+  - [ab, a, cupom]
+  - [ab, b, frete]
+  - [cupom, default, espera_dia]
+  - [frete, default, espera_dia]
+  - [espera_dia, default, ultimo]
+  - [ultimo, default, fim]

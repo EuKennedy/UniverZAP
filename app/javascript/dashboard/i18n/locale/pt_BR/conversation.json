@@ -114,6 +114,8 @@
       }
     },
     "RESOLVE_DROPDOWN": {
+      "MARK_SCHEDULED": "Agendado",
+      "SCHEDULED_SUCCESS": "Conversa marcada como agendada e resolvida",
       "MARK_PENDING": "Deixar pendente",
       "COPY_CSAT_LINK": "Copiar link de avaliação",
       "SNOOZE_UNTIL": "Adiar",

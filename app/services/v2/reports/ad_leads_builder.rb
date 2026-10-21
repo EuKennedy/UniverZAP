@@ -31,8 +31,11 @@ class V2::Reports::AdLeadsBuilder
 
   def ad_rows
     converted = converted_by(base_scope, AD_ID)
+    names = account.custom_attributes['ad_names'] || {}
     base_scope.group(AD_ID).pluck(AD_ID, *AD_COLUMNS, *COUNTS).map do |ad_id, title, url, *counts|
-      { ad_id: ad_id, title: title, url: url, **metrics(counts, converted, ad_id) }
+      named = names[ad_id] || {}
+      { ad_id: ad_id, title: named['name'].presence || title, campaign: named['campaign'].presence, url: url,
+        **metrics(counts, converted, ad_id) }
     end
   end
 

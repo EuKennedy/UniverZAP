@@ -494,15 +494,20 @@ const actions = {
   },
 
   // UniverZAP: "Agendar" writes the appointment and swaps the stage in one go.
+  // With `resolve` ("Resolver > Agendado") the backend also resolves it.
   scheduleConversation: async (
     { commit, dispatch },
-    { conversationId, attributes }
+    { conversationId, attributes = {}, resolve = false }
   ) => {
     const response = await ConversationApi.schedule({
       conversationId,
-      attributes,
+      attributes: resolve ? { ...attributes, resolve: true } : attributes,
     });
-    const { custom_attributes: customAttributes, labels } = response.data;
+    const {
+      custom_attributes: customAttributes,
+      labels,
+      status,
+    } = response.data;
     commit(types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES, {
       conversationId,
       customAttributes,
@@ -513,6 +518,13 @@ const actions = {
       { id: conversationId, data: labels },
       { root: true }
     );
+    if (resolve) {
+      commit(types.CHANGE_CONVERSATION_STATUS, {
+        conversationId,
+        status,
+        snoozedUntil: null,
+      });
+    }
     return response.data;
   },
 

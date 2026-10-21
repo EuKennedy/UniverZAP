@@ -159,7 +159,8 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     return head :unprocessable_entity unless VerticalProfile.for(Current.account).schedules?
 
     attributes = params.permit(*Conversations::ScheduleService::ATTRIBUTE_KEYS)
-    Conversations::ScheduleService.new(conversation: @conversation, attributes: attributes).perform
+    resolve = ActiveModel::Type::Boolean.new.cast(params[:resolve])
+    Conversations::ScheduleService.new(conversation: @conversation, attributes: attributes, resolve: resolve).perform
   end
 
   # UniverZAP: attach this conversation (and its contact) to a Kanban stage.

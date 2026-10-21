@@ -185,6 +185,10 @@ Rails.application.routes.draw do
               resource :direct_uploads, only: [:create]
               resource :draft_messages, only: [:show, :update, :destroy]
               resources :kanban_tasks, only: [:index]
+              resource :chatflow_state, only: [:show], controller: 'chatflow_state' do
+                post :pause
+                post :resume
+              end
             end
             member do
               post :mute
@@ -302,6 +306,7 @@ Rails.application.routes.draw do
           end
           resources :labels, only: [:index, :show, :create, :update, :destroy]
           resources :team_contacts, only: [:index, :create, :destroy]
+          resources :ad_names, only: [:update]
           resources :vertical_statuses, only: [:index] do
             collection do
               get :catalog
@@ -396,12 +401,19 @@ Rails.application.routes.draw do
           # conversations; bot messages are created through MessageBuilder so
           # they render inside Chatwoot AND dispatch to WhatsApp via WAHA.
           resources :chatflows do
+            collection do
+              get :templates
+              post :from_template
+              get :options
+            end
             member do
               post :activate
               post :archive
               post :test
               post :stop_test
               post :run
+              get :funnel
+              post :simulate
             end
             resources :chatflow_nodes, only: [:create, :update, :destroy], path: 'nodes'
             resources :chatflow_edges, only: [:create, :destroy], path: 'edges'
@@ -424,6 +436,25 @@ Rails.application.routes.draw do
               get :templates
               get :stats
               post :variations
+            end
+          end
+          # Listas de distribuição (fotos de contatos para disparo): de grupo
+          # do WhatsApp (extração pela WAHA), CSV, manual ou filtro.
+          resources :contact_lists, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              get :members
+              post :add_members
+              post :remove_members
+              post :import_csv
+              post :refresh
+              post :deduplicate
+              get :export
+            end
+            collection do
+              get :stats
+              get :groups
+              post :merge
+              post :extract_group
             end
           end
           # Mensagens agendadas para uma conversa (composer e ficha da cliente)

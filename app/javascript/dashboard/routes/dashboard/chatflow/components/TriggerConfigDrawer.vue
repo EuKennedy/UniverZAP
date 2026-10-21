@@ -12,6 +12,8 @@ import Icon from 'dashboard/components-next/icon/Icon.vue';
 const props = defineProps({
   chatflow: { type: Object, required: true },
   isSaving: { type: Boolean, default: false },
+  // Listas e disparos para os gatilhos novos (GET chatflows/options).
+  options: { type: Object, default: () => ({}) },
 });
 
 const emit = defineEmits(['save', 'close']);
@@ -19,6 +21,7 @@ const emit = defineEmits(['save', 'close']);
 const { t } = useI18n();
 const store = useStore();
 const inboxes = useMapGetter('inboxes/getInboxes');
+const labels = useMapGetter('labels/getLabels');
 const accountId = useMapGetter('getCurrentAccountId');
 
 const runUrl = computed(
@@ -40,9 +43,28 @@ const TRIGGER_TYPES = [
   { value: 'ad_referral', icon: 'i-lucide-megaphone' },
   { value: 'recurring_customer', icon: 'i-lucide-repeat' },
   { value: 'no_reply', icon: 'i-lucide-timer' },
+  { value: 'label_added', icon: 'i-lucide-tag' },
+  { value: 'broadcast_reply', icon: 'i-lucide-reply' },
+  { value: 'date', icon: 'i-lucide-calendar-heart' },
+  { value: 'list_entered', icon: 'i-lucide-list-plus' },
 ];
 
 const RESTART_MODES = ['once', 'cooldown'];
+const DATE_KINDS = [
+  'birthday',
+  'after_appointment',
+  'after_stage',
+  'after_resolution',
+];
+
+const labelIds = ref([]);
+const broadcastIds = ref([]);
+const listIds = ref([]);
+const dateConfig = ref({});
+const pauseOnAgentReply = ref(true);
+
+const toggleIn = (list, id) =>
+  list.includes(id) ? list.filter(v => v !== id) : [...list, id];
 
 const inboxId = ref(null);
 const triggerType = ref('on_first_message');
@@ -65,6 +87,18 @@ watch(
     restartMode.value = flow.trigger_config?.restart?.mode || 'once';
     restartHours.value = flow.trigger_config?.restart?.hours || 24;
     senderName.value = flow.trigger_config?.sender_name || '';
+    labelIds.value = [...(flow.trigger_config?.label_ids || [])];
+    broadcastIds.value = [...(flow.trigger_config?.broadcast_ids || [])];
+    listIds.value = [...(flow.trigger_config?.list_ids || [])];
+    dateConfig.value = {
+      kind: 'birthday',
+      attribute_key: 'data_nascimento',
+      days: 1,
+      hour: 10,
+      ...(flow.trigger_config?.date || {}),
+    };
+    pauseOnAgentReply.value =
+      flow.trigger_config?.pause_on_agent_reply !== false;
   },
   { immediate: true }
 );
@@ -99,6 +133,15 @@ const save = () => {
       no_reply_minutes: Number(noReplyMinutes.value) || 15,
       restart: { mode: restartMode.value, hours: Number(restartHours.value) },
       sender_name: senderName.value.trim(),
+      label_ids: labelIds.value,
+      broadcast_ids: broadcastIds.value,
+      list_ids: listIds.value,
+      date: {
+        ...dateConfig.value,
+        days: Number(dateConfig.value.days) || 0,
+        hour: Number(dateConfig.value.hour) || 0,
+      },
+      pause_on_agent_reply: pauseOnAgentReply.value,
     },
   });
 };
@@ -299,6 +342,191 @@ const save = () => {
           </span>
         </label>
       </div>
+
+      <!-- Etiqueta adicionada -->
+      <div v-if="triggerType === 'label_added'" class="flex flex-col gap-2">
+        <span class="text-xs font-medium text-n-slate-11">
+          {{ t('CHATFLOW.TRIGGER.LABELS') }}
+        </span>
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            v-for="label in labels"
+            :key="label.id"
+            type="button"
+            class="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border text-xs cursor-pointer transition-colors"
+            :class="
+              labelIds.includes(label.id)
+                ? 'border-n-teal-7 bg-n-teal-3 text-n-teal-12'
+                : 'border-n-weak text-n-slate-11 hover:border-n-slate-6'
+            "
+            :data-testid="`trigger-label-${label.id}`"
+            @click="labelIds = toggleIn(labelIds, label.id)"
+          >
+            <span
+              class="size-2 rounded-full"
+              :style="{ backgroundColor: label.color }"
+            />
+            {{ label.title }}
+          </button>
+        </div>
+        <p class="text-[11px] text-n-slate-10 m-0">
+          {{ t('CHATFLOW.TRIGGER.LABELS_HINT') }}
+        </p>
+      </div>
+
+      <!-- Respondeu a um disparo -->
+      <div v-if="triggerType === 'broadcast_reply'" class="flex flex-col gap-2">
+        <span class="text-xs font-medium text-n-slate-11">
+          {{ t('CHATFLOW.TRIGGER.BROADCASTS') }}
+        </span>
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            v-for="broadcast in options.broadcasts || []"
+            :key="broadcast.id"
+            type="button"
+            class="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border text-xs cursor-pointer transition-colors"
+            :class="
+              broadcastIds.includes(broadcast.id)
+                ? 'border-n-teal-7 bg-n-teal-3 text-n-teal-12'
+                : 'border-n-weak text-n-slate-11 hover:border-n-slate-6'
+            "
+            @click="broadcastIds = toggleIn(broadcastIds, broadcast.id)"
+          >
+            {{ broadcast.name }}
+          </button>
+        </div>
+        <p class="text-[11px] text-n-slate-10 m-0">
+          {{ t('CHATFLOW.TRIGGER.BROADCASTS_HINT') }}
+        </p>
+      </div>
+
+      <!-- Data -->
+      <div
+        v-if="triggerType === 'date'"
+        class="flex flex-col gap-3"
+        data-testid="trigger-date"
+      >
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-n-slate-11">
+            {{ t('CHATFLOW.TRIGGER.DATE_KIND') }}
+          </span>
+          <select
+            v-model="dateConfig.kind"
+            class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+          >
+            <option v-for="kind in DATE_KINDS" :key="kind" :value="kind">
+              {{ t(`CHATFLOW.TRIGGER.DATE_KINDS.${kind.toUpperCase()}`) }}
+            </option>
+          </select>
+        </label>
+        <label
+          v-if="dateConfig.kind === 'birthday'"
+          class="flex flex-col gap-1.5"
+        >
+          <span class="text-xs font-medium text-n-slate-11">
+            {{ t('CHATFLOW.TRIGGER.DATE_ATTRIBUTE') }}
+          </span>
+          <input
+            v-model="dateConfig.attribute_key"
+            type="text"
+            class="h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+        </label>
+        <label v-else class="flex items-center gap-2">
+          <input
+            v-model.number="dateConfig.days"
+            type="number"
+            min="0"
+            class="w-20 h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+          <span class="text-xs text-n-slate-11">
+            {{ t('CHATFLOW.TRIGGER.DATE_DAYS_AFTER') }}
+          </span>
+        </label>
+        <label
+          v-if="dateConfig.kind === 'after_stage'"
+          class="flex flex-col gap-1.5"
+        >
+          <span class="text-xs font-medium text-n-slate-11">
+            {{ t('CHATFLOW.TRIGGER.DATE_STAGE') }}
+          </span>
+          <select
+            v-model="dateConfig.label_id"
+            class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
+          >
+            <option v-for="label in labels" :key="label.id" :value="label.id">
+              {{ label.title }}
+            </option>
+          </select>
+        </label>
+        <label class="flex items-center gap-2">
+          <span class="text-xs text-n-slate-11">
+            {{ t('CHATFLOW.TRIGGER.DATE_HOUR') }}
+          </span>
+          <input
+            v-model.number="dateConfig.hour"
+            type="number"
+            min="0"
+            max="23"
+            class="w-20 h-9 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
+          />
+        </label>
+        <p class="text-[11px] text-n-slate-10 m-0">
+          {{ t('CHATFLOW.TRIGGER.DATE_HINT') }}
+        </p>
+      </div>
+
+      <!-- Entrou numa lista -->
+      <div v-if="triggerType === 'list_entered'" class="flex flex-col gap-2">
+        <p
+          v-if="!options.lists_available"
+          class="p-3 rounded-xl bg-n-amber-3 text-n-amber-11 text-xs m-0"
+          data-testid="trigger-lists-unavailable"
+        >
+          {{ t('CHATFLOW.EDITOR.LIST.UNAVAILABLE') }}
+        </p>
+        <template v-else>
+          <span class="text-xs font-medium text-n-slate-11">
+            {{ t('CHATFLOW.TRIGGER.LISTS') }}
+          </span>
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              v-for="list in options.lists || []"
+              :key="list.id"
+              type="button"
+              class="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border text-xs cursor-pointer transition-colors"
+              :class="
+                listIds.includes(list.id)
+                  ? 'border-n-teal-7 bg-n-teal-3 text-n-teal-12'
+                  : 'border-n-weak text-n-slate-11 hover:border-n-slate-6'
+              "
+              @click="listIds = toggleIn(listIds, list.id)"
+            >
+              {{ list.name }}
+            </button>
+          </div>
+        </template>
+      </div>
+
+      <!-- Pausar o robô quando um atendente responde -->
+      <label
+        class="flex items-start gap-2 p-3 rounded-xl border border-n-weak cursor-pointer"
+      >
+        <input
+          v-model="pauseOnAgentReply"
+          type="checkbox"
+          class="mt-0.5 accent-n-teal-9"
+          data-testid="trigger-pause-on-agent"
+        />
+        <span class="flex flex-col gap-0.5">
+          <span class="text-sm text-n-slate-12">
+            {{ t('CHATFLOW.TRIGGER.PAUSE_ON_AGENT') }}
+          </span>
+          <span class="text-[11px] text-n-slate-10">
+            {{ t('CHATFLOW.TRIGGER.PAUSE_ON_AGENT_HINT') }}
+          </span>
+        </span>
+      </label>
 
       <!-- Webhook trigger: external start URL -->
       <div v-if="triggerType === 'webhook'" class="flex flex-col gap-1.5">

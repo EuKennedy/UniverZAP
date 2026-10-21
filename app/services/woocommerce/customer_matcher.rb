@@ -6,7 +6,7 @@
 class Woocommerce::CustomerMatcher
   def initialize(account, billing)
     @account = account
-    @phone = Contacts::PhoneNormalizer.normalize(billing['phone'])
+    @phone = Broadcasts::PhoneNumber.normalize(billing['phone'])
     @email = billing['email'].to_s.strip.downcase.presence
     @name = [billing['first_name'], billing['last_name']].compact_blank.join(' ').presence
   end
@@ -17,8 +17,9 @@ class Woocommerce::CustomerMatcher
 
   private
 
+  # Older contacts may be stored without the ninth digit.
   def by_phone
-    @phone && @account.contacts.find_by(phone_number: @phone)
+    @phone && @account.contacts.find_by(phone_number: Broadcasts::PhoneNumber.variants(@phone))
   end
 
   def by_email

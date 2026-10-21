@@ -13,6 +13,8 @@
 #  throttle     :jsonb            default({})
 #  scheduled_at :datetime
 #  pause_reason :string
+#  cold_contacts_confirmed_at    :datetime
+#  cold_contacts_confirmed_by_id :bigint
 #  created_at   :datetime         not null
 #  updated_at   :datetime         not null
 #
@@ -39,6 +41,7 @@ class Broadcast < ApplicationRecord
   validates :name, presence: true
   validates :mode, inclusion: { in: MODES }
   validate :mode_matches_inbox
+  before_save :forget_cold_confirmation, if: -> { audience_changed? && !cold_contacts_confirmed_at_changed? }
 
   def message_text
     message['text']
@@ -83,11 +86,28 @@ class Broadcast < ApplicationRecord
     ActiveModel::Type::Boolean.new.cast((throttle || {})['smart_timing']) || false
   end
 
+  # "Estes contatos nunca falaram com o salão" — confirmado no editor por um
+  # administrador. Sem isso, o público deixa esses contatos de fora.
+  def cold_contacts_confirmed?
+    cold_contacts_confirmed_at.present?
+  end
+
+  def confirm_cold_contacts!(user, confirmed)
+    assign_attributes(cold_contacts_confirmed_at: confirmed ? Time.current : nil, cold_contacts_confirmed_by_id: confirmed ? user&.id : nil)
+  end
+
   def send_window
     Broadcasts::SendWindow.new(account: account, start_hour: window_start, end_hour: window_end, weekdays: weekdays)
   end
 
   private
+
+  # A confirmação vale para o público que a pessoa viu. Mudou o público,
+  # pede de novo.
+  def forget_cold_confirmation
+    self.cold_contacts_confirmed_at = nil
+    self.cold_contacts_confirmed_by_id = nil
+  end
 
   # The modes speak different protocols: `official` ships an approved template
   # through the Cloud API, `waha` ships free text. Crossing them fails silently

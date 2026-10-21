@@ -6,7 +6,16 @@ import { DirectUpload } from 'activestorage';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 import WhatsappFlowsAPI from 'dashboard/api/whatsappFlows';
+import { KIND_META, TONE_CLASSES } from '../helpers/nodeKinds';
+import QuestionEditor from './editors/QuestionEditor.vue';
+import ConditionEditor from './editors/ConditionEditor.vue';
+import WaitEditor from './editors/WaitEditor.vue';
+import RandomSplitEditor from './editors/RandomSplitEditor.vue';
+import GotoFlowEditor from './editors/GotoFlowEditor.vue';
+import TypingEditor from './editors/TypingEditor.vue';
+import ListActionEditor from './editors/ListActionEditor.vue';
 
 // Side panel that edits one node's config. Shape of `config` depends on the
 // node kind; we keep an editable local copy and emit a normalized patch on
@@ -17,6 +26,9 @@ const props = defineProps({
   node: { type: Object, required: true },
   isStart: { type: Boolean, default: false },
   isSaving: { type: Boolean, default: false },
+  // Listas de distribuição, outros fluxos: vêm de GET chatflows/options.
+  editorOptions: { type: Object, default: () => ({}) },
+  chatflowId: { type: [Number, String], default: null },
 });
 
 const emit = defineEmits(['save', 'remove', 'setStart', 'close']);
@@ -34,6 +46,7 @@ onMounted(() => {
   store.dispatch('agents/get');
   store.dispatch('teams/get');
   store.dispatch('funnels/get');
+  store.dispatch('attributes/get');
 });
 
 const name = ref('');
@@ -41,6 +54,14 @@ const config = ref({});
 const isUploading = ref(false);
 
 const kind = computed(() => props.node.kind);
+const kindMeta = computed(
+  () => KIND_META[kind.value] || KIND_META.send_message
+);
+
+// Os editores dos blocos novos devolvem só o pedaço que mudou.
+const applyPatch = patch => {
+  config.value = { ...config.value, ...patch };
+};
 const isMenu = computed(() => kind.value === 'menu');
 const isConfirmation = computed(() => kind.value === 'confirmation');
 const isSendFlow = computed(() => kind.value === 'send_flow');
@@ -101,6 +122,7 @@ const textLabel = computed(() => {
   if (isConfirmation.value) return t('CHATFLOW.EDITOR.CONFIRMATION_PROMPT');
   if (isSendFlow.value) return t('CHATFLOW.EDITOR.FLOW_TEXT');
   if (isMenu.value) return t('CHATFLOW.EDITOR.MENU_PROMPT');
+  if (kind.value === 'question') return t('CHATFLOW.EDITOR.QUESTION.PROMPT');
   return t('CHATFLOW.EDITOR.MESSAGE_TEXT');
 });
 
@@ -215,9 +237,17 @@ const save = () => {
     <header
       class="flex items-center justify-between px-4 h-14 border-b border-n-weak"
     >
-      <h3 class="text-sm font-semibold text-n-slate-12 m-0">
-        {{ t(`CHATFLOW.NODE.KIND.${kind.toUpperCase()}`) }}
-      </h3>
+      <div class="flex items-center gap-2">
+        <span
+          class="flex items-center justify-center size-7 rounded-lg"
+          :class="TONE_CLASSES[kindMeta.tone]"
+        >
+          <Icon :icon="kindMeta.icon" class="size-3.5" />
+        </span>
+        <h3 class="text-sm font-semibold text-n-slate-12 m-0">
+          {{ t(`CHATFLOW.NODE.KIND.${kind.toUpperCase()}`) }}
+        </h3>
+      </div>
       <Button
         variant="ghost"
         color="slate"
@@ -244,7 +274,13 @@ const save = () => {
       <!-- Message / Menu text -->
       <label
         v-if="
-          ['send_message', 'menu', 'confirmation', 'send_flow'].includes(kind)
+          [
+            'send_message',
+            'menu',
+            'confirmation',
+            'send_flow',
+            'question',
+          ].includes(kind)
         "
         class="flex flex-col gap-1.5"
       >
@@ -610,6 +646,47 @@ const save = () => {
           {{ t('CHATFLOW.EDITOR.WEBHOOK_HINT') }}
         </p>
       </div>
+
+      <!-- Blocos de automação -->
+      <QuestionEditor
+        v-if="kind === 'question'"
+        :config="config"
+        @update="applyPatch"
+      />
+      <ConditionEditor
+        v-if="kind === 'condition'"
+        :config="config"
+        @update="applyPatch"
+      />
+      <WaitEditor
+        v-if="kind === 'wait'"
+        :config="config"
+        @update="applyPatch"
+      />
+      <RandomSplitEditor
+        v-if="kind === 'random_split'"
+        :config="config"
+        @update="applyPatch"
+      />
+      <GotoFlowEditor
+        v-if="kind === 'goto_flow'"
+        :config="config"
+        :flows="editorOptions.chatflows || []"
+        :current-flow-id="chatflowId"
+        @update="applyPatch"
+      />
+      <TypingEditor
+        v-if="kind === 'typing'"
+        :config="config"
+        @update="applyPatch"
+      />
+      <ListActionEditor
+        v-if="kind === 'list_action'"
+        :config="config"
+        :lists="editorOptions.lists || []"
+        :available="Boolean(editorOptions.lists_available)"
+        @update="applyPatch"
+      />
 
       <!-- End flow + optional actions -->
       <div v-if="kind === 'end_flow'" class="flex flex-col gap-3">

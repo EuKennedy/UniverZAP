@@ -35,6 +35,20 @@ class ChatflowNode < ApplicationRecord
   # send_flow    — manda um formulário nativo do WhatsApp (Flow) e espera. Sai
   #                por `default` quando a resposta chega e por `fallback` quando
   #                o cliente digita em vez de preencher.
+  # question     — pergunta e guarda a resposta num atributo do contato ou da
+  #                conversa, validando o tipo (nome, e-mail, telefone, data,
+  #                número, texto). Sai por `default` com resposta válida e por
+  #                `invalid` depois de N tentativas erradas.
+  # condition    — se/senão: regras sobre etiqueta, atributo, origem do lead,
+  #                cliente recorrente, horário da caixa, dia/hora. Sai por
+  #                `true` ou `false`.
+  # wait         — espera X minutos/horas/dias ou até uma data. Solta pelo
+  #                scanner das mensagens agendadas; o que fazer se o cliente
+  #                escrever antes fica em `on_reply` (stop, keep, branch→`replied`).
+  # random_split — teste A/B: sorteia uma saída pelos percentuais.
+  # goto_flow    — encerra este fluxo e começa outro na mesma conversa.
+  # typing       — "Digitando…": pausa de alguns segundos antes da próxima etapa.
+  # list_action  — adiciona/remove o contato de uma lista de distribuição.
   enum kind: {
     send_message: 0,
     send_audio: 1,
@@ -46,7 +60,14 @@ class ChatflowNode < ApplicationRecord
     add_to_kanban: 7,
     webhook: 8,
     confirmation: 9,
-    send_flow: 10
+    send_flow: 10,
+    question: 11,
+    condition: 12,
+    wait: 13,
+    random_split: 14,
+    goto_flow: 15,
+    typing: 16,
+    list_action: 17
   }, _prefix: :kind
 
   validates :name, length: { maximum: 255 }, allow_blank: true
@@ -70,6 +91,16 @@ class ChatflowNode < ApplicationRecord
   # A saída do formulário para quem digitou em vez de preencher. Opcional: sem
   # ela ligada, o fluxo segue esperando o formulário.
   FALLBACK = 'fallback'.freeze
+
+  # Saídas fixas dos blocos novos.
+  INVALID = 'invalid'.freeze
+  TRUE_BRANCH = 'true'.freeze
+  FALSE_BRANCH = 'false'.freeze
+  REPLIED = 'replied'.freeze
+
+  # Etapas que param e esperam o cliente (ou o relógio). O funil conta quem
+  # está parado nelas como "esperando", não como "saiu".
+  WAITING_KINDS = %w[menu confirmation send_flow question wait typing].freeze
 
   # Quantas vezes reperguntar antes de desistir. O menu repergunta para SEMPRE,
   # e numa etapa de fechamento isso prende o cliente num robô: quem escreveu um

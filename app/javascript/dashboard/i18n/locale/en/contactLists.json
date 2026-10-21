@@ -1,0 +1,202 @@
+{
+  "CONTACT_LISTS": {
+    "TITLE": "Distribution lists",
+    "SUBTITLE": "Fixed snapshots of contacts — from a WhatsApp group, a CSV, picked by hand or by label — ready to be a broadcast audience.",
+    "NEW": "New list",
+    "EXTRACT_GROUP": "Extract from group",
+    "REFRESH": "Refresh",
+    "SEARCH": "Search lists…",
+    "ALL_SOURCES": "All sources",
+    "SOURCE": {
+      "GROUP": "WhatsApp group",
+      "CSV": "CSV",
+      "MANUAL": "Manual",
+      "FILTER": "Label filter"
+    },
+    "VIEW": {
+      "CARDS": "Cards",
+      "TABLE": "Table"
+    },
+    "STATS": {
+      "LISTS": "Lists",
+      "LISTS_HINT": "{count} from groups",
+      "CONTACTS": "People in lists",
+      "CONTACTS_HINT": "active members",
+      "SENDABLE": "Reachable",
+      "SENDABLE_HINT": "with phone and consent",
+      "COLD": "Never talked to you",
+      "COLD_HINT": "only with explicit confirmation",
+      "NO_PHONE": "No phone",
+      "NO_PHONE_HINT": "never receive broadcasts"
+    },
+    "LIST": {
+      "MEMBERS": "no members | {count} member | {count} members",
+      "UPDATED": "Updated {when}",
+      "CREATED": "Created {when}",
+      "IMPORTING": "Extracting participants…",
+      "FAILED": "Extraction failed",
+      "LEFT_COUNT": "{count} left | {count} left",
+      "NO_PHONE_COUNT": "{count} without phone",
+      "EMPTY_TITLE": "No lists yet",
+      "EMPTY_BODY": "Extract the participants of a WhatsApp group, import a CSV of phone numbers or build a list by hand.",
+      "NO_RESULTS_TITLE": "No list matches",
+      "NO_RESULTS_BODY": "Try another search or source.",
+      "CLEAR_FILTERS": "Clear filters",
+      "RESULTS": "{count} lists found",
+      "DELETE": "Delete",
+      "DELETE_CONFIRM": "Delete the list \"{name}\"? The contacts stay in your base.",
+      "DELETE_SUCCESS": "List deleted",
+      "DELETE_ERROR": "Could not delete the list",
+      "LOAD_ERROR": "Could not load the lists",
+      "COLUMN": {
+        "NAME": "List",
+        "SOURCE": "Source",
+        "MEMBERS": "Members",
+        "ISSUES": "Attention",
+        "UPDATED": "Updated"
+      }
+    },
+    "CREATE": {
+      "TITLE": "New distribution list",
+      "NAME": "Name",
+      "NAME_PLACEHOLDER": "e.g. VIP clients",
+      "DESCRIPTION": "Description",
+      "DESCRIPTION_PLACEHOLDER": "What is this list for?",
+      "SOURCE": "Start from",
+      "SOURCE_HINT": {
+        "MANUAL": "Empty list — add contacts afterwards.",
+        "CSV": "Import a CSV or paste phone numbers next.",
+        "FILTER": "Snapshot of the contacts that have these labels today."
+      },
+      "LABELS": "Labels",
+      "LABELS_EMPTY": "No labels in this account yet.",
+      "SUBMIT": "Create list",
+      "CANCEL": "Cancel",
+      "SUCCESS": "List created",
+      "ERROR": "Could not create the list"
+    },
+    "GROUPS": {
+      "TITLE": "Extract from a WhatsApp group",
+      "HINT": "Participants are read from the group through the connected number. Nothing is sent.",
+      "SEARCH": "Search groups…",
+      "EMPTY": "No WhatsApp group conversations on a connected number yet.",
+      "EXTRACT": "Extract participants",
+      "REFRESH": "Refresh list",
+      "HAS_LIST": "List with {count} members",
+      "STARTED": "Extracting the participants — the list fills in shortly.",
+      "ERROR": "Could not extract the participants",
+      "CONSENT_NOTE": "New contacts from groups never talked to the business: broadcasts only reach them after an explicit confirmation."
+    },
+    "MERGE": {
+      "TITLE": "Merge lists",
+      "HINT": "Pick two or more lists. A new list is created with everyone active in them, once each; the originals stay as they are.",
+      "NAME": "Name of the new list",
+      "SELECTED": "{count} lists selected",
+      "SUBMIT": "Merge",
+      "SUCCESS": "Lists merged",
+      "NEED_TWO": "Pick at least two lists",
+      "CANCEL": "Cancel"
+    },
+    "DETAIL": {
+      "BACK": "Lists",
+      "SEARCH": "Search by name or phone…",
+      "FILTER": {
+        "ALL": "All",
+        "ACTIVE": "Active",
+        "NEW": "New",
+        "LEFT": "Left",
+        "NO_PHONE": "No phone",
+        "COLD": "Never talked"
+      },
+      "SUMMARY": {
+        "ACTIVE": "Active",
+        "SENDABLE": "Reachable",
+        "COLD": "Never talked",
+        "NO_PHONE": "No phone",
+        "LEFT": "Left the group"
+      },
+      "SUMMARY_HINT": {
+        "ACTIVE": "members today",
+        "SENDABLE": "receive broadcasts",
+        "COLD": "need confirmation",
+        "NO_PHONE": "never receive",
+        "LEFT": "kept for history"
+      },
+      "REFRESH_GROUP": "Refresh from group",
+      "LAST_RUN": "Last refresh: {joined} joined, {left} left",
+      "IMPORT_CSV": "Import CSV",
+      "ADD_CONTACTS": "Add contacts",
+      "DEDUPLICATE": "Remove duplicates",
+      "DEDUPLICATED": "No duplicates found | {count} duplicate removed | {count} duplicates removed",
+      "EXPORT": "Export CSV",
+      "USE_IN_BROADCAST": "Use in a broadcast",
+      "BROADCAST_NAME": "Broadcast — {name}",
+      "EDIT": "Edit",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "SAVED": "List updated",
+      "ERROR": "Something went wrong",
+      "NO_MEMBERS": "Nobody here",
+      "NO_MEMBERS_BODY": "Add contacts, import a CSV or change the filter.",
+      "REMOVE": "Remove from list",
+      "REMOVE_CONFIRM": "Remove {name} from this list?",
+      "REMOVED": "Removed from the list",
+      "PAGE": "Page {page} of {pages}",
+      "PREV": "Previous",
+      "NEXT": "Next",
+      "COLUMN": {
+        "CONTACT": "Contact",
+        "PHONE": "Phone",
+        "STATUS": "Status",
+        "JOINED": "Joined"
+      },
+      "NO_PHONE_VALUE": "No phone",
+      "IMPORTING_BANNER": "Reading the group participants through WhatsApp… this page updates by itself.",
+      "FAILED_BANNER": "The last extraction failed: {error}",
+      "COLD_BANNER": "{count} people here never talked to the business. Broadcasts only reach them when the campaign confirms it.",
+      "LABEL": "Label {label}",
+      "GROUP_LINK": "Open group conversation",
+      "UNKNOWN_MEMBER": "Participant without a number"
+    },
+    "BADGE": {
+      "LEFT": "Left",
+      "NEW": "New",
+      "NO_PHONE": "No phone",
+      "COLD": "Never talked",
+      "ADMIN": "Admin"
+    },
+    "IMPORT": {
+      "TITLE": "Import phone numbers",
+      "HINT": "CSV with comma or semicolon, with or without a header. In each row the phone and the name are found by themselves. Existing contacts are reused.",
+      "PLACEHOLDER": "Ana Lima;(31) 98888-1111\n31977772222",
+      "FILE": "Choose CSV / TXT",
+      "COLD": "New contacts never talked to the business",
+      "COLD_HINT": "They are created without consent: broadcasts ask for confirmation before reaching them.",
+      "PREVIEW": "First rows",
+      "SUBMIT": "Import",
+      "CANCEL": "Cancel",
+      "RESULT": "{added} added · {created} new contacts · {invalid} invalid rows",
+      "ERROR": "Could not import the file"
+    },
+    "ADD": {
+      "TITLE": "Add contacts",
+      "SEARCH": "Search contacts by name or phone…",
+      "EMPTY": "No contacts match.",
+      "SELECTED": "{count} selected",
+      "SUBMIT": "Add",
+      "CANCEL": "Cancel",
+      "ADDED": "Nobody new was added | {count} contact added | {count} contacts added"
+    },
+    "PANEL": {
+      "TITLE": "Distribution list",
+      "BODY": "Turn the participants of this group into a list for broadcasts.",
+      "EXTRACT": "Extract participants",
+      "REFRESH": "Refresh from group",
+      "OPEN": "Open list",
+      "MEMBERS": "no members | {count} member | {count} members",
+      "IMPORTING": "Extracting…",
+      "FAILED": "The last extraction failed",
+      "STARTED": "Extracting the participants…"
+    }
+  }
+}

@@ -63,6 +63,19 @@ export const actions = {
     }
   },
 
+  // Modelo pronto: o servidor cria o fluxo em rascunho com as etapas ligadas.
+  fromTemplate: async ({ commit }, key) => {
+    commit('setUIFlag', { isCreating: true });
+    try {
+      const { data } = await ChatflowsAPI.fromTemplate(key);
+      const { nodes, edges, ...chatflow } = data;
+      commit('upsertChatflow', { ...chatflow, nodes_count: nodes.length });
+      return data;
+    } finally {
+      commit('setUIFlag', { isCreating: false });
+    }
+  },
+
   delete: async ({ commit }, id) => {
     await ChatflowsAPI.delete(id);
     commit('removeChatflow', id);

@@ -51,7 +51,9 @@ class Webhooks::WahaEventsJob < ApplicationJob
     # message.any duplicates message; skip the duplicate when fromMe is false.
     return if event[:event] == 'message.any' && payload[:fromMe] == false
 
-    normalized = normalize_to_cloud_api(payload)
+    # O serviço lê params[:entry] com símbolo e 'changes' com string: só um
+    # hash indiferente serve. Com o hash cru nada era processado.
+    normalized = normalize_to_cloud_api(payload).with_indifferent_access
     Whatsapp::IncomingMessageWahaService.new(
       inbox: inbox,
       params: normalized,
@@ -117,6 +119,10 @@ class Webhooks::WahaEventsJob < ApplicationJob
   def normalize_to_cloud_api(payload)
     from_jid = payload[:fromMe] ? payload[:to] : payload[:from]
     phone_digits = from_jid.to_s.split('@').first
+    # Lead de anúncio chega só com o LID, sem JID de telefone: esses dígitos
+    # não são um número. O contato é criado pelo identifier e o número vem
+    # depois, pela API de LIDs (Whatsapp::WahaLidResolver).
+    lid = from_jid.to_s if from_jid.to_s.end_with?(Whatsapp::WahaLidResolver::LID_SUFFIX)
     {
       'entry' => [
         {
@@ -125,7 +131,7 @@ class Webhooks::WahaEventsJob < ApplicationJob
               'value' => {
                 'messaging_product' => 'whatsapp',
                 'metadata' => { 'display_phone_number' => phone_digits, 'phone_number_id' => phone_digits },
-                'contacts' => [build_contact_hash(payload, phone_digits)],
+                'contacts' => [build_contact_hash(payload, phone_digits, lid)],
                 'messages' => [build_message_hash(payload, phone_digits)]
               }
             }
@@ -135,11 +141,11 @@ class Webhooks::WahaEventsJob < ApplicationJob
     }
   end
 
-  def build_contact_hash(payload, phone_digits)
+  def build_contact_hash(payload, phone_digits, lid)
     name = payload.dig(:_data, :notifyName) ||
            payload.dig(:contact, :pushName) ||
            payload.dig(:contact, :name)
-    { 'profile' => { 'name' => name }, 'wa_id' => phone_digits }
+    { 'profile' => { 'name' => name }, 'wa_id' => phone_digits, 'lid' => lid }.compact
   end
 
   def build_message_hash(payload, phone_digits)

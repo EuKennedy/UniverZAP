@@ -58,6 +58,7 @@ class Contact < ApplicationRecord
   belongs_to :account
   has_many :conversations, dependent: :destroy_async
   has_many :contact_inboxes, dependent: :destroy_async
+  has_many :contact_list_members, dependent: :delete_all
   has_many :csat_survey_responses, dependent: :destroy_async
   has_many :inboxes, through: :contact_inboxes
   has_many :messages, as: :sender, dependent: :destroy_async
@@ -67,6 +68,8 @@ class Contact < ApplicationRecord
   after_update_commit :dispatch_update_event
   after_destroy_commit :dispatch_destroy_event
   before_save :sync_contact_attributes
+  # Contato que a ponte WAHA criou só com o LID: tenta descobrir o número.
+  after_commit -> { Whatsapp::WahaResolveLidJob.perform_later(id) }, if: -> { Whatsapp::WahaLidResolver.worth_retrying?(self) }
 
   enum contact_type: { visitor: 0, lead: 1, customer: 2 }
 
