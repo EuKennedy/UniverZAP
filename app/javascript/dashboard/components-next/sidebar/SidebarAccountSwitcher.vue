@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { vOnClickOutside } from '@vueuse/components';
@@ -7,6 +7,7 @@ import { useAccount } from 'dashboard/composables/useAccount';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
 import WorkspaceAPI from 'dashboard/api/workspace';
+import { formatLastAccess } from 'dashboard/helper/workspaceCover';
 import ButtonNext from 'next/button/Button.vue';
 import Icon from 'next/icon/Icon.vue';
 import Logo from 'next/icon/Logo.vue';
@@ -25,7 +26,7 @@ const emit = defineEmits(['showCreateAccountModal']);
 // Past this many workspaces a search box earns its place.
 const SEARCH_THRESHOLD = 5;
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const router = useRouter();
 const { accountId, currentAccount } = useAccount();
 const currentUser = useMapGetter('getCurrentUser');
@@ -83,6 +84,16 @@ const roleLabel = account => {
   if (account.custom_role_id) return account.custom_role?.name;
   return ROLE_LABELS.value[account.role] || account.role;
 };
+
+const lastAccess = account => formatLastAccess(account.active_at, locale.value);
+
+// Activity waiting in the other workspaces, flagged on the trigger.
+const unreadElsewhere = computed(() =>
+  Object.entries(unreadCounts.value).reduce(
+    (sum, [id, count]) => (Number(id) === accountId.value ? sum : sum + count),
+    0
+  )
+);
 
 const optionId = account => `workspace-option-${account.id}`;
 const activeOption = computed(() => filteredAccounts.value[activeIndex.value]);
@@ -170,6 +181,10 @@ const onPanelKeydown = event => {
   }
 };
 
+onMounted(() => {
+  if (showAccountSwitcher.value) fetchUnreadCounts();
+});
+
 const onSearch = () => {
   activeIndex.value = 0;
 };
@@ -213,7 +228,13 @@ useKeyboardEvents({
       :aria-expanded="isOpen"
       @click="togglePanel"
     >
-      <Logo class="size-7" />
+      <span class="relative">
+        <Logo class="size-7" />
+        <span
+          v-if="unreadElsewhere"
+          class="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-n-ruby-9 ring-2 ring-n-background"
+        />
+      </span>
     </button>
     <!-- Expanded view: workspace avatar and name -->
     <button
@@ -247,11 +268,24 @@ useKeyboardEvents({
         </span>
       </span>
 
-      <span
-        v-if="showAccountSwitcher"
-        aria-hidden="true"
-        class="i-lucide-chevrons-up-down size-4 text-n-slate-10 flex-shrink-0"
-      />
+      <span class="flex items-center flex-shrink-0 gap-1.5">
+        <span
+          v-if="unreadElsewhere"
+          class="size-2 rounded-full bg-n-ruby-9"
+          :title="
+            t(
+              'WORKSPACE_SWITCHER.UNREAD_ELSEWHERE',
+              { count: unreadElsewhere },
+              unreadElsewhere
+            )
+          "
+        />
+        <span
+          v-if="showAccountSwitcher"
+          aria-hidden="true"
+          class="i-lucide-chevrons-up-down size-4 text-n-slate-10"
+        />
+      </span>
     </button>
 
     <Transition
@@ -341,29 +375,34 @@ useKeyboardEvents({
               index === activeIndex
                 ? 'border-n-brand ring-2 ring-n-brand/30'
                 : 'border-n-weak',
+              account.status === 'suspended' && 'opacity-70',
             ]"
             @click="switchTo(account)"
             @mousemove="activeIndex = index"
           >
-            <WorkspaceCover :account="account" class="h-12">
+            <WorkspaceCover :account="account" class="h-10">
               <span
-                v-if="account.id === accountId"
-                class="absolute top-2 ltr:left-2 rtl:right-2 inline-flex items-center gap-1 rounded-full bg-n-black/40 px-2 py-0.5 text-xxs font-medium text-white backdrop-blur"
+                class="absolute flex items-center gap-1 top-1.5 ltr:right-2 rtl:left-2"
               >
-                <Icon icon="i-lucide-check" class="size-3" />
-                {{ t('WORKSPACE_SWITCHER.CURRENT') }}
+                <span
+                  v-if="account.id === accountId"
+                  class="inline-flex items-center gap-1 rounded-full bg-n-black/40 px-2 py-0.5 text-xxs font-medium text-white backdrop-blur"
+                >
+                  <Icon icon="i-lucide-check" class="size-3" />
+                  {{ t('WORKSPACE_SWITCHER.CURRENT') }}
+                </span>
+                <kbd
+                  v-if="index < 9 && !query"
+                  class="grid size-5 place-content-center rounded-md bg-n-black/40 font-sans text-xxs font-semibold text-white backdrop-blur"
+                >
+                  {{ index + 1 }}
+                </kbd>
               </span>
-              <kbd
-                v-if="index < 9 && !query"
-                class="absolute top-2 ltr:right-2 rtl:left-2 grid size-5 place-content-center rounded-md bg-n-black/40 font-sans text-xxs font-semibold text-white backdrop-blur"
-              >
-                {{ index + 1 }}
-              </kbd>
             </WorkspaceCover>
             <div class="flex items-start gap-3 px-3 pb-3">
               <WorkspaceAvatar
                 :account="account"
-                class="-mt-5 ring-4 ring-n-solid-1 shadow-sm"
+                class="-mt-4 ring-4 ring-n-solid-1 shadow-sm"
               />
               <div class="flex-1 min-w-0 pt-2">
                 <p
@@ -385,6 +424,24 @@ useKeyboardEvents({
                   >
                     <Icon icon="i-lucide-briefcase" class="size-3" />
                     {{ account.vertical_name }}
+                  </span>
+                  <span
+                    v-if="account.status === 'suspended'"
+                    class="inline-flex items-center gap-1 rounded-md bg-n-ruby-3 px-1.5 py-0.5 text-xxs font-medium text-n-ruby-11"
+                  >
+                    <Icon icon="i-lucide-pause" class="size-3" />
+                    {{ t('WORKSPACE_SWITCHER.SUSPENDED') }}
+                  </span>
+                  <span
+                    v-if="lastAccess(account)"
+                    class="inline-flex items-center gap-1 text-xxs text-n-slate-10"
+                  >
+                    <Icon icon="i-lucide-clock-3" class="size-3" />
+                    {{
+                      t('WORKSPACE_SWITCHER.LAST_ACCESS', {
+                        time: lastAccess(account),
+                      })
+                    }}
                   </span>
                 </div>
               </div>

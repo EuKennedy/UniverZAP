@@ -266,7 +266,10 @@
     "EMPTY": {
       "TITLE": "Nenhum workspace encontrado",
       "DESCRIPTION": "Nada corresponde a “{query}”."
-    }
+    },
+    "UNREAD_ELSEWHERE": "{count} notificação não lida em outros workspaces | {count} notificações não lidas em outros workspaces",
+    "LAST_ACCESS": "aberto {time}",
+    "SUSPENDED": "Suspensa"
   },
   "WORKSPACE_SETTINGS": {
     "TITLE": "Identidade do workspace",

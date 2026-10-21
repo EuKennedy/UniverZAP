@@ -266,7 +266,10 @@
     "EMPTY": {
       "TITLE": "No workspace found",
       "DESCRIPTION": "Nothing matches “{query}”."
-    }
+    },
+    "UNREAD_ELSEWHERE": "{count} unread notification in other workspaces | {count} unread notifications in other workspaces",
+    "LAST_ACCESS": "opened {time}",
+    "SUSPENDED": "Suspended"
   },
   "WORKSPACE_SETTINGS": {
     "TITLE": "Workspace identity",

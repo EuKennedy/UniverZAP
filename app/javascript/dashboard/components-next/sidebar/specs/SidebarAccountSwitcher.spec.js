@@ -180,6 +180,27 @@ describe('SidebarAccountSwitcher', () => {
     expect(wrapper.text()).toContain('No workspace found');
   });
 
+  it('flags unread notifications waiting in other workspaces on the trigger', async () => {
+    const wrapper = mountSwitcher();
+    await flushPromises();
+
+    const dot = wrapper.find('#sidebar-account-switcher .bg-n-ruby-9');
+    expect(dot.exists()).toBe(true);
+    expect(dot.attributes('title')).toBe(
+      '4 unread notifications in other workspaces'
+    );
+  });
+
+  it('marks suspended workspaces', async () => {
+    accounts.value[2].status = 'suspended';
+    const wrapper = mountSwitcher();
+    await openPanel(wrapper);
+
+    const lizzon = wrapper.findAll('[role="option"]')[2];
+    expect(lizzon.text()).toContain('Suspended');
+    expect(lizzon.classes()).toContain('opacity-70');
+  });
+
   it('hides the search with only a few workspaces', async () => {
     const wrapper = mountSwitcher();
     await openPanel(wrapper);

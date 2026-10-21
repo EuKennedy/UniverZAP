@@ -55,3 +55,30 @@ export const workspaceInitials = (name = '') => {
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
 };
+
+const RELATIVE_STEPS = [
+  ['year', 31536000],
+  ['month', 2592000],
+  ['week', 604800],
+  ['day', 86400],
+  ['hour', 3600],
+  ['minute', 60],
+];
+
+// "2 days ago" / "há 2 dias" in the interface language; empty when the user
+// never opened the workspace.
+export const formatLastAccess = (
+  timestamp,
+  locale = 'en',
+  now = Date.now()
+) => {
+  if (!timestamp) return '';
+  const seconds = Math.round((new Date(timestamp).getTime() - now) / 1000);
+  const formatter = new Intl.RelativeTimeFormat(locale.replace('_', '-'), {
+    numeric: 'auto',
+  });
+  const [unit, size] = RELATIVE_STEPS.find(
+    ([, step]) => Math.abs(seconds) >= step
+  ) || ['minute', 60];
+  return formatter.format(Math.round(seconds / size), unit);
+};

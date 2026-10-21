@@ -1,6 +1,7 @@
 import {
   COVER_THEMES,
   autoCoverTheme,
+  formatLastAccess,
   coverClassFor,
   coverThemeFor,
   workspaceInitials,
@@ -37,5 +38,20 @@ describe('workspaceCover', () => {
     expect(workspaceInitials('biomelan')).toBe('BI');
     expect(workspaceInitials('Ótica - Visão')).toBe('ÓV');
     expect(workspaceInitials('')).toBe('?');
+  });
+
+  it('formats the last access in the interface language', () => {
+    const now = new Date('2026-10-21T12:00:00Z').getTime();
+
+    expect(formatLastAccess('2026-10-19T12:00:00Z', 'pt_BR', now)).toBe(
+      'anteontem'
+    );
+    expect(formatLastAccess('2026-10-14T12:00:00Z', 'en', now)).toBe(
+      'last week'
+    );
+    expect(formatLastAccess('2026-10-21T09:00:00Z', 'en', now)).toBe(
+      '3 hours ago'
+    );
+    expect(formatLastAccess(null, 'en', now)).toBe('');
   });
 });
