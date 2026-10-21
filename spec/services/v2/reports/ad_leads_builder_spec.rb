@@ -31,6 +31,15 @@ RSpec.describe V2::Reports::AdLeadsBuilder do
     expect(rows.last).to include(ad_id: '200', leads: 1, converted: 0)
   end
 
+  it 'shows the name the account gave the ad, with its campaign, over what WhatsApp sent' do
+    account.update!(custom_attributes: { 'ad_names' => { '100' => { 'name' => 'Progressiva -30%', 'campaign' => 'Outubro' } } })
+
+    rows = described_class.new(account: account, params: params).build
+
+    expect(rows.first).to include(ad_id: '100', title: 'Progressiva -30%', campaign: 'Outubro')
+    expect(rows.last).to include(ad_id: '200', title: 'Manicure', campaign: nil)
+  end
+
   it 'reports converted as nil when no conversion label is given' do
     rows = described_class.new(account: account, params: params.except(:conversion_label)).build
 

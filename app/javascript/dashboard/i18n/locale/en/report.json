@@ -548,7 +548,14 @@
       "CONVERTED": "Converted",
       "EMPTY": "No ad leads in the period.",
       "AD_ID": "ID {id}",
-      "VIEW_AD_LINK": "View ad"
+      "VIEW_AD_LINK": "View ad",
+      "UNNAMED_AD": "Unnamed ad",
+      "CAMPAIGN": "Campaign: {name}",
+      "RENAME": "Name this ad",
+      "NAME_PLACEHOLDER": "Ad name",
+      "CAMPAIGN_PLACEHOLDER": "Campaign (optional)",
+      "SAVE_NAME": "Save",
+      "CANCEL": "Cancel"
     },
     "QUEUE": {
       "TITLE": "Queue and speed",

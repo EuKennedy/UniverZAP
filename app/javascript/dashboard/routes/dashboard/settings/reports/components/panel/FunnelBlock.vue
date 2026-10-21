@@ -8,6 +8,8 @@
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useAdmin } from 'dashboard/composables/useAdmin';
+import AdNamesAPI from 'dashboard/api/adNames';
 import PanelStat from './PanelStat.vue';
 import { rate } from './panelFormat';
 
@@ -19,6 +21,40 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+const { isAdmin } = useAdmin();
+
+// WhatsApp only hands over the ad id, so an admin names each ad here (or the
+// name copied from Ads Manager shows up). Saved names live on the account and
+// override the local row right away.
+const renamed = ref({});
+const editing = ref(null);
+const draft = ref({ name: '', campaign: '' });
+const saving = ref(false);
+
+const adName = row => renamed.value[row.ad_id] || row;
+
+function startEdit(row) {
+  const current = adName(row);
+  editing.value = row.ad_id;
+  draft.value = { name: current.title || '', campaign: current.campaign || '' };
+}
+
+async function saveName(row) {
+  saving.value = true;
+  try {
+    const { data } = await AdNamesAPI.save(row.ad_id, draft.value);
+    renamed.value = {
+      ...renamed.value,
+      [row.ad_id]: {
+        title: data.name || null,
+        campaign: data.campaign || null,
+      },
+    };
+    editing.value = null;
+  } finally {
+    saving.value = false;
+  }
+}
 const VIEWS = ['ad', 'agent', 'customer'];
 const view = ref('ad');
 
@@ -43,7 +79,8 @@ const totals = computed(() =>
 );
 
 const rowTitle = row => {
-  if (view.value === 'ad') return row.title || row.ad_id;
+  if (view.value === 'ad')
+    return adName(row).title || t('PANEL_REPORTS.FUNNEL.UNNAMED_AD');
   if (view.value === 'customer')
     return t(`PANEL_REPORTS.FUNNEL.CUSTOMER_${row.customer.toUpperCase()}`);
   return row.title || t('PANEL_REPORTS.UNASSIGNED');
@@ -147,9 +184,68 @@ const pct = (part, total) => (total ? `(${rate(part, total)})` : '');
           </tr>
           <tr v-for="row in rows" :key="rowKey(row)" class="text-n-slate-12">
             <td class="px-4 py-2">
-              <div class="flex flex-col">
-                <span class="font-medium">{{ rowTitle(row) }}</span>
-                <span v-if="view === 'ad'" class="text-xs text-n-slate-11">
+              <form
+                v-if="view === 'ad' && editing === row.ad_id"
+                class="flex flex-col gap-1.5 max-w-md"
+                @submit.prevent="saveName(row)"
+              >
+                <input
+                  v-model="draft.name"
+                  class="px-2 py-1 text-sm rounded-md bg-n-alpha-1 text-n-slate-12"
+                  :placeholder="$t('PANEL_REPORTS.FUNNEL.NAME_PLACEHOLDER')"
+                  autofocus
+                />
+                <input
+                  v-model="draft.campaign"
+                  class="px-2 py-1 text-xs rounded-md bg-n-alpha-1 text-n-slate-12"
+                  :placeholder="$t('PANEL_REPORTS.FUNNEL.CAMPAIGN_PLACEHOLDER')"
+                />
+                <div class="flex gap-2">
+                  <button
+                    type="submit"
+                    class="px-3 py-1 text-xs font-medium rounded-md bg-brand-gradient text-[#06131C]"
+                    :disabled="saving"
+                  >
+                    {{ $t('PANEL_REPORTS.FUNNEL.SAVE_NAME') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="px-3 py-1 text-xs rounded-md text-n-slate-11 hover:bg-n-alpha-2"
+                    @click="editing = null"
+                  >
+                    {{ $t('PANEL_REPORTS.FUNNEL.CANCEL') }}
+                  </button>
+                </div>
+              </form>
+              <div v-else class="flex flex-col">
+                <span class="group flex items-center gap-1.5 font-semibold">
+                  <span
+                    :class="{
+                      'text-n-slate-10 italic font-normal':
+                        view === 'ad' && !adName(row).title,
+                    }"
+                  >
+                    {{ rowTitle(row) }}
+                  </span>
+                  <button
+                    v-if="view === 'ad' && isAdmin"
+                    type="button"
+                    class="i-lucide-pencil size-3.5 text-n-slate-10 opacity-0 group-hover:opacity-100 hover:text-n-slate-12"
+                    :title="$t('PANEL_REPORTS.FUNNEL.RENAME')"
+                    @click="startEdit(row)"
+                  />
+                </span>
+                <span
+                  v-if="view === 'ad' && adName(row).campaign"
+                  class="text-xs text-n-slate-11"
+                >
+                  {{
+                    $t('PANEL_REPORTS.FUNNEL.CAMPAIGN', {
+                      name: adName(row).campaign,
+                    })
+                  }}
+                </span>
+                <span v-if="view === 'ad'" class="text-xs text-n-slate-10">
                   {{ $t('PANEL_REPORTS.FUNNEL.AD_ID', { id: row.ad_id }) }}
                   <a
                     v-if="row.url"

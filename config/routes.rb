@@ -302,6 +302,7 @@ Rails.application.routes.draw do
           end
           resources :labels, only: [:index, :show, :create, :update, :destroy]
           resources :team_contacts, only: [:index, :create, :destroy]
+          resources :ad_names, only: [:update]
           resources :vertical_statuses, only: [:index] do
             collection do
               get :catalog
