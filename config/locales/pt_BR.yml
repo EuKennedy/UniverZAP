@@ -46,6 +46,26 @@ pt_BR:
       anuncio_url_description: Link do anúncio no Facebook
       anuncio_cliques: Cliques no anúncio
       anuncio_cliques_description: Quantas vezes o cliente voltou por um anúncio
+  contact_lists:
+    consent:
+      display_name: 'Consentimento para disparo'
+      description: 'Desmarcado para contatos que vieram de um grupo do WhatsApp (ou de um CSV frio) e nunca falaram com o salão. Os disparos deixam esses contatos de fora, a menos que a campanha confirme.'
+    group:
+      label_description: 'Participantes do grupo de WhatsApp %{name}'
+    errors:
+      merge_needs_two: 'Escolha pelo menos duas listas para mesclar'
+      not_a_group: 'Esta conversa não é um grupo de WhatsApp'
+      not_a_group_list: 'Só listas extraídas de um grupo podem ser atualizadas a partir dele'
+      importing: 'Esta lista ainda está sendo extraída'
+    export:
+      headers: ['Nome', 'Telefone', 'Situação', 'Consentimento', 'Etiquetas', 'Entrou em', 'Saiu em']
+      no_phone: 'sem telefone'
+      status:
+        active: 'Ativo'
+        left: 'Saiu do grupo'
+      consent:
+        'yes': 'Sim'
+        'no': 'Nunca falou com o salão'
   broadcasts:
     report:
       csv_headers:

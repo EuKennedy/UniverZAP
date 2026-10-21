@@ -13,6 +13,7 @@ class ContactMergeAction
       merge_messages
       merge_contact_inboxes
       merge_contact_notes
+      merge_contact_list_members
       merge_and_remove_mergee_contact
     end
     @base_contact
@@ -40,6 +41,14 @@ class ContactMergeAction
 
   def merge_messages
     Message.where(sender: @mergee_contact).update(sender: @base_contact)
+  end
+
+  # A cliente continua nas listas em que estava; onde as duas já estavam,
+  # fica a linha do contato base (a do mergee some com ele).
+  def merge_contact_list_members
+    ContactListMember.where(contact_id: @mergee_contact.id)
+                     .where.not(contact_list_id: ContactListMember.where(contact_id: @base_contact.id).select(:contact_list_id))
+                     .update_all(contact_id: @base_contact.id) # rubocop:disable Rails/SkipsModelValidations
   end
 
   def merge_contact_inboxes

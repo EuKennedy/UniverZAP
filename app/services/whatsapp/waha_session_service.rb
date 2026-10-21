@@ -5,6 +5,7 @@ class Whatsapp::WahaSessionService
   # para a classe caber no ClassLength. Todos usam o `request` daqui, então o
   # cliente HTTP continua sendo um só, com os mesmos headers e o mesmo erro.
   include Whatsapp::WahaChatwootApp
+  include Whatsapp::WahaGroupsApi
   include Whatsapp::WahaLidsApi
   include Whatsapp::WahaProfileApi
   include Whatsapp::WahaStatusApi

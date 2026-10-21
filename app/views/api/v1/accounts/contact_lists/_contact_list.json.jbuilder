@@ -1,0 +1,19 @@
+counts = local_assigns[:counts] || {}
+json.id contact_list.id
+json.name contact_list.name
+json.description contact_list.description
+json.source contact_list.source
+json.status contact_list.status
+json.last_error contact_list.last_error
+json.inbox_id contact_list.inbox_id
+json.group_identifier contact_list.group_identifier
+json.group_name contact_list.metadata['group_name']
+json.label contact_list.metadata['label']
+json.members_count contact_list.members_count
+json.left_count counts[:left].to_i
+json.no_phone_count counts[:no_phone].to_i
+json.last_run contact_list.metadata['last_run']
+json.last_import contact_list.metadata['last_import']
+json.refreshed_at contact_list.refreshed_at&.to_i
+json.created_at contact_list.created_at.to_i
+json.updated_at contact_list.updated_at.to_i

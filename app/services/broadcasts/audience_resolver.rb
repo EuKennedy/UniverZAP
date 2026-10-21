@@ -2,12 +2,20 @@
 # Each filter is optional; the final audience is the UNION of every filter that
 # is present. Only contacts with a phone number are eligible (WAHA send mode).
 #
+# Listas de distribuição (`contact_list_ids`) entram como os outros filtros:
+# membros ativos com contato e telefone. Quem saiu do grupo ou ficou "sem
+# telefone" nunca entra.
+#
+# Consentimento (Contacts::BroadcastConsent): contato que nunca falou com o
+# salão (veio de grupo/CSV frio) fica de fora, a menos que o disparo tenha a
+# confirmação gravada (Broadcast#cold_contacts_confirmed?). Vale para todas as
+# fontes — a etiqueta do grupo também alcança esses contatos.
+#
 # Segment filters (origem, recorrente, sem resposta há X dias, aniversariantes,
 # etiquetas a excluir) NARROW that union instead of adding to it. Used alone,
 # they narrow the whole contact base: "recorrentes sem resposta há 60 dias".
 class Broadcasts::AudienceResolver
-  DEFAULT_COUNTRY_CODE = '55'.freeze
-  INCLUDE_KEYS = %w[contact_label_ids conversation_label_ids funnel_stage_ids contact_ids phone_numbers].freeze
+  INCLUDE_KEYS = %w[contact_label_ids conversation_label_ids funnel_stage_ids contact_ids phone_numbers contact_list_ids].freeze
   BIRTHDAY_ATTRIBUTE = 'data_nascimento'.freeze
 
   def initialize(broadcast)
@@ -17,13 +25,15 @@ class Broadcasts::AudienceResolver
   end
 
   def contact_ids
-    ids = from_contact_labels +
-          from_conversation_labels +
-          from_funnel_stages +
-          from_manual_ids +
-          from_phone_numbers
+    return candidate_ids if @broadcast.cold_contacts_confirmed?
 
-    with_phone(refine(ids.uniq))
+    candidate_ids - unconsented_contact_ids
+  end
+
+  # Do público, quem nunca falou com o salão: a pré-visualização mostra a
+  # contagem e o editor pede a confirmação explícita.
+  def unconsented_contact_ids
+    @unconsented_contact_ids ||= Contacts::BroadcastConsent.unconsented_ids(@account, candidate_ids)
   end
 
   # Typed numbers that have no contact yet. They are real recipients, so the
@@ -44,6 +54,27 @@ class Broadcasts::AudienceResolver
   end
 
   private
+
+  def candidate_ids
+    @candidate_ids ||= begin
+      ids = from_contact_labels +
+            from_conversation_labels +
+            from_funnel_stages +
+            from_manual_ids +
+            from_phone_numbers +
+            from_contact_lists
+
+      with_phone(refine(ids.uniq))
+    end
+  end
+
+  def from_contact_lists
+    ids = Array(@filters['contact_list_ids']).map(&:to_i).reject(&:zero?)
+    return [] if ids.empty?
+
+    ContactListMember.where(contact_list_id: @account.contact_lists.where(id: ids).select(:id))
+                     .status_active.where.not(contact_id: nil).pluck(:contact_id)
+  end
 
   def from_contact_labels
     ids = Array(@filters['contact_label_ids']).map(&:to_i).reject(&:zero?)
@@ -92,34 +123,8 @@ class Broadcasts::AudienceResolver
     @normalized_phone_numbers ||= Array(@filters['phone_numbers']).filter_map { |n| normalize_phone(n) }.uniq
   end
 
-  # Reuses the normalizer the WhatsApp webhook already applies, so a number
-  # typed here ends up in the same shape the provider will send back. Inventing
-  # a second convention is how the reply to a broadcast opens its own separate
-  # conversation instead of landing in the one the dispatch created.
   def normalize_phone(raw)
-    digits = raw.to_s.gsub(/\D/, '')
-    return if digits.length < 10
-
-    digits = "#{DEFAULT_COUNTRY_CODE}#{digits}" if local_number?(raw, digits)
-    return "+#{digits}" unless brazilian_mobile?(digits)
-
-    "+#{Whatsapp::PhoneNormalizers::BrazilPhoneNormalizer.new.normalize(digits)}"
-  end
-
-  # A leading + means the number already carries its country code. Adding 55 to
-  # everything short turned a US number into a Brazilian one, so the + is the
-  # contract: international numbers are typed with it.
-  def local_number?(raw, digits)
-    digits.length <= 11 && !raw.to_s.strip.start_with?('+')
-  end
-
-  # The normalizer inserts the ninth digit whenever the result is not 13 long,
-  # which turns a 10-digit landline into somebody else's mobile. Only a number
-  # that already looks like a Brazilian mobile is handed to it.
-  def brazilian_mobile?(digits)
-    return false unless digits.start_with?(DEFAULT_COUNTRY_CODE)
-
-    digits.length == 13 || (digits.length == 12 && digits[4].to_i >= 6)
+    Broadcasts::PhoneNumber.normalize(raw)
   end
 
   def with_phone(ids)

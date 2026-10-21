@@ -55,6 +55,26 @@ en:
       anuncio_url_description: Link to the ad on Facebook
       anuncio_cliques: Ad clicks
       anuncio_cliques_description: How many times the customer came back through an ad
+  contact_lists:
+    consent:
+      display_name: 'Consent for broadcasts'
+      description: 'Unchecked for contacts imported from a WhatsApp group (or a cold CSV) who never talked to the business. Broadcasts leave them out unless the campaign confirms it.'
+    group:
+      label_description: 'Participants of the WhatsApp group %{name}'
+    errors:
+      merge_needs_two: 'Pick at least two lists to merge'
+      not_a_group: 'This conversation is not a WhatsApp group'
+      not_a_group_list: 'Only lists extracted from a group can be refreshed from it'
+      importing: 'This list is still being extracted'
+    export:
+      headers: ['Name', 'Phone', 'Status', 'Consent', 'Labels', 'Joined at', 'Left at']
+      no_phone: 'no phone'
+      status:
+        active: 'Active'
+        left: 'Left the group'
+      consent:
+        'yes': 'Yes'
+        'no': 'Never talked to the business'
   broadcasts:
     report:
       csv_headers:

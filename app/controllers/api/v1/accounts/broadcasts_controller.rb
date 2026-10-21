@@ -17,7 +17,8 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
   # o operador reaproveita um texto aprovado para outra leva.
   def duplicate
     copy = @broadcast.dup
-    copy.assign_attributes(name: I18n.t('broadcasts.copy_name', name: @broadcast.name), status: :draft, scheduled_at: nil, pause_reason: nil)
+    copy.assign_attributes(name: I18n.t('broadcasts.copy_name', name: @broadcast.name), status: :draft, scheduled_at: nil, pause_reason: nil,
+                           cold_contacts_confirmed_at: nil, cold_contacts_confirmed_by_id: nil)
     copy.save!
     @broadcast = copy
     render :show
@@ -31,8 +32,12 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
     render :show
   end
 
+  # `confirm_cold_contacts` só vem da caixa "estes contatos nunca falaram com
+  # o salão": grava (ou tira) a confirmação junto com o público que ela viu.
   def update
-    @broadcast.update!(permitted_params)
+    @broadcast.assign_attributes(permitted_params)
+    @broadcast.confirm_cold_contacts!(Current.user, cold_confirmation) unless cold_confirmation.nil?
+    @broadcast.save!
     render :show
   end
 
@@ -106,6 +111,11 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
   end
 
   private
+
+  def cold_confirmation
+    value = params.dig(:broadcast, :confirm_cold_contacts)
+    value.nil? ? nil : ActiveModel::Type::Boolean.new.cast(value)
+  end
 
   def recipient_report
     Broadcasts::RecipientReport.new(@broadcast, filter: params[:filter], query: params[:q])

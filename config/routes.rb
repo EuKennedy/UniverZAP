@@ -427,6 +427,25 @@ Rails.application.routes.draw do
               post :variations
             end
           end
+          # Listas de distribuição (fotos de contatos para disparo): de grupo
+          # do WhatsApp (extração pela WAHA), CSV, manual ou filtro.
+          resources :contact_lists, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              get :members
+              post :add_members
+              post :remove_members
+              post :import_csv
+              post :refresh
+              post :deduplicate
+              get :export
+            end
+            collection do
+              get :stats
+              get :groups
+              post :merge
+              post :extract_group
+            end
+          end
           # Mensagens agendadas para uma conversa (composer e ficha da cliente)
           # e as sequências presas ao horário agendado (lembrete / pós).
           resources :scheduled_messages, only: [:index, :create, :update, :destroy] do
