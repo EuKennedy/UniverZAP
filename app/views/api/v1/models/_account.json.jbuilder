@@ -1,4 +1,7 @@
 json.settings resource.settings
+json.cover_url resource.cover_url
+json.logo_url resource.logo_url
+json.vertical resource.custom_attributes['vertical_template']
 json.created_at resource.created_at
 if resource.custom_attributes.present?
   json.custom_attributes do

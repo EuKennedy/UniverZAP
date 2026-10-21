@@ -22,10 +22,16 @@ json.type resource.type
 json.accepted_terms_version resource.accepted_terms_version
 json.accepted_privacy_version resource.accepted_privacy_version
 json.accepted_at resource.accepted_at
+vertical_names = Vertical.pluck(:key, :name).to_h
 json.accounts do
-  json.array! resource.account_users do |account_user|
+  json.array! resource.account_users.includes(account: [{ cover_attachment: :blob }, { logo_attachment: :blob }]) do |account_user|
     json.id account_user.account_id
     json.name account_user.account.name
+    json.cover_theme account_user.account.cover_theme
+    json.cover_url account_user.account.cover_url
+    json.logo_url account_user.account.logo_url
+    json.vertical account_user.account.custom_attributes['vertical_template']
+    json.vertical_name vertical_names[account_user.account.custom_attributes['vertical_template']]
     json.status account_user.account.status
     json.onboarding_step account_user.account.onboarding_step
     json.active_at account_user.active_at

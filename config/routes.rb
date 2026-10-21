@@ -84,6 +84,7 @@ Rails.application.routes.draw do
             resource :contact_merge, only: [:create]
           end
           resource :bulk_actions, only: [:create]
+          resource :workspace, only: [:show, :update, :destroy]
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
@@ -773,6 +774,7 @@ Rails.application.routes.draw do
 
         # MFA routes
         scope module: 'profile' do
+          resource :workspace_summary, only: [:show]
           resource :mfa, controller: 'mfa', only: [:show, :create, :destroy] do
             post :verify
             post :backup_codes
