@@ -1,23 +1,21 @@
-# Ponte entre o Chatflow e as listas de distribuição.
+# Ponte entre o Chatflow e as listas de distribuição (branch
+# univerzap/listas-distribuicao). Este é o ÚNICO lugar do Chatflow que conhece
+# esse modelo: enquanto ele não estiver na base, `available?` é falso, a etapa
+# "Lista" é pulada (o fluxo segue) e o gatilho "entrou na lista" nunca dispara.
 #
-# O modelo de lista nasce em paralelo, na branch univerzap/listas-distribuicao.
-# Este é o ÚNICO lugar do Chatflow que conhece esse modelo: enquanto ele não
-# existir, `available?` é falso, a etapa "Lista" é pulada (o fluxo segue) e o
-# gatilho "entrou na lista" nunca dispara. Na integração, se o modelo tiver
-# outro nome ou outro jeito de adicionar contato, só este arquivo muda.
-#
-# Contrato esperado (ajustar aqui na integração):
-#   ContactList                 — belongs_to :account; has_many :contacts (através dos membros)
-#   account.contact_lists       — escopo da conta
-#   list.add_contact(contact)   — opcional; senão `list.contacts << contact`
-#   list.remove_contact(contact) — opcional; senão `list.contacts.delete(contact)`
-# E, do lado das listas, chamar `Chatflow::TriggerDispatcher.list_entered(list, contact)`
-# quando um contato entra (por tela, importação ou por esta etapa).
+# Contrato combinado com a sessão de listas:
+#   ContactList (account.contact_lists, `name`)
+#   ContactLists::MemberService.new(list).add(contact_ids)    → quantos entraram (reativa quem saiu)
+#   ContactLists::MemberService.new(list).remove(contact_ids) → quantos saíram
+# O MemberService grava com insert_all/update_all, então não há callback nem
+# evento ao adicionar: quem chama o gatilho é esta ponte (quando a etapa
+# adiciona) e, do lado das listas, quem adicionar por tela/importação/extração
+# deve chamar `Chatflow::TriggerDispatcher.list_entered(list, contact)`.
 module Chatflow::ListBridge
   module_function
 
   def available?
-    defined?(::ContactList).present? && ::ContactList < ApplicationRecord
+    defined?(::ContactList).present? && defined?(::ContactLists::MemberService).present?
   end
 
   def lists_for(account)
@@ -32,27 +30,17 @@ module Chatflow::ListBridge
     ::ContactList.find_by(account_id: account.id, id: list_id)
   end
 
-  # Devolve true quando mexeu na lista. Adicionar pela etapa também conta como
-  # "entrou na lista" — mas o dispatcher ignora conversas que já estão num fluxo.
+  # Devolve true quando mexeu na lista. Entrar pela etapa também conta como
+  # "entrou na lista" — mas o dispatcher ignora a conversa que já está num fluxo.
   def apply(account, contact, list_id, action)
     list = find(account, list_id)
     return false if list.blank? || contact.blank?
 
-    action.to_s == 'remove' ? remove(list, contact) : add(list, contact)
-    true
-  end
+    service = ::ContactLists::MemberService.new(list)
+    return service.remove([contact.id]).to_i.positive? if action.to_s == 'remove'
 
-  def add(list, contact)
-    return list.add_contact(contact) if list.respond_to?(:add_contact)
-    return if list.contacts.exists?(contact.id)
-
-    list.contacts << contact
-    Chatflow::TriggerDispatcher.list_entered(list, contact)
-  end
-
-  def remove(list, contact)
-    return list.remove_contact(contact) if list.respond_to?(:remove_contact)
-
-    list.contacts.delete(contact)
+    added = service.add([contact.id]).to_i.positive?
+    Chatflow::TriggerDispatcher.list_entered(list, contact) if added
+    added
   end
 end
