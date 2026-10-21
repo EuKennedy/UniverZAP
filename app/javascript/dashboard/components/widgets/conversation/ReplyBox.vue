@@ -18,6 +18,7 @@ import CopilotEditorSection from './CopilotEditorSection.vue';
 import MessageSignatureMissingAlert from './MessageSignatureMissingAlert.vue';
 import ReplyBoxBanner from './ReplyBoxBanner.vue';
 import ScheduledMessagesBanner from './scheduledMessages/ScheduledMessagesBanner.vue';
+import ChatflowBotBanner from './chatflowBot/ChatflowBotBanner.vue';
 import ScheduleMessageDialog from './scheduledMessages/ScheduleMessageDialog.vue';
 import QuotedEmailPreview from './QuotedEmailPreview.vue';
 import { REPLY_EDITOR_MODES } from 'dashboard/components/widgets/WootWriter/constants';
@@ -70,6 +71,7 @@ export default {
     AudioRecorder,
     ReplyBoxBanner,
     ScheduledMessagesBanner,
+    ChatflowBotBanner,
     ScheduleMessageDialog,
     EmojiInput,
     MessageSignatureMissingAlert,
@@ -1244,6 +1246,7 @@ export default {
 
 <template>
   <ReplyBoxBanner :message="message" :is-on-private-note="isOnPrivateNote" />
+  <ChatflowBotBanner />
   <ScheduledMessagesBanner />
   <div ref="replyEditor" class="reply-box" :class="replyBoxClass">
     <ReplyTopPanel

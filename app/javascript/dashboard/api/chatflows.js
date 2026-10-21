@@ -30,6 +30,46 @@ class ChatflowsAPI extends ApiClient {
     return axios.post(`${this.url}/${id}/stop_test`);
   }
 
+  // --- modelos prontos, opções do editor, funil e simulador ---------------
+
+  templates() {
+    return axios.get(`${this.url}/templates`);
+  }
+
+  fromTemplate(key) {
+    return axios.post(`${this.url}/from_template`, { key });
+  }
+
+  editorOptions() {
+    return axios.get(`${this.url}/options`);
+  }
+
+  funnel(id, days = 30) {
+    return axios.get(`${this.url}/${id}/funnel`, { params: { days } });
+  }
+
+  simulate(id, { inputs = [], seed, contact } = {}) {
+    return axios.post(`${this.url}/${id}/simulate`, { inputs, seed, contact });
+  }
+
+  // --- o robô numa conversa (pausar / retomar) ----------------------------
+
+  conversationState(conversationId) {
+    return axios.get(this.conversationStateUrl(conversationId));
+  }
+
+  pauseConversation(conversationId) {
+    return axios.post(`${this.conversationStateUrl(conversationId)}/pause`);
+  }
+
+  resumeConversation(conversationId) {
+    return axios.post(`${this.conversationStateUrl(conversationId)}/resume`);
+  }
+
+  conversationStateUrl(conversationId) {
+    return `${this.baseUrl()}/conversations/${conversationId}/chatflow_state`;
+  }
+
   // --- graph: nodes ------------------------------------------------------
 
   createNode(chatflowId, node) {

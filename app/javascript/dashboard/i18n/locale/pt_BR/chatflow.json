@@ -57,6 +57,22 @@
         "NO_REPLY": {
           "LABEL": "Cliente esperando",
           "HINT": "Começa quando a cliente espera um atendente há mais minutos do que o configurado abaixo (verificado a cada 5 minutos)."
+        },
+        "LABEL_ADDED": {
+          "LABEL": "Etiqueta adicionada",
+          "HINT": "Começa quando uma das etiquetas escolhidas entra na conversa."
+        },
+        "BROADCAST_REPLY": {
+          "LABEL": "Respondeu a um disparo",
+          "HINT": "Começa na primeira resposta da cliente a uma campanha dos últimos 7 dias."
+        },
+        "DATE": {
+          "LABEL": "Data",
+          "HINT": "Aniversário ou X dias depois do agendamento, de um estágio ou do atendimento. Só no horário de envio."
+        },
+        "LIST_ENTERED": {
+          "LABEL": "Entrou na lista",
+          "HINT": "Começa quando o contato entra numa lista de distribuição."
         }
       },
       "NO_REPLY_MINUTES": "Minutos sem resposta humana",
@@ -64,7 +80,34 @@
       "SUMMARY_NO_REPLY": "Esperando há mais de {minutes} min",
       "SENDER_NAME": "Nome que assina as mensagens",
       "SENDER_NAME_PLACEHOLDER": "Ex: Elisa",
-      "SENDER_NAME_HINT": "Aparece em negrito antes de cada mensagem do fluxo. Em branco, não assina."
+      "SENDER_NAME_HINT": "Aparece em negrito antes de cada mensagem do fluxo. Em branco, não assina.",
+      "SUMMARY_LABEL": "Quando entrar: {labels}",
+      "SUMMARY_LABEL_EMPTY": "Escolha as etiquetas",
+      "SUMMARY_DATE": {
+        "BIRTHDAY": "No aniversário, a partir das {hour}h",
+        "AFTER_APPOINTMENT": "{days} dia(s) depois do agendamento, {hour}h",
+        "AFTER_STAGE": "{days} dia(s) depois de entrar no estágio, {hour}h",
+        "AFTER_RESOLUTION": "{days} dia(s) depois do atendimento, {hour}h"
+      },
+      "LABELS": "Etiquetas",
+      "LABELS_HINT": "Etiqueta aplicada por um fluxo em andamento não começa outro fluxo.",
+      "BROADCASTS": "Disparos (opcional)",
+      "BROADCASTS_HINT": "Sem nenhum marcado, vale a resposta a qualquer disparo.",
+      "DATE_KIND": "Quando",
+      "DATE_KINDS": {
+        "BIRTHDAY": "No aniversário",
+        "AFTER_APPOINTMENT": "Dias depois do agendamento",
+        "AFTER_STAGE": "Dias depois de entrar num estágio",
+        "AFTER_RESOLUTION": "Dias depois do atendimento encerrado"
+      },
+      "DATE_ATTRIBUTE": "Atributo com a data de nascimento",
+      "DATE_DAYS_AFTER": "dias depois",
+      "DATE_STAGE": "Estágio (etiqueta)",
+      "DATE_HOUR": "A partir das",
+      "DATE_HINT": "Verificado de hora em hora, só seg–sáb 9h–19h, no máximo 30 conversas por hora e uma vez por data para cada cliente.",
+      "LISTS": "Listas (nenhuma marcada = qualquer lista)",
+      "PAUSE_ON_AGENT": "Pausar quando um atendente responder",
+      "PAUSE_ON_AGENT_HINT": "O robô para de falar quando alguém da equipe responde (pelo painel ou pelo celular). Retome com um clique na conversa."
     },
     "LIST": {
       "TITLE": "Chatflow",
@@ -79,7 +122,28 @@
       "DELETE_ERROR": "Não foi possível excluir o fluxo.",
       "NODE_COUNT": "{count} etapas",
       "EMPTY_TITLE": "Nenhum fluxo ainda",
-      "EMPTY_BODY": "Crie seu primeiro fluxo de chatbot para receber o cliente, mostrar um menu e direcioná-lo automaticamente."
+      "EMPTY_BODY": "Crie seu primeiro fluxo de chatbot para receber o cliente, mostrar um menu e direcioná-lo automaticamente.",
+      "STATS": {
+        "ACTIVE": "Fluxos ativos",
+        "ACTIVE_HINT": "de {total} fluxos",
+        "STARTED": "Execuções",
+        "COMPLETED": "Concluídas",
+        "LIVE": "Em andamento",
+        "PERIOD": "últimos 30 dias",
+        "RATE": "{rate}% das execuções",
+        "LIVE_HINT": "conversas com robô agora"
+      },
+      "TABS": {
+        "FLOWS": "Meus fluxos",
+        "TEMPLATES": "Modelos prontos"
+      },
+      "SEARCH": "Buscar fluxo",
+      "TESTING": "Em teste",
+      "CARD_STATS": {
+        "STARTED": "execuções",
+        "COMPLETED": "concluídas",
+        "LIVE": "agora"
+      }
     },
     "NODE": {
       "KIND": {
@@ -93,7 +157,14 @@
         "WEBHOOK": "Webhook",
         "END_FLOW": "Finalizar",
         "CONFIRMATION": "Confirmação",
-        "SEND_FLOW": "Enviar formulário"
+        "SEND_FLOW": "Enviar formulário",
+        "QUESTION": "Pergunta",
+        "CONDITION": "Condição",
+        "WAIT": "Esperar",
+        "RANDOM_SPLIT": "Divisão A/B",
+        "GOTO_FLOW": "Ir para outro fluxo",
+        "TYPING": "Digitando…",
+        "LIST_ACTION": "Lista de distribuição"
       },
       "MENU_EMPTY": "Menu sem título",
       "AUDIO_SUMMARY": "Mensagem de voz",
@@ -110,7 +181,24 @@
       "CONFIRMATION_UNRESOLVED": "Não resolvido",
       "FLOW_ANSWERED": "Respondeu",
       "FLOW_TYPED": "Digitou em vez de responder",
-      "FLOW_SUMMARY": "Envia um formulário do WhatsApp"
+      "FLOW_SUMMARY": "Envia um formulário do WhatsApp",
+      "QUESTION_VALID": "Respondeu certo",
+      "QUESTION_INVALID": "Resposta inválida",
+      "CONDITION_TRUE": "Sim (atende)",
+      "CONDITION_FALSE": "Senão",
+      "WAIT_DONE": "Tempo esgotado",
+      "WAIT_REPLIED": "Respondeu antes",
+      "QUESTION_EMPTY": "Pergunta sem texto",
+      "CONDITION_SUMMARY": "Regras: {count}",
+      "WAIT_SUMMARY": "Espera {amount} {unit}",
+      "WAIT_UNTIL_SUMMARY": "Espera até {date}",
+      "SPLIT_SUMMARY": "Sorteia entre {count} caminhos",
+      "GOTO_SUMMARY": "Continua no fluxo “{name}”",
+      "GOTO_EMPTY": "Escolha o fluxo de destino",
+      "TYPING_SUMMARY": "Digitando por {seconds}s",
+      "LIST_ADD": "Adiciona à lista {name}",
+      "LIST_REMOVE": "Remove da lista {name}",
+      "LIST_NONE": "(escolha a lista)"
     },
     "EDITOR": {
       "NAME": "Nome da etapa",
@@ -161,7 +249,112 @@
       "FLOW_TEXT": "Mensagem acima do botão",
       "FLOW_CTA": "Texto do botão",
       "FLOW_CTA_PLACEHOLDER": "Preencher",
-      "FLOW_HINT": "Só funciona em caixas WhatsApp Cloud API. Em modo de teste vai o rascunho; fluxo ativo exige formulário publicado."
+      "FLOW_HINT": "Só funciona em caixas WhatsApp Cloud API. Em modo de teste vai o rascunho; fluxo ativo exige formulário publicado.",
+      "UNIT": {
+        "MINUTES": "minutos",
+        "HOURS": "horas",
+        "DAYS": "dias"
+      },
+      "WEEKDAYS": {
+        "D0": "Dom",
+        "D1": "Seg",
+        "D2": "Ter",
+        "D3": "Qua",
+        "D4": "Qui",
+        "D5": "Sex",
+        "D6": "Sáb"
+      },
+      "QUESTION": {
+        "PROMPT": "Pergunta",
+        "TYPE": "Tipo de resposta",
+        "TYPES": {
+          "NAME": "Nome",
+          "EMAIL": "E-mail",
+          "PHONE": "Telefone",
+          "DATE": "Data",
+          "NUMBER": "Número",
+          "TEXT": "Texto livre"
+        },
+        "SAVE_TO": "Salvar em",
+        "SCOPE": {
+          "CONTACT": "Contato",
+          "CONVERSATION": "Conversa"
+        },
+        "KEY_PLACEHOLDER": "Atributo (ex.: email, aniversario, servico)",
+        "KEY_HINT": "name, email e phone_number gravam no próprio contato; outro nome vira atributo personalizado.",
+        "ERROR": "Mensagem quando a resposta não serve",
+        "ERROR_PLACEHOLDER": "Ex.: Não entendi a data. Responda assim: 25/10",
+        "ATTEMPTS": "Tentativas",
+        "ATTEMPTS_HINT": "Esgotadas as tentativas, o fluxo sai por “Resposta inválida” (ou termina, se ela não estiver ligada)."
+      },
+      "CONDITION": {
+        "MATCH": "Seguir por “Sim” quando",
+        "MATCH_ALL": "todas as regras",
+        "MATCH_ANY": "qualquer regra",
+        "EMPTY": "Sem regras, todo mundo segue por “Sim”. Adicione uma regra abaixo.",
+        "TYPES": {
+          "LABEL": "Etiqueta",
+          "ATTRIBUTE": "Atributo",
+          "LEAD_SOURCE": "Origem do lead",
+          "RECURRING": "Cliente recorrente",
+          "BUSINESS_HOURS": "Horário da caixa",
+          "SCHEDULE": "Dia e hora"
+        },
+        "HAS": "tem a etiqueta",
+        "NOT_HAS": "não tem a etiqueta",
+        "KEY": "atributo",
+        "VALUE": "valor",
+        "OPERATORS": {
+          "EQUALS": "é igual a",
+          "NOT_EQUALS": "é diferente de",
+          "CONTAINS": "contém",
+          "PRESENT": "está preenchido",
+          "BLANK": "está vazio",
+          "GREATER": "maior que",
+          "LESS": "menor que"
+        },
+        "SOURCE_AD": "Anúncio (Facebook/Instagram)",
+        "SOURCE_ORGANIC": "Orgânico",
+        "RECURRING_YES": "é cliente recorrente",
+        "RECURRING_NO": "é cliente nova",
+        "OPEN": "dentro do horário de funcionamento",
+        "CLOSED": "fora do horário de funcionamento",
+        "TO": "até",
+        "ADD": "Adicionar regra"
+      },
+      "WAIT": {
+        "MODE_DURATION": "Por um tempo",
+        "MODE_UNTIL": "Até uma data",
+        "ON_REPLY": "Se a cliente escrever antes",
+        "REPLY_STOP": "Encerrar o fluxo",
+        "REPLY_STOP_HINT": "O lembrete perde o sentido: a equipe continua a conversa.",
+        "REPLY_KEEP": "Continuar esperando",
+        "REPLY_KEEP_HINT": "Ignora a mensagem e segue no horário marcado.",
+        "REPLY_BRANCH": "Sair por “Respondeu antes”",
+        "REPLY_BRANCH_HINT": "Ganha uma segunda saída no cartão para tratar a resposta.",
+        "WINDOW": "Só soltar no horário de envio",
+        "WINDOW_HINT": "Se o tempo vencer fora de seg–sáb 9h–19h, espera a próxima abertura (proteção anti-bloqueio)."
+      },
+      "SPLIT": {
+        "ADD": "Adicionar caminho",
+        "TOTAL": "Total: {total}%",
+        "HINT": "Cada cliente cai num caminho sorteado pelos percentuais. Use para testar duas versões de mensagem."
+      },
+      "GOTO": {
+        "FLOW": "Fluxo de destino",
+        "HINT": "Este fluxo termina e o outro começa na mesma conversa. Só vai para fluxo ativo (ou rascunho, em modo de teste)."
+      },
+      "TYPING": {
+        "SECONDS": "Pausa de {seconds} segundos",
+        "HINT": "Uma pausa antes da próxima mensagem, para o robô não responder em rajada."
+      },
+      "LIST": {
+        "UNAVAILABLE": "As listas de distribuição ainda não estão disponíveis nesta conta. O bloco fica pronto e é pulado até lá.",
+        "ADD": "Adicionar",
+        "REMOVE": "Remover",
+        "LIST": "Lista",
+        "HINT": "Adicionar à lista também dispara os fluxos com o gatilho “Entrou na lista”."
+      }
     },
     "TEST": {
       "BUTTON": "Testar fluxo",
@@ -190,7 +383,68 @@
       "EDGE_DELETE_CONFIRM": "Remover esta conexão?",
       "START_SET": "Etapa inicial definida.",
       "ACTIVATE_HINT": "Defina uma etapa inicial antes de ativar.",
-      "SAVED_AT": "salvo às {time}"
+      "SAVED_AT": "salvo às {time}",
+      "GROUPS": {
+        "MESSAGES": "Mensagens",
+        "QUESTIONS": "Perguntas",
+        "LOGIC": "Lógica",
+        "ACTIONS": "Ações"
+      }
+    },
+    "FUNNEL": {
+      "BUTTON": "Funil",
+      "ERROR": "Não foi possível carregar o funil.",
+      "PERIOD": "Últimos 30 dias",
+      "RATE": "{rate}% seguiram",
+      "WAITING_SHORT": "{count} aqui",
+      "TOTALS": {
+        "STARTED": "começaram",
+        "COMPLETED": "concluíram",
+        "LIVE": "em andamento",
+        "ABORTED": "interrompidos"
+      }
+    },
+    "SIMULATOR": {
+      "BUTTON": "Simular",
+      "TITLE": "Simulador",
+      "SAFE": "Nada é enviado à cliente",
+      "RESTART": "Recomeçar",
+      "ATTACHMENT": "com anexo",
+      "FINISHED": "Fluxo encerrado",
+      "CAPTURED": "Dados capturados",
+      "PLACEHOLDER": "Responda como a cliente…",
+      "ENDED_PLACEHOLDER": "Fluxo encerrado — recomece para testar de novo",
+      "ERRORS": {
+        "NO_START_NODE": "Ligue o gatilho a uma etapa inicial para simular.",
+        "NO_INBOX": "A conta precisa de uma caixa de entrada para simular.",
+        "GENERIC": "Não foi possível simular agora."
+      },
+      "EVENTS": {
+        "WAITED": "Espera concluída (simulada)",
+        "TYPED": "Digitando… (simulado)",
+        "SKIPPED_WEBHOOK": "Webhook não chamado na simulação",
+        "SKIPPED_FLOW": "Formulário não enviado na simulação",
+        "ENDED": "O fluxo já tinha terminado"
+      }
+    },
+    "TEMPLATES": {
+      "BROWSE": "Modelos prontos",
+      "SUBTITLE": "Fluxos prontos para o seu segmento. Cada modelo vira um rascunho: revise os textos, teste no simulador e só então ative.",
+      "USE": "Usar modelo",
+      "INSTALLED": "Modelo criado como rascunho.",
+      "ERROR": "Não foi possível criar o fluxo a partir do modelo.",
+      "DRAFT_NOTE": "Modelos nascem desligados. Nada é enviado até você ativar o fluxo."
+    },
+    "BOT_BANNER": {
+      "WAITING_TIMER": "esperando o horário",
+      "PAUSED": "Robô pausado nesta conversa",
+      "PAUSED_BY": "Robô pausado — {name} assumiu a conversa",
+      "RUNNING": "Robô em andamento: {flow} · {step}",
+      "PAUSE": "Pausar robô",
+      "RESUME": "Retomar robô",
+      "PAUSED_OK": "Robô pausado nesta conversa.",
+      "RESUMED_OK": "Robô retomado.",
+      "ERROR": "Não foi possível mudar o robô agora."
     }
   }
 }

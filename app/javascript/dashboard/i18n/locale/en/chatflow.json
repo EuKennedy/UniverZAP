@@ -57,6 +57,22 @@
         "NO_REPLY": {
           "LABEL": "Customer waiting",
           "HINT": "Starts when the customer has waited for an agent longer than the minutes below (checked every 5 minutes)."
+        },
+        "LABEL_ADDED": {
+          "LABEL": "Label added",
+          "HINT": "Starts when one of the chosen labels is added to the conversation."
+        },
+        "BROADCAST_REPLY": {
+          "LABEL": "Replied to a broadcast",
+          "HINT": "Starts on the customer's first reply to a campaign from the last 7 days."
+        },
+        "DATE": {
+          "LABEL": "Date",
+          "HINT": "Birthday or X days after the appointment, a stage or the conversation. Only within sending hours."
+        },
+        "LIST_ENTERED": {
+          "LABEL": "Joined a list",
+          "HINT": "Starts when the contact joins a distribution list."
         }
       },
       "NO_REPLY_MINUTES": "Minutes without a human reply",
@@ -64,7 +80,34 @@
       "SUMMARY_NO_REPLY": "Waiting for more than {minutes} min",
       "SENDER_NAME": "Name signing the messages",
       "SENDER_NAME_PLACEHOLDER": "e.g. Elisa",
-      "SENDER_NAME_HINT": "Shown in bold before each flow message. Leave blank for no signature."
+      "SENDER_NAME_HINT": "Shown in bold before each flow message. Leave blank for no signature.",
+      "SUMMARY_LABEL": "When added: {labels}",
+      "SUMMARY_LABEL_EMPTY": "Pick the labels",
+      "SUMMARY_DATE": {
+        "BIRTHDAY": "On the birthday, from {hour}h",
+        "AFTER_APPOINTMENT": "{days} day(s) after the appointment, {hour}h",
+        "AFTER_STAGE": "{days} day(s) after entering the stage, {hour}h",
+        "AFTER_RESOLUTION": "{days} day(s) after the conversation, {hour}h"
+      },
+      "LABELS": "Labels",
+      "LABELS_HINT": "A label applied by a running flow does not start another flow.",
+      "BROADCASTS": "Broadcasts (optional)",
+      "BROADCASTS_HINT": "With none selected, a reply to any broadcast counts.",
+      "DATE_KIND": "When",
+      "DATE_KINDS": {
+        "BIRTHDAY": "On the birthday",
+        "AFTER_APPOINTMENT": "Days after the appointment",
+        "AFTER_STAGE": "Days after entering a stage",
+        "AFTER_RESOLUTION": "Days after the conversation was resolved"
+      },
+      "DATE_ATTRIBUTE": "Attribute with the birth date",
+      "DATE_DAYS_AFTER": "days after",
+      "DATE_STAGE": "Stage (label)",
+      "DATE_HOUR": "From",
+      "DATE_HINT": "Checked every hour, Mon–Sat 9am–7pm only, at most 30 conversations per hour and once per date for each customer.",
+      "LISTS": "Lists (none selected = any list)",
+      "PAUSE_ON_AGENT": "Pause when an agent replies",
+      "PAUSE_ON_AGENT_HINT": "The bot stops talking when someone on the team replies (from the dashboard or the phone). Resume it with one click in the conversation."
     },
     "LIST": {
       "TITLE": "Chatflow",
@@ -79,7 +122,28 @@
       "DELETE_ERROR": "Could not delete the flow.",
       "NODE_COUNT": "{count} steps",
       "EMPTY_TITLE": "No flows yet",
-      "EMPTY_BODY": "Create your first chatbot flow to greet customers, show a menu and route them automatically."
+      "EMPTY_BODY": "Create your first chatbot flow to greet customers, show a menu and route them automatically.",
+      "STATS": {
+        "ACTIVE": "Active flows",
+        "ACTIVE_HINT": "of {total} flows",
+        "STARTED": "Runs",
+        "COMPLETED": "Completed",
+        "LIVE": "In progress",
+        "PERIOD": "last 30 days",
+        "RATE": "{rate}% of runs",
+        "LIVE_HINT": "conversations with a bot now"
+      },
+      "TABS": {
+        "FLOWS": "My flows",
+        "TEMPLATES": "Ready-made templates"
+      },
+      "SEARCH": "Search flows",
+      "TESTING": "Testing",
+      "CARD_STATS": {
+        "STARTED": "runs",
+        "COMPLETED": "completed",
+        "LIVE": "now"
+      }
     },
     "NODE": {
       "KIND": {
@@ -93,7 +157,14 @@
         "WEBHOOK": "Webhook",
         "END_FLOW": "End",
         "CONFIRMATION": "Confirmation",
-        "SEND_FLOW": "Send form"
+        "SEND_FLOW": "Send form",
+        "QUESTION": "Question",
+        "CONDITION": "Condition",
+        "WAIT": "Wait",
+        "RANDOM_SPLIT": "A/B split",
+        "GOTO_FLOW": "Go to another flow",
+        "TYPING": "Typing…",
+        "LIST_ACTION": "Distribution list"
       },
       "MENU_EMPTY": "Untitled menu",
       "AUDIO_SUMMARY": "Voice message",
@@ -110,7 +181,24 @@
       "CONFIRMATION_UNRESOLVED": "Not resolved",
       "FLOW_ANSWERED": "Answered",
       "FLOW_TYPED": "Typed instead",
-      "FLOW_SUMMARY": "Sends a WhatsApp form"
+      "FLOW_SUMMARY": "Sends a WhatsApp form",
+      "QUESTION_VALID": "Valid answer",
+      "QUESTION_INVALID": "Invalid answer",
+      "CONDITION_TRUE": "Yes (matches)",
+      "CONDITION_FALSE": "Otherwise",
+      "WAIT_DONE": "Time is up",
+      "WAIT_REPLIED": "Replied before",
+      "QUESTION_EMPTY": "Question without text",
+      "CONDITION_SUMMARY": "Rules: {count}",
+      "WAIT_SUMMARY": "Waits {amount} {unit}",
+      "WAIT_UNTIL_SUMMARY": "Waits until {date}",
+      "SPLIT_SUMMARY": "Picks one of {count} paths",
+      "GOTO_SUMMARY": "Continues in “{name}”",
+      "GOTO_EMPTY": "Pick the target flow",
+      "TYPING_SUMMARY": "Typing for {seconds}s",
+      "LIST_ADD": "Adds to list {name}",
+      "LIST_REMOVE": "Removes from list {name}",
+      "LIST_NONE": "(pick a list)"
     },
     "EDITOR": {
       "NAME": "Step name",
@@ -161,7 +249,112 @@
       "FLOW_TEXT": "Message above the button",
       "FLOW_CTA": "Button label",
       "FLOW_CTA_PLACEHOLDER": "Fill in",
-      "FLOW_HINT": "Works only on WhatsApp Cloud API inboxes. In test mode a draft form is sent; live flows need a published form."
+      "FLOW_HINT": "Works only on WhatsApp Cloud API inboxes. In test mode a draft form is sent; live flows need a published form.",
+      "UNIT": {
+        "MINUTES": "minutes",
+        "HOURS": "hours",
+        "DAYS": "days"
+      },
+      "WEEKDAYS": {
+        "D0": "Sun",
+        "D1": "Mon",
+        "D2": "Tue",
+        "D3": "Wed",
+        "D4": "Thu",
+        "D5": "Fri",
+        "D6": "Sat"
+      },
+      "QUESTION": {
+        "PROMPT": "Question",
+        "TYPE": "Answer type",
+        "TYPES": {
+          "NAME": "Name",
+          "EMAIL": "Email",
+          "PHONE": "Phone",
+          "DATE": "Date",
+          "NUMBER": "Number",
+          "TEXT": "Free text"
+        },
+        "SAVE_TO": "Save to",
+        "SCOPE": {
+          "CONTACT": "Contact",
+          "CONVERSATION": "Conversation"
+        },
+        "KEY_PLACEHOLDER": "Attribute (e.g. email, birthday, service)",
+        "KEY_HINT": "name, email and phone_number are saved on the contact itself; any other key becomes a custom attribute.",
+        "ERROR": "Message when the answer is not valid",
+        "ERROR_PLACEHOLDER": "E.g. I didn't get the date. Reply like 25/10",
+        "ATTEMPTS": "Attempts",
+        "ATTEMPTS_HINT": "After the last attempt the flow leaves through “Invalid answer” (or ends, if it is not connected)."
+      },
+      "CONDITION": {
+        "MATCH": "Go through “Yes” when",
+        "MATCH_ALL": "all rules",
+        "MATCH_ANY": "any rule",
+        "EMPTY": "Without rules everyone goes through “Yes”. Add a rule below.",
+        "TYPES": {
+          "LABEL": "Label",
+          "ATTRIBUTE": "Attribute",
+          "LEAD_SOURCE": "Lead source",
+          "RECURRING": "Returning customer",
+          "BUSINESS_HOURS": "Inbox hours",
+          "SCHEDULE": "Day and time"
+        },
+        "HAS": "has the label",
+        "NOT_HAS": "does not have the label",
+        "KEY": "attribute",
+        "VALUE": "value",
+        "OPERATORS": {
+          "EQUALS": "equals",
+          "NOT_EQUALS": "is not",
+          "CONTAINS": "contains",
+          "PRESENT": "is filled",
+          "BLANK": "is empty",
+          "GREATER": "greater than",
+          "LESS": "less than"
+        },
+        "SOURCE_AD": "Ad (Facebook/Instagram)",
+        "SOURCE_ORGANIC": "Organic",
+        "RECURRING_YES": "is a returning customer",
+        "RECURRING_NO": "is a new customer",
+        "OPEN": "within business hours",
+        "CLOSED": "outside business hours",
+        "TO": "to",
+        "ADD": "Add rule"
+      },
+      "WAIT": {
+        "MODE_DURATION": "For a while",
+        "MODE_UNTIL": "Until a date",
+        "ON_REPLY": "If the customer writes before",
+        "REPLY_STOP": "End the flow",
+        "REPLY_STOP_HINT": "The reminder no longer makes sense: the team takes the conversation.",
+        "REPLY_KEEP": "Keep waiting",
+        "REPLY_KEEP_HINT": "Ignore the message and go on at the scheduled time.",
+        "REPLY_BRANCH": "Leave through “Replied before”",
+        "REPLY_BRANCH_HINT": "Adds a second exit to the card to handle the reply.",
+        "WINDOW": "Only release within sending hours",
+        "WINDOW_HINT": "If the time is up outside Mon–Sat 9am–7pm, waits for the next opening (anti-ban protection)."
+      },
+      "SPLIT": {
+        "ADD": "Add path",
+        "TOTAL": "Total: {total}%",
+        "HINT": "Each customer goes down a path picked by the percentages. Use it to test two message versions."
+      },
+      "GOTO": {
+        "FLOW": "Target flow",
+        "HINT": "This flow ends and the other one starts on the same conversation. Only active flows (or drafts, in test mode)."
+      },
+      "TYPING": {
+        "SECONDS": "{seconds}-second pause",
+        "HINT": "A pause before the next message so the bot doesn't reply in bursts."
+      },
+      "LIST": {
+        "UNAVAILABLE": "Distribution lists are not available in this account yet. The block is ready and skipped until then.",
+        "ADD": "Add",
+        "REMOVE": "Remove",
+        "LIST": "List",
+        "HINT": "Adding to a list also fires flows with the “Joined a list” trigger."
+      }
     },
     "TEST": {
       "BUTTON": "Test flow",
@@ -190,7 +383,68 @@
       "EDGE_DELETE_CONFIRM": "Remove this connection?",
       "START_SET": "Start step set.",
       "ACTIVATE_HINT": "Set a start step before activating.",
-      "SAVED_AT": "saved at {time}"
+      "SAVED_AT": "saved at {time}",
+      "GROUPS": {
+        "MESSAGES": "Messages",
+        "QUESTIONS": "Questions",
+        "LOGIC": "Logic",
+        "ACTIONS": "Actions"
+      }
+    },
+    "FUNNEL": {
+      "BUTTON": "Funnel",
+      "ERROR": "Could not load the funnel.",
+      "PERIOD": "Last 30 days",
+      "RATE": "{rate}% moved on",
+      "WAITING_SHORT": "{count} here",
+      "TOTALS": {
+        "STARTED": "started",
+        "COMPLETED": "completed",
+        "LIVE": "in progress",
+        "ABORTED": "interrupted"
+      }
+    },
+    "SIMULATOR": {
+      "BUTTON": "Simulate",
+      "TITLE": "Simulator",
+      "SAFE": "Nothing is sent to the customer",
+      "RESTART": "Restart",
+      "ATTACHMENT": "with attachment",
+      "FINISHED": "Flow finished",
+      "CAPTURED": "Captured data",
+      "PLACEHOLDER": "Reply as the customer…",
+      "ENDED_PLACEHOLDER": "Flow finished — restart to test again",
+      "ERRORS": {
+        "NO_START_NODE": "Connect the trigger to a start step to simulate.",
+        "NO_INBOX": "The account needs an inbox to simulate.",
+        "GENERIC": "Could not simulate right now."
+      },
+      "EVENTS": {
+        "WAITED": "Wait finished (simulated)",
+        "TYPED": "Typing… (simulated)",
+        "SKIPPED_WEBHOOK": "Webhook not called in simulation",
+        "SKIPPED_FLOW": "Form not sent in simulation",
+        "ENDED": "The flow had already finished"
+      }
+    },
+    "TEMPLATES": {
+      "BROWSE": "Templates",
+      "SUBTITLE": "Ready-made flows for your business. Each template becomes a draft: review the texts, test in the simulator and only then activate it.",
+      "USE": "Use template",
+      "INSTALLED": "Template created as a draft.",
+      "ERROR": "Could not create the flow from the template.",
+      "DRAFT_NOTE": "Templates start turned off. Nothing is sent until you activate the flow."
+    },
+    "BOT_BANNER": {
+      "WAITING_TIMER": "waiting for the scheduled time",
+      "PAUSED": "Bot paused in this conversation",
+      "PAUSED_BY": "Bot paused — {name} took over the conversation",
+      "RUNNING": "Bot running: {flow} · {step}",
+      "PAUSE": "Pause bot",
+      "RESUME": "Resume bot",
+      "PAUSED_OK": "Bot paused in this conversation.",
+      "RESUMED_OK": "Bot resumed.",
+      "ERROR": "Could not change the bot right now."
     }
   }
 }

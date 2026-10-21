@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Handle, Position } from '@vue-flow/core';
 import { useMapGetter } from 'dashboard/composables/store';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 
 // Synthetic entry node (not backed by a ChatflowNode row). Renders the
 // flow's trigger config — the single most important part: WHEN the bot
@@ -15,6 +16,7 @@ const props = defineProps({
 
 const { t } = useI18n();
 const inboxes = useMapGetter('inboxes/getInboxes');
+const labels = useMapGetter('labels/getLabels');
 
 const flow = computed(() => props.data.chatflow || {});
 
@@ -35,6 +37,23 @@ const conditionText = computed(() => {
       ? t('CHATFLOW.TRIGGER.SUMMARY_KEYWORD', { keywords: kws.join(', ') })
       : t('CHATFLOW.TRIGGER.SUMMARY_KEYWORD_EMPTY');
   }
+  if (type === 'label_added') {
+    const ids = flow.value.trigger_config?.label_ids || [];
+    const titles = labels.value
+      .filter(l => ids.includes(l.id))
+      .map(l => l.title);
+    return titles.length
+      ? t('CHATFLOW.TRIGGER.SUMMARY_LABEL', { labels: titles.join(', ') })
+      : t('CHATFLOW.TRIGGER.SUMMARY_LABEL_EMPTY');
+  }
+  if (type === 'date') {
+    const date = flow.value.trigger_config?.date || {};
+    const kind = (date.kind || 'birthday').toUpperCase();
+    return t(`CHATFLOW.TRIGGER.SUMMARY_DATE.${kind}`, {
+      days: Number(date.days) || 0,
+      hour: Number(date.hour ?? 10),
+    });
+  }
   if (type === 'no_reply') {
     return t('CHATFLOW.TRIGGER.SUMMARY_NO_REPLY', {
       minutes: flow.value.trigger_config?.no_reply_minutes || 15,
@@ -53,7 +72,7 @@ const conditionText = computed(() => {
       <span
         class="flex items-center justify-center size-8 rounded-lg bg-white/20 text-white shrink-0"
       >
-        <fluent-icon icon="flash" size="18" />
+        <Icon icon="i-lucide-zap" class="size-[18px]" />
       </span>
       <div class="flex flex-col min-w-0">
         <p
@@ -74,7 +93,7 @@ const conditionText = computed(() => {
       <p
         class="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-white/70 m-0"
       >
-        <fluent-icon icon="settings" size="11" />
+        <Icon icon="i-lucide-settings" class="size-[11px]" />
         {{ t('CHATFLOW.TRIGGER.EDIT_HINT') }}
       </p>
     </div>

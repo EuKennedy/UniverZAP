@@ -16,6 +16,14 @@ import ChatflowNode from '../components/ChatflowNode.vue';
 import ChatflowTriggerNode from '../components/ChatflowTriggerNode.vue';
 import NodeEditorDrawer from '../components/NodeEditorDrawer.vue';
 import TriggerConfigDrawer from '../components/TriggerConfigDrawer.vue';
+import ChatflowSimulator from '../components/ChatflowSimulator.vue';
+import ChatflowsAPI from 'dashboard/api/chatflows';
+import {
+  PALETTE_GROUPS,
+  paletteFor,
+  defaultConfigFor,
+} from '../helpers/nodeKinds';
+import { funnelByNode } from '../helpers/funnel';
 
 const props = defineProps({
   chatflowId: { type: [String, Number], required: true },
@@ -105,42 +113,47 @@ const FLOW_COLORS = [
   '#8593A8',
 ];
 
-const PALETTE = [
-  { kind: 'send_message', icon: 'i-lucide-message-square' },
-  { kind: 'send_audio', icon: 'i-lucide-mic' },
-  { kind: 'send_media', icon: 'i-lucide-image' },
-  { kind: 'menu', icon: 'i-lucide-list-tree' },
-  { kind: 'confirmation', icon: 'i-lucide-circle-check-big' },
-  { kind: 'send_flow', icon: 'i-lucide-clipboard-list' },
-  { kind: 'set_label', icon: 'i-lucide-tag' },
-  { kind: 'assign_agent', icon: 'i-lucide-user-check' },
-  { kind: 'add_to_kanban', icon: 'i-lucide-kanban-square' },
-  { kind: 'webhook', icon: 'i-lucide-webhook' },
-  { kind: 'end_flow', icon: 'i-lucide-flag' },
-];
+const PALETTE = PALETTE_GROUPS.map(group => ({
+  group,
+  items: paletteFor(group),
+}));
 
-const DEFAULT_CONFIG = {
-  send_message: { text: '' },
-  send_audio: {},
-  send_media: { caption: '' },
-  menu: { text: '', options: [] },
-  // Já vem pronta para usar: a pergunta e as palavras que a maioria das pessoas
-  // responde. Uma etapa de fechamento que nasce em branco é uma etapa que
-  // ninguém configura direito e que solta o cliente no meio do caminho.
-  confirmation: {
-    text: 'Seu problema foi resolvido?',
-    resolved_keywords: ['sim', 'resolveu', 'obrigado', 'valeu'],
-    unresolved_keywords: ['não', 'nao resolveu', 'quero humano', 'atendente'],
-    fallback_text: 'Desculpa, não entendi. Responda com Sim ou Não.',
-  },
-  // Texto e botão já preenchidos: um formulário sem chamada é um botão vazio
-  // no WhatsApp, e a Meta recusa o envio.
-  send_flow: { text: 'Toque no botão para preencher.', cta: 'Preencher' },
-  set_label: { label_ids: [] },
-  assign_agent: {},
-  add_to_kanban: {},
-  webhook: { method: 'post' },
-  end_flow: { actions: {} },
+// Listas de distribuição, outros fluxos e disparos: o que os blocos e gatilhos
+// novos oferecem para escolher.
+const editorOptions = ref({ lists: [], lists_available: false, chatflows: [] });
+const loadOptions = async () => {
+  try {
+    const { data } = await ChatflowsAPI.editorOptions();
+    editorOptions.value = data;
+  } catch {
+    // Sem opções o editor continua funcionando; só os seletores ficam vazios.
+  }
+};
+
+// --- funil por bloco ------------------------------------------------------
+
+const showFunnel = ref(false);
+const funnelReport = ref(null);
+const funnelMap = computed(() => funnelByNode(funnelReport.value));
+const toggleFunnel = async () => {
+  showFunnel.value = !showFunnel.value;
+  if (!showFunnel.value) return;
+  try {
+    const { data } = await ChatflowsAPI.funnel(props.chatflowId);
+    funnelReport.value = data;
+  } catch {
+    useAlert(t('CHATFLOW.FUNNEL.ERROR'));
+    showFunnel.value = false;
+  }
+};
+
+// --- simulador --------------------------------------------------------------
+
+const isSimulatorOpen = ref(false);
+const simulation = ref({ visited: [], current: null });
+const simulationState = id => {
+  if (simulation.value.current === id) return 'current';
+  return simulation.value.visited.includes(id) ? 'visited' : null;
 };
 
 const selectedBackendNode = computed(
@@ -242,6 +255,7 @@ const refreshTrigger = () => {
 onMounted(async () => {
   store.dispatch('labels/get');
   store.dispatch('inboxes/get');
+  loadOptions();
   await store.dispatch('chatflows/show', props.chatflowId);
   hydrateCanvas();
 });
@@ -259,7 +273,7 @@ const addNode = async kind => {
         name: '',
         position_x: 120 + spawnOffset * 36,
         position_y: 120 + spawnOffset * 28,
-        config: DEFAULT_CONFIG[kind],
+        config: defaultConfigFor(kind),
       },
     });
     addNodes([mapNode(created)]);
@@ -487,6 +501,7 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
       v-if="isTriggerOpen && flow"
       :chatflow="flow"
       :is-saving="isSavingTrigger"
+      :options="editorOptions"
       @save="saveTrigger"
       @close="isTriggerOpen = false"
     />
@@ -496,6 +511,8 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
       :node="selectedBackendNode"
       :is-start="flow?.start_node_id === selectedBackendNode.id"
       :is-saving="isSavingNode"
+      :editor-options="editorOptions"
+      :chatflow-id="Number(chatflowId)"
       @save="saveNode"
       @remove="removeNode"
       @set-start="setAsStart"
@@ -514,6 +531,11 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
             icon="i-lucide-arrow-left"
             @click="goBack"
           />
+          <span
+            class="flex items-center justify-center size-8 rounded-lg shrink-0 bg-brand-gradient text-[#06131C]"
+          >
+            <Icon icon="i-lucide-workflow" class="size-4" />
+          </span>
           <h1 class="text-sm font-semibold text-n-slate-12 m-0 truncate">
             {{ flow?.name }}
           </h1>
@@ -538,6 +560,28 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
           >
             {{ savedLabel }}
           </span>
+        </div>
+        <div class="flex items-center gap-1 ml-auto">
+          <Button
+            v-if="flow"
+            :variant="showFunnel ? 'solid' : 'ghost'"
+            :color="showFunnel ? 'blue' : 'slate'"
+            size="sm"
+            icon="i-lucide-filter"
+            :label="t('CHATFLOW.FUNNEL.BUTTON')"
+            data-testid="chatflow-funnel-toggle"
+            @click="toggleFunnel"
+          />
+          <Button
+            v-if="flow"
+            :variant="isSimulatorOpen ? 'solid' : 'ghost'"
+            :color="isSimulatorOpen ? 'blue' : 'slate'"
+            size="sm"
+            icon="i-lucide-smartphone"
+            :label="t('CHATFLOW.SIMULATOR.BUTTON')"
+            data-testid="chatflow-simulate"
+            @click="isSimulatorOpen = !isSimulatorOpen"
+          />
         </div>
         <div
           v-if="isTestActive"
@@ -620,11 +664,49 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
                 :id="nodeProps.id"
                 :data="nodeProps.data"
                 :selected="nodeProps.id === selectedNodeId"
+                :funnel="showFunnel ? funnelMap[nodeProps.id] || null : null"
+                :simulation="simulationState(nodeProps.id)"
+                :context="{
+                  flows: editorOptions.chatflows || [],
+                  lists: editorOptions.lists || [],
+                }"
                 @delete="deleteNodeFromCanvas(nodeProps.id)"
               />
             </template>
           </VueFlow>
+
+          <!-- Resumo do funil (últimos 30 dias) -->
+          <div
+            v-if="showFunnel && funnelReport"
+            class="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 px-4 py-2 rounded-xl border border-n-weak bg-n-solid-1 shadow-sm text-xs"
+            data-testid="chatflow-funnel-totals"
+          >
+            <span
+              class="text-[10px] font-semibold uppercase tracking-wider text-n-slate-10"
+            >
+              {{ t('CHATFLOW.FUNNEL.PERIOD') }}
+            </span>
+            <span
+              v-for="key in ['started', 'completed', 'live', 'aborted']"
+              :key="key"
+              class="flex items-baseline gap-1"
+            >
+              <strong class="text-sm text-n-slate-12 tabular-nums">
+                {{ funnelReport.totals[key] }}
+              </strong>
+              <span class="text-n-slate-11">
+                {{ t(`CHATFLOW.FUNNEL.TOTALS.${key.toUpperCase()}`) }}
+              </span>
+            </span>
+          </div>
         </div>
+
+        <ChatflowSimulator
+          v-if="isSimulatorOpen"
+          :chatflow-id="chatflowId"
+          @highlight="value => (simulation = value)"
+          @close="isSimulatorOpen = false"
+        />
 
         <!-- Palette (far right) -->
         <nav
@@ -635,16 +717,24 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
           >
             {{ t('CHATFLOW.BUILDER.PALETTE') }}
           </p>
-          <button
-            v-for="item in PALETTE"
-            :key="item.kind"
-            type="button"
-            class="flex items-center gap-2 px-2.5 h-9 rounded-lg text-xs text-n-slate-12 hover:bg-n-alpha-2 transition-colors cursor-pointer text-left"
-            @click="addNode(item.kind)"
-          >
-            <Icon :icon="item.icon" class="size-4 text-n-slate-11" />
-            {{ t(`CHATFLOW.NODE.KIND.${item.kind.toUpperCase()}`) }}
-          </button>
+          <template v-for="section in PALETTE" :key="section.group">
+            <p
+              class="px-2 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-n-slate-9 m-0"
+            >
+              {{ t(`CHATFLOW.BUILDER.GROUPS.${section.group.toUpperCase()}`) }}
+            </p>
+            <button
+              v-for="item in section.items"
+              :key="item.kind"
+              type="button"
+              class="flex items-center gap-2 px-2.5 h-8 rounded-lg text-xs text-n-slate-12 hover:bg-n-alpha-2 transition-colors cursor-pointer text-left"
+              :data-testid="`palette-${item.kind}`"
+              @click="addNode(item.kind)"
+            >
+              <Icon :icon="item.icon" class="size-4 text-n-slate-11" />
+              {{ t(`CHATFLOW.NODE.KIND.${item.kind.toUpperCase()}`) }}
+            </button>
+          </template>
         </nav>
       </div>
     </div>
