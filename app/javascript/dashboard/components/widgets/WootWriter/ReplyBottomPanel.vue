@@ -133,6 +133,7 @@ export default {
     'selectWhatsappTemplate',
     'selectContentTemplate',
     'toggleQuotedReply',
+    'scheduleMessage',
   ],
   setup(props) {
     const { setSignatureFlagForInbox, fetchSignatureFlagFromUISettings } =
@@ -435,6 +436,17 @@ export default {
       />
     </div>
     <div class="right-wrap">
+      <NextButton
+        v-if="!isNote && !isEditorDisabled"
+        v-tooltip.top-end="$t('SCHEDULED_MESSAGES.COMPOSER.TOOLTIP')"
+        icon="i-lucide-calendar-clock"
+        slate
+        faded
+        sm
+        class="flex-shrink-0 me-2"
+        data-testid="schedule-message-button"
+        @click="$emit('scheduleMessage')"
+      />
       <NextButton
         :label="sendButtonText"
         type="submit"

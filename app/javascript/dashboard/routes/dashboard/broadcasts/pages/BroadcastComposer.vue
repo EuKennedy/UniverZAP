@@ -20,6 +20,10 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import BroadcastProgressModal from '../components/BroadcastProgressModal.vue';
+import MessageSmartTools from '../components/MessageSmartTools.vue';
+import AudienceSegments from '../components/AudienceSegments.vue';
+import SafetySettings from '../components/SafetySettings.vue';
+import AudiencePreviewPanel from '../components/AudiencePreviewPanel.vue';
 import {
   buildTemplateParameters,
   findComponentByType,
@@ -57,17 +61,36 @@ const inboxes = useMapGetter('inboxes/getInboxes');
 // A fresh, empty WAHA message block.
 const emptyMessageBlock = () => ({
   text: '',
+  variants: [],
   attachment: null,
   attachment_name: '',
   caption: '',
 });
 
+// Mesmos padrões do backend (Broadcast::THROTTLE_DEFAULTS): uma por vez,
+// 45–150s entre envios, 30/h e 150/dia por conexão, seg–sáb das 9h às 19h.
 const THROTTLE_DEFAULTS = {
-  batch_min: 3,
-  batch_max: 8,
-  delay_min: 20,
-  delay_max: 60,
-  daily_cap: 500,
+  batch_min: 1,
+  batch_max: 1,
+  delay_min: 45,
+  delay_max: 150,
+  hourly_cap: 30,
+  daily_cap: 150,
+  window_start: 9,
+  window_end: 19,
+  weekdays: [1, 2, 3, 4, 5, 6],
+  quiet_hours: 12,
+  max_failures: 3,
+  smart_timing: false,
+};
+
+// Segmentos que estreitam o público (ver AudienceSegments).
+const SEGMENT_DEFAULTS = {
+  origins: [],
+  recurring: '',
+  no_reply_days: '',
+  birthday: '',
+  exclude_label_ids: [],
 };
 
 const broadcast = ref(null);
@@ -77,9 +100,7 @@ const form = reactive({
   mode: 'waha',
   inbox_id: null,
   message: {
-    messages: [
-      { text: '', attachment: null, attachment_name: '', caption: '' },
-    ],
+    messages: [emptyMessageBlock()],
     template: { name: '', language: 'pt_BR', namespace: '' },
   },
   audience: {
@@ -88,6 +109,7 @@ const form = reactive({
     funnel_stage_ids: [],
     contact_ids: [],
     phone_numbers: [],
+    ...SEGMENT_DEFAULTS,
   },
   throttle: { ...THROTTLE_DEFAULTS },
   scheduled_at: '',
@@ -96,6 +118,7 @@ const form = reactive({
 const audienceCount = ref(null);
 // Who a relaunch would actually reach — contacts already sent are skipped.
 const audienceNewCount = ref(null);
+const audiencePreview = ref(null);
 const isPreviewing = ref(false);
 
 // Media upload (WAHA mode) — tracks which message block is currently uploading.
@@ -260,6 +283,14 @@ const hasAudience = computed(() =>
   )
 );
 
+const activeSegments = computed(
+  () =>
+    Object.keys(SEGMENT_DEFAULTS).filter(key => {
+      const value = form.audience[key];
+      return Array.isArray(value) ? value.length > 0 : Boolean(value);
+    }).length
+);
+
 const canLaunch = computed(
   () =>
     ['draft', 'paused', 'completed'].includes(status.value) &&
@@ -275,7 +306,9 @@ const launchHint = computed(() => {
   return '';
 });
 
-const isRunning = computed(() => status.value === 'running');
+const isRunning = computed(() =>
+  ['running', 'scheduled'].includes(status.value)
+);
 
 // Live dispatch progress popup — auto-opens after launch, reopenable later.
 const isProgressOpen = ref(false);
@@ -326,6 +359,7 @@ const hydrate = record => {
   if (Array.isArray(msg.messages) && msg.messages.length) {
     form.message.messages = msg.messages.map(part => ({
       text: part.text || '',
+      variants: part.variants || [],
       attachment: part.attachment || null,
       attachment_name: part.attachment_name || '',
       caption: part.caption || '',
@@ -334,6 +368,7 @@ const hydrate = record => {
     form.message.messages = [
       {
         text: msg.text || '',
+        variants: [],
         attachment: msg.attachment || null,
         attachment_name: msg.attachment_name || '',
         caption: msg.caption || '',
@@ -353,6 +388,9 @@ const hydrate = record => {
   form.audience.funnel_stage_ids = aud.funnel_stage_ids || [];
   form.audience.contact_ids = aud.contact_ids || [];
   form.audience.phone_numbers = aud.phone_numbers || [];
+  Object.keys(SEGMENT_DEFAULTS).forEach(key => {
+    form.audience[key] = aud[key] ?? SEGMENT_DEFAULTS[key];
+  });
   form.throttle = { ...THROTTLE_DEFAULTS, ...(record.throttle || {}) };
   form.scheduled_at = toLocalInput(record.scheduled_at);
   selectedTemplateKey.value = form.message.template.name
@@ -630,6 +668,7 @@ const buildPayload = () => {
       ? {
           messages: form.message.messages.filter(isBlockFilled).map(block => ({
             text: block.text,
+            variants: (block.variants || []).filter(v => v.trim()),
             attachment: block.attachment,
             attachment_name: block.attachment_name,
             caption: block.caption,
@@ -662,6 +701,7 @@ const refreshAudience = async () => {
     const { data } = await BroadcastsAPI.audiencePreview(props.broadcastId);
     audienceCount.value = data.count;
     audienceNewCount.value = data.new_count ?? data.count;
+    audiencePreview.value = data;
   } catch (error) {
     useAlert(error?.message || t('BROADCAST.COMPOSER.PREVIEW_ERROR'));
   } finally {
@@ -689,7 +729,9 @@ const save = () => persist();
 // confirm against the count of what was actually saved.
 const confirmLaunch = () => {
   const sent = Number(broadcast.value?.sent_count) || 0;
-  const message =
+  const preview = audiencePreview.value || {};
+  const estimate = preview.estimate || {};
+  const lines = [
     sent > 0
       ? t('BROADCAST.COMPOSER.LAUNCH_CONFIRM_RELAUNCH', {
           count: audienceNewCount.value,
@@ -697,14 +739,34 @@ const confirmLaunch = () => {
         })
       : t('BROADCAST.COMPOSER.LAUNCH_CONFIRM', {
           count: audienceNewCount.value,
-        });
+        }),
+    t('BROADCAST.COMPOSER.LAUNCH_CONFIRM_SAFETY', {
+      eligible: preview.eligible_count ?? audienceNewCount.value,
+      perHour: estimate.per_hour,
+      start: estimate.window_start,
+      end: estimate.window_end,
+      days: estimate.days,
+    }),
+  ];
+  if (form.scheduled_at && new Date(form.scheduled_at) > new Date()) {
+    lines.push(
+      t('BROADCAST.COMPOSER.LAUNCH_CONFIRM_SCHEDULED', {
+        when: new Date(form.scheduled_at).toLocaleString(),
+      })
+    );
+  }
   // eslint-disable-next-line no-alert
-  return window.confirm(message);
+  return window.confirm(lines.join('\n\n'));
 };
 
 const launch = async () => {
   if (!(await persist({ quiet: true }))) return;
-  if (!(Number(audienceNewCount.value) > 0)) {
+  if (
+    !(
+      Number(audiencePreview.value?.eligible_count ?? audienceNewCount.value) >
+      0
+    )
+  ) {
     useAlert(t('BROADCAST.COMPOSER.LAUNCH_NOTHING_NEW'));
     return;
   }
@@ -952,6 +1014,10 @@ onBeforeUnmount(stopStatsRefresh);
                   :placeholder="t('BROADCAST.MESSAGE.TEXT_PLACEHOLDER')"
                   class="px-3 py-2 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 resize-y"
                 />
+                <MessageSmartTools
+                  v-model:text="block.text"
+                  v-model:variants="block.variants"
+                />
                 <label
                   class="inline-flex self-start items-center gap-2 px-3 h-9 rounded-lg border border-dashed border-n-weak text-xs text-n-slate-11 cursor-pointer hover:border-n-teal-7 hover:text-n-teal-11 transition-colors"
                 >
@@ -1173,6 +1239,41 @@ onBeforeUnmount(stopStatsRefresh);
           <div
             class="flex flex-col rounded-xl border border-n-weak bg-n-solid-1 divide-y divide-n-weak overflow-hidden"
           >
+            <!-- Segments (narrow the audience) -->
+            <div class="flex flex-col">
+              <button
+                type="button"
+                class="flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors hover:bg-n-alpha-1"
+                @click="toggleSection('segments')"
+              >
+                <Icon
+                  icon="i-lucide-chevron-down"
+                  class="size-4 text-n-slate-11 transition-transform"
+                  :class="openSection === 'segments' ? 'rotate-180' : ''"
+                />
+                <span
+                  class="flex-1 text-left text-sm font-medium text-n-slate-12"
+                >
+                  {{ t('BROADCAST.SEGMENTS.TITLE') }}
+                </span>
+                <span
+                  v-if="activeSegments"
+                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-n-teal-3 text-[11px] font-semibold text-n-teal-11 tabular-nums"
+                >
+                  {{ activeSegments }}
+                </span>
+              </button>
+              <div v-if="openSection === 'segments'" class="px-4 pb-4">
+                <AudienceSegments
+                  :model-value="form.audience"
+                  :labels="labels"
+                  @update:model-value="
+                    value => Object.assign(form.audience, value)
+                  "
+                />
+              </div>
+            </div>
+
             <!-- Contact labels -->
             <div class="flex flex-col">
               <button
@@ -1547,32 +1648,10 @@ onBeforeUnmount(stopStatsRefresh);
           <h2 class="text-sm font-semibold text-n-slate-12 m-0">
             {{ t('BROADCAST.COMPOSER.THROTTLE_TITLE') }}
           </h2>
-          <p class="text-xs text-n-slate-11 m-0">
-            {{ t('BROADCAST.THROTTLE.HINT') }}
-          </p>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <label
-              v-for="field in [
-                'batch_min',
-                'batch_max',
-                'delay_min',
-                'delay_max',
-                'daily_cap',
-              ]"
-              :key="field"
-              class="flex flex-col gap-1.5"
-            >
-              <span class="text-xs font-medium text-n-slate-11">
-                {{ t(`BROADCAST.THROTTLE.${field.toUpperCase()}`) }}
-              </span>
-              <input
-                v-model.number="form.throttle[field]"
-                type="number"
-                min="0"
-                class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8"
-              />
-            </label>
-          </div>
+          <SafetySettings
+            :model-value="form.throttle"
+            @update:model-value="value => Object.assign(form.throttle, value)"
+          />
         </section>
 
         <!-- Schedule -->
@@ -1625,6 +1704,19 @@ onBeforeUnmount(stopStatsRefresh);
           />
         </div>
 
+        <AudiencePreviewPanel
+          v-if="audiencePreview"
+          :preview="audiencePreview"
+        />
+
+        <p
+          v-if="broadcast?.pause_reason === 'failures'"
+          class="m-0 px-3 py-2 rounded-lg bg-n-ruby-3 text-xs text-n-ruby-11"
+          data-testid="paused-by-failures"
+        >
+          {{ t('BROADCAST.COMPOSER.PAUSED_BY_FAILURES') }}
+        </p>
+
         <div v-if="broadcast" class="grid grid-cols-3 gap-2 text-center">
           <div class="flex flex-col gap-0.5 p-3 rounded-xl bg-n-alpha-1">
             <span class="text-lg font-semibold text-n-slate-12 tabular-nums">
@@ -1654,7 +1746,7 @@ onBeforeUnmount(stopStatsRefresh);
 
         <div class="flex flex-col gap-2 mt-auto">
           <Button
-            v-if="['running', 'paused'].includes(status)"
+            v-if="['running', 'paused', 'completed'].includes(status)"
             class="w-full"
             variant="outline"
             color="teal"
@@ -1686,7 +1778,7 @@ onBeforeUnmount(stopStatsRefresh);
             {{ launchHint }}
           </p>
           <Button
-            v-else
+            v-if="isRunning"
             class="w-full"
             color="ruby"
             icon="i-lucide-pause"

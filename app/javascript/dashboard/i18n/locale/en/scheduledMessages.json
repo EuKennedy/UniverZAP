@@ -1,0 +1,56 @@
+{
+  "SCHEDULED_MESSAGES": {
+    "COMPOSER": {
+      "TOOLTIP": "Schedule this message"
+    },
+    "DIALOG": {
+      "TITLE": "Schedule message",
+      "EDIT_TITLE": "Edit scheduled message",
+      "DESCRIPTION": "It goes out in this conversation at the chosen time. You can edit or cancel it until then.",
+      "CONFIRM": "Schedule",
+      "PLACEHOLDER": "Write the message…",
+      "PREVIEW": "She will receive:",
+      "MISSING": "Empty for this contact: {names}",
+      "WHEN": "When",
+      "CANCEL_IF_REPLY": "Cancel if she writes before",
+      "CANCEL_IF_REPLY_HINT": "If the customer sends a message before the time, this one is not sent.",
+      "SAVED": "Message scheduled for {when}",
+      "ERROR": "Could not schedule the message"
+    },
+    "VARIABLES": {
+      "LABEL": "Insert:",
+      "PRIMEIRO_NOME": "first name",
+      "NOME": "full name",
+      "SERVICO": "service",
+      "PROFISSIONAL": "professional",
+      "ULTIMA_VISITA": "last visit"
+    },
+    "SHORTCUTS": {
+      "IN_1_HOUR": "In 1 hour",
+      "TODAY_18": "Today 6 pm",
+      "TOMORROW_9": "Tomorrow 9 am",
+      "IN_3_DAYS": "In 3 days",
+      "MONDAY_MORNING": "Monday morning",
+      "BEST_TIME": "When she usually replies · {time}"
+    },
+    "BANNER": {
+      "PENDING": "Message scheduled for {when}",
+      "MORE": "+{count} more",
+      "EDIT": "Edit",
+      "CANCEL": "Cancel",
+      "CANCELLED_OK": "Scheduled message cancelled",
+      "CANCEL_ERROR": "Could not cancel the message",
+      "FAILED": "Scheduled message failed: {error}",
+      "CANCELLED": {
+        "CUSTOMER_REPLIED": "Not sent: the customer wrote first",
+        "OPTED_OUT": "Not sent: the customer asked not to receive messages",
+        "SEQUENCE_DISABLED": "Not sent: the sequence was turned off"
+      }
+    },
+    "SHEET": {
+      "BUTTON": "Schedule message",
+      "PENDING": "1 scheduled message | {count} scheduled messages",
+      "OPTED_OUT": "Asked not to receive broadcasts"
+    }
+  }
+}

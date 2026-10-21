@@ -14,7 +14,7 @@ class ScheduledMessageListener < BaseListener
     message = event.data[:message]
     return if message.blank? || !message.incoming? || message.private?
 
-    cancel_pending(message.conversation)
+    cancel_pending(message)
     mark_replied(message)
     Broadcasts::OptOutService.new(message.conversation.contact).perform if Broadcasts::OptOutService.opt_out_text?(message.content)
   end
@@ -34,8 +34,11 @@ class ScheduledMessageListener < BaseListener
 
   private
 
-  def cancel_pending(conversation)
-    ScheduledMessage.pending.where(conversation_id: conversation.id, cancel_if_reply: true)
+  # Só o que foi agendado ANTES da mensagem dela: com a fila atrasada, uma
+  # mensagem antiga processada agora não pode cancelar um agendamento novo.
+  def cancel_pending(message)
+    ScheduledMessage.pending.where(conversation_id: message.conversation_id, cancel_if_reply: true)
+                    .where(created_at: ...message.created_at)
                     .find_each { |scheduled| scheduled.cancel!('customer_replied') }
   end
 

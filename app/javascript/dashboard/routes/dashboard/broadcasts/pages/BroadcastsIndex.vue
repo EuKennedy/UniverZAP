@@ -9,6 +9,7 @@ import { useAlert } from 'dashboard/composables';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import SequencesPanel from '../components/SequencesPanel.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -17,6 +18,10 @@ const { accountScopedRoute } = useAccount();
 
 const broadcasts = useMapGetter('broadcasts/getBroadcasts');
 const uiFlags = useMapGetter('broadcasts/getUIFlags');
+
+// Disparos e sequências moram no mesmo menu: as duas coisas saem pelo número.
+const TABS = ['broadcasts', 'sequences'];
+const tab = ref('broadcasts');
 
 const isCreating = ref(false);
 const newName = ref('');
@@ -106,13 +111,36 @@ const removeBroadcast = async (broadcast, event) => {
         </p>
       </div>
       <Button
+        v-if="tab === 'broadcasts'"
         icon="i-lucide-plus"
         :label="t('BROADCAST.LIST.NEW')"
         @click="startCreate"
       />
     </header>
 
-    <div class="flex-1 px-8 py-6">
+    <nav class="flex gap-1 px-8 pt-4" data-testid="broadcast-tabs">
+      <button
+        v-for="item in TABS"
+        :key="item"
+        type="button"
+        class="px-3 h-8 rounded-lg text-sm font-medium transition-colors"
+        :class="
+          tab === item
+            ? 'bg-n-alpha-2 text-n-slate-12'
+            : 'text-n-slate-11 hover:text-n-slate-12'
+        "
+        :data-testid="`broadcast-tab-${item}`"
+        @click="tab = item"
+      >
+        {{ t(`BROADCAST.TABS.${item.toUpperCase()}`) }}
+      </button>
+    </nav>
+
+    <div v-if="tab === 'sequences'" class="flex-1 px-8 py-6">
+      <SequencesPanel />
+    </div>
+
+    <div v-else class="flex-1 px-8 py-6">
       <form
         v-if="isCreating"
         class="flex items-center gap-2 mb-6 max-w-xl"

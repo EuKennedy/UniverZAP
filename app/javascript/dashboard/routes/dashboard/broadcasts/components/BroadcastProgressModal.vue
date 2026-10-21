@@ -21,6 +21,7 @@ const POLL_INTERVAL = 3000;
 
 const status = ref('running');
 const counts = ref({ total: 0, sent: 0, failed: 0, pending: 0 });
+const pauseReason = ref(null);
 const recipients = ref([]);
 const isLoading = ref(false);
 const isPausing = ref(false);
@@ -63,11 +64,16 @@ const fetchRecipients = async () => {
   try {
     const { data } = await BroadcastsAPI.recipients(props.broadcastId);
     status.value = data.status || 'running';
+    pauseReason.value = data.pause_reason;
     counts.value = {
       total: data.counts?.total || 0,
       sent: data.counts?.sent || 0,
       failed: data.counts?.failed || 0,
       pending: data.counts?.pending || 0,
+      delivered: data.counts?.delivered || 0,
+      read: data.counts?.read || 0,
+      replied: data.counts?.replied || 0,
+      skipped: data.counts?.skipped || 0,
     };
     recipients.value = data.recipients || [];
     // Stop polling once the campaign is no longer actively running.
@@ -106,9 +112,18 @@ const onPause = async () => {
   }
 };
 
+// Relatório do disparo: o que a WhatsApp confirmou e o que voltou.
+const reportItems = computed(() =>
+  ['delivered', 'read', 'replied', 'skipped'].map(key => ({
+    key,
+    value: counts.value[key] || 0,
+  }))
+);
+
 // Map a recipient status to its visual treatment.
 const statusIcon = recipientStatus => {
   if (recipientStatus === 'failed') return 'i-lucide-x';
+  if (recipientStatus === 'skipped') return 'i-lucide-shield-check';
   if (['sent', 'delivered', 'read'].includes(recipientStatus)) {
     return 'i-lucide-check';
   }
@@ -123,8 +138,16 @@ const statusIconTone = recipientStatus => {
   return 'text-n-slate-11 bg-n-alpha-2';
 };
 
-const recipientStatusLabel = recipientStatus =>
-  t(`BROADCAST.PROGRESS.RECIPIENT.${recipientStatus.toUpperCase()}`);
+const recipientStatusLabel = recipient => {
+  if (recipient.status === 'skipped' && recipient.skip_reason) {
+    return t(`BROADCAST.PREVIEW.SKIP.${recipient.skip_reason.toUpperCase()}`);
+  }
+  if (recipient.replied_at) return t('BROADCAST.PROGRESS.RECIPIENT.REPLIED');
+  const shown = ['delivered', 'read'].includes(recipient.delivery)
+    ? recipient.delivery
+    : recipient.status;
+  return t(`BROADCAST.PROGRESS.RECIPIENT.${shown.toUpperCase()}`);
+};
 
 const formatTime = sentAt => {
   if (!sentAt) return '';
@@ -242,6 +265,30 @@ onBeforeUnmount(stopPolling);
           </div>
         </div>
 
+        <div
+          class="grid grid-cols-4 gap-2 px-6 py-3 border-b border-n-weak text-center shrink-0"
+          data-testid="broadcast-report"
+        >
+          <div
+            v-for="item in reportItems"
+            :key="item.key"
+            class="flex flex-col gap-0.5"
+          >
+            <span class="text-sm font-semibold text-n-slate-12 tabular-nums">
+              {{ item.value }}
+            </span>
+            <span class="text-[11px] text-n-slate-11">
+              {{ t(`BROADCAST.PROGRESS.REPORT.${item.key.toUpperCase()}`) }}
+            </span>
+          </div>
+        </div>
+        <p
+          v-if="isPaused && pauseReason === 'failures'"
+          class="m-0 px-6 py-2 bg-n-ruby-3 text-xs text-n-ruby-11 shrink-0"
+        >
+          {{ t('BROADCAST.COMPOSER.PAUSED_BY_FAILURES') }}
+        </p>
+
         <!-- Log list -->
         <div class="flex-1 min-h-0 overflow-auto px-3 py-2">
           <ul
@@ -286,7 +333,7 @@ onBeforeUnmount(stopPolling);
                         : 'text-n-slate-11'
                     "
                   >
-                    {{ recipientStatusLabel(recipient.status) }}
+                    {{ recipientStatusLabel(recipient) }}
                   </span>
                 </div>
                 <p

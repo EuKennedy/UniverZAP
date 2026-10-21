@@ -23,6 +23,14 @@ describe ScheduledMessageListener do
       expect(kept.reload).to be_status_scheduled
     end
 
+    it 'mensagem antiga processada com atraso não cancela agendamento novo' do
+      late = create(:message, account: account, conversation: conversation, inbox: conversation.inbox, content: 'oi',
+                              message_type: :incoming, created_at: 1.hour.ago)
+      listener.message_created(Events::Base.new('message_created', Time.zone.now, message: late))
+
+      expect(cancellable.reload).to be_status_scheduled
+    end
+
     it 'nota privada não conta como resposta' do
       customer_says('nota', private: true, message_type: :outgoing)
 

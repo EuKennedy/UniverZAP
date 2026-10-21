@@ -37,6 +37,11 @@ class BroadcastsAPI extends ApiClient {
   recipients(id) {
     return axios.get(`${this.url}/${id}/recipients`);
   }
+
+  // 2–3 versões do texto pela IA da conta (o operador revisa antes de salvar).
+  variations(text) {
+    return axios.post(`${this.url}/variations`, { text });
+  }
 }
 
 export default new BroadcastsAPI();

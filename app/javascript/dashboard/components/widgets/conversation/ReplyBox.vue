@@ -17,6 +17,8 @@ import ArticleSearchPopover from 'dashboard/routes/dashboard/helpcenter/componen
 import CopilotEditorSection from './CopilotEditorSection.vue';
 import MessageSignatureMissingAlert from './MessageSignatureMissingAlert.vue';
 import ReplyBoxBanner from './ReplyBoxBanner.vue';
+import ScheduledMessagesBanner from './scheduledMessages/ScheduledMessagesBanner.vue';
+import ScheduleMessageDialog from './scheduledMessages/ScheduleMessageDialog.vue';
 import QuotedEmailPreview from './QuotedEmailPreview.vue';
 import { REPLY_EDITOR_MODES } from 'dashboard/components/widgets/WootWriter/constants';
 import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
@@ -67,6 +69,8 @@ export default {
     AttachmentPreview,
     AudioRecorder,
     ReplyBoxBanner,
+    ScheduledMessagesBanner,
+    ScheduleMessageDialog,
     EmojiInput,
     MessageSignatureMissingAlert,
     ReplyBottomPanel,
@@ -1221,6 +1225,14 @@ export default {
       this.$emit('toggleEditorSize');
       this.$nextTick(() => this.messageEditor?.focusEditorInputField());
     },
+    // Agendar o que já está digitado: o texto vai para o diálogo e o editor
+    // só é limpo depois que o agendamento foi salvo.
+    openScheduleMessage() {
+      this.$refs.scheduleMessageDialog?.open({ content: this.message.trim() });
+    },
+    onScheduledMessageSaved() {
+      this.clearMessage();
+    },
     onSubmitCopilotReply() {
       const acceptedMessage = this.copilot.accept();
       this.message = acceptedMessage;
@@ -1232,6 +1244,7 @@ export default {
 
 <template>
   <ReplyBoxBanner :message="message" :is-on-private-note="isOnPrivateNote" />
+  <ScheduledMessagesBanner />
   <div ref="replyEditor" class="reply-box" :class="replyBoxClass">
     <ReplyTopPanel
       :mode="replyType"
@@ -1416,8 +1429,17 @@ export default {
         @select-content-template="openContentTemplateModal"
         @toggle-insert-article="toggleInsertArticle"
         @toggle-quoted-reply="toggleQuotedReply"
+        @schedule-message="openScheduleMessage"
       />
     </Transition>
+
+    <ScheduleMessageDialog
+      ref="scheduleMessageDialog"
+      :conversation-id="conversationId"
+      :contact="currentChat?.meta?.sender || {}"
+      :conversation="currentChat"
+      @saved="onScheduledMessageSaved"
+    />
 
     <WhatsappTemplates
       :inbox-id="inbox.id"

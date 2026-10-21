@@ -1,0 +1,56 @@
+{
+  "SCHEDULED_MESSAGES": {
+    "COMPOSER": {
+      "TOOLTIP": "Agendar esta mensagem"
+    },
+    "DIALOG": {
+      "TITLE": "Agendar mensagem",
+      "EDIT_TITLE": "Editar mensagem agendada",
+      "DESCRIPTION": "Ela sai nesta conversa no horário escolhido. Dá para editar ou cancelar até lá.",
+      "CONFIRM": "Agendar",
+      "PLACEHOLDER": "Escreva a mensagem…",
+      "PREVIEW": "Ela vai receber:",
+      "MISSING": "Vazio para este contato: {names}",
+      "WHEN": "Quando",
+      "CANCEL_IF_REPLY": "Cancelar se ela escrever antes",
+      "CANCEL_IF_REPLY_HINT": "Se a cliente mandar mensagem antes do horário, esta não é enviada.",
+      "SAVED": "Mensagem agendada para {when}",
+      "ERROR": "Não foi possível agendar a mensagem"
+    },
+    "VARIABLES": {
+      "LABEL": "Inserir:",
+      "PRIMEIRO_NOME": "primeiro nome",
+      "NOME": "nome completo",
+      "SERVICO": "serviço",
+      "PROFISSIONAL": "profissional",
+      "ULTIMA_VISITA": "última visita"
+    },
+    "SHORTCUTS": {
+      "IN_1_HOUR": "Daqui 1 hora",
+      "TODAY_18": "Hoje 18h",
+      "TOMORROW_9": "Amanhã 9h",
+      "IN_3_DAYS": "Daqui 3 dias",
+      "MONDAY_MORNING": "Segunda de manhã",
+      "BEST_TIME": "Quando ela costuma responder · {time}"
+    },
+    "BANNER": {
+      "PENDING": "Mensagem agendada para {when}",
+      "MORE": "+{count}",
+      "EDIT": "Editar",
+      "CANCEL": "Cancelar",
+      "CANCELLED_OK": "Mensagem agendada cancelada",
+      "CANCEL_ERROR": "Não foi possível cancelar a mensagem",
+      "FAILED": "A mensagem agendada falhou: {error}",
+      "CANCELLED": {
+        "CUSTOMER_REPLIED": "Não enviada: a cliente escreveu antes",
+        "OPTED_OUT": "Não enviada: a cliente pediu para não receber mensagens",
+        "SEQUENCE_DISABLED": "Não enviada: a sequência foi desligada"
+      }
+    },
+    "SHEET": {
+      "BUTTON": "Agendar mensagem",
+      "PENDING": "1 mensagem agendada | {count} mensagens agendadas",
+      "OPTED_OUT": "Pediu para não receber disparos"
+    }
+  }
+}
