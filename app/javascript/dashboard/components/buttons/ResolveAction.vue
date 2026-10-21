@@ -8,6 +8,7 @@ import { useEmitter } from 'dashboard/composables/emitter';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
 import { useConversationRequiredAttributes } from 'dashboard/composables/useConversationRequiredAttributes';
 import { useClosingLabels } from 'dashboard/composables/useClosingLabels';
+import { useAccount } from 'dashboard/composables/useAccount';
 
 import WootDropdownItem from 'shared/components/ui/dropdown/DropdownItem.vue';
 import WootDropdownMenu from 'shared/components/ui/dropdown/DropdownMenu.vue';
@@ -31,6 +32,12 @@ const getters = useStoreGetters();
 const { t } = useI18n();
 const { checkMissingAttributes } = useConversationRequiredAttributes();
 const { closingLabels, requiresClosingLabel } = useClosingLabels();
+// UniverZAP: "Agendado" = customer won. Only verticals that schedule
+// (VerticalProfile#schedule_status) offer it.
+const { currentAccount } = useAccount();
+const canMarkScheduled = computed(() =>
+  Boolean(currentAccount.value?.vertical_profile?.schedule_status)
+);
 
 // Athenas saldo chip — replaces the old floating bottom-36 widget so
 // the saldo lives next to "Mover/Visualizar Kanban" instead of
@@ -254,10 +261,41 @@ const toggleStatus = async (
   }
 };
 
+// "Resolver > Agendado": tags the conversation with the vertical's scheduling
+// status and resolves it in one request, so it counts as a conversion.
+const scheduleAndResolve = async (customAttributes = null) => {
+  closeDropdown();
+  isLoading.value = true;
+  const conversationId = currentChat.value.id;
+  try {
+    if (customAttributes) {
+      await store.dispatch('updateCustomAttributes', {
+        conversationId,
+        customAttributes,
+      });
+    }
+    await store.dispatch('scheduleConversation', {
+      conversationId,
+      resolve: true,
+    });
+    useAlert(t('CONVERSATION.RESOLVE_DROPDOWN.SCHEDULED_SUCCESS'));
+  } catch (error) {
+    useAlert(
+      error?.response?.data?.error || t('CONVERSATION.CHANGE_STATUS_FAILED')
+    );
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 const handleResolveWithAttributes = ({ attributes, context }) => {
   if (context) {
     const currentCustomAttributes = currentChat.value.custom_attributes || {};
     const mergedAttributes = { ...currentCustomAttributes, ...attributes };
+    if (context.schedule) {
+      scheduleAndResolve(mergedAttributes);
+      return;
+    }
     toggleStatus(
       wootConstants.STATUS_TYPE.RESOLVED,
       context.snoozedUntil,
@@ -316,6 +354,24 @@ const resolveConversation = (closingLabel = null) => {
     null,
     closingLabel
   );
+};
+
+// Same required-attributes gate as "Resolve", then schedule + resolve.
+const markScheduled = () => {
+  const currentCustomAttributes = currentChat.value.custom_attributes || {};
+  const { hasMissing, missing } = checkMissingAttributes(
+    currentCustomAttributes
+  );
+
+  if (hasMissing) {
+    closeDropdown();
+    resolveAttributesModalRef.value?.open(missing, currentCustomAttributes, {
+      id: currentChat.value.id,
+      schedule: true,
+    });
+    return;
+  }
+  scheduleAndResolve();
 };
 
 const goToNextConversation = () => {
@@ -549,6 +605,19 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
       class="border rounded-lg shadow-lg border-n-strong dark:border-n-strong box-content p-2 w-fit z-10 bg-n-alpha-3 backdrop-blur-[100px] absolute block left-auto top-full mt-0.5 start-0 xl:start-auto xl:end-0 max-w-[12.5rem] min-w-[9.75rem] [&_ul>li]:mb-0"
     >
       <WootDropdownMenu class="mb-0">
+        <WootDropdownItem v-if="isOpen && canMarkScheduled">
+          <Button
+            :label="t('CONVERSATION.RESOLVE_DROPDOWN.MARK_SCHEDULED')"
+            ghost
+            slate
+            sm
+            start
+            icon="i-lucide-calendar-check"
+            class="w-full"
+            data-testid="resolve-scheduled"
+            @click="markScheduled"
+          />
+        </WootDropdownItem>
         <WootDropdownItem v-if="!isPending">
           <Button
             :label="t('CONVERSATION.RESOLVE_DROPDOWN.SNOOZE_UNTIL')"

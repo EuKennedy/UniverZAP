@@ -118,6 +118,8 @@
       }
     },
     "RESOLVE_DROPDOWN": {
+      "MARK_SCHEDULED": "Scheduled",
+      "SCHEDULED_SUCCESS": "Marked as scheduled and resolved",
       "MARK_PENDING": "Mark as pending",
       "COPY_CSAT_LINK": "Copy review link",
       "SNOOZE_UNTIL": "Snooze",
