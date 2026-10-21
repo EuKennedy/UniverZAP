@@ -7,14 +7,15 @@
 class Api::V1::Accounts::Whatsapp::StatusPostsController < Api::V1::Accounts::BaseController
   STATUS_BY_INTENT = { 'draft' => :draft, 'schedule' => :scheduled, 'publish' => :publishing }.freeze
   PER_PAGE = 10
-  MAX_PER_PAGE = 50
+  # O calendário pede o mês inteiro de uma vez.
+  MAX_PER_PAGE = 200
 
   before_action :ensure_administrator
   before_action :fetch_post, only: [:update, :destroy, :publish, :retry, :duplicate]
   before_action :ensure_editable, only: [:update, :destroy, :publish]
 
   def index
-    posts = filtered_posts.includes(:deliveries, media_attachment: :blob).page(params[:page]).per(per_page)
+    posts = filtered_posts.includes(:deliveries, :campaign, media_attachment: :blob).page(params[:page]).per(per_page)
     render json: {
       payload: posts.map { |post| payload(post) },
       meta: { has_more: posts.next_page.present?, total_count: posts.total_count, total_pages: posts.total_pages,
@@ -157,6 +158,7 @@ class Api::V1::Accounts::Whatsapp::StatusPostsController < Api::V1::Accounts::Ba
       published_at: post.published_at&.iso8601,
       created_at: post.created_at.iso8601,
       media: media_payload(post),
+      campaign: post.campaign&.slice(:id, :name, :color),
       deliveries: post.deliveries.map { |delivery| delivery_payload(delivery) }
     }
   end

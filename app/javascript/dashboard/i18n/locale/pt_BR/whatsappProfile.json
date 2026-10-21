@@ -213,6 +213,104 @@
     "AGENDA": {
       "TODAY": "Hoje",
       "EMPTY_DAY": "Nada agendado"
+    },
+    "TABS": {
+      "PUBLISH": "Publicar",
+      "CAMPAIGNS": "Campanhas",
+      "CALENDAR": "Calendário"
+    },
+    "CAMPAIGNS": {
+      "DESCRIPTION": "Fluxos de status que saem sozinhos, com repostagem e ciclo.",
+      "NEW": "Nova campanha",
+      "SEARCH": "Buscar campanha",
+      "ALL_STATUSES": "Todos os status",
+      "EMPTY_TITLE": "Nenhuma campanha aqui ainda",
+      "EMPTY": "Monte um fluxo uma vez (anúncio, lembrete, última chamada) e deixe a campanha agendar e repostar sozinha.",
+      "STATUS": {
+        "DRAFT": "Rascunho",
+        "ACTIVE": "Ativa",
+        "PAUSED": "Pausada",
+        "FINISHED": "Concluída"
+      },
+      "CARD": {
+        "STEPS": "nenhum passo | 1 passo | {count} passos",
+        "REPOSTS": "{count} repostagem(ns)",
+        "NEXT": "Próxima: {date}",
+        "NOTHING_SCHEDULED": "Nada agendado"
+      },
+      "FOLDERS": {
+        "TITLE": "Pastas",
+        "ALL": "Todas as campanhas",
+        "UNFILED": "Sem pasta",
+        "NEW": "Nova pasta",
+        "NAME": "Nome da pasta",
+        "NAME_PLACEHOLDER": "ex.: Promoções",
+        "RENAME": "Renomear pasta",
+        "DELETE": "Excluir pasta",
+        "DELETED": "Pasta excluída. As campanhas foram para Sem pasta."
+      },
+      "EDITOR": {
+        "BACK": "Campanhas",
+        "SAVE": "Salvar",
+        "ACTIVATE": "Ativar",
+        "PAUSE": "Pausar",
+        "DELETE": "Excluir",
+        "SAVED": "Campanha salva.",
+        "ACTIVATED": "Campanha ativada. Os próximos status já estão no calendário.",
+        "PAUSED": "Campanha pausada. Os agendados futuros saíram do calendário.",
+        "DELETED": "Campanha excluída. O que já foi publicado continua no histórico.",
+        "NAME_REQUIRED": "Dê um nome para a campanha.",
+        "NAME": "Nome",
+        "NAME_PLACEHOLDER": "ex.: Semana da escova",
+        "DESCRIPTION": "Descrição",
+        "DESCRIPTION_PLACEHOLDER": "Opcional: para quem é e o objetivo",
+        "FOLDER": "Pasta",
+        "COLOR": "Cor no calendário",
+        "STARTS_ON": "Começa em",
+        "CYCLE": "Repetir o fluxo",
+        "CYCLE_ONCE": "Uma vez só",
+        "CYCLE_EVERY": "A cada {days} dias",
+        "ENDS_ON": "Termina em",
+        "ENDS_ON_HINT": "Vazio = repete até pausar.",
+        "FLOW": "Fluxo de postagem",
+        "FLOW_SUMMARY": "{steps} passo(s) · {posts} status por ciclo",
+        "FLOW_EMPTY": "Adicione o primeiro passo: o que sai, em qual dia e a que horas.",
+        "ADD_STEP": "Adicionar passo",
+        "EDIT_STEP": "Editar passo",
+        "DUPLICATE_STEP": "Duplicar passo",
+        "REMOVE_STEP": "Remover passo",
+        "DAY_SHORT": "D{day}",
+        "STEP_WHEN": "Dia {day} · {time}",
+        "REPOST_INFO": "Reposta {count}× a cada {hours}h",
+        "NEXT_POSTS": "Próximas postagens",
+        "NEXT_POSTS_EMPTY": "Nada a agendar nos próximos 60 dias: confira a data de início e os passos.",
+        "PUBLISHED_COUNT": "{count} já publicado(s)"
+      },
+      "STEP": {
+        "NEW_TITLE": "Novo passo",
+        "EDIT_TITLE": "Editar passo",
+        "SAVE": "Salvar passo",
+        "DAY": "Dia do ciclo",
+        "DAY_HINT": "Dia 0 é o dia de início; dia 2 sai dois dias depois.",
+        "TIME": "Horário",
+        "REPOST": "Repostar",
+        "NO_REPOST": "Não repostar",
+        "REPOST_TIMES": "nenhuma vez | 1 vez | {count} vezes",
+        "INTERVAL": "Intervalo",
+        "EVERY_HOURS": "a cada {hours}h",
+        "UPLOADING": "Enviando arquivo…"
+      }
+    },
+    "CALENDAR": {
+      "PREVIOUS": "Mês anterior",
+      "NEXT": "Próximo mês",
+      "TODAY": "Hoje",
+      "ALL_CAMPAIGNS": "Todas as campanhas",
+      "NO_CAMPAIGN": "Avulso",
+      "ADD": "Agendar neste dia",
+      "MORE": "+{count} mais",
+      "RESCHEDULED": "Status remarcado.",
+      "HINT": "Clique no + de um dia para agendar nele. Arraste um agendado para outro dia para remarcar, mantendo o horário."
     }
   }
 }

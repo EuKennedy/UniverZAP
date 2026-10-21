@@ -176,4 +176,22 @@ RSpec.describe 'Api::V1::Accounts::Whatsapp::StatusPostsController', type: :requ
       expect(original.reload).to be_status_published
     end
   end
+
+  describe 'GET /status_posts for the calendar' do
+    it 'returns the posts of the month by the day they show up, with their campaign' do
+      campaign = create(:whatsapp_status_campaign, account: account, name: 'Escova', color: '#B03A2E')
+      inside = create(:whatsapp_status_post, account: account, status: :scheduled, inbox_ids: [waha_inbox.id],
+                                             scheduled_at: 3.days.from_now, campaign: campaign)
+      create(:whatsapp_status_post, account: account, status: :scheduled, inbox_ids: [waha_inbox.id], scheduled_at: 60.days.from_now)
+
+      get base, params: { from: Time.current.iso8601, until: 30.days.from_now.iso8601, per: 200 }, headers: headers
+
+      payload = response.parsed_body['payload']
+      expect(payload.pluck('id')).to eq([inside.id])
+      expect(payload.first['campaign']).to eq('id' => campaign.id, 'name' => 'Escova', 'color' => '#B03A2E')
+
+      get base, params: { campaign_id: campaign.id }, headers: headers
+      expect(response.parsed_body['payload'].pluck('id')).to eq([inside.id])
+    end
+  end
 end

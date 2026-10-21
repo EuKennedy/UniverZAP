@@ -19,3 +19,28 @@ FactoryBot.define do
     font { 1 }
   end
 end
+
+FactoryBot.define do
+  factory :whatsapp_status_folder do
+    account
+    sequence(:name) { |n| "Pasta #{n}" }
+    color { '#8E44AD' }
+  end
+
+  factory :whatsapp_status_campaign do
+    account
+    sequence(:name) { |n| "Campanha #{n}" }
+    color { '#B03A2E' }
+    time_zone { 'America/Sao_Paulo' }
+    inbox_ids { [] }
+  end
+
+  factory :whatsapp_status_campaign_step do
+    campaign factory: :whatsapp_status_campaign
+    kind { 'text' }
+    body { 'Promoção de terça na {{conexao}}' }
+    background_color { '#B03A2E' }
+    time_of_day { '09:00' }
+    day_offset { 0 }
+  end
+end

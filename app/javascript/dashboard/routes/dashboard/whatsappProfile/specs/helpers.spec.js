@@ -1,4 +1,9 @@
-import { backgroundClass, squareCrop, apiErrorMessage } from '../helpers';
+import {
+  apiErrorMessage,
+  backgroundClass,
+  monthGrid,
+  squareCrop,
+} from '../helpers';
 
 describe('whatsappProfile helpers', () => {
   // O maior quadrado centralizado é o ponto de partida do recorte.
@@ -25,5 +30,16 @@ describe('whatsappProfile helpers', () => {
     expect(
       apiErrorMessage({ response: { data: { message: 'Body is blank' } } })
     ).toBe('Body is blank');
+  });
+
+  // O calendário sempre tem 6 semanas começando no domingo.
+  it('builds a six-week month grid starting on Sunday', () => {
+    const grid = monthGrid(new Date(2026, 9, 21));
+    expect(grid).toHaveLength(42);
+    expect(grid[0].getDay()).toBe(0);
+    expect(grid[0] <= new Date(2026, 9, 1)).toBe(true);
+    expect(grid.some(day => day.getMonth() === 9 && day.getDate() === 31)).toBe(
+      true
+    );
   });
 });

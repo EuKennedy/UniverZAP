@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_21_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_21_150000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -2403,6 +2403,43 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_100000) do
     t.index ["meta_flow_id"], name: "index_whatsapp_flows_on_meta_flow_id", unique: true, where: "(meta_flow_id IS NOT NULL)"
   end
 
+  create_table "whatsapp_status_campaign_steps", force: :cascade do |t|
+    t.bigint "campaign_id", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "day_offset", default: 0, null: false
+    t.string "time_of_day", default: "09:00", null: false
+    t.string "kind", default: "text", null: false
+    t.text "body"
+    t.string "background_color"
+    t.integer "font", default: 0, null: false
+    t.integer "repost_count", default: 0, null: false
+    t.integer "repost_interval_hours", default: 24, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_whatsapp_status_campaign_steps_on_campaign_id"
+  end
+
+  create_table "whatsapp_status_campaigns", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "folder_id"
+    t.bigint "user_id"
+    t.string "name", null: false
+    t.text "description"
+    t.string "color"
+    t.integer "status", default: 0, null: false
+    t.jsonb "inbox_ids", default: [], null: false
+    t.date "starts_on"
+    t.date "ends_on"
+    t.integer "cycle_days", default: 0, null: false
+    t.string "time_zone", default: "America/Sao_Paulo", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "status"], name: "index_whatsapp_status_campaigns_on_account_id_and_status"
+    t.index ["account_id"], name: "index_whatsapp_status_campaigns_on_account_id"
+    t.index ["folder_id"], name: "index_whatsapp_status_campaigns_on_folder_id"
+    t.index ["user_id"], name: "index_whatsapp_status_campaigns_on_user_id"
+  end
+
   create_table "whatsapp_status_deliveries", force: :cascade do |t|
     t.bigint "whatsapp_status_post_id", null: false
     t.bigint "inbox_id"
@@ -2415,6 +2452,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_100000) do
     t.datetime "updated_at", null: false
     t.index ["inbox_id"], name: "index_whatsapp_status_deliveries_on_inbox_id"
     t.index ["whatsapp_status_post_id"], name: "index_whatsapp_status_deliveries_on_whatsapp_status_post_id"
+  end
+
+  create_table "whatsapp_status_folders", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.string "color"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "name"], name: "index_whatsapp_status_folders_on_account_id_and_name", unique: true
+    t.index ["account_id"], name: "index_whatsapp_status_folders_on_account_id"
   end
 
   create_table "whatsapp_status_posts", force: :cascade do |t|
@@ -2431,8 +2478,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_100000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "recurrence", default: "none", null: false
+    t.bigint "campaign_id"
+    t.bigint "campaign_step_id"
+    t.string "occurrence_key"
     t.index ["account_id", "status", "scheduled_at"], name: "idx_on_account_id_status_scheduled_at_e293e01cb2"
     t.index ["account_id"], name: "index_whatsapp_status_posts_on_account_id"
+    t.index ["campaign_id", "occurrence_key"], name: "index_whatsapp_status_posts_on_campaign_id_and_occurrence_key", unique: true, where: "(occurrence_key IS NOT NULL)"
+    t.index ["campaign_id"], name: "index_whatsapp_status_posts_on_campaign_id"
+    t.index ["campaign_step_id"], name: "index_whatsapp_status_posts_on_campaign_step_id"
     t.index ["user_id"], name: "index_whatsapp_status_posts_on_user_id"
   end
 
@@ -2604,10 +2657,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_100000) do
   add_foreign_key "vertical_statuses", "verticals"
   add_foreign_key "whatsapp_flows", "accounts"
   add_foreign_key "whatsapp_flows", "inboxes", on_delete: :cascade
+  add_foreign_key "whatsapp_status_campaign_steps", "whatsapp_status_campaigns", column: "campaign_id", on_delete: :cascade
+  add_foreign_key "whatsapp_status_campaigns", "accounts", on_delete: :cascade
+  add_foreign_key "whatsapp_status_campaigns", "users", on_delete: :nullify
+  add_foreign_key "whatsapp_status_campaigns", "whatsapp_status_folders", column: "folder_id", on_delete: :nullify
   add_foreign_key "whatsapp_status_deliveries", "inboxes", on_delete: :nullify
   add_foreign_key "whatsapp_status_deliveries", "whatsapp_status_posts", on_delete: :cascade
+  add_foreign_key "whatsapp_status_folders", "accounts", on_delete: :cascade
   add_foreign_key "whatsapp_status_posts", "accounts", on_delete: :cascade
   add_foreign_key "whatsapp_status_posts", "users", on_delete: :nullify
+  add_foreign_key "whatsapp_status_posts", "whatsapp_status_campaign_steps", column: "campaign_step_id", on_delete: :nullify
+  add_foreign_key "whatsapp_status_posts", "whatsapp_status_campaigns", column: "campaign_id", on_delete: :nullify
   add_foreign_key "whatsapp_status_templates", "accounts", on_delete: :cascade
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").

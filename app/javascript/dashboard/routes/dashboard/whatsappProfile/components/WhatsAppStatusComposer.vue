@@ -76,7 +76,9 @@ const recurrence = ref('none');
 
 const label = key => t(`WHATSAPP_PROFILE.STATUS.${key}`);
 const isText = computed(() => kind.value === 'text');
-const isEditing = computed(() => Boolean(props.editingPost));
+// Um post sem id vindo de fora é um ponto de partida (o dia clicado no
+// calendário), não uma edição.
+const isEditing = computed(() => Boolean(props.editingPost?.id));
 const acceptedTypes = computed(() =>
   kind.value === 'image' ? 'image/jpeg,image/png,image/webp' : 'video/*'
 );

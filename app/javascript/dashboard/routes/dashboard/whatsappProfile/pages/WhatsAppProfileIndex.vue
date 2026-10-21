@@ -8,7 +8,7 @@
  * qual é qual é o resolvedor do backend, então repetir essa regra aqui só
  * criaria uma segunda versão dela para divergir com o tempo.
  */
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { dateLocale } from '../helpers';
@@ -24,6 +24,8 @@ import WhatsAppProfileCard from '../components/WhatsAppProfileCard.vue';
 import WhatsAppStatusComposer from '../components/WhatsAppStatusComposer.vue';
 import WhatsAppStatusHistory from '../components/WhatsAppStatusHistory.vue';
 import StatusStatsBar from '../components/StatusStatsBar.vue';
+import CampaignsPanel from '../components/CampaignsPanel.vue';
+import StatusCalendar from '../components/StatusCalendar.vue';
 
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -38,6 +40,13 @@ const historyKey = ref(0);
 const composerRef = ref(null);
 const statsKey = ref(0);
 const stats = ref(null);
+const TABS = [
+  { value: 'publish', icon: 'i-lucide-send' },
+  { value: 'campaigns', icon: 'i-lucide-folder-kanban' },
+  { value: 'calendar', icon: 'i-lucide-calendar-range' },
+];
+const tab = ref('publish');
+const calendarKey = ref(0);
 const accountName = computed(() => currentAccount.value?.name || '');
 
 // O subtítulo responde a pergunta do dono ao abrir a tela: quantos números
@@ -86,8 +95,33 @@ const fetchInboxes = async () => {
   }
 };
 
-const scrollToComposer = () =>
+// O compositor mora na aba Publicar: quem chega do calendário ou das
+// campanhas é levado até ele.
+const scrollToComposer = async () => {
+  tab.value = 'publish';
+  await nextTick();
   composerRef.value?.$el?.scrollIntoView?.({ behavior: 'smooth' });
+};
+
+const refreshAll = () => {
+  historyKey.value += 1;
+  statsKey.value += 1;
+  calendarKey.value += 1;
+};
+
+// Dia clicado no calendário: compositor novo, já agendado para as 9h dele.
+const createOn = day => {
+  const at = new Date(day);
+  at.setHours(9, 0, 0, 0);
+  editingPost.value = {
+    kind: 'text',
+    body: '',
+    inbox_ids: selectedInboxId.value ? [selectedInboxId.value] : [],
+    scheduled_at: at.toISOString(),
+    recurrence: 'none',
+  };
+  scrollToComposer();
+};
 
 const editPost = post => {
   editingPost.value = post;
@@ -97,8 +131,7 @@ const editPost = post => {
 
 const onSaved = () => {
   editingPost.value = null;
-  historyKey.value += 1;
-  statsKey.value += 1;
+  refreshAll();
 };
 
 const startNew = () => {
@@ -165,11 +198,35 @@ onMounted(fetchInboxes);
       />
     </header>
 
-    <div v-if="hasInboxes && !isLoading" class="px-8 pt-6">
+    <div v-if="hasInboxes && !isLoading" class="flex flex-col gap-5 px-8 pt-6">
       <StatusStatsBar
         :refresh-key="statsKey"
         @loaded="data => (stats = data)"
       />
+      <div
+        class="flex gap-1 p-1 rounded-xl w-fit bg-n-alpha-1"
+        role="tablist"
+        data-testid="page-tabs"
+      >
+        <button
+          v-for="option in TABS"
+          :key="option.value"
+          type="button"
+          role="tab"
+          :aria-selected="tab === option.value"
+          class="flex gap-2 items-center px-4 py-2 text-[13px] font-semibold rounded-lg transition-colors"
+          :class="
+            tab === option.value
+              ? 'bg-n-solid-1 text-n-slate-12 shadow-sm'
+              : 'text-n-slate-11 hover:text-n-slate-12'
+          "
+          :data-testid="`tab-${option.value}`"
+          @click="tab = option.value"
+        >
+          <span class="size-4" :class="option.icon" />
+          {{ t(`WHATSAPP_PROFILE.TABS.${option.value.toUpperCase()}`) }}
+        </button>
+      </div>
     </div>
 
     <div v-if="isLoading" class="flex flex-1 justify-center items-center">
@@ -210,6 +267,23 @@ onMounted(fetchInboxes);
           @click="goToConnections"
         />
       </div>
+    </div>
+
+    <div v-else-if="tab === 'campaigns'" class="px-8 py-6">
+      <CampaignsPanel
+        :inboxes="inboxes"
+        :account-name="accountName"
+        @changed="refreshAll"
+      />
+    </div>
+
+    <div v-else-if="tab === 'calendar'" class="px-8 py-6">
+      <StatusCalendar
+        :refresh-key="calendarKey"
+        @create="createOn"
+        @edit="editPost"
+        @changed="refreshAll"
+      />
     </div>
 
     <div

@@ -31,10 +31,22 @@ class WhatsAppStatus extends ApiClient {
     super('whatsapp/status_posts', { accountScoped: true });
   }
 
-  // Filtros: { page, per, q, status, kind, inboxId, until }.
-  list({ inboxId, ...filters } = {}) {
+  // Filtros: { page, per, q, status, kind, inboxId, campaignId, folderId, from, until }.
+  list({ inboxId, campaignId, folderId, ...filters } = {}) {
     return axios.get(this.url, {
-      params: { ...filters, inbox_id: inboxId || undefined },
+      params: {
+        ...filters,
+        inbox_id: inboxId || undefined,
+        campaign_id: campaignId || undefined,
+        folder_id: folderId || undefined,
+      },
+    });
+  }
+
+  reschedule(id, scheduledAt) {
+    return axios.patch(`${this.url}/${id}`, {
+      intent: 'schedule',
+      scheduled_at: scheduledAt,
     });
   }
 

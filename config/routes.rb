@@ -663,6 +663,14 @@ Rails.application.routes.draw do
               get :stats, on: :collection
             end
             resources :status_templates, only: [:index, :create, :update, :destroy]
+            resources :status_folders, only: [:index, :create, :update, :destroy]
+            resources :status_campaigns, only: [:index, :show, :create, :update, :destroy] do
+              member do
+                post :activate
+                post :pause
+                get :preview
+              end
+            end
           end
 
           resources :webhooks, only: [:index, :create, :update, :destroy]
