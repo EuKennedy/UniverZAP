@@ -218,7 +218,30 @@
         "READ": "Read",
         "REPLIED": "Replied",
         "SKIPPED": "Skipped (protection)"
-      }
+      },
+      "PROCESSED": "{total} recipients · {pending} waiting",
+      "FUNNEL": {
+        "SENT": "Sent",
+        "DELIVERED": "Delivered",
+        "READ": "Read",
+        "REPLIED": "Replied"
+      },
+      "FAILED_COUNT": "1 failed | {count} failed",
+      "SKIPPED_COUNT": "1 held by protection | {count} held by protection",
+      "FILTERS": {
+        "ALL": "All",
+        "SENT": "Sent",
+        "DELIVERED": "Delivered",
+        "READ": "Read",
+        "REPLIED": "Replied",
+        "FAILED": "Failed",
+        "SKIPPED": "Skipped",
+        "PENDING": "Waiting"
+      },
+      "SEARCH": "Search name or phone…",
+      "EXPORT": "Download CSV",
+      "EXPORT_ERROR": "Could not download the report",
+      "NO_MATCH": "No recipient for this filter"
     },
     "TABS": {
       "BROADCASTS": "Broadcasts",

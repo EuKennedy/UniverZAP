@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BroadcastsAPI from 'dashboard/api/broadcasts';
-import { usageTone } from '../helpers/broadcastList';
+import { usageTone, widthClass } from '../helpers/broadcastList';
 
 // Os quatro números que respondem "os disparos estão funcionando e com
 // segurança?" e, embaixo, o uso de hoje de cada conexão contra o teto
@@ -70,22 +70,7 @@ const cards = computed(() => {
 
 const connections = computed(() => stats.value?.connections || []);
 
-const width = (used, cap) =>
-  ({
-    0: 'w-0',
-    1: 'w-1/12',
-    2: 'w-2/12',
-    3: 'w-3/12',
-    4: 'w-4/12',
-    5: 'w-5/12',
-    6: 'w-6/12',
-    7: 'w-7/12',
-    8: 'w-8/12',
-    9: 'w-9/12',
-    10: 'w-10/12',
-    11: 'w-11/12',
-    12: 'w-full',
-  })[Math.min(12, Math.ceil((cap ? used / cap : 0) * 12))];
+const width = (used, cap) => widthClass(cap ? used / cap : 0);
 
 const load = async () => {
   try {

@@ -5,8 +5,13 @@ import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 
 import BroadcastsAPI from 'dashboard/api/broadcasts';
+import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import { REPORT_FILTERS, funnelOf, widthClass } from '../helpers/broadcastList';
 
+// Relatório do disparo: progresso, o funil enviadas → entregues → lidas →
+// responderam, e a lista de destinatários filtrável por resultado, com busca
+// e CSV. Atualiza sozinho enquanto o disparo está rodando.
 const props = defineProps({
   broadcastId: { type: Number, required: true },
   open: { type: Boolean, default: false },
@@ -18,15 +23,20 @@ const { t } = useI18n();
 const store = useStore();
 
 const POLL_INTERVAL = 3000;
+const SEARCH_DEBOUNCE = 300;
 
 const status = ref('running');
-const counts = ref({ total: 0, sent: 0, failed: 0, pending: 0 });
+const counts = ref({});
 const pauseReason = ref(null);
 const recipients = ref([]);
+const filter = ref('all');
+const query = ref('');
 const isLoading = ref(false);
 const isPausing = ref(false);
+const isExporting = ref(false);
 
 let pollTimer = null;
+let searchTimer = null;
 
 const isRunning = computed(() => status.value === 'running');
 const isPaused = computed(() => status.value === 'paused');
@@ -44,12 +54,25 @@ const statusLabel = computed(() => {
   return t('BROADCAST.PROGRESS.STATUS_RUNNING');
 });
 
-const percent = computed(() => {
+// Processados (enviadas + falhas + puladas) sobre o total.
+const processedRatio = computed(() => {
   const total = Number(counts.value.total) || 0;
   if (!total) return 0;
-  const sent = Number(counts.value.sent) || 0;
-  return Math.min(100, Math.round((sent / total) * 100));
+  const done =
+    (Number(counts.value.sent) || 0) +
+    (Number(counts.value.failed) || 0) +
+    (Number(counts.value.skipped) || 0);
+  return Math.min(1, done / total);
 });
+const percentLabel = computed(
+  () => `${Math.round(processedRatio.value * 100)}%`
+);
+
+const funnel = computed(() => funnelOf(counts.value));
+const ratioLabel = ratio => `${Math.round(ratio * 100)}%`;
+
+const filterCount = key =>
+  key === 'all' ? counts.value.total || 0 : counts.value[key] || 0;
 
 const stopPolling = () => {
   if (pollTimer) {
@@ -62,21 +85,14 @@ const fetchRecipients = async () => {
   if (isLoading.value) return;
   isLoading.value = true;
   try {
-    const { data } = await BroadcastsAPI.recipients(props.broadcastId);
+    const { data } = await BroadcastsAPI.recipients(props.broadcastId, {
+      filter: filter.value,
+      q: query.value.trim(),
+    });
     status.value = data.status || 'running';
     pauseReason.value = data.pause_reason;
-    counts.value = {
-      total: data.counts?.total || 0,
-      sent: data.counts?.sent || 0,
-      failed: data.counts?.failed || 0,
-      pending: data.counts?.pending || 0,
-      delivered: data.counts?.delivered || 0,
-      read: data.counts?.read || 0,
-      replied: data.counts?.replied || 0,
-      skipped: data.counts?.skipped || 0,
-    };
+    counts.value = data.counts || {};
     recipients.value = data.recipients || [];
-    // Stop polling once the campaign is no longer actively running.
     if (status.value !== 'running') stopPolling();
   } catch (error) {
     useAlert(error?.message || t('BROADCAST.PROGRESS.LOAD_ERROR'));
@@ -87,7 +103,6 @@ const fetchRecipients = async () => {
 
 const startPolling = () => {
   stopPolling();
-  // Immediate fetch, then poll on an interval while running.
   fetchRecipients();
   pollTimer = setInterval(() => {
     if (status.value === 'running') fetchRecipients();
@@ -112,54 +127,84 @@ const onPause = async () => {
   }
 };
 
-// Relatório do disparo: o que a WhatsApp confirmou e o que voltou.
-const reportItems = computed(() =>
-  ['delivered', 'read', 'replied', 'skipped'].map(key => ({
-    key,
-    value: counts.value[key] || 0,
-  }))
-);
-
-// Map a recipient status to its visual treatment.
-const statusIcon = recipientStatus => {
-  if (recipientStatus === 'failed') return 'i-lucide-x';
-  if (recipientStatus === 'skipped') return 'i-lucide-shield-check';
-  if (['sent', 'delivered', 'read'].includes(recipientStatus)) {
-    return 'i-lucide-check';
-  }
-  return 'i-lucide-clock';
+const pickFilter = key => {
+  filter.value = key;
+  fetchRecipients();
 };
 
-const statusIconTone = recipientStatus => {
-  if (recipientStatus === 'failed') return 'text-n-ruby-11 bg-n-ruby-3';
-  if (['sent', 'delivered', 'read'].includes(recipientStatus)) {
-    return 'text-n-teal-11 bg-n-teal-3';
+watch(query, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(fetchRecipients, SEARCH_DEBOUNCE);
+});
+
+const exportCsv = async () => {
+  isExporting.value = true;
+  try {
+    const { data } = await BroadcastsAPI.exportRecipients(props.broadcastId, {
+      filter: filter.value,
+      q: query.value.trim(),
+    });
+    const url = URL.createObjectURL(data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `disparo-${props.broadcastId}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    useAlert(t('BROADCAST.PROGRESS.EXPORT_ERROR'));
+  } finally {
+    isExporting.value = false;
   }
-  return 'text-n-slate-11 bg-n-alpha-2';
 };
 
-const recipientStatusLabel = recipient => {
+const resultOf = recipient => {
+  if (recipient.status === 'skipped') return 'skipped';
+  if (recipient.status === 'failed' || recipient.delivery === 'failed')
+    return 'failed';
+  if (recipient.replied_at) return 'replied';
+  if (['delivered', 'read'].includes(recipient.delivery))
+    return recipient.delivery;
+  return recipient.status;
+};
+
+const RESULT_STYLE = {
+  failed: { icon: 'i-lucide-x', tone: 'text-n-ruby-11 bg-n-ruby-3' },
+  skipped: {
+    icon: 'i-lucide-shield-check',
+    tone: 'text-n-slate-11 bg-n-alpha-2',
+  },
+  replied: {
+    icon: 'i-lucide-message-circle-reply',
+    tone: 'text-n-amber-11 bg-n-amber-3',
+  },
+  read: { icon: 'i-lucide-check-check', tone: 'text-n-teal-11 bg-n-teal-3' },
+  delivered: {
+    icon: 'i-lucide-check-check',
+    tone: 'text-n-teal-11 bg-n-teal-3',
+  },
+  sent: { icon: 'i-lucide-check', tone: 'text-n-teal-11 bg-n-teal-3' },
+  pending: { icon: 'i-lucide-clock', tone: 'text-n-slate-11 bg-n-alpha-2' },
+};
+const styleOf = recipient =>
+  RESULT_STYLE[resultOf(recipient)] || RESULT_STYLE.pending;
+
+const resultLabel = recipient => {
   if (recipient.status === 'skipped' && recipient.skip_reason) {
     return t(`BROADCAST.PREVIEW.SKIP.${recipient.skip_reason.toUpperCase()}`);
   }
-  if (recipient.replied_at) return t('BROADCAST.PROGRESS.RECIPIENT.REPLIED');
-  const shown = ['delivered', 'read'].includes(recipient.delivery)
-    ? recipient.delivery
-    : recipient.status;
-  return t(`BROADCAST.PROGRESS.RECIPIENT.${shown.toUpperCase()}`);
+  return t(`BROADCAST.PROGRESS.RECIPIENT.${resultOf(recipient).toUpperCase()}`);
 };
 
-const formatTime = sentAt => {
-  if (!sentAt) return '';
-  const date = new Date(sentAt * 1000);
-  return date.toLocaleTimeString([], {
+const formatTime = seconds => {
+  if (!seconds) return '';
+  return new Date(seconds * 1000).toLocaleString([], {
+    day: '2-digit',
+    month: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
   });
 };
 
-// Start/stop polling cleanly as the modal opens and closes.
 watch(
   () => props.open,
   isOpen => {
@@ -169,7 +214,10 @@ watch(
   { immediate: true }
 );
 
-onBeforeUnmount(stopPolling);
+onBeforeUnmount(() => {
+  stopPolling();
+  if (searchTimer) clearTimeout(searchTimer);
+});
 </script>
 
 <template>
@@ -180,13 +228,18 @@ onBeforeUnmount(stopPolling);
       @click.self="onClose"
     >
       <div
-        class="flex flex-col w-full max-w-lg max-h-[85vh] rounded-2xl bg-n-solid-1 border border-n-weak shadow-2xl overflow-hidden"
+        class="flex flex-col w-full max-w-2xl max-h-[88vh] rounded-2xl bg-n-solid-1 border border-n-weak shadow-2xl overflow-hidden"
+        data-testid="broadcast-report-modal"
       >
-        <!-- Header -->
         <header
           class="flex items-center gap-3 px-6 py-4 border-b border-n-weak shrink-0"
         >
-          <h2 class="flex-1 text-base font-semibold text-n-slate-12 m-0">
+          <span
+            class="flex items-center justify-center rounded-xl size-9 shrink-0 bg-brand-gradient text-[#06131C]"
+          >
+            <span class="i-lucide-chart-spline size-4" />
+          </span>
+          <h2 class="flex-1 m-0 text-base font-semibold text-n-slate-12">
             {{ t('BROADCAST.PROGRESS.TITLE') }}
           </h2>
           <span
@@ -195,150 +248,197 @@ onBeforeUnmount(stopPolling);
           >
             {{ statusLabel }}
           </span>
-          <button
-            type="button"
-            class="flex items-center justify-center size-7 rounded-lg text-n-slate-11 cursor-pointer hover:bg-n-alpha-2 hover:text-n-slate-12 transition-colors"
+          <Button
+            variant="ghost"
+            color="slate"
+            size="sm"
+            icon="i-lucide-x"
             @click="onClose"
-          >
-            <Icon icon="i-lucide-x" class="size-4" />
-          </button>
+          />
         </header>
 
-        <!-- Progress -->
         <div
           class="flex flex-col gap-4 px-6 py-5 border-b border-n-weak shrink-0"
         >
           <div class="flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-medium text-n-slate-11">
-                {{ t('BROADCAST.PROGRESS.PROGRESS_LABEL') }}
+                {{
+                  t('BROADCAST.PROGRESS.PROCESSED', {
+                    total: counts.total || 0,
+                    pending: counts.pending || 0,
+                  })
+                }}
               </span>
-              <span class="text-xs font-semibold text-n-teal-11 tabular-nums">
-                {{ percent }}%
+              <span class="text-xs font-semibold tabular-nums text-n-teal-11">
+                {{ percentLabel }}
               </span>
             </div>
-            <div class="h-2 w-full rounded-full bg-n-alpha-2 overflow-hidden">
+            <div class="w-full h-2 overflow-hidden rounded-full bg-n-alpha-2">
               <div
-                class="h-full rounded-full bg-n-teal-9 transition-all duration-500"
-                :style="{ width: `${percent}%` }"
+                class="h-full transition-all duration-500 rounded-full bg-n-teal-9"
+                :class="widthClass(processedRatio)"
               />
             </div>
           </div>
 
-          <div class="grid grid-cols-4 gap-2 text-center">
-            <div class="flex flex-col gap-0.5 p-2 rounded-xl bg-n-teal-3">
-              <span class="text-base font-semibold text-n-teal-11 tabular-nums">
-                {{ counts.sent }}
-              </span>
-              <span class="text-[11px] text-n-teal-11">
-                {{ t('BROADCAST.PROGRESS.SENT') }}
-              </span>
-            </div>
-            <div class="flex flex-col gap-0.5 p-2 rounded-xl bg-n-ruby-3">
-              <span class="text-base font-semibold text-n-ruby-11 tabular-nums">
-                {{ counts.failed }}
-              </span>
-              <span class="text-[11px] text-n-ruby-11">
-                {{ t('BROADCAST.PROGRESS.FAILED') }}
-              </span>
-            </div>
-            <div class="flex flex-col gap-0.5 p-2 rounded-xl bg-n-alpha-2">
-              <span
-                class="text-base font-semibold text-n-slate-11 tabular-nums"
-              >
-                {{ counts.pending }}
-              </span>
-              <span class="text-[11px] text-n-slate-11">
-                {{ t('BROADCAST.PROGRESS.PENDING') }}
-              </span>
-            </div>
-            <div class="flex flex-col gap-0.5 p-2 rounded-xl bg-n-alpha-1">
-              <span
-                class="text-base font-semibold text-n-slate-12 tabular-nums"
-              >
-                {{ counts.total }}
-              </span>
-              <span class="text-[11px] text-n-slate-11">
-                {{ t('BROADCAST.PROGRESS.TOTAL') }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="grid grid-cols-4 gap-2 px-6 py-3 border-b border-n-weak text-center shrink-0"
-          data-testid="broadcast-report"
-        >
           <div
-            v-for="item in reportItems"
-            :key="item.key"
-            class="flex flex-col gap-0.5"
+            class="grid grid-cols-2 gap-2 sm:grid-cols-4"
+            data-testid="broadcast-funnel"
           >
-            <span class="text-sm font-semibold text-n-slate-12 tabular-nums">
-              {{ item.value }}
+            <div
+              v-for="step in funnel"
+              :key="step.key"
+              class="flex flex-col gap-1.5 p-3 rounded-xl bg-n-alpha-1"
+            >
+              <span
+                class="text-[10px] font-semibold tracking-wider uppercase text-n-slate-11"
+              >
+                {{ t(`BROADCAST.PROGRESS.FUNNEL.${step.key.toUpperCase()}`) }}
+              </span>
+              <span
+                class="text-lg font-bold leading-none tabular-nums text-n-slate-12"
+              >
+                {{ step.value }}
+              </span>
+              <span class="overflow-hidden h-1 rounded-full bg-n-alpha-2">
+                <span
+                  class="block h-full rounded-full bg-n-teal-9"
+                  :class="widthClass(step.ratio)"
+                />
+              </span>
+              <span class="text-[10px] tabular-nums text-n-slate-10">
+                {{ ratioLabel(step.ratio) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex gap-2 text-xs">
+            <span class="px-2 py-1 rounded-lg bg-n-ruby-3 text-n-ruby-11">
+              {{
+                t(
+                  'BROADCAST.PROGRESS.FAILED_COUNT',
+                  { count: counts.failed || 0 },
+                  counts.failed || 0
+                )
+              }}
             </span>
-            <span class="text-[11px] text-n-slate-11">
-              {{ t(`BROADCAST.PROGRESS.REPORT.${item.key.toUpperCase()}`) }}
+            <span class="px-2 py-1 rounded-lg bg-n-alpha-2 text-n-slate-11">
+              {{
+                t(
+                  'BROADCAST.PROGRESS.SKIPPED_COUNT',
+                  { count: counts.skipped || 0 },
+                  counts.skipped || 0
+                )
+              }}
             </span>
           </div>
-        </div>
-        <p
-          v-if="isPaused && pauseReason === 'failures'"
-          class="m-0 px-6 py-2 bg-n-ruby-3 text-xs text-n-ruby-11 shrink-0"
-        >
-          {{ t('BROADCAST.COMPOSER.PAUSED_BY_FAILURES') }}
-        </p>
 
-        <!-- Log list -->
-        <div class="flex-1 min-h-0 overflow-auto px-3 py-2">
+          <p
+            v-if="isPaused && pauseReason === 'failures'"
+            class="m-0 px-3 py-2 rounded-lg text-xs bg-n-ruby-3 text-n-ruby-11"
+          >
+            {{ t('BROADCAST.COMPOSER.PAUSED_BY_FAILURES') }}
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-2 px-6 pt-4 shrink-0">
+          <div class="flex flex-wrap gap-1" data-testid="report-filters">
+            <button
+              v-for="key in REPORT_FILTERS"
+              :key="key"
+              type="button"
+              class="flex items-center gap-1 px-2.5 py-1 text-xs rounded-full border transition-colors"
+              :class="
+                filter === key
+                  ? 'border-n-teal-8 bg-n-teal-3 text-n-teal-11'
+                  : 'border-n-weak text-n-slate-11 hover:border-n-slate-8'
+              "
+              :data-testid="`report-filter-${key}`"
+              @click="pickFilter(key)"
+            >
+              {{ t(`BROADCAST.PROGRESS.FILTERS.${key.toUpperCase()}`) }}
+              <span class="tabular-nums opacity-70">{{
+                filterCount(key)
+              }}</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="relative flex-1">
+              <span
+                class="absolute -translate-y-1/2 pointer-events-none i-lucide-search size-3.5 start-3 top-1/2 text-n-slate-10"
+              />
+              <input
+                v-model="query"
+                type="search"
+                :placeholder="t('BROADCAST.PROGRESS.SEARCH')"
+                class="w-full h-8 !ps-8 pe-3 rounded-lg bg-n-solid-2 border border-n-weak text-[13px] text-n-slate-12 focus:outline-none focus:border-n-brand !mb-0"
+                data-testid="report-search"
+              />
+            </label>
+            <Button
+              variant="outline"
+              color="slate"
+              size="sm"
+              icon="i-lucide-download"
+              :label="t('BROADCAST.PROGRESS.EXPORT')"
+              :is-loading="isExporting"
+              data-testid="report-export"
+              @click="exportCsv"
+            />
+          </div>
+        </div>
+
+        <div class="flex-1 min-h-0 px-3 py-2 overflow-auto">
           <ul
             v-if="recipients.length"
-            class="flex flex-col divide-y divide-n-weak"
+            class="flex flex-col m-0 divide-y divide-n-weak"
           >
             <li
               v-for="recipient in recipients"
               :key="recipient.id"
-              class="flex items-start gap-3 px-3 py-2.5"
+              class="flex items-start gap-3 px-3 py-2.5 list-none"
+              data-testid="report-row"
             >
               <span
                 class="flex items-center justify-center size-7 rounded-full shrink-0 mt-0.5"
-                :class="statusIconTone(recipient.status)"
+                :class="styleOf(recipient).tone"
               >
-                <Icon :icon="statusIcon(recipient.status)" class="size-3.5" />
+                <Icon :icon="styleOf(recipient).icon" class="size-3.5" />
               </span>
-              <div class="flex flex-col min-w-0 flex-1 gap-0.5">
+              <div class="flex flex-col flex-1 min-w-0 gap-0.5">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-sm text-n-slate-12 truncate">
+                  <span class="text-sm truncate text-n-slate-12">
                     {{ recipient.name || recipient.phone }}
                   </span>
                   <span
                     v-if="recipient.sent_at"
-                    class="text-[11px] text-n-slate-10 tabular-nums shrink-0"
+                    class="text-[11px] tabular-nums shrink-0 text-n-slate-10"
                   >
                     {{ formatTime(recipient.sent_at) }}
                   </span>
                 </div>
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="flex items-center min-w-0 gap-2">
                   <span
                     v-if="recipient.name && recipient.phone"
-                    class="text-[11px] text-n-slate-10 truncate"
+                    class="text-[11px] truncate text-n-slate-10"
                   >
                     {{ recipient.phone }}
                   </span>
                   <span
                     class="text-[11px] font-medium"
                     :class="
-                      recipient.status === 'failed'
+                      resultOf(recipient) === 'failed'
                         ? 'text-n-ruby-11'
                         : 'text-n-slate-11'
                     "
                   >
-                    {{ recipientStatusLabel(recipient) }}
+                    {{ resultLabel(recipient) }}
                   </span>
                 </div>
                 <p
                   v-if="recipient.error"
-                  class="text-[11px] text-n-ruby-11 m-0 break-words"
+                  class="m-0 text-[11px] break-words text-n-ruby-11"
                 >
                   {{ recipient.error }}
                 </p>
@@ -349,38 +449,34 @@ onBeforeUnmount(stopPolling);
             v-else
             class="flex flex-col items-center justify-center gap-2 py-12 text-center"
           >
-            <Icon icon="i-lucide-send" class="size-6 text-n-slate-9" />
-            <p class="text-xs text-n-slate-10 m-0">
-              {{ t('BROADCAST.PROGRESS.EMPTY') }}
+            <Icon icon="i-lucide-search-x" class="size-6 text-n-slate-9" />
+            <p class="m-0 text-xs text-n-slate-10">
+              {{
+                filter === 'all' && !query
+                  ? t('BROADCAST.PROGRESS.EMPTY')
+                  : t('BROADCAST.PROGRESS.NO_MATCH')
+              }}
             </p>
           </div>
         </div>
 
-        <!-- Footer -->
         <footer
           class="flex items-center justify-end gap-2 px-6 py-4 border-t border-n-weak shrink-0"
         >
-          <button
+          <Button
             v-if="isRunning"
-            type="button"
-            class="inline-flex items-center gap-2 px-4 h-9 rounded-lg bg-n-ruby-9 text-sm font-medium text-white cursor-pointer hover:bg-n-ruby-10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            :disabled="isPausing"
+            color="ruby"
+            icon="i-lucide-pause"
+            :label="t('BROADCAST.PROGRESS.PAUSE')"
+            :is-loading="isPausing"
             @click="onPause"
-          >
-            <Icon
-              :icon="isPausing ? 'i-lucide-loader-circle' : 'i-lucide-pause'"
-              class="size-4"
-              :class="isPausing ? 'animate-spin' : ''"
-            />
-            <span>{{ t('BROADCAST.PROGRESS.PAUSE') }}</span>
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center px-4 h-9 rounded-lg border border-n-weak text-sm font-medium text-n-slate-12 cursor-pointer hover:bg-n-alpha-2 transition-colors"
+          />
+          <Button
+            variant="outline"
+            color="slate"
+            :label="t('BROADCAST.PROGRESS.CLOSE')"
             @click="onClose"
-          >
-            {{ t('BROADCAST.PROGRESS.CLOSE') }}
-          </button>
+          />
         </footer>
       </div>
     </div>

@@ -47,6 +47,27 @@ pt_BR:
       anuncio_cliques: Cliques no anúncio
       anuncio_cliques_description: Quantas vezes o cliente voltou por um anúncio
   broadcasts:
+    report:
+      csv_headers:
+        name: Nome
+        phone: Telefone
+        result: Resultado
+        reason: Motivo
+        error: Erro
+        sent_at: Enviada em
+        replied_at: Respondeu em
+      result:
+        pending: Pendente
+        sent: Enviada
+        delivered: Entregue
+        read: Lida
+        replied: Respondeu
+        failed: Falhou
+        skipped: Pulada
+      skip_reason:
+        opted_out: Pediu para não receber
+        recent_activity: Em atendimento
+        no_phone: Sem número
     copy_name: '%{name} (cópia)'
   scheduled_messages:
     errors:

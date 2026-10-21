@@ -43,6 +43,10 @@ class BroadcastPolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
+  def export?
+    @account_user.present?
+  end
+
   def stats?
     @account_user.present?
   end

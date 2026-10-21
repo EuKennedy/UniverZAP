@@ -417,6 +417,7 @@ Rails.application.routes.draw do
               post :pause
               get :audience_preview
               get :recipients
+              get :export
               post :duplicate
             end
             collection do
