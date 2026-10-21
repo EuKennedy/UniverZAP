@@ -24,6 +24,7 @@ import MessageSmartTools from '../components/MessageSmartTools.vue';
 import AudienceSegments from '../components/AudienceSegments.vue';
 import SafetySettings from '../components/SafetySettings.vue';
 import AudiencePreviewPanel from '../components/AudiencePreviewPanel.vue';
+import ComposerStep from '../components/ComposerStep.vue';
 import {
   buildTemplateParameters,
   findComponentByType,
@@ -300,6 +301,46 @@ const canLaunch = computed(
     hasAudience.value &&
     Boolean(form.inbox_id) &&
     hasMessage.value
+);
+
+// As etapas do editor, na ordem da tela: alimentam a barra do topo, o número
+// de cada cartão e o checklist "pronto para disparar" do painel lateral.
+const steps = computed(() => [
+  { id: 'mode', key: 'MODE', state: 'done' },
+  { id: 'inbox', key: 'INBOX', state: form.inbox_id ? 'done' : 'missing' },
+  {
+    id: 'message',
+    key: 'MESSAGE',
+    state: hasMessage.value ? 'done' : 'missing',
+  },
+  {
+    id: 'audience',
+    key: 'AUDIENCE',
+    state: hasAudience.value ? 'done' : 'missing',
+  },
+  { id: 'safety', key: 'SAFETY', state: 'done' },
+  {
+    id: 'schedule',
+    key: 'SCHEDULE',
+    state: form.scheduled_at ? 'done' : 'optional',
+  },
+]);
+const stepOf = id => steps.value.find(step => step.id === id);
+const stepNumber = id => steps.value.findIndex(step => step.id === id) + 1;
+const stepLabel = id =>
+  t(`BROADCAST.COMPOSER.STEP_STATE.${stepOf(id).state.toUpperCase()}`);
+// "Quando" é opcional: o placar conta só as etapas obrigatórias.
+const requiredSteps = computed(() =>
+  steps.value.filter(step => step.id !== 'schedule')
+);
+const readyCount = computed(
+  () => requiredSteps.value.filter(step => step.state === 'done').length
+);
+const goToStep = id =>
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+const inboxName = computed(
+  () => (inboxes.value || []).find(i => i.id === form.inbox_id)?.name
 );
 
 const launchHint = computed(() => {
@@ -833,7 +874,7 @@ onBeforeUnmount(stopStatsRefresh);
 <template>
   <div class="flex flex-col w-full h-full overflow-hidden bg-n-background">
     <header
-      class="flex items-center justify-between gap-4 px-8 py-5 border-b border-n-weak shrink-0"
+      class="flex flex-wrap items-center justify-between gap-4 px-8 py-5 border-b border-n-weak shrink-0"
     >
       <div class="flex items-center gap-3 min-w-0">
         <Button
@@ -843,30 +884,84 @@ onBeforeUnmount(stopStatsRefresh);
           icon="i-lucide-arrow-left"
           @click="goBack"
         />
-        <div class="flex flex-col gap-0.5 min-w-0">
-          <h1 class="text-lg font-semibold text-n-slate-12 m-0 truncate">
-            {{ broadcast?.name || t('BROADCAST.COMPOSER.TITLE') }}
-          </h1>
-          <span
-            class="self-start px-2 py-0.5 rounded-full text-[11px] font-medium capitalize"
-            :class="statusTone"
+        <span
+          class="flex items-center justify-center rounded-xl shadow-lg size-11 shrink-0 bg-brand-gradient text-[#06131C] shadow-n-brand/20"
+        >
+          <span class="i-lucide-megaphone size-5" />
+        </span>
+        <div class="flex flex-col min-w-0 gap-0.5">
+          <div class="flex items-center min-w-0 gap-2">
+            <h1
+              class="m-0 text-xl font-bold tracking-tight truncate text-n-slate-12"
+            >
+              {{ broadcast?.name || t('BROADCAST.COMPOSER.TITLE') }}
+            </h1>
+            <span
+              class="px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0"
+              :class="statusTone"
+            >
+              {{ t(`BROADCAST.STATUS.${status.toUpperCase()}`) }}
+            </span>
+          </div>
+          <p
+            class="m-0 text-[13px] truncate text-n-slate-11"
+            data-testid="composer-subtitle"
           >
-            {{ t(`BROADCAST.STATUS.${status.toUpperCase()}`) }}
-          </span>
+            {{
+              t('BROADCAST.COMPOSER.SUBTITLE', {
+                inbox: inboxName || t('BROADCAST.LIST.NO_INBOX'),
+                ready: readyCount,
+                total: requiredSteps.length,
+              })
+            }}
+          </p>
         </div>
       </div>
     </header>
+
+    <nav
+      class="flex flex-wrap items-center gap-1 px-8 py-2.5 border-b border-n-weak bg-n-solid-1 shrink-0"
+      data-testid="composer-steps"
+    >
+      <button
+        v-for="(step, index) in steps"
+        :key="step.id"
+        type="button"
+        class="flex items-center gap-1.5 px-2.5 py-1 text-[13px] rounded-lg transition-colors hover:bg-n-alpha-2"
+        :class="
+          step.state === 'missing' ? 'text-n-slate-11' : 'text-n-slate-12'
+        "
+        @click="goToStep(step.id)"
+      >
+        <span
+          class="flex items-center justify-center text-[10px] font-bold rounded-full size-4"
+          :class="
+            step.state === 'done'
+              ? 'bg-n-teal-9 text-white'
+              : 'bg-n-alpha-3 text-n-slate-11'
+          "
+        >
+          <span v-if="step.state === 'done'" class="i-lucide-check size-2.5" />
+          <template v-else>{{ index + 1 }}</template>
+        </span>
+        {{ t(`BROADCAST.COMPOSER.STEPS.${step.key}`) }}
+      </button>
+    </nav>
 
     <div
       class="flex-1 grid grid-cols-1 xl:grid-cols-[1fr_360px] overflow-hidden"
     >
       <!-- Left: config form -->
-      <div class="overflow-auto px-8 py-6 flex flex-col gap-8">
+      <div class="overflow-auto px-8 py-6 flex flex-col gap-5">
         <!-- Mode -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.MODE_TITLE') }}
-          </h2>
+        <ComposerStep
+          id="mode"
+          :number="stepNumber('mode')"
+          :title="t('BROADCAST.COMPOSER.MODE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.MODE')"
+          :state="stepOf('mode').state"
+          :state-label="stepLabel('mode')"
+        >
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               v-for="m in ['waha', 'official']"
@@ -907,13 +1002,17 @@ onBeforeUnmount(stopStatsRefresh);
               </span>
             </button>
           </div>
-        </section>
+        </ComposerStep>
 
         <!-- Inbox -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.INBOX_TITLE') }}
-          </h2>
+        <ComposerStep
+          id="inbox"
+          :number="stepNumber('inbox')"
+          :title="t('BROADCAST.COMPOSER.INBOX_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.INBOX')"
+          :state="stepOf('inbox').state"
+          :state-label="stepLabel('inbox')"
+        >
           <select
             v-model="form.inbox_id"
             class="h-10 px-3 rounded-lg bg-n-alpha-1 border border-n-weak text-sm text-n-slate-12 focus:outline-none focus:border-n-teal-8 cursor-pointer"
@@ -935,14 +1034,17 @@ onBeforeUnmount(stopStatsRefresh);
           >
             {{ t('BROADCAST.COMPOSER.INBOX_EMPTY') }}
           </p>
-        </section>
+        </ComposerStep>
 
         <!-- Message -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.MESSAGE_TITLE') }}
-          </h2>
-
+        <ComposerStep
+          id="message"
+          :number="stepNumber('message')"
+          :title="t('BROADCAST.COMPOSER.MESSAGE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.MESSAGE')"
+          :state="stepOf('message').state"
+          :state-label="stepLabel('message')"
+        >
           <template v-if="form.mode === 'waha'">
             <p class="text-[11px] text-n-slate-10 m-0 -mt-1">
               {{ t('BROADCAST.MESSAGE.SEQUENCE_HINT') }}
@@ -1231,14 +1333,17 @@ onBeforeUnmount(stopStatsRefresh);
               }}
             </p>
           </template>
-        </section>
+        </ComposerStep>
 
         <!-- Audience -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.AUDIENCE_TITLE') }}
-          </h2>
-
+        <ComposerStep
+          id="audience"
+          :number="stepNumber('audience')"
+          :title="t('BROADCAST.COMPOSER.AUDIENCE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.AUDIENCE')"
+          :state="stepOf('audience').state"
+          :state-label="stepLabel('audience')"
+        >
           <div
             class="flex flex-col rounded-xl border border-n-weak bg-n-solid-1 divide-y divide-n-weak overflow-hidden"
           >
@@ -1644,24 +1749,32 @@ onBeforeUnmount(stopStatsRefresh);
               </div>
             </div>
           </div>
-        </section>
+        </ComposerStep>
 
         <!-- Throttle -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.THROTTLE_TITLE') }}
-          </h2>
+        <ComposerStep
+          id="safety"
+          :number="stepNumber('safety')"
+          :title="t('BROADCAST.COMPOSER.THROTTLE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.SAFETY')"
+          :state="stepOf('safety').state"
+          :state-label="stepLabel('safety')"
+        >
           <SafetySettings
             :model-value="form.throttle"
             @update:model-value="value => Object.assign(form.throttle, value)"
           />
-        </section>
+        </ComposerStep>
 
         <!-- Schedule -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-n-slate-12 m-0">
-            {{ t('BROADCAST.COMPOSER.SCHEDULE_TITLE') }}
-          </h2>
+        <ComposerStep
+          id="schedule"
+          :number="stepNumber('schedule')"
+          :title="t('BROADCAST.COMPOSER.SCHEDULE_TITLE')"
+          :hint="t('BROADCAST.COMPOSER.STEP_HINT.SCHEDULE')"
+          :state="stepOf('schedule').state"
+          :state-label="stepLabel('schedule')"
+        >
           <label class="flex flex-col gap-1.5 max-w-xs">
             <span class="text-xs font-medium text-n-slate-11">
               {{ t('BROADCAST.SCHEDULE.AT') }}
@@ -1675,7 +1788,7 @@ onBeforeUnmount(stopStatsRefresh);
               {{ t('BROADCAST.SCHEDULE.HINT') }}
             </p>
           </label>
-        </section>
+        </ComposerStep>
       </div>
 
       <!-- Right rail: audience + send controls -->
@@ -1705,6 +1818,40 @@ onBeforeUnmount(stopStatsRefresh);
             :is-loading="isPreviewing"
             @click="refreshAudience"
           />
+        </div>
+
+        <div
+          class="flex flex-col gap-2 p-4 rounded-2xl border border-n-weak bg-n-alpha-1"
+          data-testid="composer-readiness"
+        >
+          <span class="text-xs font-medium text-n-slate-11">
+            {{
+              t('BROADCAST.COMPOSER.READINESS', {
+                ready: readyCount,
+                total: requiredSteps.length,
+              })
+            }}
+          </span>
+          <button
+            v-for="step in steps"
+            :key="step.id"
+            type="button"
+            class="flex items-center gap-2 text-left text-[13px] rounded-md hover:text-n-slate-12"
+            :class="
+              step.state === 'missing' ? 'text-n-amber-11' : 'text-n-slate-11'
+            "
+            @click="goToStep(step.id)"
+          >
+            <span
+              class="size-3.5 shrink-0"
+              :class="{
+                'i-lucide-circle-check text-n-teal-11': step.state === 'done',
+                'i-lucide-circle-dashed': step.state === 'optional',
+                'i-lucide-circle-alert': step.state === 'missing',
+              }"
+            />
+            {{ t(`BROADCAST.COMPOSER.STEPS.${step.key}`) }}
+          </button>
         </div>
 
         <AudiencePreviewPanel
