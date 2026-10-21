@@ -14,7 +14,6 @@ import {
 import SectionLayout from './SectionLayout.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import Icon from 'next/icon/Icon.vue';
-import WorkspaceCover from 'next/workspace/WorkspaceCover.vue';
 import WorkspaceAvatar from 'next/workspace/WorkspaceAvatar.vue';
 
 const { t } = useI18n();
@@ -29,9 +28,6 @@ const logoInput = useTemplateRef('logoInput');
 
 const coverTheme = computed(() => currentAccount.value.settings?.cover_theme);
 const currentVertical = computed(() => currentAccount.value.vertical);
-const verticalName = computed(
-  () => verticals.value.find(v => v.key === currentVertical.value)?.name
-);
 const chosenVerticalName = computed(
   () => verticals.value.find(v => v.key === chosenVertical.value)?.name
 );
@@ -130,31 +126,6 @@ onMounted(fetchWorkspace);
     with-border
   >
     <div class="grid gap-8">
-      <div
-        class="overflow-hidden rounded-2xl border border-n-weak bg-n-solid-1 shadow-sm"
-        :aria-label="t('WORKSPACE_SETTINGS.PREVIEW')"
-      >
-        <WorkspaceCover :account="preview" class="h-32" />
-        <div class="flex items-end gap-4 px-5 pb-5">
-          <WorkspaceAvatar
-            :account="preview"
-            size="lg"
-            class="-mt-8 ring-4 ring-n-solid-1 shadow-md"
-          />
-          <div class="min-w-0 flex-1">
-            <p
-              class="text-base font-semibold leading-6 text-n-slate-12 break-words"
-            >
-              {{ currentAccount.name }}
-            </p>
-            <p class="flex items-center gap-1 text-xs text-n-slate-11">
-              <Icon icon="i-lucide-briefcase" class="size-3.5" />
-              {{ verticalName || t('WORKSPACE_SETTINGS.VERTICAL.NONE') }}
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div class="grid gap-3">
         <h5 class="text-sm font-medium text-n-slate-12">
           {{ t('WORKSPACE_SETTINGS.COVER.TITLE') }}

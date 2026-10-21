@@ -47,11 +47,10 @@ describe('WorkspaceIdentity', () => {
     WorkspaceAPI.update.mockResolvedValue({ data: { id: 5 } });
   });
 
-  it('previews the workspace with its vertical and marks the chosen theme', async () => {
+  it('marks the chosen theme and the vertical in use', async () => {
     const wrapper = await mountIdentity();
 
-    expect(wrapper.text()).toContain('BEAUTY CENTER BH LOURDES');
-    expect(wrapper.text()).toContain('Salão de beleza');
+    expect(wrapper.find('select').element.value).toBe('beauty_salon');
     expect(
       wrapper.find('button[aria-label="Sunset"]').attributes('aria-pressed')
     ).toBe('true');

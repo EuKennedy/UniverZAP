@@ -12,7 +12,13 @@ const store = createStore({
     'accounts/getUIFlags': () => ({ isFetchingItem: false }),
     'accounts/isFeatureEnabledonAccount': () => () => false,
     'globalConfig/isOnChatwootCloud': () => false,
+    getUserAccounts: () => [],
+    'agents/getAgents': () => [],
+    'inboxes/getInboxes': () => [],
+    'teams/getTeams': () => [],
+    'labels/getLabels': () => [],
   },
+  actions: { 'agents/get': () => {} },
   mutations: {
     setAccounts(state, records) {
       state.records = records;
@@ -67,12 +73,14 @@ describe('Account settings after a page reload', () => {
     const wrapper = shallowMount(AccountSettings, {
       global: { plugins: [store] },
     });
-    expect(wrapper.vm.name).toBeFalsy();
+    expect(wrapper.find('#account-general-form').exists()).toBe(false);
 
     store.commit('setAccounts', [account]);
     await flushPromises();
 
-    expect(wrapper.vm.name).toBe('BEAUTY CENTER BH LOURDES');
-    expect(wrapper.vm.locale).toBe('pt_BR');
+    expect(wrapper.vm.form).toMatchObject({
+      name: 'BEAUTY CENTER BH LOURDES',
+      locale: 'pt_BR',
+    });
   });
 });

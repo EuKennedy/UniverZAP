@@ -319,5 +319,27 @@
       "ERROR": "Não foi possível atualizar o workspace. Tente de novo.",
       "VERTICAL_SUCCESS": "Vertical aplicada ao workspace"
     }
+  },
+  "ACCOUNT_PAGE": {
+    "SUBTITLE": "Workspace ID {id}",
+    "SUBTITLE_WITH_DATE": "Workspace ID {id} · criado em {date}",
+    "COPY_ID": "Copiar ID",
+    "ID_COPIED": "ID da conta copiado",
+    "SAVE": "Salvar alterações",
+    "EDIT_IDENTITY": "Editar identidade",
+    "STATS": {
+      "AGENTS": "Agentes",
+      "INBOXES": "Caixas de entrada",
+      "TEAMS": "Equipes",
+      "LABELS": "Etiquetas"
+    },
+    "NAV": {
+      "LABEL": "Seções das configurações da conta",
+      "GENERAL": "Geral",
+      "IDENTITY": "Identidade",
+      "AI": "IA",
+      "INTEGRATION": "Integração",
+      "DANGER": "Zona de risco"
+    }
   }
 }

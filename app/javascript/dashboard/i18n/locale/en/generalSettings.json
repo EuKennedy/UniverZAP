@@ -319,5 +319,27 @@
       "ERROR": "Could not update the workspace. Please try again.",
       "VERTICAL_SUCCESS": "Vertical applied to the workspace"
     }
+  },
+  "ACCOUNT_PAGE": {
+    "SUBTITLE": "Workspace ID {id}",
+    "SUBTITLE_WITH_DATE": "Workspace ID {id} · created {date}",
+    "COPY_ID": "Copy ID",
+    "ID_COPIED": "Account ID copied",
+    "SAVE": "Save changes",
+    "EDIT_IDENTITY": "Edit identity",
+    "STATS": {
+      "AGENTS": "Agents",
+      "INBOXES": "Inboxes",
+      "TEAMS": "Teams",
+      "LABELS": "Labels"
+    },
+    "NAV": {
+      "LABEL": "Account settings sections",
+      "GENERAL": "General",
+      "IDENTITY": "Identity",
+      "AI": "AI",
+      "INTEGRATION": "Integration",
+      "DANGER": "Danger zone"
+    }
   }
 }
