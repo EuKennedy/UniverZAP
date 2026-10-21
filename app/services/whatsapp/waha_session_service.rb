@@ -7,6 +7,20 @@ class Whatsapp::WahaSessionService
   include Whatsapp::WahaChatwootApp
   include Whatsapp::WahaProfileApi
   include Whatsapp::WahaStatusApi
+  include Whatsapp::WahaOutreachApi
+
+  WEBHOOK_EVENTS = %w[message message.any message.ack session.status].freeze
+  # WAHA keeps no queue of its own: an event that runs out of attempts is gone.
+  # Exponential (2, 4, 8 ... ~1024 s, 20% jitter) means 10 attempts cover about
+  # half an hour, long enough to ride out a deploy instead of the 6 s that 3
+  # constant attempts gave.
+  WEBHOOK_RETRIES = { attempts: 10, delaySeconds: 2, policy: 'exponential' }.freeze
+
+  def self.webhook_url(fallback_base = nil)
+    "#{ENV.fetch('FRONTEND_URL', fallback_base).to_s.chomp('/')}/webhooks/waha"
+  end
+
+  attr_reader :session_name
 
   def initialize(session_name: nil, base_url: nil, api_key: nil)
     @session_name = session_name
@@ -33,13 +47,7 @@ class Whatsapp::WahaSessionService
       name: @session_name,
       start: true,
       config: {
-        webhooks: [
-          {
-            url: webhook_url,
-            events: %w[message message.any message.ack session.status],
-            retries: { attempts: 3, delaySeconds: 2, policy: 'constant' }
-          }
-        ],
+        webhooks: [our_webhook(webhook_url)],
         ignore: { status: true, groups: false, channels: false, broadcast: true }
       }
     }
@@ -77,11 +85,13 @@ class Whatsapp::WahaSessionService
     extract_qr_data_url(response)
   end
 
-  # Preserve other systems' webhooks on the session — only refresh ours.
+  # Preserve other systems' webhooks on the session — only refresh ours. The
+  # rest of the session config goes back as it was: the PUT replaces it whole.
   def update_webhook(webhook_url:)
-    our = { url: webhook_url, events: %w[message message.any message.ack session.status] }
-    others = current_webhooks.reject { |w| (w['url'] || w[:url]) == webhook_url }
-    request(:put, "/api/sessions/#{@session_name}", body: { config: { webhooks: others + [our] } })
+    current = session
+    config = (current.is_a?(Hash) && current['config']) || {}
+    others = Array(config['webhooks']).reject { |w| (w['url'] || w[:url]) == webhook_url }
+    request(:put, "/api/sessions/#{@session_name}", body: { config: config.merge('webhooks' => others + [our_webhook(webhook_url)]) })
   end
 
   def current_webhooks
@@ -113,6 +123,15 @@ class Whatsapp::WahaSessionService
   end
 
   private
+
+  # Signed when WAHA_WEBHOOK_HMAC_KEY is set: WAHA then sends X-Webhook-Hmac,
+  # the sha512 HMAC of the raw body, which Webhooks::WahaController checks.
+  def our_webhook(url)
+    hook = { url: url, events: WEBHOOK_EVENTS, retries: WEBHOOK_RETRIES }
+    key = ENV.fetch('WAHA_WEBHOOK_HMAC_KEY', nil)
+    hook[:hmac] = { key: key } if key.present?
+    hook
+  end
 
   def headers
     {

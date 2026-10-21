@@ -98,6 +98,10 @@ class Webhooks::WahaEventsJob < ApplicationJob
       channel.prompt_reauthorization!
     when 'WORKING'
       channel.reauthorized!
+      # WAHA re-issues WORKING carrying the timelock/capping state whenever
+      # WhatsApp changes it (https://waha.devlike.pro/docs/how-to/sessions/).
+      data = event.dig(:payload, :data)
+      Whatsapp::WahaOutreachGuard.new(inbox).sync!(data) if data.present?
     end
   rescue StandardError => e
     Rails.logger.error("[WAHA events] session status failed: #{e.message}")

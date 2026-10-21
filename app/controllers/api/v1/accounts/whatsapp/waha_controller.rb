@@ -94,8 +94,7 @@ class Api::V1::Accounts::Whatsapp::WahaController < Api::V1::Accounts::BaseContr
   end
 
   def webhook_url
-    base = ENV.fetch('FRONTEND_URL', request.base_url)
-    "#{base.chomp('/')}/webhooks/waha"
+    Whatsapp::WahaSessionService.webhook_url(request.base_url)
   end
 
   def create_api_inbox(name, app_id:)
