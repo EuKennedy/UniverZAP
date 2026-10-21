@@ -51,4 +51,10 @@ RSpec.describe Broadcasts::AudienceResolver do
 
     expect(ids('origins' => %w[anuncio_facebook organico], 'exclude_label_ids' => [label.id])).to contain_exactly(returning.id)
   end
+
+  it 'só "deixar de fora" não escolhe a base inteira' do
+    label = create(:label, account: account, title: 'nao-perturbe')
+
+    expect(ids('exclude_label_ids' => [label.id])).to be_empty
+  end
 end

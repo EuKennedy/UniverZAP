@@ -19,4 +19,14 @@ RSpec.describe ScheduledMessages::DueScannerJob do
     expect(later.reload).to be_status_scheduled
     expect(enqueued_jobs.count { |job| job[:job] == ScheduledMessages::SendJob }).to eq(1)
   end
+
+  it 'marca como falha a que ficou presa em envio, sem reenviar' do
+    stuck = create(:scheduled_message, conversation: conversation, send_at: 1.minute.from_now)
+    stuck.update_columns(status: ScheduledMessage.statuses[:sending], updated_at: 20.minutes.ago) # rubocop:disable Rails/SkipsModelValidations
+
+    described_class.perform_now
+
+    expect(stuck.reload).to have_attributes(status: 'failed', error: I18n.t('scheduled_messages.errors.interrupted'))
+    expect(enqueued_jobs.count { |job| job[:job] == ScheduledMessages::SendJob && job[:args] == [stuck.id] }).to eq(0)
+  end
 end

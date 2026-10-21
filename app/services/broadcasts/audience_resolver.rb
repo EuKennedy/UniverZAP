@@ -130,6 +130,9 @@ class Broadcasts::AudienceResolver
 
   def refine(ids)
     return ids unless refining?
+    # "Deixar de fora" sozinho não escolhe ninguém: sem esta trava, excluir
+    # uma etiqueta e mais nada disparava para a base inteira.
+    return [] unless include_filters? || segments?
 
     scope = include_filters? ? @account.contacts.where(id: ids) : @account.contacts
     scope = by_origin(scope)
@@ -139,8 +142,14 @@ class Broadcasts::AudienceResolver
     by_birthday(scope.pluck(:id))
   end
 
+  SEGMENT_KEYS = %w[origins recurring no_reply_days birthday].freeze
+
   def refining?
-    %w[origins recurring no_reply_days birthday exclude_label_ids].any? { |key| @filters[key].present? }
+    segments? || @filters['exclude_label_ids'].present?
+  end
+
+  def segments?
+    SEGMENT_KEYS.any? { |key| @filters[key].present? }
   end
 
   def include_filters?

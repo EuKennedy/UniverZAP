@@ -46,10 +46,10 @@ class Api::V1::Accounts::BroadcastsController < Api::V1::Accounts::BaseControlle
   def launch
     if @broadcast.scheduled_at.present? && @broadcast.scheduled_at > Time.current
       @broadcast.update!(status: :scheduled, pause_reason: nil)
-      Broadcasts::DispatchJob.set(wait_until: @broadcast.scheduled_at).perform_later(@broadcast.id)
+      Broadcasts::DispatchJob.start(@broadcast, wait_until: @broadcast.scheduled_at)
     else
       @broadcast.update!(status: :running, pause_reason: nil)
-      Broadcasts::DispatchJob.perform_later(@broadcast.id)
+      Broadcasts::DispatchJob.start(@broadcast)
     end
     render :show
   end

@@ -114,4 +114,26 @@ RSpec.describe Broadcasts::DispatchJob do
       expect(broadcast.broadcast_recipients.status_sent.count).to eq(1)
     end
   end
+
+  describe 'uma corrente por lançamento' do
+    it 'o job da corrente antiga não envia depois de relançar' do
+      travel_to(zone.parse('2026-10-20 10:00')) do
+        described_class.start(broadcast)
+        old_token = enqueued_jobs.last[:args].last
+        described_class.start(broadcast)
+
+        described_class.perform_now(broadcast.id, old_token)
+        expect(broadcast.broadcast_recipients.count).to eq(0)
+
+        described_class.perform_now(broadcast.id, enqueued_jobs.last[:args].last)
+        expect(broadcast.broadcast_recipients.status_sent.count).to eq(1)
+      end
+    end
+
+    it 'job antigo sem token (enfileirado antes do deploy) continua valendo' do
+      run_at(zone.parse('2026-10-20 10:00'))
+
+      expect(broadcast.broadcast_recipients.status_sent.count).to eq(1)
+    end
+  end
 end

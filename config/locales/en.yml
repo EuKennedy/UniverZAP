@@ -59,6 +59,7 @@ en:
     copy_name: '%{name} (copy)'
   scheduled_messages:
     errors:
+      interrupted: Sending was interrupted; check the conversation before trying again
       in_past: must be in the future
       not_pending: This message was already sent or cancelled
       sequence_steps_required: needs at least one message

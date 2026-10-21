@@ -19,15 +19,22 @@ class Broadcasts::Stats
       scheduled: @scheduled.status_scheduled.count + @account.broadcasts.status_scheduled.count,
       next_scheduled_at: next_scheduled_at&.iso8601,
       reply_rate_30d: reply_rate,
-      skipped_7d: @recipients.status_skipped.where(updated_at: 7.days.ago(@now)..).count,
-      opted_out: @account.contacts.where("contacts.custom_attributes->>'#{Broadcasts::RecipientGuard::OPT_OUT_ATTRIBUTE}' = 'true'").count,
-      running: @account.broadcasts.status_running.count,
-      sequences_enabled: @account.message_sequences.enabled.count,
       connections: connections
-    }
+    }.merge(protection, activity)
   end
 
   private
+
+  def protection
+    {
+      skipped_7d: @recipients.status_skipped.where(updated_at: 7.days.ago(@now)..).count,
+      opted_out: @account.contacts.where("contacts.custom_attributes->>'#{Broadcasts::RecipientGuard::OPT_OUT_ATTRIBUTE}' = 'true'").count
+    }
+  end
+
+  def activity
+    { running: @account.broadcasts.status_running.count, sequences_enabled: @account.message_sequences.enabled.count }
+  end
 
   def sent_since(time)
     @recipients.where(sent_at: time..).count + @scheduled.status_sent.where(sent_at: time..).count

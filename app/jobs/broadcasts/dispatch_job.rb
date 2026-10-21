@@ -24,12 +24,26 @@ class Broadcasts::DispatchJob < ApplicationJob
   # Quantos destinatários pulados (opt-out, em atendimento) um lote atravessa
   # antes de dar a vez ao próximo job.
   SCAN_LIMIT = 50
+  TOKEN_TTL = 30.days
 
-  def perform(broadcast_id)
+  # Cada lançamento gera um token; cada job da corrente carrega o seu. Relançar
+  # ou retomar depois de pausar deixaria a corrente antiga (que dormia até a
+  # janela abrir) viva ao lado da nova — o dobro do ritmo no mesmo número.
+  # Job sem token (enfileirado antes deste código) segue valendo.
+  def self.start(broadcast, wait_until: nil)
+    token = SecureRandom.hex(8)
+    Redis::Alfred.setex(token_key(broadcast.id), token, TOKEN_TTL)
+    set(wait_until: wait_until).perform_later(broadcast.id, token)
+  end
+
+  def self.token_key(broadcast_id)
+    "broadcast:#{broadcast_id}:dispatch_token"
+  end
+
+  def perform(broadcast_id, token = nil)
+    @token = token
     @broadcast = Broadcast.find_by(id: broadcast_id)
-    return if @broadcast.nil?
-    return unless start_if_due
-    return unless @broadcast.status_running?
+    return unless runnable?
 
     build_recipients
     return if waiting?
@@ -41,6 +55,16 @@ class Broadcasts::DispatchJob < ApplicationJob
   end
 
   private
+
+  def runnable?
+    return false if @broadcast.nil? || stale?
+
+    start_if_due && @broadcast.status_running?
+  end
+
+  def stale?
+    @token.present? && Redis::Alfred.get(self.class.token_key(@broadcast.id)) != @token
+  end
 
   # Nobody ready yet, window closed or connection capped: each of these
   # schedules its own wake-up and the batch is skipped.
@@ -124,7 +148,7 @@ class Broadcasts::DispatchJob < ApplicationJob
   def schedule_next
     delay = rand(@broadcast.delay_min..[@broadcast.delay_max, @broadcast.delay_min].max)
     delay += rand(BREATHER) if rand(BREATHER_CHANCE).zero?
-    self.class.set(wait: delay.seconds).perform_later(@broadcast.id)
+    self.class.set(wait: delay.seconds).perform_later(@broadcast.id, @token)
   end
 
   # Caps count every automated send on the connection, not only this
@@ -160,7 +184,7 @@ class Broadcasts::DispatchJob < ApplicationJob
   end
 
   def wake_at(time)
-    self.class.set(wait_until: time).perform_later(@broadcast.id)
+    self.class.set(wait_until: time).perform_later(@broadcast.id, @token)
   end
 
   def day_start

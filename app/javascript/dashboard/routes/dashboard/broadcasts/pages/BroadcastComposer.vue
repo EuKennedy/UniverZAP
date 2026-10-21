@@ -277,10 +277,13 @@ const hasMessage = computed(() => {
 // found out on their own that they had to save first — launch now saves by
 // itself. 'completed' is allowed so a campaign tested on one contact can go
 // out to the rest: the dispatch only sends to contacts not reached yet.
+// "Deixar de fora" sozinho não escolhe ninguém (o backend devolve público vazio).
 const hasAudience = computed(() =>
-  Object.values(form.audience).some(value =>
-    Array.isArray(value) ? value.length > 0 : Boolean(value)
-  )
+  Object.entries(form.audience)
+    .filter(([key]) => key !== 'exclude_label_ids')
+    .some(([, value]) =>
+      Array.isArray(value) ? value.length > 0 : Boolean(value)
+    )
 );
 
 const activeSegments = computed(
