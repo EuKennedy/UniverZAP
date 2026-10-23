@@ -63,6 +63,27 @@ module Whatsapp::WahaChatwootApp
     request(:delete, "/api/apps/#{app_id}")
   end
 
+  # The apps installed before the branding existed keep the WAHA name and
+  # logo until their templates are rewritten (`rake waha:rebrand`).
+  def rebrand_chatwoot_apps!
+    Array(list_apps).select { |app| chatwoot_app_matches?(app, nil) }.each do |app|
+      config = app['config'] || {}
+      templates = (config['templates'] || {}).merge(brand_templates)
+      request(:put, "/api/apps/#{app['id']}", body: app.merge('config' => config.merge('templates' => templates)))
+    end
+  end
+
+  # O app conversa com o cliente por um contato próprio na inbox (QR, status da
+  # sessão, avisos), que a WAHA chama de "Integração WhatsApp" e mostra com o
+  # logo dela. Quem atende o cliente é a UniverZAP: nome e avatar são nossos.
+  # Chaves: https://waha.devlike.pro/docs/apps/chatwoot/#language
+  def brand_templates
+    {
+      'app.inbox.contact.name' => 'UniverZAP',
+      'app.inbox.contact.avatar.url' => "#{ENV.fetch('FRONTEND_URL', '').chomp('/')}/brand-assets/lp/apple-touch-icon.png"
+    }
+  end
+
   private
 
   def chatwoot_app_config(options)
@@ -73,7 +94,7 @@ module Whatsapp::WahaChatwootApp
       accountToken: options[:user_token],
       inboxId: options[:inbox_id],
       inboxIdentifier: options[:inbox_identifier],
-      templates: {},
+      templates: brand_templates,
       commands: { server: true, queue: true },
       conversations: { sort: 'created_newest', status: %w[open pending snoozed resolved] }
     }
