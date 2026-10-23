@@ -49,6 +49,16 @@ RSpec.describe V2::Reports::QueueBuilder do
     expect(rows.first[:waiting_since]).to be < rows.last[:waiting_since]
   end
 
+  it 'leaves WhatsApp groups, statuses and the team out of the queue' do
+    %i[is_group is_status_broadcast is_team].each do |flag|
+      conversation(waiting_since: 3.hours.ago, awaiting_reply: true).update_columns(flag => true) # rubocop:disable Rails/SkipsModelValidations
+    end
+
+    result = described_class.new(account: account, params: params).build
+
+    expect(result).to include(open: 7, at_risk: 2)
+  end
+
   it 'honours the risk threshold' do
     result = described_class.new(account: account, params: params.merge(risk_minutes: '5')).build
 

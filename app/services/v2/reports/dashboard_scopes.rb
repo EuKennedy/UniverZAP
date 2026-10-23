@@ -2,6 +2,7 @@
 # page comes from columns the conversation list already relies on:
 #   - first_reply_created_at: first valid (human) reply;
 #   - awaiting_reply + waiting_since: the contact has the last word since then.
+# Only regular conversations count (see #conversations).
 # The period (since/until) always filters conversations.created_at; the queue
 # (waiting, at risk) is live and ignores the period.
 module V2::Reports::DashboardScopes
@@ -16,8 +17,10 @@ module V2::Reports::DashboardScopes
 
   private
 
+  # WhatsApp groups, contacts' statuses and the team chat are not customers:
+  # they never count in the queue, the period or the conversion.
   def conversations
-    account.conversations.unscope(:order)
+    account.conversations.regular.unscope(:order)
   end
 
   def period_scope
