@@ -3,8 +3,11 @@ name: UniverZAP CI
 on:
   push:
     branches: [main, develop, 'univerzap/**']
+  # PRs into the production branch (univerzap/phase-0-saneamento) get the
+  # full gate before merge. Feature branches use the `uz/` prefix, outside
+  # the push filter above, so each PR runs CI once instead of twice.
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, 'univerzap/**']
   # Manual re-run. A GitHub Actions outage once left a commit with no run at
   # all — the push webhook never fired — and with only push triggers the sole
   # way to test it again was to invent a new commit.
