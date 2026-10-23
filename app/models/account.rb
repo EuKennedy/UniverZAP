@@ -93,6 +93,8 @@ class Account < ApplicationRecord
   has_many :whatsapp_status_campaigns, dependent: :destroy
   has_many :sales_goals, dependent: :destroy
   has_many :sale_records, dependent: :destroy
+  has_one :store_connection, dependent: :destroy
+  has_many :store_orders, dependent: :delete_all
   has_many :categories, dependent: :destroy_async, class_name: '::Category'
   has_many :contacts, dependent: :destroy_async
   has_many :conversations, dependent: :destroy_async

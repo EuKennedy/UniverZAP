@@ -14,6 +14,7 @@ RSpec.describe VerticalProfile do
     expect(profile.sheet_fields).to eq(%w[numero_pedido valor_pedido codigo_rastreio motivo_contato])
     expect(profile.agent_templates).to eq(%w[varejo])
     expect(profile.belezaki?).to be(false)
+    expect(profile.store_connector?).to be(true)
   end
 
   it 'keeps the salon behaviour for salons', :aggregate_failures do
@@ -25,6 +26,7 @@ RSpec.describe VerticalProfile do
     expect(profile.sheet_fields).to be_nil
     expect(profile.agent_templates).to eq(%w[salao nails])
     expect(profile.belezaki?).to be(true)
+    expect(profile.store_connector?).to be(false)
   end
 
   it 'keeps the salon behaviour for an account without a vertical, but no template preference', :aggregate_failures do

@@ -742,6 +742,12 @@ Rails.application.routes.draw do
                 get :orders
               end
             end
+            resource :woocommerce, controller: 'woocommerce', only: [:show, :create, :destroy] do
+              collection do
+                get :orders
+                post :sync
+              end
+            end
             resource :belezaki, controller: 'belezaki', only: [] do
               collection do
                 get :customer
@@ -1047,6 +1053,7 @@ Rails.application.routes.draw do
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
   post 'webhooks/tiktok', to: 'webhooks/tiktok#events'
   post 'webhooks/shopify', to: 'webhooks/shopify#events'
+  post 'webhooks/woocommerce/:token', to: 'webhooks/woocommerce#create'
 
   namespace :twitter do
     resource :callback, only: [:show]

@@ -475,6 +475,10 @@ pt_BR:
       name: 'Shopify'
       short_description: 'Acessar detalhes do pedido e dados de clientes da sua loja Shopify.'
       description: 'Conecte sua loja Shopify para acessar detalhes de pedidos, informações de clientes e dados de produtos diretamente em suas conversas e ajudar sua equipe de suporte a fornecer um atendimento mais rápido e contextual aos seus clientes.'
+    woocommerce:
+      name: 'WooCommerce'
+      short_description: 'Pedidos da sua loja WooCommerce ao lado de cada conversa.'
+      description: 'Conecte a loja WooCommerce de um workspace de e-commerce. Os pedidos chegam por webhook, a cliente é encontrada pelo WhatsApp ou e-mail, a ficha mostra o pedido e o total gasto, e o estágio da conversa acompanha o status do pedido.'
     belezaki:
       name: 'belezaki'
       short_description: 'Veja a agenda do salão de cada cliente ao lado da conversa.'
