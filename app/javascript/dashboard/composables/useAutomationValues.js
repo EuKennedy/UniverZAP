@@ -28,6 +28,16 @@ export default function useAutomationValues() {
   const teams = useMapGetter('teams/getTeams');
   const slaPolicies = useMapGetter('sla/getSLA');
   const chatflows = useMapGetter('chatflows/getChatflows');
+  const funnels = useMapGetter('funnels/getFunnels');
+  // "Funnel › Stage" rows so one dropdown picks the stage across funnels.
+  const funnelStages = computed(() =>
+    (funnels.value || []).flatMap(funnel =>
+      (funnel.stages || []).map(stage => ({
+        id: stage.id,
+        name: `${funnel.name} › ${stage.name}`,
+      }))
+    )
+  );
 
   const booleanFilterOptions = computed(() => [
     { id: true, name: t('FILTER.ATTRIBUTE_LABELS.TRUE') },
@@ -139,6 +149,7 @@ export default function useAutomationValues() {
       teams: teams.value,
       slaPolicies: slaPolicies.value,
       chatflows: chatflows.value,
+      funnelStages: funnelStages.value,
       languages,
       type,
       addNoneToListFn: addNoneToList,

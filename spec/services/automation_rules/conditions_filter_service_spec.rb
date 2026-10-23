@@ -57,6 +57,20 @@ RSpec.describe AutomationRules::ConditionsFilterService do
       end
     end
 
+    context 'when conditions use open_minutes' do
+      before do
+        rule.conditions = [{ 'values': ['60'], 'attribute_key': 'open_minutes', 'query_operator': nil, 'filter_operator': 'is_greater_than' }]
+        rule.save
+      end
+
+      it 'matches a conversation created longer ago than the threshold' do
+        conversation.update!(created_at: 2.hours.ago)
+        expect(described_class.new(rule, conversation, {}).perform).to be(true)
+        conversation.update!(created_at: 10.minutes.ago)
+        expect(described_class.new(rule, conversation, {}).perform).to be(false)
+      end
+    end
+
     context 'when conditions based on filter_operator start_with' do
       before do
         contact = conversation.contact

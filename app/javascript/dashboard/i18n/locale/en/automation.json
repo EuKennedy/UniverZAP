@@ -139,7 +139,9 @@
       "CONVERSATION_OPENED": "Conversation Opened",
       "CONVERSATION_AD_REFERRAL": "Lead from ad (Click-to-WhatsApp)",
       "CONVERSATION_RECURRING_CUSTOMER": "Returning customer (had a conversation that ended)",
-      "CONVERSATION_WAITING": "Customer waiting for an agent (minutes)"
+      "CONVERSATION_WAITING": "Customer waiting for an agent (minutes)",
+      "CONVERSATION_LABEL_ADDED": "Label or status applied",
+      "CONVERSATION_UNRESOLVED": "Open for too long (minutes)"
     },
     "ACTIONS": {
       "ASSIGN_AGENT": "Assign to Agent",
@@ -161,6 +163,7 @@
       "ASSIGN_LEAST_BUSY": "Reassign to the least busy agent",
       "NOTIFY_TEAM": "Notify a team (private note with mention)",
       "START_CHATFLOW": "Start a Chatflow",
+      "MOVE_KANBAN_STAGE": "Move the Kanban card to a stage",
       "ADD_SLA": "Add SLA",
       "OPEN_CONVERSATION": "Open conversation",
       "PENDING_CONVERSATION": "Mark conversation as pending"
@@ -184,6 +187,7 @@
       "INBOX": "Inbox",
       "CONVERSATION_LANGUAGE": "Conversation Language",
       "WAITING_MINUTES": "Minutes waiting for an agent",
+      "OPEN_MINUTES": "Minutes since the conversation started",
       "PHONE_NUMBER": "Phone Number",
       "STATUS": "Status",
       "BROWSER_LANGUAGE": "Browser Language",

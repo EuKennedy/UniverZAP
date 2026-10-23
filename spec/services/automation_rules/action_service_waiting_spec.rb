@@ -57,6 +57,37 @@ RSpec.describe AutomationRules::ActionService do
     end
   end
 
+  describe 'move_kanban_stage' do
+    let(:funnel) { create(:funnel, account: account) }
+    let!(:first_stage) { create(:funnel_stage, funnel: funnel, name: 'Novo') }
+    let!(:target_stage) { create(:funnel_stage, funnel: funnel, name: 'Agendado') }
+
+    it 'moves the conversation card to the stage when it already has one in that funnel' do
+      task = create(:kanban_task, account: account, funnel: funnel, funnel_stage: first_stage)
+      task.conversations << conversation
+
+      described_class.new(rule_with('move_kanban_stage', [target_stage.id]), account, conversation).perform
+
+      expect(task.reload.funnel_stage).to eq(target_stage)
+    end
+
+    it 'creates a card in the stage when the conversation has none' do
+      described_class.new(rule_with('move_kanban_stage', [target_stage.id]), account, conversation).perform
+
+      task = conversation.kanban_tasks.sole
+      expect(task.funnel_stage).to eq(target_stage)
+      expect(task.title).to eq(conversation.contact.name)
+    end
+
+    it 'ignores a stage of another account' do
+      foreign = create(:funnel_stage, funnel: create(:funnel, account: create(:account)))
+
+      described_class.new(rule_with('move_kanban_stage', [foreign.id]), account, conversation).perform
+
+      expect(conversation.kanban_tasks).to be_empty
+    end
+  end
+
   describe 'start_chatflow' do
     let(:chatflow) { Chatflow.create!(account: account, name: 'Resgate', inbox: inbox, status: :active) }
 

@@ -100,6 +100,7 @@ export const getActionOptions = ({
   labels,
   slaPolicies,
   chatflows = [],
+  funnelStages = [],
   type,
   addNoneToListFn,
   priorityOptions,
@@ -114,6 +115,7 @@ export const getActionOptions = ({
     add_sla: slaPolicies,
     notify_team: teams,
     start_chatflow: chatflows,
+    move_kanban_stage: funnelStages,
   };
   return actionsMap[type];
 };
@@ -171,7 +173,34 @@ export const getFileName = (action, files = []) => {
   return '';
 };
 
+// UniverZAP events whose first condition is the one that makes them work:
+// the time sweeps need a threshold and the label event needs a label.
+const UNIVERZAP_DEFAULT_CONDITIONS = {
+  conversation_waiting: {
+    attribute_key: 'waiting_minutes',
+    filter_operator: 'is_greater_than',
+  },
+  conversation_unresolved: {
+    attribute_key: 'open_minutes',
+    filter_operator: 'is_greater_than',
+  },
+  conversation_label_added: {
+    attribute_key: 'labels',
+    filter_operator: 'equal_to',
+  },
+};
+
 export const getDefaultConditions = eventName => {
+  if (UNIVERZAP_DEFAULT_CONDITIONS[eventName]) {
+    return [
+      {
+        ...UNIVERZAP_DEFAULT_CONDITIONS[eventName],
+        values: '',
+        query_operator: 'and',
+        custom_attribute_type: '',
+      },
+    ];
+  }
   if (eventName === 'message_created') {
     return structuredClone(DEFAULT_MESSAGE_CREATED_CONDITION);
   }

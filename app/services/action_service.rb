@@ -111,6 +111,20 @@ class ActionService
                                                        content_attributes: { automation_rule_id: Current.executed_by&.id } }).perform
   end
 
+  # UniverZAP: put the conversation's Kanban card in a stage, creating the
+  # card when the conversation has none in that funnel.
+  def move_kanban_stage(stage_ids)
+    stage = FunnelStage.joins(:funnel).where(funnels: { account_id: @account.id }).find_by(id: stage_ids[0])
+    return if stage.nil?
+
+    task = @conversation.kanban_tasks.find_by(funnel_id: stage.funnel_id)
+    return task.update!(funnel_stage: stage) if task
+
+    title = @conversation.contact&.name.presence || "Conversa ##{@conversation.display_id}"
+    task = @account.kanban_tasks.create!(funnel: stage.funnel, funnel_stage: stage, title: title)
+    task.conversations << @conversation
+  end
+
   # UniverZAP: start a Chatflow on the conversation (e.g. a rescue message).
   def start_chatflow(chatflow_ids)
     chatflow = @account.chatflows.find_by(id: chatflow_ids[0])

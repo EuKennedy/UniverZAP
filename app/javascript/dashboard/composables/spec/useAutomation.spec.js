@@ -206,6 +206,8 @@ describe('useAutomation', () => {
     automationTypes.conversation_ad_referral = { conditions: [] };
     automationTypes.conversation_recurring_customer = { conditions: [] };
     automationTypes.conversation_waiting = { conditions: [] };
+    automationTypes.conversation_label_added = { conditions: [] };
+    automationTypes.conversation_unresolved = { conditions: [] };
 
     automationHelper.generateCustomAttributeTypes.mockReturnValue([]);
     automationHelper.generateCustomAttributes.mockReturnValue([]);

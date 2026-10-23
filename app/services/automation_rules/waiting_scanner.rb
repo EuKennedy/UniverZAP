@@ -7,47 +7,55 @@
 #     passed, once per waiting period (AutomationRuleFiring);
 #   - every live chatflow with the `no_reply` trigger, once per waiting period
 #     (an execution created since waiting_since counts as done).
+#
+# The same sweep runs the `conversation_unresolved` rules (resolution SLA):
+# conversations still open for more than X minutes since they were created,
+# once per conversation.
 class AutomationRules::WaitingScanner
-  EVENT = 'conversation_waiting'.freeze
-  THRESHOLD_KEY = 'waiting_minutes'.freeze
   BATCH_LIMIT = 500
 
+  # event => [threshold condition key, scope builder, dedupe key]
+  SWEEPS = {
+    'conversation_waiting' => ['waiting_minutes', :waiting_conversations, ->(c) { c.waiting_since.to_i.to_s }],
+    'conversation_unresolved' => ['open_minutes', :unresolved_conversations, ->(c) { c.created_at.to_i.to_s }]
+  }.freeze
+
   def perform
-    AutomationRule.active.joins(:account).where(event_name: EVENT).find_each { |rule| run_rule(rule) }
+    SWEEPS.each_key do |event|
+      AutomationRule.active.joins(:account).where(event_name: event).find_each { |rule| run_rule(rule) }
+    end
     Chatflow.live.joins(:account).trigger_no_reply.find_each { |chatflow| run_chatflow(chatflow) }
   end
 
   private
 
   def run_rule(rule)
-    minutes = threshold_minutes(rule)
+    threshold_key, scope_builder, dedupe = SWEEPS.fetch(rule.event_name)
+    minutes = threshold_minutes(rule, threshold_key)
     return if minutes.nil?
 
-    waiting_conversations(rule.account.conversations, minutes).each do |conversation|
-      next if already_fired?(rule, conversation)
+    send(scope_builder, rule.account.conversations, minutes).each do |conversation|
+      key = dedupe.call(conversation)
+      next if AutomationRuleFiring.exists?(automation_rule: rule, conversation: conversation, dedupe_key: key)
       next unless AutomationRules::ConditionsFilterService.new(rule, conversation, {}).perform
 
-      AutomationRuleFiring.create!(automation_rule: rule, conversation: conversation, dedupe_key: dedupe_key(conversation))
+      AutomationRuleFiring.create!(automation_rule: rule, conversation: conversation, dedupe_key: key)
       AutomationRules::ActionService.new(rule, rule.account, conversation).perform
     end
   end
 
-  # The rule's own "waiting for more than N minutes" condition is the sweep's
-  # threshold. A rule without one would fire on every waiting conversation
-  # every five minutes, so it is skipped rather than guessed.
-  def threshold_minutes(rule)
+  # The rule's own "more than N minutes" condition is the sweep's threshold.
+  # A rule without one would fire on every conversation every five minutes,
+  # so it is skipped rather than guessed.
+  def threshold_minutes(rule, threshold_key)
     rule.conditions
-        .select { |c| c['attribute_key'] == THRESHOLD_KEY && c['filter_operator'] == 'is_greater_than' }
+        .select { |c| c['attribute_key'] == threshold_key && c['filter_operator'] == 'is_greater_than' }
         .filter_map { |c| Array(c['values']).first&.to_i }
         .min
   end
 
-  def already_fired?(rule, conversation)
-    AutomationRuleFiring.exists?(automation_rule: rule, conversation: conversation, dedupe_key: dedupe_key(conversation))
-  end
-
-  def dedupe_key(conversation)
-    conversation.waiting_since.to_i.to_s
+  def unresolved_conversations(scope, minutes)
+    scope.open.where(created_at: ..minutes.minutes.ago).order(:created_at).limit(BATCH_LIMIT)
   end
 
   def waiting_conversations(scope, minutes)

@@ -228,6 +228,24 @@ describe('getDefaultConditions', () => {
     );
     expect(helpers.getDefaultConditions()).toEqual(genericConditionModel);
   });
+
+  it('starts the UniverZAP time and label events on their own condition', () => {
+    expect(helpers.getDefaultConditions('conversation_waiting')).toEqual([
+      {
+        attribute_key: 'waiting_minutes',
+        filter_operator: 'is_greater_than',
+        values: '',
+        query_operator: 'and',
+        custom_attribute_type: '',
+      },
+    ]);
+    expect(
+      helpers.getDefaultConditions('conversation_label_added')[0]
+    ).toMatchObject({ attribute_key: 'labels', filter_operator: 'equal_to' });
+    expect(
+      helpers.getDefaultConditions('conversation_unresolved')[0]
+    ).toMatchObject({ attribute_key: 'open_minutes' });
+  });
 });
 
 describe('getDefaultActions', () => {

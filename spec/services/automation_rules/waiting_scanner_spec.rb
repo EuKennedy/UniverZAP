@@ -81,6 +81,39 @@ RSpec.describe AutomationRules::WaitingScanner do
     expect(AutomationRules::ActionService).not_to have_received(:new)
   end
 
+  describe 'conversations open for too long (resolution SLA)' do
+    let!(:sla_rule) do
+      create(:automation_rule, account: account, event_name: 'conversation_unresolved',
+                               conditions: [{ 'attribute_key' => 'open_minutes', 'filter_operator' => 'is_greater_than',
+                                              'values' => ['60'], 'query_operator' => nil }],
+                               actions: [{ 'action_name' => 'change_priority', 'action_params' => ['urgent'] }])
+    end
+
+    before { rule.update!(active: false) }
+
+    def opened(minutes_ago, status: :open)
+      create(:conversation, account: account, inbox: inbox, status: status, created_at: minutes_ago.minutes.ago)
+    end
+
+    it 'fires once on a conversation open for longer than the threshold' do
+      conversation = opened(120)
+
+      described_class.new.perform
+      described_class.new.perform
+
+      expect(AutomationRules::ActionService).to have_received(:new).with(sla_rule, account, conversation).once
+    end
+
+    it 'leaves recent or resolved conversations alone' do
+      opened(10)
+      opened(120, status: :resolved)
+
+      described_class.new.perform
+
+      expect(AutomationRules::ActionService).not_to have_received(:new)
+    end
+  end
+
   describe 'chatflows triggered by no reply' do
     let(:chatflow) do
       Chatflow.create!(account: account, name: 'Sem resposta', inbox: inbox, status: :active,

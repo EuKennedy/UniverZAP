@@ -3,6 +3,7 @@ class AutomationRuleListener < BaseListener
     return if sandbox_event?(event)
 
     process_conversation_event(event, 'conversation_updated')
+    process_label_added_event(event)
   end
 
   def conversation_created(event)
@@ -61,6 +62,26 @@ class AutomationRuleListener < BaseListener
   end
 
   private
+
+  # UniverZAP: "label/status X was just applied" — runs the
+  # conversation_label_added rules against the labels this update added.
+  def process_label_added_event(event)
+    return if performed_by_automation?(event)
+
+    conversation = event.data[:conversation]
+    previous, current = event.data[:changed_attributes].to_h.with_indifferent_access[:label_list]
+    added = Array(current) - Array(previous)
+    return if added.empty?
+
+    account = conversation.account
+    return unless rule_present?('conversation_label_added', account)
+
+    current_account_rules('conversation_label_added', account).each do |rule|
+      next unless AutomationRules::LabelAddedMatcher.new(rule, conversation, added).match?
+
+      AutomationRules::ActionService.new(rule, account, conversation).perform
+    end
+  end
 
   def process_conversation_event(event, event_name)
     return if performed_by_automation?(event)

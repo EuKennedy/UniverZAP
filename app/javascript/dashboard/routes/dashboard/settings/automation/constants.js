@@ -718,11 +718,45 @@ AUTOMATIONS.conversation_waiting = {
   actions: AUTOMATIONS.conversation_created.actions,
 };
 
+// UniverZAP: a label (vertical status) was just applied. The `labels`
+// condition is checked against the labels that arrived, so "status changed TO
+// X" fires once instead of on every later update.
+AUTOMATIONS.conversation_label_added = {
+  conditions: [
+    {
+      key: 'labels',
+      name: 'LABELS',
+      inputType: 'multi_select',
+      filterOperators: OPERATOR_TYPES_1,
+    },
+    ...AUTOMATIONS.conversation_created.conditions.filter(
+      condition => condition.key !== 'labels'
+    ),
+  ],
+  actions: AUTOMATIONS.conversation_created.actions,
+};
+
+// UniverZAP: resolution SLA — still open for more than N minutes since it
+// was created, swept with conversation_waiting. Fires once per conversation.
+AUTOMATIONS.conversation_unresolved = {
+  conditions: [
+    {
+      key: 'open_minutes',
+      name: 'OPEN_MINUTES',
+      inputType: 'plain_text',
+      filterOperators: OPERATOR_TYPES_5,
+    },
+    ...AUTOMATIONS.conversation_created.conditions,
+  ],
+  actions: AUTOMATIONS.conversation_created.actions,
+};
+
 // UniverZAP actions available on every event.
 const UNIVERZAP_ACTIONS = [
   { key: 'assign_least_busy', name: 'ASSIGN_LEAST_BUSY' },
   { key: 'notify_team', name: 'NOTIFY_TEAM' },
   { key: 'start_chatflow', name: 'START_CHATFLOW' },
+  { key: 'move_kanban_stage', name: 'MOVE_KANBAN_STAGE' },
 ];
 Object.values(AUTOMATIONS).forEach(event => {
   if (!event.actions.some(action => action.key === 'assign_least_busy')) {
@@ -762,6 +796,14 @@ export const AUTOMATION_RULE_EVENTS = [
   {
     key: 'conversation_waiting',
     value: 'CONVERSATION_WAITING',
+  },
+  {
+    key: 'conversation_label_added',
+    value: 'CONVERSATION_LABEL_ADDED',
+  },
+  {
+    key: 'conversation_unresolved',
+    value: 'CONVERSATION_UNRESOLVED',
   },
 ];
 
@@ -859,6 +901,11 @@ export const AUTOMATION_ACTION_TYPES = [
   {
     key: 'start_chatflow',
     label: 'START_CHATFLOW',
+    inputType: 'search_select',
+  },
+  {
+    key: 'move_kanban_stage',
+    label: 'MOVE_KANBAN_STAGE',
     inputType: 'search_select',
   },
   {

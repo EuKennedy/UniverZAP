@@ -61,6 +61,7 @@ onMounted(() => {
   store.dispatch('campaigns/get');
   store.dispatch('automations/get');
   store.dispatch('chatflows/get');
+  store.dispatch('funnels/get');
   if (isSLAEnabled.value) {
     store.dispatch('sla/get');
   }

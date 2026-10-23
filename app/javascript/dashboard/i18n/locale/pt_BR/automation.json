@@ -138,7 +138,9 @@
       "CONVERSATION_OPENED": "Conversa Aberta",
       "CONVERSATION_AD_REFERRAL": "Lead de anúncio (Click-to-WhatsApp)",
       "CONVERSATION_RECURRING_CUSTOMER": "Cliente recorrente (já teve atendimento encerrado)",
-      "CONVERSATION_WAITING": "Cliente esperando atendente (minutos)"
+      "CONVERSATION_WAITING": "Cliente esperando atendente (minutos)",
+      "CONVERSATION_LABEL_ADDED": "Etiqueta ou status aplicado",
+      "CONVERSATION_UNRESOLVED": "Aberta há tempo demais (minutos)"
     },
     "ACTIONS": {
       "ASSIGN_AGENT": "Atribuir ao Atendente",
@@ -160,6 +162,7 @@
       "ASSIGN_LEAST_BUSY": "Reatribuir ao atendente menos ocupado",
       "NOTIFY_TEAM": "Avisar um time (nota privada com menção)",
       "START_CHATFLOW": "Iniciar um Chatflow",
+      "MOVE_KANBAN_STAGE": "Mover o card do Kanban para uma etapa",
       "ADD_SLA": "Adicionar SLA",
       "OPEN_CONVERSATION": "Abrir conversa",
       "PENDING_CONVERSATION": "Marcar conversa como pendente"
@@ -183,6 +186,7 @@
       "INBOX": "Caixa de Entrada",
       "CONVERSATION_LANGUAGE": "Idioma da conversa",
       "WAITING_MINUTES": "Minutos esperando atendente",
+      "OPEN_MINUTES": "Minutos desde o início da conversa",
       "PHONE_NUMBER": "Número de Telefone",
       "STATUS": "Status",
       "BROWSER_LANGUAGE": "Idioma do navegador",

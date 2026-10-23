@@ -155,6 +155,8 @@ class AutomationRules::ConditionsFilterService < FilterService
         build_label_query_string(query_hash, current_index, query_operator)
       elsif attribute_key == 'waiting_minutes'
         " EXTRACT(EPOCH FROM (NOW() - #{table_name}.waiting_since)) / 60 #{filter_operator_value} #{query_operator} "
+      elsif attribute_key == 'open_minutes'
+        " EXTRACT(EPOCH FROM (NOW() - #{table_name}.created_at)) / 60 #{filter_operator_value} #{query_operator} "
       else
         " #{table_name}.#{attribute_key} #{filter_operator_value} #{query_operator} "
       end

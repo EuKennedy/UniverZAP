@@ -275,6 +275,38 @@ describe AutomationRuleListener do
     end
   end
 
+  describe 'conversation_label_added (fired from conversation_updated)' do
+    let!(:automation_rule) do
+      create(:automation_rule, event_name: 'conversation_label_added', account: account,
+                               conditions: [{ 'attribute_key' => 'labels', 'filter_operator' => 'equal_to',
+                                              'values' => ['agendado'], 'query_operator' => nil }])
+    end
+
+    def updated_event(previous, current, performed_by: nil)
+      Events::Base.new('conversation_updated', Time.zone.now,
+                       { conversation: conversation, changed_attributes: { label_list: [previous, current] }, performed_by: performed_by })
+    end
+
+    it 'runs the rule once when the label is added' do
+      listener.conversation_updated(updated_event([], %w[agendado]))
+
+      expect(AutomationRules::ActionService).to have_received(:new).with(automation_rule, account, conversation).once
+    end
+
+    it 'does not run when another label is added or the label is removed' do
+      listener.conversation_updated(updated_event([], %w[confirmado]))
+      listener.conversation_updated(updated_event(%w[agendado], []))
+
+      expect(AutomationRules::ActionService).not_to have_received(:new).with(automation_rule, account, conversation)
+    end
+
+    it 'does not run for changes made by an automation rule' do
+      listener.conversation_updated(updated_event([], %w[agendado], performed_by: automation_rule))
+
+      expect(AutomationRules::ActionService).not_to have_received(:new).with(automation_rule, account, conversation)
+    end
+  end
+
   describe 'conversation_recurring_customer' do
     let!(:automation_rule) { create(:automation_rule, event_name: 'conversation_recurring_customer', account: account) }
     let(:event) do
