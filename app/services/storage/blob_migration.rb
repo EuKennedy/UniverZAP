@@ -27,7 +27,11 @@ class Storage::BlobMigration
   def migrate(blob)
     result = copy(blob)
     # Sem o arquivo na origem não há o que levar: o blob fica onde está.
+    # update_columns de propósito: só muda onde o arquivo mora, sem tocar
+    # updated_at nem disparar o touch nos anexos e mensagens de cada blob.
+    # rubocop:disable Rails/SkipsModelValidations
     blob.update_columns(service_name: @to) unless result == :missing
+    # rubocop:enable Rails/SkipsModelValidations
     @totals[result] += 1
     progress
   rescue StandardError => e
