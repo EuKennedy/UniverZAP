@@ -1,11 +1,10 @@
 # Connecting a WooCommerce store, the way SAK does it but without a plugin:
 # probe the keys, save them (encrypted), ask the store to send order webhooks
-# here (signed with a secret only this account has) and import the last
-# BACKFILL_DAYS of orders in the background. Reconnecting replaces the keys
-# and the webhooks; disconnecting removes the webhooks from the store too.
+# here (signed with a secret only this account has) and import the store's
+# whole order history in the background. From then on the webhooks keep the
+# orders current. Reconnecting replaces the keys and the webhooks;
+# disconnecting removes the webhooks from the store too.
 class Woocommerce::ConnectService
-  BACKFILL_DAYS = 90
-
   def initialize(account)
     @account = account
   end
@@ -19,8 +18,22 @@ class Woocommerce::ConnectService
     connection.update!(store_url: store_url, consumer_key: consumer_key, consumer_secret: consumer_secret,
                        status: :connected, last_error: nil, webhook_ids: [])
     connection.update!(webhook_ids: register_webhooks(connection))
-    Woocommerce::SyncJob.perform_later(connection.id, BACKFILL_DAYS.days.ago.iso8601)
+    Woocommerce::SyncJob.perform_later(connection.id)
     connection
+  end
+
+  # The webhooks are what spare the API, so the daily check makes sure both
+  # still exist and are on. WooCommerce switches one off after repeated
+  # failed deliveries; a missing one is registered again.
+  def ensure_webhooks
+    connection = @account.store_connection
+    return reregister_webhooks(connection) if connection.webhook_ids.size < Woocommerce::Client::WEBHOOK_TOPICS.size
+
+    connection.webhook_ids.map { |id| client(connection).webhook(id) }
+              .reject { |hook| hook['status'] == 'active' }
+              .each { |hook| client(connection).activate_webhook(hook['id']) }
+  rescue Woocommerce::Client::NotFound
+    reregister_webhooks(connection)
   end
 
   def disconnect
@@ -42,6 +55,11 @@ class Woocommerce::ConnectService
     Woocommerce::Client::WEBHOOK_TOPICS.map do |topic|
       client(connection).create_webhook(topic: topic, delivery_url: connection.webhook_url, secret: connection.webhook_secret)['id']
     end
+  end
+
+  def reregister_webhooks(connection)
+    remove_webhooks(connection)
+    connection.update!(webhook_ids: register_webhooks(connection))
   end
 
   # Best effort: the store may already be gone or the keys revoked.

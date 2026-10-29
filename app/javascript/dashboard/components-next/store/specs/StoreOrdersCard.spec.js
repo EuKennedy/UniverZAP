@@ -10,7 +10,7 @@ vi.mock('dashboard/composables', () => ({ useAlert: vi.fn() }));
 const order = (id, extra = {}) => ({
   id,
   number: String(1040 + id),
-  status: 'processing',
+  status: 'completed',
   currency: 'BRL',
   total: 189.9,
   payment_method_title: 'Pix',
@@ -22,61 +22,92 @@ const order = (id, extra = {}) => ({
   ...extra,
 });
 
-const mountCard = async data => {
-  WoocommerceAPI.getOrders.mockResolvedValue({ data });
+const page = (orders, extra = {}) => ({
+  connected: true,
+  store_name: 'lizzon.com.br',
+  customer: { customer_name: 'Rosana Rita', customer_email: 'rosana@x.com' },
+  metrics: {
+    orders_count: 2,
+    total_spent: 239.9,
+    average_ticket: 119.95,
+    last_order_at: '2026-10-20T13:00:00Z',
+  },
+  orders,
+  has_more: false,
+  ...extra,
+});
+
+const mountCard = async (...responses) => {
+  responses.forEach(data =>
+    WoocommerceAPI.getOrders.mockResolvedValueOnce({ data })
+  );
   const wrapper = mount(StoreOrdersCard, { props: { contactId: 7 } });
   await flushPromises();
   return wrapper;
 };
 
 describe('StoreOrdersCard', () => {
-  it('shows the spend and the last order with items and tracking', async () => {
-    const wrapper = await mountCard({
-      connected: true,
-      metrics: {
-        orders_count: 2,
-        total_spent: 239.9,
-        average_ticket: 119.95,
-        last_order_at: '2026-10-20T13:00:00Z',
-      },
-      orders: [
+  beforeEach(() => WoocommerceAPI.getOrders.mockReset());
+
+  it('shows who she is in the store, her spend and the order on its way', async () => {
+    const wrapper = await mountCard(
+      page([
         order(2, {
-          status: 'completed',
+          status: 'processing',
           tracking: { code: 'QB123456789BR', carrier: 'Correios' },
         }),
         order(1, { total: 50 }),
-      ],
-    });
-
-    expect(WoocommerceAPI.getOrders).toHaveBeenCalledWith(7);
-    expect(wrapper.find('[data-testid="store-stat-orders"]').text()).toContain(
-      '2'
+      ])
     );
+
+    expect(WoocommerceAPI.getOrders).toHaveBeenCalledWith(7, 1);
+    expect(wrapper.text()).toContain('Orders at lizzon.com.br');
+    expect(wrapper.text()).toContain('Rosana Rita · customer of lizzon.com.br');
+    expect(wrapper.find('[data-testid="store-recurring"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="store-stat-spent"]').text()).toMatch(
       /239[.,]90/
     );
-    const latest = wrapper.find('[data-testid="store-latest-order"]');
-    expect(latest.text()).toContain('Order #1042');
-    expect(latest.text()).toContain('Shipped');
-    expect(latest.text()).toContain('2× Booster Ativador 500ml');
-    expect(latest.text()).toContain('QB123456789BR');
+    const current = wrapper.find('[data-testid="store-current-order"]');
+    expect(current.text()).toContain('Order #1042');
+    expect(current.text()).toContain('Paid');
+    expect(current.text()).toContain('2× Booster Ativador 500ml');
+    expect(current.text()).toContain('QB123456789BR');
     expect(wrapper.text()).toContain('Order #1041');
+    expect(wrapper.text()).toContain('Shipped');
+  });
+
+  it('keeps a delivered order in the history, with nothing in progress', async () => {
+    const wrapper = await mountCard(page([order(1)]));
+
+    expect(wrapper.find('[data-testid="store-current-order"]').exists()).toBe(
+      false
+    );
+    expect(wrapper.text()).toContain('No order in progress');
+    expect(wrapper.findAll('[data-testid="store-order-row"]')).toHaveLength(1);
   });
 
   it('offers the payment link only while the order waits for payment', async () => {
-    const pending = await mountCard({
-      connected: true,
-      metrics: {},
-      orders: [order(1, { status: 'pending' })],
-    });
+    const pending = await mountCard(page([order(1, { status: 'pending' })]));
     expect(pending.text()).toContain('Payment link');
 
-    const paid = await mountCard({
-      connected: true,
-      metrics: {},
-      orders: [order(1)],
-    });
+    const paid = await mountCard(page([order(1, { status: 'processing' })]));
     expect(paid.text()).not.toContain('Payment link');
+  });
+
+  it('loads older orders on demand', async () => {
+    const wrapper = await mountCard(
+      page([order(3), order(2)], { has_more: true }),
+      page([order(1)], { has_more: false })
+    );
+
+    await wrapper.find('[data-testid="store-load-more"]').trigger('click');
+    await flushPromises();
+
+    expect(WoocommerceAPI.getOrders).toHaveBeenLastCalledWith(7, 2);
+    expect(wrapper.findAll('[data-testid="store-order-row"]')).toHaveLength(3);
+    expect(wrapper.find('[data-testid="store-load-more"]').exists()).toBe(
+      false
+    );
   });
 
   it('stays hidden while no store is connected', async () => {

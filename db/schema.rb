@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_21_210000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_29_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -2243,9 +2243,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_21_210000) do
     t.datetime "store_updated_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "customer_external_id"
     t.index ["account_id"], name: "index_store_orders_on_account_id"
     t.index ["contact_id", "placed_at"], name: "index_store_orders_on_contact_id_and_placed_at"
     t.index ["contact_id"], name: "index_store_orders_on_contact_id"
+    t.index ["store_connection_id", "customer_external_id"], name: "index_store_orders_on_connection_and_customer"
     t.index ["store_connection_id", "external_id"], name: "index_store_orders_on_store_connection_id_and_external_id", unique: true
     t.index ["store_connection_id"], name: "index_store_orders_on_store_connection_id"
   end

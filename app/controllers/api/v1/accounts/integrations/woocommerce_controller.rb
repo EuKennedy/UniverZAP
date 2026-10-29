@@ -1,9 +1,10 @@
 # UniverZAP: the workspace's WooCommerce store. Only e-commerce workspaces have
 # it. Admins connect, resync and disconnect; any agent reads a contact's orders
-# for the customer sheet. The keys never come back out: show returns the store
-# URL, the status and the counters.
+# for the customer sheet, straight from store_orders (the store is never asked
+# while someone opens a conversation). The keys never come back out: show
+# returns the store URL, the status and the counters.
 class Api::V1::Accounts::Integrations::WoocommerceController < Api::V1::Accounts::BaseController
-  RECENT_ORDERS = 5
+  ORDERS_PER_PAGE = 10
 
   before_action :ensure_store_vertical
   before_action :check_admin_authorization?, only: [:create, :sync, :destroy]
@@ -24,8 +25,10 @@ class Api::V1::Accounts::Integrations::WoocommerceController < Api::V1::Accounts
     connection = Current.account.store_connection
     return head :not_found if connection.nil?
 
-    since = connection.last_synced_at || Woocommerce::ConnectService::BACKFILL_DAYS.days.ago
-    Woocommerce::SyncJob.perform_later(connection.id, since.iso8601, silent: false)
+    # Never synced means the history import did not finish: run it again
+    # (orders already stored are skipped). Otherwise catch up from the last sync.
+    since = connection.last_synced_at && (connection.last_synced_at - 5.minutes)
+    Woocommerce::SyncJob.perform_later(connection.id, since&.iso8601, silent: since.nil?)
     head :accepted
   end
 
@@ -34,13 +37,19 @@ class Api::V1::Accounts::Integrations::WoocommerceController < Api::V1::Accounts
     head :no_content
   end
 
+  # The whole history, a page at a time, newest first.
   def orders
     contact = Current.account.contacts.find(params[:contact_id])
-    orders = Current.account.store_orders.where(contact: contact).recent_first.limit(RECENT_ORDERS)
+    scope = Current.account.store_orders.where(contact: contact).recent_first
+    page = [params[:page].to_i, 1].max
+    orders = scope.offset((page - 1) * ORDERS_PER_PAGE).limit(ORDERS_PER_PAGE + 1).to_a
     render json: {
       connected: Current.account.store_connection.present?,
+      store_name: store_name(Current.account.store_connection),
+      customer: scope.first&.slice(:customer_name, :customer_email, :customer_phone),
       metrics: Current.account.store_orders.metrics_for(contact),
-      orders: orders.map { |order| order_json(order) }
+      orders: orders.first(ORDERS_PER_PAGE).map { |order| order_json(order) },
+      has_more: orders.size > ORDERS_PER_PAGE
     }
   end
 
@@ -48,6 +57,10 @@ class Api::V1::Accounts::Integrations::WoocommerceController < Api::V1::Accounts
 
   def ensure_store_vertical
     head :not_found unless VerticalProfile.for(Current.account).store_connector?
+  end
+
+  def store_name(connection)
+    connection && URI.parse(connection.store_url).host.to_s.delete_prefix('www.')
   end
 
   def connection_json(connection)

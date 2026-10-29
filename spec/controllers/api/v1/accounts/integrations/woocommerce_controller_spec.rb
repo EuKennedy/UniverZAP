@@ -55,5 +55,23 @@ RSpec.describe 'WooCommerce integration API', type: :request do
     expect(body['metrics']).to include('orders_count' => 2, 'total_spent' => 150.0, 'average_ticket' => 75.0)
     expect(body['orders'].pluck('number')).to eq(%w[1 2 3])
     expect(body['orders'].first['admin_url']).to eq('https://loja.lizzon.com.br/wp-admin/post.php?post=1&action=edit')
+    expect(body).to include('store_name' => 'loja.lizzon.com.br', 'has_more' => false)
+  end
+
+  it 'pages through the whole history, newest first', :aggregate_failures do
+    contact = create(:contact, account: account)
+    12.times do |i|
+      connection.store_orders.create!(account: account, contact: contact, external_id: (i + 1).to_s, number: (i + 1).to_s,
+                                      status: 'completed', customer_name: 'Rosana Rita', placed_at: (i + 1).days.ago)
+    end
+
+    get "#{base}/orders", params: { contact_id: contact.id }, headers: agent.create_new_auth_token
+    first_page = response.parsed_body
+    get "#{base}/orders", params: { contact_id: contact.id, page: 2 }, headers: agent.create_new_auth_token
+
+    expect(first_page['orders'].size).to eq(10)
+    expect(first_page).to include('has_more' => true)
+    expect(first_page['customer']).to include('customer_name' => 'Rosana Rita')
+    expect(response.parsed_body['orders'].pluck('number')).to eq(%w[11 12])
   end
 end

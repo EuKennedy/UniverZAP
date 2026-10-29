@@ -26,8 +26,33 @@ RSpec.describe Woocommerce::ConnectService do
     end).to have_been_made.twice
   end
 
-  it 'imports the last 90 days in the background' do
-    expect { connect }.to have_enqueued_job(Woocommerce::SyncJob)
+  it 'imports the whole order history in the background' do
+    expect { connect }.to have_enqueued_job(Woocommerce::SyncJob).with(kind_of(Integer))
+  end
+
+  describe '#ensure_webhooks' do
+    before { connect }
+
+    it 'switches back on a webhook the store turned off' do
+      stub_request(:get, %r{\A#{api}/webhooks/11}).to_return(status: 200, body: { id: 11, status: 'active' }.to_json)
+      stub_request(:get, %r{\A#{api}/webhooks/12}).to_return(status: 200, body: { id: 12, status: 'disabled' }.to_json)
+      stub_request(:put, %r{\A#{api}/webhooks/12}).to_return(status: 200, body: { id: 12, status: 'active' }.to_json)
+
+      described_class.new(account).ensure_webhooks
+
+      expect(a_request(:put, %r{\A#{api}/webhooks/12}).with { |req| JSON.parse(req.body)['status'] == 'active' }).to have_been_made
+    end
+
+    it 'registers the webhooks again when one is gone' do
+      stub_request(:get, %r{\A#{api}/webhooks/11}).to_return(status: 404, body: { message: 'ID inválido' }.to_json)
+      stub_request(:delete, %r{\A#{api}/webhooks/1[12]}).to_return(status: 200, body: '{}')
+      stub_request(:post, %r{\A#{api}/webhooks})
+        .to_return({ status: 201, body: { id: 21 }.to_json }, { status: 201, body: { id: 22 }.to_json })
+
+      described_class.new(account).ensure_webhooks
+
+      expect(account.store_connection.reload.webhook_ids).to eq([21, 22])
+    end
   end
 
   it 'sends the keys as query parameters, which WordPress hosts do not strip' do

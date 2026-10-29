@@ -159,8 +159,9 @@ belezaki_catalog_sync_all_job:
   class: 'Belezaki::CatalogSyncAllJob'
   queue: scheduled_jobs
 
-# WooCommerce: busca a cada 15 min os pedidos que algum webhook não entregou.
+# WooCommerce: os pedidos chegam por webhook. Uma vez por dia (03h30 de
+# Brasília) confere os webhooks e busca só o que mudou desde a última vez.
 woocommerce_poll_all_job:
-  cron: '*/15 * * * *'
+  cron: '30 6 * * *'
   class: 'Woocommerce::PollAllJob'
   queue: scheduled_jobs
