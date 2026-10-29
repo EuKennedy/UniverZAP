@@ -10,6 +10,7 @@
 # vazia para pular o job.
 
 require 'json'
+require_relative '../lib/univerzap_ci'
 require_relative '../lib/univerzap_ci/test_plan'
 
 base = ARGV[0].to_s

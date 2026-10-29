@@ -18,7 +18,7 @@ RSpec.describe UniverzapCi::TestPlan do
 
   def plan(*changed, deleted: [])
     described_class.new(changed + deleted, specs: specs.keys, read: ->(path) { specs.fetch(path) },
-                                           exists: ->(path) { !deleted.include?(path) })
+                                           exists: ->(path) { deleted.exclude?(path) })
   end
 
   it 'runs the mirror spec and every spec citing the changed class, nothing else', :aggregate_failures do
