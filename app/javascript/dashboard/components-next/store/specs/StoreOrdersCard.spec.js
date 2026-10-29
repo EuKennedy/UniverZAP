@@ -18,6 +18,7 @@ const order = (id, extra = {}) => ({
   items: [{ name: 'Booster Ativador 500ml', quantity: 2, total: '159.80' }],
   tracking: {},
   placed_at: '2026-10-20T13:00:00Z',
+  paid_at: '2026-10-20T14:00:00Z',
   admin_url: `https://loja.x/wp-admin/post.php?post=${id}&action=edit`,
   ...extra,
 });
@@ -34,6 +35,7 @@ const page = (orders, extra = {}) => ({
   },
   orders,
   has_more: false,
+  total_count: orders.length,
   ...extra,
 });
 
@@ -41,23 +43,30 @@ const mountCard = async (...responses) => {
   responses.forEach(data =>
     WoocommerceAPI.getOrders.mockResolvedValueOnce({ data })
   );
-  const wrapper = mount(StoreOrdersCard, { props: { contactId: 7 } });
+  const wrapper = mount(StoreOrdersCard, {
+    props: { contactId: 7 },
+    attachTo: document.body,
+  });
   await flushPromises();
   return wrapper;
 };
 
-describe('StoreOrdersCard', () => {
-  beforeEach(() => WoocommerceAPI.getOrders.mockReset());
+const toggles = wrapper =>
+  wrapper.findAll('[data-testid="store-order-toggle"]');
+const openNumbers = wrapper =>
+  toggles(wrapper)
+    .filter(button => button.attributes('aria-expanded') === 'true')
+    .map(button => button.text().match(/#(\d+)/)[1]);
 
-  it('shows who she is in the store, her spend and the order on its way', async () => {
+describe('StoreOrdersCard', () => {
+  beforeEach(() => {
+    WoocommerceAPI.getOrders.mockReset();
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  it('shows who she is in the store, her spend and every order closed', async () => {
     const wrapper = await mountCard(
-      page([
-        order(2, {
-          status: 'processing',
-          tracking: { code: 'QB123456789BR', carrier: 'Correios' },
-        }),
-        order(1, { total: 50 }),
-      ])
+      page([order(2, { status: 'processing' }), order(1, { total: 50 })])
     );
 
     expect(WoocommerceAPI.getOrders).toHaveBeenCalledWith(7, 1);
@@ -67,23 +76,61 @@ describe('StoreOrdersCard', () => {
     expect(wrapper.find('[data-testid="store-stat-spent"]').text()).toMatch(
       /239[.,]90/
     );
-    const current = wrapper.find('[data-testid="store-current-order"]');
-    expect(current.text()).toContain('Order #1042');
-    expect(current.text()).toContain('Paid');
-    expect(current.text()).toContain('2× Booster Ativador 500ml');
-    expect(current.text()).toContain('QB123456789BR');
-    expect(wrapper.text()).toContain('Order #1041');
-    expect(wrapper.text()).toContain('Shipped');
+    expect(wrapper.text()).toContain('2 orders');
+    expect(toggles(wrapper)).toHaveLength(2);
+    expect(toggles(wrapper)[0].text()).toContain('Order #1042');
+    expect(toggles(wrapper)[0].text()).toContain('Paid');
+    expect(toggles(wrapper)[0].text()).toContain('2 items');
+    expect(openNumbers(wrapper)).toEqual([]);
   });
 
-  it('keeps a delivered order in the history, with nothing in progress', async () => {
-    const wrapper = await mountCard(page([order(1)]));
+  it('opens the summary of the order clicked, one at a time', async () => {
+    const wrapper = await mountCard(
+      page([
+        order(2, { tracking: { code: 'QB123456789BR', carrier: 'Correios' } }),
+        order(1),
+      ])
+    );
 
-    expect(wrapper.find('[data-testid="store-current-order"]').exists()).toBe(
+    await toggles(wrapper)[0].trigger('click');
+    expect(openNumbers(wrapper)).toEqual(['1042']);
+    const summary = wrapper.findAll('[data-testid="store-order-summary"]')[0];
+    expect(summary.text()).toContain('2× Booster Ativador 500ml');
+    expect(summary.text()).toContain('QB123456789BR');
+    expect(summary.text()).toContain('paid on');
+    expect(summary.text()).toContain('1 of 2');
+
+    await toggles(wrapper)[1].trigger('click');
+    expect(openNumbers(wrapper)).toEqual(['1041']);
+
+    await toggles(wrapper)[1].trigger('click');
+    expect(openNumbers(wrapper)).toEqual([]);
+  });
+
+  it('walks to the older order and loads the next page on the way', async () => {
+    const wrapper = await mountCard(
+      page([order(3), order(2)], { has_more: true, total_count: 3 }),
+      page([order(1)], { has_more: false, total_count: 3 })
+    );
+
+    await toggles(wrapper)[1].trigger('click');
+    await wrapper
+      .findAll('[data-testid="store-order-older"]')[1]
+      .trigger('click');
+    await flushPromises();
+
+    expect(WoocommerceAPI.getOrders).toHaveBeenLastCalledWith(7, 2);
+    expect(openNumbers(wrapper)).toEqual(['1041']);
+    expect(wrapper.text()).toContain('3 of 3');
+    expect(wrapper.find('[data-testid="store-load-more"]').exists()).toBe(
       false
     );
-    expect(wrapper.text()).toContain('No order in progress');
-    expect(wrapper.findAll('[data-testid="store-order-row"]')).toHaveLength(1);
+
+    await wrapper
+      .findAll('[data-testid="store-order-newer"]')[2]
+      .trigger('click');
+    await flushPromises();
+    expect(openNumbers(wrapper)).toEqual(['1042']);
   });
 
   it('offers the payment link only while the order waits for payment', async () => {
@@ -92,22 +139,6 @@ describe('StoreOrdersCard', () => {
 
     const paid = await mountCard(page([order(1, { status: 'processing' })]));
     expect(paid.text()).not.toContain('Payment link');
-  });
-
-  it('loads older orders on demand', async () => {
-    const wrapper = await mountCard(
-      page([order(3), order(2)], { has_more: true }),
-      page([order(1)], { has_more: false })
-    );
-
-    await wrapper.find('[data-testid="store-load-more"]').trigger('click');
-    await flushPromises();
-
-    expect(WoocommerceAPI.getOrders).toHaveBeenLastCalledWith(7, 2);
-    expect(wrapper.findAll('[data-testid="store-order-row"]')).toHaveLength(3);
-    expect(wrapper.find('[data-testid="store-load-more"]').exists()).toBe(
-      false
-    );
   });
 
   it('stays hidden while no store is connected', async () => {
