@@ -4,14 +4,19 @@ on:
   push:
     branches: [main, develop, 'univerzap/**']
   # PRs into the production branch (univerzap/phase-0-saneamento) get the
-  # full gate before merge. Feature branches use the `uz/` prefix, outside
-  # the push filter above, so each PR runs CI once instead of twice.
+  # gate before merge. Feature branches use the `uz/` prefix, outside the push
+  # filter above, so each PR runs CI once instead of twice.
   pull_request:
     branches: [main, develop, 'univerzap/**']
   # Manual re-run. A GitHub Actions outage once left a commit with no run at
   # all — the push webhook never fired — and with only push triggers the sole
   # way to test it again was to invent a new commit.
   workflow_dispatch:
+    inputs:
+      full:
+        description: 'Rodar a suíte inteira, não só o que mudou'
+        type: boolean
+        default: false
 
 concurrency:
   group: univerzap-ci-${{ github.workflow }}-${{ github.ref }}
@@ -22,22 +27,76 @@ permissions:
   packages: write
 
 jobs:
+  # Num PR roda só o que o PR mexeu: os specs dos arquivos alterados, os
+  # testes de front que dependem deles e o lint só desses arquivos (regras em
+  # lib/univerzap_ci/test_plan.rb). Mexer no armário do almoxarifado não
+  # testa o micro-ondas da cozinha.
+  #
+  # A suíte inteira roda quando a mudança sustenta a suíte (Gemfile, factories,
+  # configuração, este arquivo), no push para o branch de produção depois do
+  # merge — a rede de segurança para o que a regra deixar passar, sem segurar
+  # PR nenhum — e no botão manual com "full".
+  plan:
+    name: Plano de testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      full: ${{ steps.plan.outputs.full }}
+      rspec: ${{ steps.plan.outputs.rspec }}
+      rspec_matrix: ${{ steps.plan.outputs.rspec_matrix }}
+      vitest: ${{ steps.plan.outputs.vitest }}
+      rubocop: ${{ steps.plan.outputs.rubocop }}
+      eslint: ${{ steps.plan.outputs.eslint }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: false
+      - name: Decide what to run
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          FULL: ${{ github.event_name == 'push' || inputs.full == true }}
+        run: |
+          # No PR o HEAD é o merge com o base, então base..HEAD é o PR.
+          # Fora dele (botão manual) compara com o ponto em que o branch
+          # saiu da produção.
+          BASE="$PR_BASE"
+          if [ "$EVENT" != "pull_request" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            BASE=$(git merge-base origin/univerzap/phase-0-saneamento HEAD)
+          fi
+          ruby bin/ci_test_plan.rb "$BASE" $([ "$FULL" = "true" ] && echo full)
+
   lint-ruby:
     name: Lint Ruby (RuboCop)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [plan]
+    if: needs.plan.outputs.rubocop != ''
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
       - name: RuboCop
-        run: bundle exec rubocop --parallel --format progress
+        env:
+          FILES: ${{ needs.plan.outputs.rubocop }}
+        run: |
+          if [ "$FILES" = "ALL" ]; then
+            bundle exec rubocop --parallel --format progress
+          else
+            bundle exec rubocop --force-exclusion --format progress $FILES
+          fi
 
   lint-frontend:
     name: Lint Frontend (ESLint)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [plan]
+    if: needs.plan.outputs.eslint != ''
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -46,12 +105,22 @@ jobs:
           node-version: 24
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm eslint
+      - name: ESLint
+        env:
+          FILES: ${{ needs.plan.outputs.eslint }}
+        run: |
+          if [ "$FILES" = "ALL" ]; then
+            pnpm eslint
+          else
+            pnpm exec eslint $FILES
+          fi
 
   frontend-tests:
     name: Frontend tests (Vitest)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    needs: [plan]
+    if: needs.plan.outputs.vitest != ''
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -61,10 +130,19 @@ jobs:
           cache: 'pnpm'
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
+      # `vitest related` sobe o grafo de imports: roda os testes que importam,
+      # direta ou indiretamente, os arquivos que mudaram.
       - name: Run Vitest
-        run: pnpm run test:coverage
+        env:
+          FILES: ${{ needs.plan.outputs.vitest }}
+        run: |
+          if [ "$FILES" = "ALL" ]; then
+            pnpm run test:coverage
+          else
+            TZ=UTC pnpm exec vitest related --run --no-cache --no-coverage --passWithNoTests $FILES
+          fi
       - name: Upload coverage artifact
-        if: always()
+        if: always() && needs.plan.outputs.vitest == 'ALL'
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
@@ -74,11 +152,12 @@ jobs:
     name: Backend specs (rspec)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: [plan]
+    if: needs.plan.outputs.rspec != ''
     strategy:
       fail-fast: false
-      matrix:
-        ci_node_total: [8]
-        ci_node_index: [0, 1, 2, 3, 4, 5, 6, 7]
+      # 8 máquinas para a suíte inteira; de 1 a 4 para o que o PR mexeu.
+      matrix: ${{ fromJSON(needs.plan.outputs.rspec_matrix) }}
 
     services:
       postgres:
@@ -146,8 +225,16 @@ jobs:
           # fast; CI always exports coverage so we can upload the
           # report as an artifact for inspection.
           COVERAGE: 'true'
+          SPECS: ${{ needs.plan.outputs.rspec }}
         run: |
-          SPEC_FILES=($(find spec -name '*_spec.rb' | sort))
+          if [ "$SPECS" = "ALL" ]; then
+            SPEC_FILES=($(find spec -name '*_spec.rb' | sort))
+          else
+            # spec/enterprise saiu no passo acima; o que o plano listou de lá
+            # não existe mais aqui.
+            SPEC_FILES=()
+            for f in $SPECS; do [ -f "$f" ] && SPEC_FILES+=("$f"); done
+          fi
           TESTS=""
           for i in "${!SPEC_FILES[@]}"; do
             if [ $(( i % ${{ matrix.ci_node_total }} )) -eq ${{ matrix.ci_node_index }} ]; then
@@ -202,7 +289,9 @@ jobs:
     name: Coverage gate (código UniverZAP)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [backend-tests]
+    needs: [plan, backend-tests]
+    # Cobertura só faz sentido sobre a suíte inteira.
+    if: needs.plan.outputs.full == 'true'
     steps:
       - uses: actions/checkout@v4
       # Sem bundler-cache: o portão usa só json e yaml da stdlib, então
@@ -232,7 +321,7 @@ jobs:
     name: CI pass
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [lint-ruby, lint-frontend, frontend-tests, backend-tests]
+    needs: [plan, lint-ruby, lint-frontend, frontend-tests, backend-tests]
     if: always()
     steps:
       # coverage-gate ainda NÃO entra nesta lista, de propósito.
@@ -247,13 +336,18 @@ jobs:
       # Promover assim que a primeira execução sair verde: acrescentar
       # coverage-gate ao `needs` e ao `if` abaixo, e declarar os pisos medidos
       # em config/coverage_floors.yml.
+      # Pulado conta como aprovado: é o job que o plano deixou de fora porque
+      # o PR não mexeu em nada que ele testa.
       - name: Ensure all required jobs succeeded
         run: |
-          if [ "${{ needs.lint-ruby.result }}" != "success" ] || \
-             [ "${{ needs.lint-frontend.result }}" != "success" ] || \
-             [ "${{ needs.frontend-tests.result }}" != "success" ] || \
-             [ "${{ needs.backend-tests.result }}" != "success" ]; then
+          ok() { [ "$1" = "success" ] || [ "$1" = "skipped" ]; }
+          if [ "${{ needs.plan.result }}" != "success" ] || \
+             ! ok "${{ needs.lint-ruby.result }}" || \
+             ! ok "${{ needs.lint-frontend.result }}" || \
+             ! ok "${{ needs.frontend-tests.result }}" || \
+             ! ok "${{ needs.backend-tests.result }}"; then
             echo "One or more required jobs failed"
+            echo "plan:           ${{ needs.plan.result }}"
             echo "lint-ruby:      ${{ needs.lint-ruby.result }}"
             echo "lint-frontend:  ${{ needs.lint-frontend.result }}"
             echo "frontend-tests: ${{ needs.frontend-tests.result }}"
