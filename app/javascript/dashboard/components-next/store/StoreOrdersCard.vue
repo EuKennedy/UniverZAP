@@ -3,14 +3,16 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import WoocommerceAPI from 'dashboard/api/integrations/woocommerce';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
+import Icon from 'next/icon/Icon.vue';
 import StoreOrderItem from './StoreOrderItem.vue';
+import { formatMoney, formatShortDate } from './storeOrderFormat';
 
-// The customer's orders from the workspace's store, under the sheet and in the
-// same shape as the salon's agenda: who she is in the store, what she spent
-// and her whole history, newest first. Every order starts closed; opening one
-// shows its summary and lets the agent walk to the next one, loading older
-// pages on the way. Everything comes from the orders already imported here:
-// opening a conversation never asks the store.
+// The customer's orders from the workspace's store, under the sheet. Built to
+// be read at a glance while chatting: who she is in the store, four numbers
+// with their colour, and the history as light lines that open one at a time
+// into the order summary, with a way to walk to the next order (loading
+// older pages on the way). Everything comes from the orders already imported
+// here: opening a conversation never asks the store.
 const props = defineProps({
   contactId: { type: Number, required: true },
 });
@@ -42,41 +44,37 @@ const openIndex = computed(() =>
   orders.value.findIndex(order => order.id === openId.value)
 );
 
-const intlLocale = computed(() => locale.value.replace('_', '-'));
-const money = value =>
-  new Intl.NumberFormat(intlLocale.value, {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(Number(value) || 0);
-const day = value =>
-  value
-    ? new Date(value).toLocaleDateString(intlLocale.value, {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-    : '—';
+const money = value => formatMoney(value, locale.value);
+const shortDate = value => formatShortDate(value, locale.value);
 
 const tiles = computed(() => [
   {
     key: 'orders',
+    icon: 'i-lucide-receipt',
+    tone: 'bg-n-iris-3 text-n-iris-11',
     label: t('STORE_ORDERS.ORDERS'),
     value: String(metrics.value.orders_count ?? 0),
   },
   {
     key: 'spent',
+    icon: 'i-lucide-wallet',
+    tone: 'bg-n-teal-3 text-n-teal-11',
     label: t('STORE_ORDERS.SPENT'),
     value: money(metrics.value.total_spent),
   },
   {
     key: 'ticket',
+    icon: 'i-lucide-chart-no-axes-column',
+    tone: 'bg-n-amber-3 text-n-amber-11',
     label: t('STORE_ORDERS.TICKET'),
     value: money(metrics.value.average_ticket),
   },
   {
     key: 'last',
+    icon: 'i-lucide-calendar-clock',
+    tone: 'bg-n-violet-3 text-n-violet-11',
     label: t('STORE_ORDERS.LAST'),
-    value: day(metrics.value.last_order_at),
+    value: shortDate(metrics.value.last_order_at),
   },
 ]);
 
@@ -137,74 +135,88 @@ watch(() => props.contactId, load, { immediate: true });
 </script>
 
 <template>
-  <div
+  <section
     v-if="isLoading || data?.connected"
     ref="root"
-    class="pt-2 border-t border-n-weak text-sm text-n-slate-12 flex flex-col gap-2"
+    class="flex flex-col gap-3 pt-3 border-t border-n-weak"
     data-testid="store-orders"
   >
-    <p class="text-xs uppercase tracking-wide text-n-slate-11">
-      {{ t('STORE_ORDERS.TITLE', { store: storeName }) }}
-    </p>
-    <div v-if="isLoading" class="flex justify-center items-center p-4">
-      <Spinner :size="32" class="text-n-brand" />
+    <header class="flex items-center gap-2.5">
+      <span
+        class="grid rounded-lg size-8 shrink-0 place-content-center bg-brand-gradient"
+      >
+        <Icon icon="i-lucide-shopping-bag" class="size-4 text-[#06131C]" />
+      </span>
+      <div class="flex flex-col flex-1 min-w-0">
+        <h4 class="m-0 text-sm leading-5 truncate font-520 text-n-slate-12">
+          {{ t('STORE_ORDERS.TITLE', { store: storeName }) }}
+        </h4>
+        <p
+          v-if="customerName"
+          class="flex items-center min-w-0 gap-1.5 m-0 text-xs leading-4 font-420 text-n-slate-11"
+          :title="customer.customer_email"
+        >
+          <span class="truncate">{{ customerName }}</span>
+          <span
+            v-if="recurring"
+            class="inline-flex items-center gap-1 shrink-0 px-1.5 rounded-full bg-n-amber-3 text-n-amber-11 text-[11px] leading-4"
+            data-testid="store-recurring"
+          >
+            <Icon icon="i-lucide-repeat" class="size-3" />
+            {{ t('STORE_ORDERS.RECURRENT') }}
+          </span>
+        </p>
+      </div>
+    </header>
+
+    <div v-if="isLoading" class="flex items-center justify-center p-4">
+      <Spinner :size="28" class="text-n-brand" />
     </div>
 
-    <p v-else-if="!orders.length" class="text-n-slate-11">
+    <p
+      v-else-if="!orders.length"
+      class="m-0 px-3 py-2.5 text-xs rounded-lg font-420 bg-n-alpha-1 text-n-slate-11"
+    >
       {{ t('STORE_ORDERS.EMPTY', { store: storeName }) }}
     </p>
 
     <template v-else>
-      <p
-        class="flex items-center gap-2 text-xs text-n-slate-11"
-        :title="customer.customer_email"
-      >
-        <span v-if="customerName" class="truncate">
-          {{
-            t('STORE_ORDERS.CLIENT_AT', {
-              name: customerName,
-              store: storeName,
-            })
-          }}
-        </span>
-        <span
-          v-if="recurring"
-          class="shrink-0 px-1.5 py-0.5 rounded bg-n-amber-5 text-n-amber-12"
-          data-testid="store-recurring"
-        >
-          {{ t('STORE_ORDERS.RECURRENT') }}
-        </span>
-      </p>
-
-      <dl
-        class="grid grid-cols-2 gap-x-3 gap-y-2 m-0 rounded-lg px-3 py-2 bg-n-slate-2 outline outline-1 outline-n-weak"
-        data-testid="store-stats"
-      >
+      <dl class="grid grid-cols-2 gap-1.5 m-0" data-testid="store-stats">
         <div
           v-for="tile in tiles"
           :key="tile.key"
-          class="flex flex-col min-w-0"
+          class="flex items-center min-w-0 gap-2 px-2 py-1.5 rounded-lg bg-n-alpha-1"
           :data-testid="`store-stat-${tile.key}`"
         >
-          <dt class="text-xs text-n-slate-11 truncate">{{ tile.label }}</dt>
-          <dd class="m-0 text-sm font-semibold truncate text-n-slate-12">
-            {{ tile.value }}
-          </dd>
+          <span
+            class="grid rounded-md size-7 shrink-0 place-content-center"
+            :class="tile.tone"
+          >
+            <Icon :icon="tile.icon" class="size-3.5" />
+          </span>
+          <div class="flex flex-col min-w-0">
+            <dd
+              class="m-0 text-[13px] leading-5 truncate tabular-nums font-520 text-n-slate-12"
+            >
+              {{ tile.value }}
+            </dd>
+            <dt class="text-[11px] leading-4 truncate font-420 text-n-slate-10">
+              {{ tile.label }}
+            </dt>
+          </div>
         </div>
       </dl>
 
-      <section class="flex flex-col gap-1.5">
-        <header class="flex items-baseline justify-between gap-2">
-          <p class="text-xs uppercase tracking-wide text-n-slate-11">
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-xs font-460 text-n-slate-11">
             {{ t('STORE_ORDERS.LIST_TITLE') }}
-          </p>
-          <span class="text-xs tabular-nums text-n-slate-10">
+          </span>
+          <span class="text-xs tabular-nums font-420 text-n-slate-10">
             {{ t('STORE_ORDERS.LIST_COUNT', totalCount) }}
           </span>
-        </header>
-        <ul
-          class="flex flex-col m-0 list-none overflow-hidden rounded-lg bg-n-slate-2 outline outline-1 outline-n-weak divide-y divide-n-weak"
-        >
+        </div>
+        <ul class="flex flex-col gap-0.5 m-0 list-none">
           <StoreOrderItem
             v-for="(order, index) in orders"
             :key="order.id"
@@ -218,20 +230,20 @@ watch(() => props.contactId, load, { immediate: true });
             @newer="step(-1)"
             @older="step(1)"
           />
-          <li v-if="hasMore">
-            <button
-              type="button"
-              class="flex items-center justify-center w-full gap-2 px-3 py-2 text-xs text-n-slate-11 hover:bg-n-alpha-1 hover:text-n-slate-12 disabled:opacity-60"
-              :disabled="isLoadingMore"
-              data-testid="store-load-more"
-              @click="loadMore"
-            >
-              <Spinner v-if="isLoadingMore" :size="14" />
-              {{ t('STORE_ORDERS.LOAD_MORE') }}
-            </button>
-          </li>
         </ul>
-      </section>
+        <button
+          v-if="hasMore"
+          type="button"
+          class="flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg font-420 text-n-slate-11 hover:bg-n-alpha-1 hover:text-n-slate-12 disabled:opacity-60"
+          :disabled="isLoadingMore"
+          data-testid="store-load-more"
+          @click="loadMore"
+        >
+          <Spinner v-if="isLoadingMore" :size="12" />
+          <Icon v-else icon="i-lucide-chevrons-down" class="size-3.5" />
+          {{ t('STORE_ORDERS.LOAD_MORE') }}
+        </button>
+      </div>
     </template>
-  </div>
+  </section>
 </template>

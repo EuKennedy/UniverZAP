@@ -1109,15 +1109,15 @@
   "STORE_ORDERS": {
     "TITLE": "Pedidos na {store}",
     "STORE": "loja",
-    "CLIENT_AT": "{name} · cliente da {store}",
     "RECURRENT": "Recorrente",
     "LIST_TITLE": "Pedidos",
     "LIST_COUNT": "{n} pedido | {n} pedidos",
     "ITEMS": "{n} item | {n} itens",
-    "PAYMENT": "Pagamento",
+    "QUANTITY": "× {quantity}",
+    "MORE_ITEMS": "+{n} item | +{n} itens",
+    "FEWER_ITEMS": "Mostrar menos itens",
+    "SEPARATOR": " · ",
     "PAID_ON": "pago em {date}",
-    "TRACKING": "Rastreio",
-    "TOTAL": "Total",
     "OPEN_IN_STORE": "Abrir na loja",
     "NAVIGATION": "Navegar pelos pedidos desta cliente",
     "NEWER": "Mais recente",
@@ -1129,7 +1129,7 @@
     "TICKET": "Ticket médio",
     "LAST": "Último pedido",
     "EMPTY": "Nenhum pedido desta cliente na {store} ainda.",
-    "ORDER_NUMBER": "Pedido #{number}",
+    "ORDER_NUMBER": "#{number}",
     "COPY_TRACKING": "Copiar código de rastreio",
     "TRACKING_COPIED": "Código de rastreio copiado",
     "PAYMENT_LINK": "Link de pagamento",
@@ -1138,10 +1138,10 @@
       "ON_HOLD": "Em espera",
       "PROCESSING": "Pago",
       "COMPLETED": "Enviado",
+      "DELIVERED": "Entregue",
       "FAILED": "Pagamento recusado",
       "CANCELLED": "Cancelado",
       "REFUNDED": "Reembolsado"
-    },
-    "ITEM": "{quantity}× {name}"
+    }
   }
 }
