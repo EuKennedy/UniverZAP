@@ -1073,7 +1073,7 @@
     "DISCONNECT_CONFIRM": "Remover a loja e os pedidos dela deste workspace?",
     "DISCONNECT_YES": "Sim, desconectar",
     "CANCEL": "Cancelar",
-    "CONNECTED": "Loja conectada. Importando os pedidos dos últimos 90 dias.",
+    "CONNECTED": "Loja conectada. Importando todo o histórico de pedidos.",
     "DISCONNECTED": "Loja desconectada",
     "ERROR": "Não foi possível conectar a loja. Confira o endereço e as chaves.",
     "STATUS": {
@@ -1087,7 +1087,7 @@
     },
     "WHAT_HAPPENS": {
       "TITLE": "O que acontece agora",
-      "WEBHOOKS": "Cada pedido novo ou alterado chega aqui em segundos; a cada 15 minutos também buscamos o que a loja não tiver enviado.",
+      "WEBHOOKS": "Depois da primeira importação, cada pedido novo ou alterado chega por webhook em segundos, sem consultar a loja. Uma vez por dia conferimos os webhooks e buscamos só o que mudou desde a última conferência.",
       "MATCH": "A cliente é encontrada pelo WhatsApp ou pelo e-mail. Cliente nova vira contato.",
       "LABELS": "A conversa aberta acompanha o pedido: aguardando-pagamento, pedido-confirmado, enviado, pagamento-recusado, reembolso."
     },
@@ -1107,18 +1107,23 @@
     }
   },
   "STORE_ORDERS": {
-    "TITLE": "Pedidos da loja",
+    "TITLE": "Pedidos na {store}",
+    "STORE": "loja",
+    "CLIENT_AT": "{name} · cliente da {store}",
+    "RECURRENT": "Recorrente",
+    "IN_PROGRESS": "Pedido em andamento",
+    "NO_IN_PROGRESS": "Nenhum pedido em andamento",
+    "HISTORY": "Histórico de pedidos",
+    "LOAD_MORE": "Ver pedidos anteriores",
     "SPENT": "Total gasto",
     "ORDERS": "Pedidos",
     "TICKET": "Ticket médio",
     "LAST": "Último pedido",
-    "EMPTY": "Nenhum pedido desta cliente ainda.",
+    "EMPTY": "Nenhum pedido desta cliente na {store} ainda.",
     "ORDER_NUMBER": "Pedido #{number}",
-    "TOTAL": "Total",
     "COPY_TRACKING": "Copiar código de rastreio",
     "TRACKING_COPIED": "Código de rastreio copiado",
     "PAYMENT_LINK": "Link de pagamento",
-    "OPEN_IN_STORE": "Abrir no WooCommerce",
     "STATUS": {
       "PENDING": "Aguardando pagamento",
       "ON_HOLD": "Em espera",
@@ -1128,7 +1133,6 @@
       "CANCELLED": "Cancelado",
       "REFUNDED": "Reembolsado"
     },
-    "META": "{date} · {method}",
     "ITEM": "{quantity}× {name}",
     "CARRIER": "· {carrier}"
   }

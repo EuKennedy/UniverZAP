@@ -1073,7 +1073,7 @@
     "DISCONNECT_CONFIRM": "Remove the store and its orders from this workspace?",
     "DISCONNECT_YES": "Yes, disconnect",
     "CANCEL": "Cancel",
-    "CONNECTED": "Store connected. Importing the last 90 days of orders.",
+    "CONNECTED": "Store connected. Importing the whole order history.",
     "DISCONNECTED": "Store disconnected",
     "ERROR": "Could not connect the store. Check the URL and the keys.",
     "STATUS": {
@@ -1087,7 +1087,7 @@
     },
     "WHAT_HAPPENS": {
       "TITLE": "What happens now",
-      "WEBHOOKS": "Every new or changed order arrives here in seconds; every 15 minutes we also catch up anything the store did not send.",
+      "WEBHOOKS": "After the first import, every new or changed order arrives here by webhook in seconds, without querying the store. Once a day we check the webhooks and fetch only what changed since the last check.",
       "MATCH": "The customer is found by WhatsApp number or e-mail. New customers become contacts.",
       "LABELS": "The open conversation follows the order: aguardando-pagamento, pedido-confirmado, enviado, pagamento-recusado, reembolso."
     },
@@ -1107,18 +1107,23 @@
     }
   },
   "STORE_ORDERS": {
-    "TITLE": "Store orders",
+    "TITLE": "Orders at {store}",
+    "STORE": "the store",
+    "CLIENT_AT": "{name} · customer of {store}",
+    "RECURRENT": "Returning",
+    "IN_PROGRESS": "Order in progress",
+    "NO_IN_PROGRESS": "No order in progress",
+    "HISTORY": "Order history",
+    "LOAD_MORE": "Show older orders",
     "SPENT": "Spent",
     "ORDERS": "Orders",
     "TICKET": "Avg. ticket",
     "LAST": "Last order",
-    "EMPTY": "No orders from this customer yet.",
+    "EMPTY": "No orders from this customer at {store} yet.",
     "ORDER_NUMBER": "Order #{number}",
-    "TOTAL": "Total",
     "COPY_TRACKING": "Copy tracking code",
     "TRACKING_COPIED": "Tracking code copied",
     "PAYMENT_LINK": "Payment link",
-    "OPEN_IN_STORE": "Open in WooCommerce",
     "STATUS": {
       "PENDING": "Awaiting payment",
       "ON_HOLD": "On hold",
@@ -1128,7 +1133,6 @@
       "CANCELLED": "Cancelled",
       "REFUNDED": "Refunded"
     },
-    "META": "{date} · {method}",
     "ITEM": "{quantity}× {name}",
     "CARRIER": "· {carrier}"
   }

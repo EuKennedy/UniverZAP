@@ -9,6 +9,7 @@
 #  id                   :bigint           not null, primary key
 #  currency             :string           default("BRL")
 #  customer_email       :string
+#  customer_external_id :string
 #  customer_name        :string
 #  customer_phone       :string
 #  items                :jsonb            not null
@@ -33,6 +34,7 @@
 #
 #  index_store_orders_on_account_id                           (account_id)
 #  index_store_orders_on_contact_id                           (contact_id)
+#  index_store_orders_on_connection_and_customer              (store_connection_id,customer_external_id)
 #  index_store_orders_on_contact_id_and_placed_at             (contact_id,placed_at)
 #  index_store_orders_on_store_connection_id                  (store_connection_id)
 #  index_store_orders_on_store_connection_id_and_external_id  (store_connection_id,external_id) UNIQUE

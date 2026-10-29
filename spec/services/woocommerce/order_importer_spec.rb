@@ -46,6 +46,17 @@ RSpec.describe Woocommerce::OrderImporter do
     expect(contact).to have_attributes(name: 'Rosana Rita', phone_number: '+5531987654321', email: 'rosana@example.com')
   end
 
+  it 'keeps the orders of a registered customer on one contact, whatever phone she used', :aggregate_failures do
+    payload['customer_id'] = 77
+    first = import
+
+    billing = payload['billing'].merge('phone' => '(11) 91234-5678', 'email' => 'outro@example.com')
+    second = import(payload.merge('id' => 2001, 'billing' => billing))
+
+    expect(second.contact).to eq(first.contact)
+    expect(second.customer_external_id).to eq('77')
+  end
+
   it 'updates the same row when the store sends the order again' do
     import
     payload['status'] = 'completed'

@@ -4,7 +4,7 @@
 #     previous status had (see STATUS_LABELS), only if the account has it;
 #   - the order number, value and tracking code fill the sheet's attributes.
 # A payload older than what is stored is ignored, so a late webhook cannot
-# undo a newer status. `silent` (the 90-day backfill) skips the conversation:
+# undo a newer status. `silent` (the history import) skips the conversation:
 # old orders must not relabel today's chats.
 class Woocommerce::OrderImporter
   STATUS_LABELS = {
@@ -32,13 +32,27 @@ class Woocommerce::OrderImporter
     status_changed = order.status != @payload['status']
     order.assign_attributes(attributes)
     order.account = @account
-    order.contact ||= Woocommerce::CustomerMatcher.new(@account, @payload['billing'] || {}).perform
+    order.contact ||= store_account_contact || Woocommerce::CustomerMatcher.new(@account, @payload['billing'] || {}).perform
     order.save!
     reflect_on_conversation(order) if status_changed && !@silent
     order
   end
 
   private
+
+  # A registered customer is one account in the store: her orders stay on one
+  # contact even when she checked out with another phone or e-mail.
+  def store_account_contact
+    return if customer_external_id.nil?
+
+    contact_id = @connection.store_orders.where(customer_external_id: customer_external_id).where.not(contact_id: nil).pick(:contact_id)
+    contact_id && @account.contacts.find_by(id: contact_id)
+  end
+
+  # WooCommerce sends 0 for a guest checkout.
+  def customer_external_id
+    @payload['customer_id'].to_i.positive? ? @payload['customer_id'].to_s : nil
+  end
 
   def stale?(order)
     modified = time(@payload['date_modified_gmt'])
@@ -72,7 +86,8 @@ class Woocommerce::OrderImporter
     {
       customer_name: [billing['first_name'], billing['last_name']].compact_blank.join(' '),
       customer_phone: billing['phone'],
-      customer_email: billing['email']
+      customer_email: billing['email'],
+      customer_external_id: customer_external_id
     }
   end
 

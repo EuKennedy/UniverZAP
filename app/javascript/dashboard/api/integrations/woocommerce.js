@@ -24,9 +24,9 @@ class WoocommerceAPI extends ApiClient {
     return axios.delete(this.url);
   }
 
-  getOrders(contactId) {
+  getOrders(contactId, page = 1) {
     return axios.get(`${this.url}/orders`, {
-      params: { contact_id: contactId },
+      params: { contact_id: contactId, page },
     });
   }
 }
