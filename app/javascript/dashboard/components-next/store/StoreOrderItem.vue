@@ -195,7 +195,10 @@ const copyTracking = async () => {
                   {{ order.tracking.code }}
                   <Icon icon="i-lucide-copy" class="size-3 text-n-slate-10" />
                 </button>
-                <span v-if="order.tracking.carrier" class="block text-n-slate-10">
+                <span
+                  v-if="order.tracking.carrier"
+                  class="block text-n-slate-10"
+                >
                   {{ order.tracking.carrier }}
                 </span>
               </dd>
