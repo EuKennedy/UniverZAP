@@ -1109,15 +1109,15 @@
   "STORE_ORDERS": {
     "TITLE": "Orders at {store}",
     "STORE": "the store",
-    "CLIENT_AT": "{name} · customer of {store}",
     "RECURRENT": "Returning",
     "LIST_TITLE": "Orders",
     "LIST_COUNT": "{n} order | {n} orders",
     "ITEMS": "{n} item | {n} items",
-    "PAYMENT": "Payment",
+    "QUANTITY": "× {quantity}",
+    "MORE_ITEMS": "+{n} item | +{n} items",
+    "FEWER_ITEMS": "Show fewer items",
+    "SEPARATOR": " · ",
     "PAID_ON": "paid on {date}",
-    "TRACKING": "Tracking",
-    "TOTAL": "Total",
     "OPEN_IN_STORE": "Open in store",
     "NAVIGATION": "Browse this customer's orders",
     "NEWER": "Newer",
@@ -1129,7 +1129,7 @@
     "TICKET": "Avg. ticket",
     "LAST": "Last order",
     "EMPTY": "No orders from this customer at {store} yet.",
-    "ORDER_NUMBER": "Order #{number}",
+    "ORDER_NUMBER": "#{number}",
     "COPY_TRACKING": "Copy tracking code",
     "TRACKING_COPIED": "Tracking code copied",
     "PAYMENT_LINK": "Payment link",
@@ -1138,10 +1138,10 @@
       "ON_HOLD": "On hold",
       "PROCESSING": "Paid",
       "COMPLETED": "Shipped",
+      "DELIVERED": "Delivered",
       "FAILED": "Payment failed",
       "CANCELLED": "Cancelled",
       "REFUNDED": "Refunded"
-    },
-    "ITEM": "{quantity}× {name}"
+    }
   }
 }

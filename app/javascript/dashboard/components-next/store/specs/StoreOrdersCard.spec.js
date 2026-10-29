@@ -71,14 +71,14 @@ describe('StoreOrdersCard', () => {
 
     expect(WoocommerceAPI.getOrders).toHaveBeenCalledWith(7, 1);
     expect(wrapper.text()).toContain('Orders at lizzon.com.br');
-    expect(wrapper.text()).toContain('Rosana Rita · customer of lizzon.com.br');
+    expect(wrapper.text()).toContain('Rosana Rita');
     expect(wrapper.find('[data-testid="store-recurring"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="store-stat-spent"]').text()).toMatch(
       /239[.,]90/
     );
     expect(wrapper.text()).toContain('2 orders');
     expect(toggles(wrapper)).toHaveLength(2);
-    expect(toggles(wrapper)[0].text()).toContain('Order #1042');
+    expect(toggles(wrapper)[0].text()).toContain('#1042');
     expect(toggles(wrapper)[0].text()).toContain('Paid');
     expect(toggles(wrapper)[0].text()).toContain('2 items');
     expect(openNumbers(wrapper)).toEqual([]);
@@ -95,7 +95,8 @@ describe('StoreOrdersCard', () => {
     await toggles(wrapper)[0].trigger('click');
     expect(openNumbers(wrapper)).toEqual(['1042']);
     const summary = wrapper.findAll('[data-testid="store-order-summary"]')[0];
-    expect(summary.text()).toContain('2× Booster Ativador 500ml');
+    expect(summary.text()).toContain('Booster Ativador 500ml');
+    expect(summary.text()).toContain('× 2');
     expect(summary.text()).toContain('QB123456789BR');
     expect(summary.text()).toContain('paid on');
     expect(summary.text()).toContain('1 of 2');
@@ -131,6 +132,33 @@ describe('StoreOrdersCard', () => {
       .trigger('click');
     await flushPromises();
     expect(openNumbers(wrapper)).toEqual(['1042']);
+  });
+
+  it('names a plugin status instead of showing its slug', async () => {
+    const wrapper = await mountCard(
+      page([
+        order(2, { status: 'uvf-shipped' }),
+        order(1, { status: 'abc-custom-step' }),
+      ])
+    );
+
+    expect(toggles(wrapper)[0].text()).toContain('Shipped');
+    expect(toggles(wrapper)[1].text()).toContain('Custom step');
+  });
+
+  it('shows only the first items of a long order until asked', async () => {
+    const items = ['A', 'B', 'C', 'D', 'E'].map(name => ({
+      name,
+      quantity: 1,
+      total: '1',
+    }));
+    const wrapper = await mountCard(page([order(1, { items })]));
+
+    await toggles(wrapper)[0].trigger('click');
+    const summary = () => wrapper.find('[data-testid="store-order-summary"]');
+    expect(summary().text()).not.toContain('D');
+    await summary().find('button').trigger('click');
+    expect(summary().text()).toContain('E');
   });
 
   it('offers the payment link only while the order waits for payment', async () => {
