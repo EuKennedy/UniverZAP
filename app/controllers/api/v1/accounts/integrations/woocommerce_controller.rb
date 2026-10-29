@@ -39,24 +39,27 @@ class Api::V1::Accounts::Integrations::WoocommerceController < Api::V1::Accounts
 
   # The whole history, a page at a time, newest first.
   def orders
-    contact = Current.account.contacts.find(params[:contact_id])
-    scope = Current.account.store_orders.where(contact: contact).recent_first
-    page = [params[:page].to_i, 1].max
-    orders = scope.offset((page - 1) * ORDERS_PER_PAGE).limit(ORDERS_PER_PAGE + 1).to_a
+    account = Current.account
+    contact = account.contacts.find(params[:contact_id])
+    scope = account.store_orders.where(contact: contact).recent_first
     render json: {
-      connected: Current.account.store_connection.present?,
-      store_name: store_name(Current.account.store_connection),
+      connected: account.store_connection.present?,
+      store_name: store_name(account.store_connection),
       customer: scope.first&.slice(:customer_name, :customer_email, :customer_phone),
-      metrics: Current.account.store_orders.metrics_for(contact),
-      orders: orders.first(ORDERS_PER_PAGE).map { |order| order_json(order) },
-      has_more: orders.size > ORDERS_PER_PAGE
-    }
+      metrics: account.store_orders.metrics_for(contact)
+    }.merge(orders_page(scope))
   end
 
   private
 
   def ensure_store_vertical
     head :not_found unless VerticalProfile.for(Current.account).store_connector?
+  end
+
+  def orders_page(scope)
+    page = [params[:page].to_i, 1].max
+    orders = scope.offset((page - 1) * ORDERS_PER_PAGE).limit(ORDERS_PER_PAGE + 1).to_a
+    { orders: orders.first(ORDERS_PER_PAGE).map { |order| order_json(order) }, has_more: orders.size > ORDERS_PER_PAGE }
   end
 
   def store_name(connection)

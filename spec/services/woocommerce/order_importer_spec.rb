@@ -50,8 +50,8 @@ RSpec.describe Woocommerce::OrderImporter do
     payload['customer_id'] = 77
     first = import
 
-    second = import(payload.merge('id' => 2001, 'billing' => payload['billing'].merge('phone' => '(11) 91234-5678',
-                                                                                     'email' => 'outro@example.com')))
+    billing = payload['billing'].merge('phone' => '(11) 91234-5678', 'email' => 'outro@example.com')
+    second = import(payload.merge('id' => 2001, 'billing' => billing))
 
     expect(second.contact).to eq(first.contact)
     expect(second.customer_external_id).to eq('77')

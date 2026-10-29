@@ -20,38 +20,42 @@ class Woocommerce::SyncJob < ApplicationJob
   end
 
   def perform(connection_id, since = nil, silent: true, page: 1, started_at: nil)
-    connection = StoreConnection.find_by(id: connection_id)
-    return if connection.nil?
+    @connection = StoreConnection.find_by(id: connection_id)
+    return if @connection.nil?
 
-    started_at ||= Time.current.iso8601
-    orders = client(connection).orders(page: page, modified_after: since.present? ? Time.zone.parse(since) : nil)
-    orders.each { |payload| Woocommerce::OrderImporter.new(connection, payload, silent: silent).perform }
+    @since = since.present? ? Time.zone.parse(since) : nil
+    @started_at = started_at || Time.current.iso8601
+    orders = import(page, silent)
+    return finish if !more?(orders) || page >= MAX_PAGES
 
-    if more?(orders, since) && page < MAX_PAGES
-      self.class.set(wait: PAUSE).perform_later(connection_id, since, silent: silent, page: page + 1, started_at: started_at)
-    else
-      connection.update!(last_synced_at: Time.zone.parse(started_at), status: :connected, last_error: nil)
-    end
+    self.class.set(wait: PAUSE).perform_later(connection_id, since, silent: silent, page: page + 1, started_at: @started_at)
   rescue Woocommerce::Client::Unavailable
     raise
   rescue Woocommerce::Client::Error => e
-    connection&.update!(status: :failing, last_error: e.message.truncate(250))
+    @connection.update!(status: :failing, last_error: e.message.truncate(250))
   end
 
   private
 
-  def client(connection)
-    Woocommerce::Client.new(store_url: connection.store_url, consumer_key: connection.consumer_key,
-                            consumer_secret: connection.consumer_secret)
+  def import(page, silent)
+    client = Woocommerce::Client.new(store_url: @connection.store_url, consumer_key: @connection.consumer_key,
+                                     consumer_secret: @connection.consumer_secret)
+    orders = client.orders(page: page, modified_after: @since)
+    orders.each { |payload| Woocommerce::OrderImporter.new(@connection, payload, silent: silent).perform }
+    orders
+  end
+
+  def finish
+    @connection.update!(last_synced_at: Time.zone.parse(@started_at), status: :connected, last_error: nil)
   end
 
   # A full page may have more behind it. In a catch-up the pages go newest
   # first, so an order older than the date means the rest are older too.
-  def more?(orders, since)
+  def more?(orders)
     return false if orders.size < Woocommerce::Client::PAGE_SIZE
-    return true if since.blank?
+    return true if @since.nil?
 
     oldest = orders.filter_map { |payload| payload['date_modified_gmt'].presence }.min
-    oldest.nil? || Time.zone.parse("#{oldest}Z") >= Time.zone.parse(since)
+    oldest.nil? || Time.zone.parse("#{oldest}Z") >= @since
   end
 end

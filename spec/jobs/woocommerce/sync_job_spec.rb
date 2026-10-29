@@ -18,7 +18,7 @@ RSpec.describe Woocommerce::SyncJob do
     stub_request(:get, orders_url).with(query: hash_including('page' => '1')).to_return(status: 200, body: full_page.to_json)
     stub_request(:get, orders_url).with(query: hash_including('page' => '2')).to_return(status: 200, body: [order.merge('id' => 999)].to_json)
 
-    perform_enqueued_jobs { described_class.perform_later(connection.id) }
+    perform_enqueued_jobs(only: described_class) { described_class.perform_later(connection.id) }
 
     expect(connection.store_orders.count).to eq(Woocommerce::Client::PAGE_SIZE + 1)
     expect(connection.reload.last_synced_at).to be_present

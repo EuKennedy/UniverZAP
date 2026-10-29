@@ -36,13 +36,10 @@ class Woocommerce::Client
   # the first order older than the date even on a WooCommerce too old to
   # know modified_after.
   def orders(page: 1, modified_after: nil)
-    params = { page: page, per_page: PAGE_SIZE, _fields: ORDER_FIELDS }
-    if modified_after
-      params.merge!(modified_after: modified_after.utc.iso8601, orderby: 'modified', order: 'desc')
-    else
-      params.merge!(orderby: 'id', order: 'asc')
-    end
-    get('orders', params)
+    params = { page: page, per_page: PAGE_SIZE, _fields: ORDER_FIELDS, orderby: 'id', order: 'asc' }
+    return get('orders', params) if modified_after.nil?
+
+    get('orders', params.merge(modified_after: modified_after.utc.iso8601, orderby: 'modified', order: 'desc'))
   end
 
   def webhook(id)
