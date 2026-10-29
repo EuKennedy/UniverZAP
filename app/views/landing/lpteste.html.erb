@@ -413,19 +413,94 @@ footer{padding:60px 0 44px;border-top:1px solid var(--line);margin-top:20px}
    z-index:1 e obrigatorio: o .hd-bg e absoluto, cobre o header inteiro e vem
    DEPOIS no DOM. No modo .stuck ele vira fundo escuro opaco e, sem isto,
    pinta por cima da barra e a apaga. */
-.bf-bar{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 16px;padding:9px 16px;background:linear-gradient(90deg,var(--green-800),var(--green-700));color:#fff;font-family:var(--sans);font-size:13.5px;font-weight:500;line-height:1.3;text-align:center}
+.bf-bar{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 18px;padding:9px 16px;background:linear-gradient(90deg,#030806,#0B2417 50%,#030806);border-bottom:1px solid rgba(74,222,128,.4);color:#EAF4EE;font-family:var(--sans);font-size:13.5px;font-weight:500;line-height:1.3;text-align:center}
 .bf-bar[hidden]{display:none}
-.bf-bar b{font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.bf-bar b{font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#4ADE80}
+.bf-bar .p{font-family:var(--disp);font-size:16px;font-weight:800;color:#fff}
 .bf-bar i,.bf-bar svg{width:16px;height:16px;vertical-align:-3px}
 .bf-cd{display:inline-flex;gap:5px;font-variant-numeric:tabular-nums}
-.bf-cd span{display:inline-flex;flex-direction:column;align-items:center;min-width:36px;padding:4px 5px 3px;border-radius:8px;background:rgba(0,0,0,.24);line-height:1}
-.bf-cd strong{font-family:var(--disp);font-size:16px;font-weight:700}
-.bf-cd small{margin-top:3px;font-size:9px;letter-spacing:.09em;text-transform:uppercase;opacity:.82}
-.bf-go{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;background:#fff;color:var(--green-800);font-weight:700;text-decoration:none;white-space:nowrap}
-.bf-go:hover{background:#ECFDF3}
+.bf-cd span{display:inline-flex;flex-direction:column;align-items:center;min-width:36px;padding:4px 5px 3px;border-radius:8px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);line-height:1}
+.bf-cd strong{font-family:var(--disp);font-size:16px;font-weight:700;color:#fff}
+.bf-cd small{margin-top:3px;font-size:9px;letter-spacing:.09em;text-transform:uppercase;opacity:.75}
+.bf-go{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:999px;background:linear-gradient(180deg,#4ADE80,#22C55E);color:#052312;font-weight:700;text-decoration:none;white-space:nowrap;animation:bf-ping 2.4s infinite}
+.bf-go:hover{filter:brightness(1.08)}
+@keyframes bf-ping{0%{box-shadow:0 0 0 0 rgba(74,222,128,.55)}70%,100%{box-shadow:0 0 0 10px rgba(74,222,128,0)}}
+/* Preco riscado: linha vermelha grossa, o sinal universal de "baixou". */
+.bf-bar s,.bfx-was s,.price-was s,.vsl-price s{color:#849A8F;text-decoration-thickness:2px;text-decoration-color:#EF4444}
 html.has-bf{scroll-padding-top:calc(76px + var(--bf-h,44px))}
 html.has-bf .hero{padding-top:calc(clamp(120px,17vw,180px) + var(--bf-h,44px))}
 @media (max-width:640px){.bf-bar{font-size:12.5px;padding:8px 12px}.bf-txt{flex-basis:100%}}
+/* Tudo que e .bf-only vale so durante a Black: some junto com a barra quando
+   o prazo acaba (o JS tira .has-bf do html). O script da barra roda logo no
+   header, antes do resto do corpo, entao isto nao pisca no carregamento. */
+html:not(.has-bf) .bf-only{display:none!important}
+/* Faixas animadas entre secoes. Duas fitas cruzadas em X correndo em sentidos
+   opostos. O texto vem repetido 4x e a animacao anda -50%, entao o loop fecha
+   sem emenda. Sao decorativas (aria-hidden): a oferta e o prazo estao escritos
+   de verdade no bloco da oferta e no card de preco. */
+.bfx-band{position:relative;padding:clamp(34px,5vw,64px) 0;overflow:hidden;pointer-events:none}
+.bfx-strip{position:relative;width:112vw;margin-left:-6vw;overflow:hidden;font-family:var(--disp);font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:clamp(15px,1.9vw,22px);line-height:1}
+.bfx-strip.a{z-index:2;transform:rotate(-2.4deg);background:linear-gradient(90deg,#22C55E,#4ADE80 50%,#22C55E);color:#052312;box-shadow:0 18px 40px -18px rgba(34,197,94,.7)}
+.bfx-strip.b{z-index:1;transform:rotate(2deg);margin-top:-52px;background:#030806;color:#EAF4EE;border-block:1px solid rgba(74,222,128,.45)}
+.bfx-band.one{padding:clamp(22px,3vw,36px) 0}.bfx-band.one .bfx-strip.a{transform:rotate(-1.2deg)}
+.bfx-run{display:flex;align-items:center;width:max-content;padding:15px 0;animation:bfx-mq 44s linear infinite}
+.bfx-strip.b .bfx-run{animation-direction:reverse;animation-duration:52s}
+.bfx-run span{white-space:nowrap;padding:0 22px}
+.bfx-run em{font-style:normal;color:#4ADE80}
+.bfx-run b{flex:0 0 auto;width:13px;height:13px;background:currentColor;clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+@keyframes bfx-mq{to{transform:translateX(-50%)}}
+/* Bloco da oferta: logo depois do video, para ninguem chegar no fim da pagina
+   sem ter visto o preco. Escuro nos dois temas, como a barra. */
+.bfx-sec{padding:clamp(8px,2vw,20px) 0}
+.bfx-offer{position:relative;overflow:hidden;display:grid;gap:clamp(24px,4vw,44px);grid-template-columns:1fr;align-items:center;padding:clamp(26px,5vw,56px);border-radius:32px;color:#EAF4EE;background:radial-gradient(110% 90% at 0% 0%,rgba(34,197,94,.3),transparent 55%),radial-gradient(90% 80% at 100% 100%,rgba(74,222,128,.16),transparent 60%),linear-gradient(160deg,#04100A,#030806 60%,#071A10);border:1.5px solid rgba(74,222,128,.45);box-shadow:0 40px 100px -40px rgba(34,197,94,.55),inset 0 1px 0 rgba(255,255,255,.08)}
+.bfx-offer>*{position:relative;z-index:1;min-width:0}
+.bfx-wm{position:absolute;z-index:0;right:-3%;bottom:-6%;font-family:var(--disp);font-weight:800;font-size:clamp(7rem,24vw,19rem);line-height:.8;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:1.5px rgba(74,222,128,.15);pointer-events:none;user-select:none}
+.bfx-tag{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:#4ADE80;color:#052312;font-weight:800;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase}
+.bfx-tag i{width:15px;height:15px}
+.bfx-h{margin-top:18px;color:#fff;font-size:clamp(1.9rem,4.4vw,3rem);letter-spacing:-.035em}
+.bfx-h em{font-style:normal;color:#4ADE80}
+.bfx-price{margin-top:24px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.bfx-was{font-size:clamp(1.1rem,2.2vw,1.45rem);font-weight:600;color:#A6BDB2}
+.bfx-now{display:flex;align-items:center;gap:clamp(10px,2vw,18px);font-family:var(--disp);font-weight:800;color:#fff;font-size:clamp(4.2rem,13vw,7.6rem);line-height:.9;letter-spacing:-.05em}
+.bfx-now .rs{font-size:.38em;letter-spacing:-.02em;vertical-align:.95em;margin-right:.12em;color:#4ADE80}
+.bfx-off{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(74px,11vw,96px);aspect-ratio:1;border-radius:50%;background:#4ADE80;color:#052312;font-size:clamp(1.15rem,2.2vw,1.5rem);letter-spacing:-.03em;line-height:.95;text-align:center;transform:rotate(-12deg);box-shadow:0 10px 30px -8px rgba(74,222,128,.7)}
+.bfx-off small{display:block;margin-top:2px;font-size:.5em;letter-spacing:.08em}
+.bfx-inst{font-size:clamp(1.05rem,1.9vw,1.25rem);color:#D8F5E5}
+.bfx-inst b{color:#4ADE80}
+.bfx-pts{list-style:none;display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:22px}
+.bfx-pts li{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:13.5px}
+.bfx-pts i{width:15px;height:15px;color:#4ADE80}
+.bfx-r{padding:clamp(20px,3vw,30px);border-radius:24px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);text-align:center}
+.bfx-lb{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#4ADE80}
+.bfx-lb::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;animation:bf-dot 1.2s infinite}
+@keyframes bf-dot{50%{opacity:.2}}
+/* Cronometro grande. Os segundos alternam entre duas animacoes iguais com
+   nomes diferentes: trocar o nome e o que faz o navegador rodar de novo. */
+.bfx-cd{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(6px,1.2vw,10px);margin-top:14px;font-variant-numeric:tabular-nums}
+.bfx-cd span{min-width:0;display:flex;flex-direction:column;align-items:center;padding:clamp(10px,1.6vw,14px) 4px clamp(8px,1.2vw,10px);border-radius:16px;background:linear-gradient(180deg,#0E2A1C,#06140D);border:1px solid rgba(74,222,128,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 12px 30px -16px rgba(34,197,94,.6);transition:border-color .4s}
+.bfx-cd strong{font-family:var(--disp);font-weight:800;font-size:clamp(1.7rem,7.4vw,3.2rem);line-height:1;color:#fff;letter-spacing:-.03em}
+.bfx-cd small{margin-top:6px;font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#A6BDB2}
+.bfx-cd .tka strong{animation:bf-tka .5s var(--ease)}.bfx-cd .tkb strong{animation:bf-tkb .5s var(--ease)}
+@keyframes bf-tka{0%{transform:translateY(-7px) scale(1.1);color:#4ADE80}100%{transform:none}}
+@keyframes bf-tkb{0%{transform:translateY(-7px) scale(1.1);color:#4ADE80}100%{transform:none}}
+.bfx-cd.sm{margin:22px 0 4px}.bfx-cd.sm strong{font-size:clamp(1.6rem,6vw,2rem)}.bfx-cd.sm span{border-radius:13px}
+.bfx-when{margin-top:14px;font-size:14px;color:#D8F5E5}
+.bfx-when b{color:#fff}
+.bfx-cta{width:100%;margin-top:18px}
+.bfx-secure{margin-top:12px;font-size:12.5px;color:#A6BDB2}.bfx-secure i,.bfx-secure svg{width:14px;height:14px;vertical-align:-2px}
+@media(max-width:479px){.bfx-r{padding:18px 14px}.bfx-cd small{font-size:9.5px;letter-spacing:.08em}}
+/* Ultimas 24 horas: o cronometro muda de cor e o texto avisa. */
+.bfx-urg{display:none}
+html.bf-urgent .bfx-urg{display:inline}html.bf-urgent .bfx-norm{display:none}
+html.bf-urgent .bfx-cd span{border-color:rgba(251,191,36,.7)}
+html.bf-urgent .bfx-lb{color:#FBBF24}
+/* Preco do hero e do card. */
+.vsl-price{text-align:center;margin-top:14px;font-size:15px;color:var(--slate)}
+.vsl-price b{color:var(--ink);font-family:var(--disp);font-size:1.25em}
+.price-was{margin-top:18px;font-size:17px;font-weight:600;color:var(--slate)}
+.price-val.big .num{font-size:clamp(4.6rem,15vw,5.8rem)}
+.price-inst{font-size:16.5px;color:var(--ink)}.price-inst b{color:var(--green)}
+@media(min-width:960px){.bfx-offer{grid-template-columns:1.2fr 1fr}}
 </style>
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
@@ -437,17 +512,18 @@ fbq('init','2274850053326427');fbq('track','PageView');
 <div class="bg-field"></div><div class="grain"></div><div class="rule-field"></div>
 
 <header id="hd">
-  <%# Data FIXA de encerramento. Trocar UM valor no lancamento — nunca um
-      timer que reinicia a cada visita, que e o dark pattern classico. %>
-  <div class="bf-bar" id="bfBar" data-bf-end="2026-10-26T23:59:59-03:00" role="region" aria-label="Esquenta Black Friday">
-    <span class="bf-txt"><i data-lucide="flame"></i> <b>Esquenta Black Friday - Controle seu WhatsApp</b></span>
-    <span class="bf-cd" aria-live="off" aria-label="Tempo restante">
+  <%# Data FIXA de encerramento, a mesma para todo mundo. Trocar UM valor —
+      nunca um timer que reinicia a cada visita, que e o dark pattern
+      classico. Todos os cronometros da pagina leem esta data. %>
+  <div class="bf-bar" id="bfBar" data-bf-end="2026-11-01T23:59:59-03:00" role="region" aria-label="Black Friday UniverZAP">
+    <span class="bf-txt"><i data-lucide="flame"></i> <b>Black Friday</b> Plano anual de <s>R$ 1.197</s> por <span class="p">R$ 297</span></span>
+    <span class="bf-cd" data-bf-cd aria-live="off" aria-label="Tempo restante">
       <span><strong data-u="d">--</strong><small>dias</small></span>
       <span><strong data-u="h">--</strong><small>hrs</small></span>
       <span><strong data-u="m">--</strong><small>min</small></span>
       <span><strong data-u="s">--</strong><small>seg</small></span>
     </span>
-    <a href="#planos" class="bf-go">Garantir <i data-lucide="arrow-right"></i></a>
+    <a href="#planos" class="bf-go">Garantir R$ 297 <i data-lucide="arrow-right"></i></a>
   </div>
   <div class="hd-bg"></div>
   <div class="wrap"><div class="hd">
@@ -469,18 +545,23 @@ fbq('init','2274850053326427');fbq('track','PageView');
   var bar=document.getElementById('bfBar');
   if(!bar)return;
   var end=new Date(bar.dataset.bfEnd).getTime(), root=document.documentElement;
-  var u={};['d','h','m','s'].forEach(function(k){u[k]=bar.querySelector('[data-u="'+k+'"]')});
   function pad(n){return n<10?'0'+n:''+n}
   function fit(){root.style.setProperty('--bf-h',bar.offsetHeight+'px')}
-  function off(){bar.hidden=true;root.classList.remove('has-bf');root.style.removeProperty('--bf-h')}
+  function off(){bar.hidden=true;root.classList.remove('has-bf','bf-urgent');root.style.removeProperty('--bf-h')}
   function tick(){
     var left=end-Date.now();
     /* !(left>0) tambem pega data invalida (NaN): erro de digitacao esconde a
        barra em vez de mostrar "NaN" ao visitante. */
     if(!(left>0)){off();return false}
     var s=Math.floor(left/1000);
-    u.d.textContent=pad(Math.floor(s/86400));u.h.textContent=pad(Math.floor(s%86400/3600));
-    u.m.textContent=pad(Math.floor(s%3600/60));u.s.textContent=pad(s%60);
+    var v={d:pad(Math.floor(s/86400)),h:pad(Math.floor(s%86400/3600)),m:pad(Math.floor(s%3600/60)),s:pad(s%60)};
+    root.classList.toggle('bf-urgent',left<864e5);
+    /* Os outros cronometros ficam mais abaixo no corpo e ainda nao existem
+       quando este script roda, entao a busca e feita a cada segundo. */
+    document.querySelectorAll('[data-bf-cd]').forEach(function(cd){
+      ['d','h','m','s'].forEach(function(k){var el=cd.querySelector('[data-u="'+k+'"]');if(el)el.textContent=v[k]});
+      var sec=cd.querySelector('[data-u="s"]');if(sec)sec.parentNode.className=s%2?'tka':'tkb';
+    });
     return true
   }
   if(!tick())return;
@@ -500,7 +581,7 @@ fbq('init','2274850053326427');fbq('track','PageView');
 <header class="hero hero-vsl" id="top" style="position:static">
   <div class="wrap">
     <div class="vsl-head">
-      <div class="rv"><span class="h-badge"><b><i data-lucide="flame"></i> Esquenta Black Friday</b> Prepare-se pro pico de vendas</span></div>
+      <div class="rv"><span class="h-badge"><b><i data-lucide="flame"></i> Black Friday</b> 75% OFF · só até 01/11</span></div>
       <h1 class="hero-h rv" id="heroH">A Black Friday vai lotar<br>seu WhatsApp. <span class="u">Esteja pronto<svg viewBox="0 0 300 12" preserveAspectRatio="none"><path d="M2 8 C 70 2, 150 2, 298 6" pathLength="1"/></svg></span>.</h1>
       <p class="hero-sub rv">Na semana que mais vende no ano, cada mensagem sem resposta é uma venda pro concorrente. O UniverZAP atende, automatiza e vende por você — <b>por menos de R$ 1 por dia</b>.</p>
     </div>
@@ -517,9 +598,10 @@ fbq('init','2274850053326427');fbq('track','PageView');
       </button>
     </div>
     <div class="vsl-cta rv">
-      <a href="#planos" class="btn btn-p btn-lg">Garantir em 6x de R$ 49,50 <i data-lucide="arrow-right"></i></a>
+      <a href="#planos" class="btn btn-p btn-lg">Garantir por R$ 297 <i data-lucide="arrow-right"></i></a>
       <a href="#como" class="btn btn-g btn-lg"><i data-lucide="layout-grid"></i> Ver recursos</a>
     </div>
+    <p class="vsl-price rv">De <s>R$ 1.197</s> por <b>R$ 297</b> · ou 6x de R$ 49,50 sem juros</p>
   </div>
 </header>
 
@@ -529,6 +611,52 @@ fbq('init','2274850053326427');fbq('track','PageView');
   <span class="it"><i data-lucide="qr-code"></i> Conexão QR</span>
   <span class="it"><i data-lucide="lock"></i> LGPD</span>
 </div></div>
+
+<div class="bfx-band bf-only" aria-hidden="true">
+  <div class="bfx-strip a"><div class="bfx-run"><% 4.times do %><span>Black Friday UniverZAP</span><b></b><span>De R$ 1.197 por R$ 297</span><b></b><span>75% OFF</span><b></b><span>6x de R$ 49,50 sem juros</span><b></b><span>1 ano inteiro de UniverZAP</span><b></b><% end %></div></div>
+  <div class="bfx-strip b"><div class="bfx-run"><% 4.times do %><span>Só até <em>01/11</em></span><b></b><span>Depois o anual sobe para <em>R$ 1.197</em></span><b></b><span>Menos de <em>R$ 1 por dia</em></span><b></b><span>Garanta o seu ano agora</span><b></b><% end %></div></div>
+</div>
+
+<%# Bloco da oferta logo depois do video. "De R$ 1.197" e o preco que o
+    plano anual passa a ter depois de 01/11: se isso mudar, o "de" e a frase
+    "depois sobe para R$ 1.197" mudam junto, senao vira preco de referencia
+    falso. %>
+<section id="oferta" class="bfx-sec bf-only">
+  <div class="wrap"><div class="bfx-offer rv">
+    <span class="bfx-wm" aria-hidden="true">BLACK</span>
+    <div class="bfx-l">
+      <span class="bfx-tag"><i data-lucide="flame"></i> Black Friday UniverZAP</span>
+      <h2 class="bfx-h">1 ano inteiro de UniverZAP<br>com <em>75% de desconto</em>.</h2>
+      <div class="bfx-price">
+        <span class="bfx-was">De <s>R$ 1.197</s> por</span>
+        <span class="bfx-now"><span><span class="rs">R$</span>297</span><span class="bfx-off">75%<small>OFF</small></span></span>
+        <span class="bfx-inst">ou <b>6x de R$ 49,50</b> sem juros</span>
+      </div>
+      <ul class="bfx-pts">
+        <li><i data-lucide="piggy-bank"></i> Você economiza R$ 900</li>
+        <li><i data-lucide="calendar-check"></i> 12 meses de acesso</li>
+        <li><i data-lucide="headset"></i> Suporte o ano todo</li>
+        <li><i data-lucide="sparkles"></i> Menos de R$ 1 por dia</li>
+      </ul>
+    </div>
+    <div class="bfx-r">
+      <p class="bfx-lb"><span class="bfx-norm">A oferta acaba em</span><span class="bfx-urg">Últimas horas da oferta</span></p>
+      <div class="bfx-cd" data-bf-cd aria-live="off" aria-label="Tempo restante">
+        <span><strong data-u="d">--</strong><small>dias</small></span>
+        <span><strong data-u="h">--</strong><small>horas</small></span>
+        <span><strong data-u="m">--</strong><small>min</small></span>
+        <span><strong data-u="s">--</strong><small>seg</small></span>
+      </div>
+      <p class="bfx-when">Termina <b>domingo, 01/11, às 23h59</b>.<br>Depois disso, o plano anual sobe para R$ 1.197.</p>
+      <a href="https://pay.univercart.com/c/assinatura-univerzap-mensal-eca5?plan=f364c359-156f-4028-8db4-e4c0cda658a8" target="_blank" rel="noopener" onclick="try{fbq('track','InitiateCheckout',{value:297.00,currency:'BRL'})}catch(e){}" class="btn btn-p btn-lg bfx-cta">Garantir meu ano por R$ 297 <i data-lucide="arrow-right"></i></a>
+      <p class="bfx-secure"><i data-lucide="shield-check"></i> PIX ou cartão em até 6x sem juros · 7 dias para desistir</p>
+    </div>
+  </div></div>
+</section>
+
+<div class="bfx-band bf-only one" aria-hidden="true">
+  <div class="bfx-strip a"><div class="bfx-run"><% 4.times do %><span>Black Friday UniverZAP</span><b></b><span>De R$ 1.197 por R$ 297</span><b></b><span>75% OFF</span><b></b><span>6x de R$ 49,50 sem juros</span><b></b><span>1 ano inteiro de UniverZAP</span><b></b><% end %></div></div>
+</div>
 
 <section id="problema">
   <div class="wrap">
@@ -720,6 +848,10 @@ fbq('init','2274850053326427');fbq('track','PageView');
   </div>
 </section>
 
+<div class="bfx-band bf-only one" aria-hidden="true">
+  <div class="bfx-strip a"><div class="bfx-run"><% 4.times do %><span>Black Friday UniverZAP</span><b></b><span>De R$ 1.197 por R$ 297</span><b></b><span>75% OFF</span><b></b><span>6x de R$ 49,50 sem juros</span><b></b><span>1 ano inteiro de UniverZAP</span><b></b><% end %></div></div>
+</div>
+
 <section id="clientes">
   <div class="wrap">
     <div class="testi-head rv"><span class="kicker">Depoimentos reais</span><h2 style="font-size:clamp(2rem,5.4vw,3.4rem);margin-top:16px;letter-spacing:-.035em">Quem usa, não larga mais.</h2><p class="lead" style="margin-top:18px">Histórias de verdade de quem colocou o WhatsApp no controle. Arraste e aperte o play.</p></div>
@@ -760,16 +892,19 @@ fbq('init','2274850053326427');fbq('track','PageView');
   </div>
 </section>
 
-<%# Esquenta Black Friday: plano anual de R$ 297 (6x de R$ 49,50 sem juros).
-    So componentes que ja existem na pagina (eyeline, kicker, bento, bt). A
-    comparacao "12 meses no mensal = R$ 598,80" vale enquanto o plano mensal
-    de R$ 49,90 continuar a venda; se ele sair, essa linha sai junto. Plano
-    anual tem prazo de 12 meses, entao nenhuma frase aqui promete "sem
-    fidelidade": a saida garantida e o direito de arrependimento de 7 dias. %>
+<div class="bfx-band bf-only" aria-hidden="true">
+  <div class="bfx-strip a"><div class="bfx-run"><% 4.times do %><span>Black Friday UniverZAP</span><b></b><span>De R$ 1.197 por R$ 297</span><b></b><span>75% OFF</span><b></b><span>6x de R$ 49,50 sem juros</span><b></b><span>1 ano inteiro de UniverZAP</span><b></b><% end %></div></div>
+  <div class="bfx-strip b"><div class="bfx-run"><% 4.times do %><span>Só até <em>01/11</em></span><b></b><span>Depois o anual sobe para <em>R$ 1.197</em></span><b></b><span>Menos de <em>R$ 1 por dia</em></span><b></b><span>Garanta o seu ano agora</span><b></b><% end %></div></div>
+</div>
+
+<%# Black Friday: plano anual de R$ 1.197 por R$ 297 (6x de R$ 49,50 sem
+    juros) ate 01/11. Plano anual tem prazo de 12 meses, entao nenhuma frase
+    aqui promete "sem fidelidade": a saida garantida e o direito de
+    arrependimento de 7 dias. %>
 <section id="black">
   <div class="wrap">
     <div class="eyeline c rv">
-      <span class="kicker"><i data-lucide="flame"></i> Black Friday UniverZAP</span>
+      <span class="kicker"><i data-lucide="flame"></i> Black Friday UniverZAP · 75% OFF</span>
       <h2>A semana que mais vende<br>não pode ter fila.</h2>
       <p class="lead">O volume de mensagens explode, mas seu time continua do mesmo tamanho. É aqui que o UniverZAP se paga.</p>
     </div>
@@ -777,7 +912,7 @@ fbq('init','2274850053326427');fbq('track','PageView');
       <div class="bt lg feat w2">
         <div class="ic"><i data-lucide="piggy-bank"></i></div>
         <h3>O ano inteiro custa menos que uma semana de atendente.</h3>
-        <p>R$ 297 pelo ano todo, em 6x de R$ 49,50 sem juros: menos de R$ 1 por dia. Um atendente a mais custa isso em poucos dias de trabalho — e não responde de madrugada, quando o pico da Black continua.</p>
+        <p>De R$ 1.197 por R$ 297 pelo ano todo, ou 6x de R$ 49,50 sem juros: menos de R$ 1 por dia. Um atendente a mais custa isso em poucos dias de trabalho — e não responde de madrugada, quando o pico da Black continua.</p>
       </div>
       <div class="bt lg"><div class="ic"><i data-lucide="bot"></i></div><h3>Atende 24/7, inclusive de madrugada</h3><p>A Athenas IA responde, qualifica e vende enquanto seu time descansa.</p></div>
       <div class="bt lg"><div class="ic"><i data-lucide="shopping-cart"></i></div><h3>Recupera o carrinho abandonado</h3><p>Quem desistiu na Black recebe a mensagem certa, na hora certa, direto do WooCommerce.</p></div>
@@ -790,13 +925,20 @@ fbq('init','2274850053326427');fbq('track','PageView');
 
 <section id="planos">
   <div class="wrap">
-    <div class="eyeline c rv"><span class="kicker">Comece hoje</span><h2>Um ano inteiro. Tudo incluído.</h2><p class="lead">Um preço só, sem surpresa. Assine, conecte seu WhatsApp e comece a vender ainda hoje.</p></div>
+    <div class="eyeline c rv"><span class="kicker">Black Friday · só até 01/11</span><h2>Um ano inteiro. Tudo incluído.</h2><p class="lead">De R$ 1.197 por R$ 297, à vista ou em 6x sem juros. Assine, conecte seu WhatsApp e comece a vender ainda hoje.</p></div>
     <div class="price-wrap rv">
       <div class="price-card lg">
-        <span class="price-badge">Esquenta Black Friday · plano anual</span>
-        <p class="price-sub" style="margin-top:16px">12 meses no plano mensal: <s>R$ 598,80</s></p>
-        <div class="price-val"><span class="cur">6x R$</span><span class="num">49</span><span class="cents">,50</span><span class="per">sem juros</span></div>
-        <p class="price-sub">ou R$ 297 à vista. Um ano inteiro de UniverZAP, por menos de R$ 1 por dia.</p>
+        <span class="price-badge">Black Friday · 75% OFF</span>
+        <p class="price-was">De <s>R$ 1.197</s> por</p>
+        <div class="price-val big"><span class="cur">R$</span><span class="num">297</span><span class="per">o ano todo</span></div>
+        <p class="price-inst">ou <b>6x de R$ 49,50</b> sem juros</p>
+        <div class="bfx-cd sm bf-only" data-bf-cd aria-live="off" aria-label="Tempo restante">
+          <span><strong data-u="d">--</strong><small>dias</small></span>
+          <span><strong data-u="h">--</strong><small>horas</small></span>
+          <span><strong data-u="m">--</strong><small>min</small></span>
+          <span><strong data-u="s">--</strong><small>seg</small></span>
+        </div>
+        <p class="price-sub">Oferta até domingo, 01/11, às 23h59. Um ano inteiro de UniverZAP, por menos de R$ 1 por dia.</p>
         <ul class="price-list">
           <li><span class="ck"><i data-lucide="check"></i></span> 1 ano de acesso e suporte personalizado</li>
           <li><span class="ck"><i data-lucide="check"></i></span> Caixa de entrada unificada (WhatsApp, Instagram, e-mail, web)</li>
@@ -806,7 +948,7 @@ fbq('init','2274850053326427');fbq('track','PageView');
           <li><span class="ck"><i data-lucide="check"></i></span> Campanhas em massa pela API oficial da Meta</li>
           <li><span class="ck"><i data-lucide="check"></i></span> Vários atendentes no mesmo número</li>
         </ul>
-        <a href="https://pay.univercart.com/c/assinatura-univerzap-mensal-eca5?plan=f364c359-156f-4028-8db4-e4c0cda658a8" target="_blank" rel="noopener" class="btn btn-p btn-lg price-cta" onclick="try{fbq('track','InitiateCheckout',{value:297.00,currency:'BRL'})}catch(e){}">Garantir meu ano em 6x de R$ 49,50 <i data-lucide="arrow-right"></i></a>
+        <a href="https://pay.univercart.com/c/assinatura-univerzap-mensal-eca5?plan=f364c359-156f-4028-8db4-e4c0cda658a8" target="_blank" rel="noopener" class="btn btn-p btn-lg price-cta" onclick="try{fbq('track','InitiateCheckout',{value:297.00,currency:'BRL'})}catch(e){}">Garantir meu ano por R$ 297 <i data-lucide="arrow-right"></i></a>
         <div class="price-secure"><i data-lucide="shield-check"></i> Pagamento seguro via UniverCart · PIX ou cartão em até 6x sem juros</div>
       </div>
     </div>
@@ -827,15 +969,20 @@ fbq('init','2274850053326427');fbq('track','PageView');
   </div>
 </section>
 
+<div class="bfx-band bf-only" aria-hidden="true">
+  <div class="bfx-strip a"><div class="bfx-run"><% 4.times do %><span>Black Friday UniverZAP</span><b></b><span>De R$ 1.197 por R$ 297</span><b></b><span>75% OFF</span><b></b><span>6x de R$ 49,50 sem juros</span><b></b><span>1 ano inteiro de UniverZAP</span><b></b><% end %></div></div>
+  <div class="bfx-strip b"><div class="bfx-run"><% 4.times do %><span>Só até <em>01/11</em></span><b></b><span>Depois o anual sobe para <em>R$ 1.197</em></span><b></b><span>Menos de <em>R$ 1 por dia</em></span><b></b><span>Garanta o seu ano agora</span><b></b><% end %></div></div>
+</div>
+
 <section id="final">
   <div class="wrap"><div class="final rv">
     <h2>Coloque seu WhatsApp<br>no controle hoje.</h2>
     <p>Atendimento, automação e vendas numa só plataforma, por menos de R$ 1 por dia. Assine e veja a diferença já nas primeiras conversas.</p>
     <div class="hero-cta">
-      <a href="#planos" class="btn btn-p btn-lg">Ver o plano <i data-lucide="arrow-right"></i></a>
+      <a href="#planos" class="btn btn-p btn-lg">Garantir por R$ 297 <i data-lucide="arrow-right"></i></a>
       <a href="mailto:suporte@univerbeauty.com.br?subject=Quero%20falar%20com%20vendas%20-%20UniverZAP" class="btn btn-g btn-lg">Falar com vendas</a>
     </div>
-    <div class="note">6x sem juros · Suporte personalizado o ano todo · Conexão por QR em 1 minuto</div>
+    <div class="note">Black Friday: de R$ 1.197 por R$ 297 até 01/11 · 6x sem juros · Suporte o ano todo</div>
   </div></div>
 </section>
 
