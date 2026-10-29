@@ -59,7 +59,8 @@ class Api::V1::Accounts::Integrations::WoocommerceController < Api::V1::Accounts
   def orders_page(scope)
     page = [params[:page].to_i, 1].max
     orders = scope.offset((page - 1) * ORDERS_PER_PAGE).limit(ORDERS_PER_PAGE + 1).to_a
-    { orders: orders.first(ORDERS_PER_PAGE).map { |order| order_json(order) }, has_more: orders.size > ORDERS_PER_PAGE }
+    { orders: orders.first(ORDERS_PER_PAGE).map { |order| order_json(order) }, has_more: orders.size > ORDERS_PER_PAGE,
+      total_count: scope.count }
   end
 
   def store_name(connection)

@@ -70,7 +70,7 @@ RSpec.describe 'WooCommerce integration API', type: :request do
     get "#{base}/orders", params: { contact_id: contact.id, page: 2 }, headers: agent.create_new_auth_token
 
     expect(first_page['orders'].size).to eq(10)
-    expect(first_page).to include('has_more' => true)
+    expect(first_page).to include('has_more' => true, 'total_count' => 12)
     expect(first_page['customer']).to include('customer_name' => 'Rosana Rita')
     expect(response.parsed_body['orders'].pluck('number')).to eq(%w[11 12])
   end

@@ -1111,10 +1111,19 @@
     "STORE": "loja",
     "CLIENT_AT": "{name} · cliente da {store}",
     "RECURRENT": "Recorrente",
-    "IN_PROGRESS": "Pedido em andamento",
-    "NO_IN_PROGRESS": "Nenhum pedido em andamento",
-    "HISTORY": "Histórico de pedidos",
-    "LOAD_MORE": "Ver pedidos anteriores",
+    "LIST_TITLE": "Pedidos",
+    "LIST_COUNT": "{n} pedido | {n} pedidos",
+    "ITEMS": "{n} item | {n} itens",
+    "PAYMENT": "Pagamento",
+    "PAID_ON": "pago em {date}",
+    "TRACKING": "Rastreio",
+    "TOTAL": "Total",
+    "OPEN_IN_STORE": "Abrir na loja",
+    "NAVIGATION": "Navegar pelos pedidos desta cliente",
+    "NEWER": "Mais recente",
+    "OLDER": "Mais antigo",
+    "POSITION": "{current} de {total}",
+    "LOAD_MORE": "Carregar mais pedidos",
     "SPENT": "Total gasto",
     "ORDERS": "Pedidos",
     "TICKET": "Ticket médio",
@@ -1133,7 +1142,6 @@
       "CANCELLED": "Cancelado",
       "REFUNDED": "Reembolsado"
     },
-    "ITEM": "{quantity}× {name}",
-    "CARRIER": "· {carrier}"
+    "ITEM": "{quantity}× {name}"
   }
 }
