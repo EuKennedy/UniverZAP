@@ -33,7 +33,14 @@ const inDays = (days, hour = 10) => {
 };
 
 describe('StatusCalendar.vue', () => {
-  beforeEach(() => vi.clearAllMocks());
+  // "Hoje" fixo no meio do mês: perto do fim do mês o dia de destino caía no
+  // mês seguinte, numa célula apagada, e o teste soltava num dia passado.
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 15, 12));
+  });
+  afterEach(() => vi.useRealTimers());
 
   it('shows the month with each post on its day and the campaign colour', async () => {
     const day = inDays(1);
