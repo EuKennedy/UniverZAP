@@ -49,7 +49,7 @@ const openFirstMatch = () => {
 const rowClass = item => [
   props.collapsed ? 'justify-center' : 'px-2.5',
   item.active
-    ? 'bg-brand-gradient-soft text-n-teal-11 outline outline-1 outline-n-teal-7 shadow-[0_0_20px_-6px_rgba(20,230,127,0.65)]'
+    ? 'bg-brand-gradient-soft text-n-teal-11 shadow-brand-neon'
     : 'hover:bg-n-alpha-2 hover:text-n-slate-12',
   !item.active && item.risk ? 'text-n-amber-11' : '',
   !item.active && !item.risk ? 'text-n-slate-11' : '',

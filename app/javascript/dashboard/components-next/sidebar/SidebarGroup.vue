@@ -269,7 +269,7 @@ watch(
           type="button"
           class="flex flex-col items-center justify-center w-[3.75rem] gap-1 px-0.5 py-1.5 transition-all rounded-xl motion-safe:active:scale-95"
           :class="{
-            'text-n-teal-11 bg-brand-gradient-soft outline outline-1 outline-n-teal-7 shadow-[0_0_18px_-6px_rgba(20,230,127,0.65)]':
+            'text-n-teal-11 bg-brand-gradient-soft shadow-brand-neon':
               isActive || hasActiveChild,
             'text-n-slate-11 hover:bg-n-alpha-2 hover:text-n-slate-12':
               !isActive && !hasActiveChild,
