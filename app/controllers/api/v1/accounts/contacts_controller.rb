@@ -24,10 +24,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   def search
     render json: { error: 'Specify search string with parameter q' }, status: :unprocessable_entity if params[:q].blank? && return
 
-    contacts = Current.account.contacts.where(
-      'name ILIKE :search OR email ILIKE :search OR phone_number ILIKE :search OR contacts.identifier LIKE :search',
-      search: "%#{params[:q].strip}%"
-    )
+    contacts = Current.account.contacts.matching_text(params[:q])
     @contacts = fetch_contacts_with_has_more(contacts)
   end
 
@@ -59,10 +56,16 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
   def show; end
 
+  def stats
+    render json: ::Contacts::StatsService.new(Current.account).perform
+  end
+
   def filter
     result = ::Contacts::FilterService.new(Current.account, Current.user, params.permit!).perform
     contacts = result[:contacts]
     @contacts_count = result[:count]
+    contacts = contacts.matching_text(params[:q]) if params[:q].present?
+    @contacts_count = contacts.count if params[:q].present?
     @contacts = fetch_contacts(contacts)
   rescue CustomExceptions::CustomFilter::InvalidAttribute,
          CustomExceptions::CustomFilter::InvalidOperator,
@@ -132,7 +135,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
   def fetch_contacts(contacts)
     # Build includes hash to avoid separate query when contact_inboxes are needed
-    includes_hash = { avatar_attachment: [:blob] }
+    includes_hash = { avatar_attachment: [:blob], labels: [] }
     includes_hash[:contact_inboxes] = { inbox: :channel } if @include_contact_inboxes
 
     filtrate(contacts)
@@ -142,7 +145,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def fetch_contacts_with_has_more(contacts)
-    includes_hash = { avatar_attachment: [:blob] }
+    includes_hash = { avatar_attachment: [:blob], labels: [] }
     includes_hash[:contact_inboxes] = { inbox: :channel } if @include_contact_inboxes
 
     # Calculate offset manually to fetch one extra record for has_more check

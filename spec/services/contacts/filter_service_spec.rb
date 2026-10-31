@@ -122,6 +122,31 @@ describe Contacts::FilterService do
       end
     end
 
+    context 'with phone number presence' do
+      it 'finds contacts with and without a phone number' do
+        without_phone = create(:contact, account: account, email: Faker::Internet.unique.email, phone_number: nil)
+        params = { payload: [{ attribute_key: 'phone_number', filter_operator: 'is_not_present', values: [],
+                               query_operator: nil }.with_indifferent_access] }
+
+        expect(filter_service.new(account, first_user, params).perform[:contacts]).to include(without_phone)
+
+        params[:payload].first[:filter_operator] = 'is_present'
+        expect(filter_service.new(account, first_user, params).perform[:contacts]).not_to include(without_phone)
+      end
+    end
+
+    context 'with not_equal_to on a custom attribute followed by another condition' do
+      it 'keeps the second condition applied to contacts missing the attribute' do
+        params = { payload: [
+          { attribute_key: 'customer_type', filter_operator: 'not_equal_to', values: ['platinum'], query_operator: 'AND' }.with_indifferent_access,
+          { attribute_key: 'name', filter_operator: 'equal_to', values: [en_contact.name], query_operator: nil }.with_indifferent_access
+        ] }
+
+        result = filter_service.new(account, first_user, params).perform
+        expect(result[:contacts]).to contain_exactly(en_contact)
+      end
+    end
+
     context 'with standard attributes - blocked' do
       it 'filter contacts by blocked' do
         blocked_contact = create(

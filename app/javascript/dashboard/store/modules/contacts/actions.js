@@ -284,13 +284,13 @@ export const actions = {
 
   filter: async (
     { commit },
-    { page = 1, sortAttr, queryPayload, resetState = true } = {}
+    { page = 1, sortAttr, queryPayload, q, resetState = true } = {}
   ) => {
     commit(types.SET_CONTACT_UI_FLAG, { isFetching: true });
     try {
       const {
         data: { payload, meta },
-      } = await ContactAPI.filter(page, sortAttr, queryPayload);
+      } = await ContactAPI.filter(page, sortAttr, queryPayload, q);
       if (resetState) {
         commit(types.CLEAR_CONTACTS);
         commit(types.SET_CONTACTS, payload);

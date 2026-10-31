@@ -62,7 +62,6 @@ const activeFilterQueryData = computed(() => {
       t('CONTACTS_LAYOUT.FILTER.ACTIVE_FILTERS.CLEAR_FILTERS')
     "
     :show-clear-button="!hasActiveSegments"
-    class="max-w-5xl"
     @open-filter="emit('openFilter')"
     @clear-filters="emit('clearFilters')"
   />

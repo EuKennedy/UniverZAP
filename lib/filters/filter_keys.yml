@@ -184,6 +184,8 @@ contacts:
       - "contains"
       - "does_not_contain"
       - "starts_with"
+      - "is_present"
+      - "is_not_present"
   email:
     attribute_type: "standard"
     data_type: "text_case_insensitive"
@@ -192,6 +194,8 @@ contacts:
       - "not_equal_to"
       - "contains"
       - "does_not_contain"
+      - "is_present"
+      - "is_not_present"
   identifier:
     attribute_type: "standard"
     data_type: "text_case_insensitive"

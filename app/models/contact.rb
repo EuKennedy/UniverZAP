@@ -42,6 +42,8 @@
 # rubocop:enable Layout/LineLength
 
 class Contact < ApplicationRecord
+  MIN_PHONE_SEARCH_DIGITS = 4
+
   include Avatarable
   include AvailabilityStatusable
   include Labelable
@@ -179,6 +181,16 @@ class Contact < ApplicationRecord
       thumbnail: avatar_url,
       blocked: blocked
     }
+  end
+
+  # Digits are matched on their own so "(31) 99865-1793" finds +5531998651793.
+  def self.matching_text(query)
+    term = query.strip
+    digits = term.gsub(/\D/, '')
+    conditions = 'contacts.name ILIKE :search OR contacts.email ILIKE :search OR contacts.phone_number ILIKE :search ' \
+                 'OR contacts.identifier LIKE :search'
+    conditions += ' OR contacts.phone_number LIKE :digits' if digits.length >= MIN_PHONE_SEARCH_DIGITS
+    where(conditions, search: "%#{term}%", digits: "%#{digits}%")
   end
 
   def self.resolved_contacts(use_crm_v2: false)

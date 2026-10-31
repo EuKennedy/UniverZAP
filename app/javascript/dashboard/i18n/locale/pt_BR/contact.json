@@ -404,7 +404,9 @@
             "ERROR_MESSAGE": "Não foi possível excluir o filtro. Por favor, tente mais tarde."
           }
         }
-      }
+      },
+      "SUBTITLE": "{count} contato | {count} contatos",
+      "ADVANCED_FILTERS": "Filtros"
     },
     "PAGINATION_FOOTER": {
       "SHOWING": "Exibindo {startItem} - {endItem} de {totalItems} contatos"
@@ -608,7 +610,68 @@
       "LIST_EMPTY_STATE_TITLE": "Não há contatos disponíveis nesta visualização 📋",
       "ACTIVE_EMPTY_STATE_TITLE": "Nenhum contato está ativo no momento 🌙"
     },
-    "LOAD_MORE": "Carregar mais"
+    "LOAD_MORE": "Carregar mais",
+    "STATS": {
+      "TOTAL": "Contatos",
+      "RECENT": "Novos em 30 dias",
+      "RECURRING": "Recorrentes",
+      "WITHOUTPHONE": "Sem telefone"
+    },
+    "QUICK_FILTERS": {
+      "LABELS": "Etiqueta",
+      "ORIGIN": "Origem",
+      "TYPE": "Tipo",
+      "PERIOD": "Entrada",
+      "PHONE": "Telefone",
+      "WITH_PHONE": "Com telefone",
+      "WITHOUT_PHONE": "Sem telefone",
+      "LAST_DAYS": "Últimos {days} dias"
+    },
+    "VIEW": {
+      "MODE": "Modo de visualização",
+      "LIST": "Lista",
+      "CARDS": "Cards",
+      "FIELDS": "Campos",
+      "SHOW_ALL": "Mostrar todos os campos",
+      "BELEZAKI": "Belezaki",
+      "BELEZAKI_HINT": "Mostra os dados do salão para os contatos desta página",
+      "GROUPS": {
+        "STANDARD": "Contato",
+        "CUSTOM": "Atributos personalizados",
+        "BELEZAKI": "Belezaki"
+      }
+    },
+    "FIELDS": {
+      "NAME": "Nome",
+      "PHONE": "Telefone",
+      "EMAIL": "E-mail",
+      "LABELS": "Etiquetas",
+      "TYPE": "Tipo",
+      "ORIGIN": "Origem",
+      "COMPANY": "Empresa",
+      "LOCATION": "Cidade / país",
+      "IDENTIFIER": "Identificador",
+      "CREATED_AT": "Criado em",
+      "LAST_ACTIVITY": "Última atividade",
+      "BELEZAKI_NEXT": "Próximo agendamento",
+      "BELEZAKI_SERVICES": "Últimos serviços",
+      "BELEZAKI_PROFESSIONAL": "Profissional",
+      "BELEZAKI_SPENT": "Total gasto",
+      "BELEZAKI_VISITS": "Visitas",
+      "BELEZAKI_UNKNOWN": "Sem cadastro",
+      "TYPE_NEW": "Nova",
+      "TYPE_RECURRING": "Recorrente",
+      "ORIGIN_AD": "Anúncio",
+      "ORIGIN_ORGANIC": "Orgânico",
+      "WITHOUT_NUMBER": "Contato sem número",
+      "YES": "Sim",
+      "NO": "Não"
+    },
+    "PREVIEW": {
+      "CLOSE": "Fechar",
+      "OPEN_DETAILS": "Abrir ficha completa",
+      "SEND_MESSAGE": "Enviar mensagem"
+    }
   },
   "CONTACTS_BULK_ACTIONS": {
     "ASSIGN_LABELS": "Atribuir rótulo",

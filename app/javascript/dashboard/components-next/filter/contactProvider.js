@@ -54,6 +54,7 @@ export function useContactFilterContext() {
 
   const {
     equalityOperators,
+    presenceOperators,
     containmentOperators,
     dateOperators,
     getOperatorTypes,
@@ -91,7 +92,10 @@ export function useContactFilterContext() {
       label: t('CONTACTS_LAYOUT.FILTER.EMAIL'),
       inputType: 'plainText',
       dataType: 'text',
-      filterOperators: containmentOperators.value,
+      filterOperators: [
+        ...containmentOperators.value,
+        ...presenceOperators.value,
+      ],
       attributeModel: 'standard',
     },
     {
@@ -101,7 +105,10 @@ export function useContactFilterContext() {
       label: t('CONTACTS_LAYOUT.FILTER.PHONE_NUMBER'),
       inputType: 'plainText',
       dataType: 'text',
-      filterOperators: containmentOperators.value,
+      filterOperators: [
+        ...containmentOperators.value,
+        ...presenceOperators.value,
+      ],
       attributeModel: 'standard',
     },
     {

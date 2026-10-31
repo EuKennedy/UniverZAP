@@ -15,6 +15,14 @@ import ContactsList from 'dashboard/components-next/Contacts/Pages/ContactsList.
 import ContactsBulkActionBar from '../components/ContactsBulkActionBar.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import BulkActionsAPI from 'dashboard/api/bulkActions';
+import ContactAPI from 'dashboard/api/contacts';
+import ContactsStatsBar from 'dashboard/components-next/Contacts/ContactsView/ContactsStatsBar.vue';
+import ContactsQuickFilters from 'dashboard/components-next/Contacts/ContactsView/ContactsQuickFilters.vue';
+import ContactsViewControls from 'dashboard/components-next/Contacts/ContactsView/ContactsViewControls.vue';
+import {
+  quickFilterState,
+  withQuickFilter,
+} from 'dashboard/components-next/Contacts/helper/quickFilters';
 
 const DEFAULT_SORT_FIELD = 'last_activity_at';
 const DEBOUNCE_DELAY = 300;
@@ -31,6 +39,7 @@ const uiFlags = useMapGetter('contacts/getUIFlags');
 const customViewsUiFlags = useMapGetter('customViews/getUIFlags');
 const segments = useMapGetter('customViews/getContactCustomViews');
 const appliedFilters = useMapGetter('contacts/getAppliedContactFilters');
+const contactAttributes = useMapGetter('attributes/getContactAttributes');
 const meta = useMapGetter('contacts/getMeta');
 
 const searchQuery = computed(() => route.query?.search);
@@ -66,7 +75,7 @@ const isFetchingList = computed(
 const currentPage = computed(() => Number(meta.value?.currentPage));
 const totalItems = computed(() => meta.value?.count);
 const hasMore = computed(() => meta.value?.hasMore ?? false);
-const isSearchView = computed(() => !!searchQuery.value);
+const stats = ref({});
 
 const selectedContactIds = ref([]);
 const isBulkActionLoading = ref(false);
@@ -103,6 +112,36 @@ const isActiveView = computed(() => route.name === 'contacts_dashboard_active');
 const hasAppliedFilters = computed(() => {
   return appliedFilters.value.length > 0;
 });
+
+// A search inside filters goes through the filter endpoint and stays paginated.
+const isSearchView = computed(
+  () => !!searchQuery.value && !hasAppliedFilters.value
+);
+const canQuickFilter = computed(
+  () => route.name === 'contacts_dashboard_index'
+);
+const hasRecurringAttribute = computed(() =>
+  contactAttributes.value.some(
+    ({ attributeKey }) => attributeKey === 'recorrente'
+  )
+);
+
+const activeStat = computed(() => {
+  const { period, type, phone } = quickFilterState(appliedFilters.value);
+  if (phone === 'without') return 'withoutPhone';
+  if (type === 'recurring') return 'recurring';
+  return period === 30 ? 'recent' : '';
+});
+
+const headerSubtitle = computed(() =>
+  Number.isFinite(totalItems.value)
+    ? t(
+        'CONTACTS_LAYOUT.HEADER.SUBTITLE',
+        { count: totalItems.value },
+        totalItems.value
+      )
+    : ''
+);
 
 const showEmptyStateLayout = computed(() => {
   return (
@@ -221,8 +260,9 @@ const fetchSavedOrAppliedFilteredContact = async (
   await store.dispatch('contacts/filter', {
     ...getCommonFetchParams(page),
     queryPayload: payload,
+    q: searchValue.value,
   });
-  updatePageParam(page);
+  updatePageParam(page, searchValue.value);
 };
 
 const fetchActiveContacts = async (page = 1, options = {}) => {
@@ -239,9 +279,33 @@ const fetchActiveContacts = async (page = 1, options = {}) => {
   updatePageParam(page);
 };
 
+const clearAllFilters = async () => {
+  await store.dispatch('contacts/clearContactFilters');
+  if (searchValue.value) {
+    await store.dispatch('contacts/search', {
+      ...getCommonFetchParams(1),
+      search: encodeURIComponent(searchValue.value),
+    });
+    searchPageNumber.value = 1;
+    updatePageParam(1, searchValue.value);
+    return;
+  }
+  await fetchContacts();
+};
+
 const searchContacts = debounce(
   async (value, page = 1, append = false, options = {}) => {
     const { clearSelection: shouldClearSelection = true } = options;
+
+    if (hasAppliedFilters.value) {
+      searchValue.value = value;
+      await fetchSavedOrAppliedFilteredContact(
+        filterQueryGenerator(appliedFilters.value),
+        page,
+        { clearSelection: shouldClearSelection }
+      );
+      return;
+    }
 
     if (!append) {
       searchPageNumber.value = 1;
@@ -284,6 +348,29 @@ const loadMoreSearchResults = async () => {
 
   searchPageNumber.value = nextPage;
   isLoadingMore.value = false;
+};
+
+const applyQuickFilters = async filters => {
+  if (!filters.length) {
+    clearAllFilters();
+    return;
+  }
+  await store.dispatch('contacts/setContactFilters', filters);
+  await fetchSavedOrAppliedFilteredContact(filterQueryGenerator(filters));
+};
+
+const STAT_FILTERS = {
+  recent: ['period', 30],
+  recurring: ['type', 'recurring'],
+  withoutPhone: ['phone', 'without'],
+};
+
+const onSelectStat = key => {
+  const [name, value] = STAT_FILTERS[key];
+  const isActive = activeStat.value === key;
+  applyQuickFilters(
+    withQuickFilter(appliedFilters.value, name, isActive ? null : value)
+  );
 };
 
 const fetchContactsBasedOnContext = async (page, options = {}) => {
@@ -449,6 +536,9 @@ watch(searchQuery, value => {
 });
 
 onMounted(async () => {
+  ContactAPI.getStats().then(({ data }) => {
+    stats.value = data;
+  });
   if (!activeSegmentId.value) {
     if (searchQuery.value) {
       await searchContacts(searchQuery.value, pageNumber.value, false, {
@@ -477,6 +567,7 @@ onMounted(async () => {
     <ContactsListLayout
       :search-value="searchValue"
       :header-title="headerTitle"
+      :subtitle="headerSubtitle"
       :current-page="currentPage"
       :total-items="totalItems"
       :show-pagination-footer="!isFetchingList && hasContacts && !isSearchView"
@@ -495,9 +586,30 @@ onMounted(async () => {
       "
       @update:sort="handleSort"
       @apply-filter="fetchSavedOrAppliedFilteredContact"
-      @clear-filters="fetchContacts"
+      @clear-filters="clearAllFilters"
       @load-more="loadMoreSearchResults"
     >
+      <template #stats>
+        <ContactsStatsBar
+          class="px-6"
+          :stats="stats"
+          :active="activeStat"
+          :interactive="canQuickFilter"
+          :recurring-available="hasRecurringAttribute"
+          @select="onSelectStat"
+        />
+      </template>
+      <template #quickFilters>
+        <ContactsQuickFilters
+          v-if="canQuickFilter"
+          @change="applyQuickFilters"
+          @clear="clearAllFilters"
+        />
+      </template>
+      <template #viewControls>
+        <ContactsViewControls />
+      </template>
+
       <div
         v-if="isFetchingList && !(isSearchView && hasContacts)"
         class="flex items-center justify-center py-10 text-n-slate-11"
@@ -527,18 +639,27 @@ onMounted(async () => {
 
         <div
           v-else-if="showEmptyText"
-          class="flex items-center justify-center py-10"
+          class="flex flex-col items-center justify-center gap-3 py-16"
         >
+          <span
+            class="flex items-center justify-center rounded-2xl size-14 bg-brand-gradient-soft text-n-teal-11"
+          >
+            <span class="i-lucide-search-x size-6" />
+          </span>
           <span class="text-base text-n-slate-11">
             {{ emptyStateMessage }}
           </span>
         </div>
 
-        <div v-else class="flex flex-col gap-4 pt-4 pb-6">
+        <div v-else class="flex flex-col gap-4 pt-1 pb-6">
           <ContactsList
             :contacts="contacts"
             :selected-contact-ids="selectedContactIds"
+            :active-sort="sortState.activeSort"
+            :active-ordering="sortState.activeOrdering"
             @toggle-contact="toggleContactSelection"
+            @toggle-all="toggleSelectAll"
+            @sort="handleSort"
           />
           <Dialog
             v-if="selectedCount"

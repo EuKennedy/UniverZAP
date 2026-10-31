@@ -480,6 +480,47 @@ RSpec.describe 'Contacts API', type: :request do
     end
   end
 
+  describe 'contact list page data' do
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let!(:contact) { create(:contact, account: account, name: 'Josieli', phone_number: '+5531998651793') }
+    let!(:other) { create(:contact, account: account, name: 'Carol', email: 'carol@example.com', phone_number: nil) }
+
+    it 'lists each contact with its labels' do
+      contact.update!(label_list: %w[vip nova-cliente])
+
+      get "/api/v1/accounts/#{account.id}/contacts", headers: agent.create_new_auth_token, as: :json
+
+      row = response.parsed_body['payload'].find { |item| item['id'] == contact.id }
+      expect(row['labels']).to match_array(%w[vip nova-cliente])
+    end
+
+    it 'finds a phone number typed with punctuation' do
+      get "/api/v1/accounts/#{account.id}/contacts/search", params: { q: '(31) 99865-1793' }, headers: agent.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['payload'].pluck('id')).to eq([contact.id])
+    end
+
+    it 'narrows the filter down by the search term and counts what is left' do
+      payload = [{ attribute_key: 'name', filter_operator: 'contains', values: ['o'], query_operator: nil }]
+
+      post "/api/v1/accounts/#{account.id}/contacts/filter?q=carol", params: { payload: payload },
+                                                                     headers: agent.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['payload'].pluck('id')).to eq([other.id])
+      expect(response.parsed_body['meta']['count']).to eq(1)
+    end
+
+    it 'returns the figures of the stats bar' do
+      contact.update!(custom_attributes: { recorrente: true })
+      other.update!(created_at: 2.months.ago)
+
+      get "/api/v1/accounts/#{account.id}/contacts/stats", headers: agent.create_new_auth_token, as: :json
+
+      expect(response.parsed_body).to include('total' => be >= 2, 'recurring' => 1, 'without_phone' => be >= 1)
+      expect(response.parsed_body['recent']).to eq(response.parsed_body['total'] - 1)
+    end
+  end
+
   describe 'GET /api/v1/accounts/{account.id}/contacts/:id' do
     let!(:contact) { create(:contact, account: account) }
 

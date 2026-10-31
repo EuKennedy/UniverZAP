@@ -238,6 +238,7 @@ Rails.application.routes.draw do
           resources :contacts, only: [:index, :show, :update, :create, :destroy] do
             collection do
               get :active
+              get :stats
               get :search
               post :filter
               post :import
@@ -751,6 +752,7 @@ Rails.application.routes.draw do
             resource :belezaki, controller: 'belezaki', only: [] do
               collection do
                 get :customer
+                get :customers
                 get :catalog
                 post :sync_catalog
               end

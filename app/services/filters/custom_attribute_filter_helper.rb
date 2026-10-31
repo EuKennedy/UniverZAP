@@ -24,17 +24,18 @@ module Filters::CustomAttributeFilterHelper
     query_operator = query_hash[:query_operator]
     table_name = attribute_model == 'conversation_attribute' ? 'conversations' : 'contacts'
 
-    query = if attribute_data_type == 'text'
-              ActiveRecord::Base.sanitize_sql_array(
-                ["LOWER(#{table_name}.custom_attributes ->> ?)::#{attribute_data_type} #{filter_operator_value} #{query_operator} ", @attribute_key]
-              )
-            else
-              ActiveRecord::Base.sanitize_sql_array(
-                ["(#{table_name}.custom_attributes ->> ?)::#{attribute_data_type} #{filter_operator_value} #{query_operator} ", @attribute_key]
-              )
-            end
+    value = custom_attr_value_sql(table_name)
+    condition = "#{value} #{filter_operator_value}"
+    # "Is not X" also matches contacts that never had the attribute. Grouped so
+    # the OR cannot swallow the conditions around it.
+    condition = "(#{condition} OR #{value} IS NULL)" if query_hash[:filter_operator] == 'not_equal_to'
 
-    query + not_in_custom_attr_query(table_name, query_hash, attribute_data_type)
+    "#{condition} #{query_operator} "
+  end
+
+  def custom_attr_value_sql(table_name)
+    template = attribute_data_type == 'text' ? 'LOWER(%s.custom_attributes ->> ?)::%s' : '(%s.custom_attributes ->> ?)::%s'
+    ActiveRecord::Base.sanitize_sql_array([format(template, table_name, attribute_data_type), @attribute_key])
   end
 
   def custom_attribute(attribute_key, account, custom_attribute_type)
@@ -43,13 +44,5 @@ module Filters::CustomAttributeFilterHelper
     @custom_attribute = current_account.custom_attribute_definitions.where(
       attribute_model: attribute_model
     ).find_by(attribute_key: attribute_key)
-  end
-
-  def not_in_custom_attr_query(table_name, query_hash, attribute_data_type)
-    return '' unless query_hash[:filter_operator] == 'not_equal_to'
-
-    ActiveRecord::Base.sanitize_sql_array(
-      [" OR (#{table_name}.custom_attributes ->> ?)::#{attribute_data_type} IS NULL ", @attribute_key]
-    )
   end
 end
