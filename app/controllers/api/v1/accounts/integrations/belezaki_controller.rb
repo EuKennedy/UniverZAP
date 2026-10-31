@@ -8,6 +8,14 @@ class Api::V1::Accounts::Integrations::BelezakiController < Api::V1::Accounts::B
     render json: Belezaki::CustomerCardService.new(account: Current.account, contact: contact).perform
   end
 
+  # Short summaries for a small batch of contacts of the list page. The cap is
+  # what keeps a request from turning into a burst against the salon's API.
+  def customers
+    ids = Array(params[:contact_ids]).first(Belezaki::CustomerSummariesService::MAX_BATCH)
+    contacts = Current.account.contacts.where(id: ids)
+    render json: { customers: Belezaki::CustomerSummariesService.new(account: Current.account, contacts: contacts).perform }
+  end
+
   # Services and professionals, for the catalogue block and the Apps page.
   def catalog
     render json: Belezaki::CatalogService.new(account: Current.account).perform

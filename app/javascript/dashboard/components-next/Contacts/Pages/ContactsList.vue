@@ -1,14 +1,17 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { useStore, useMapGetter } from 'dashboard/composables/store';
-import { useAlert } from 'dashboard/composables';
-import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
+import { useMapGetter } from 'dashboard/composables/store';
+import { useContactsView } from 'dashboard/composables/useContactsView';
+import { useBelezakiSummaries } from 'dashboard/composables/useBelezakiSummaries';
 import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
-import ContactsCard from 'dashboard/components-next/Contacts/ContactsCard/ContactsCard.vue';
+  BELEZAKI_FIELDS,
+  STANDARD_FIELDS,
+  customFields,
+} from 'dashboard/components-next/Contacts/helper/contactFields';
+import ContactsTable from 'dashboard/components-next/Contacts/ContactsView/ContactsTable.vue';
+import ContactsGrid from 'dashboard/components-next/Contacts/ContactsView/ContactsGrid.vue';
+import ContactPreviewPanel from 'dashboard/components-next/Contacts/ContactsView/ContactPreviewPanel.vue';
 
 const props = defineProps({
   contacts: { type: Array, required: true },
@@ -16,43 +19,46 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  activeSort: { type: String, default: '' },
+  activeOrdering: { type: String, default: '' },
 });
 
-const emit = defineEmits(['toggleContact']);
+const emit = defineEmits(['toggleContact', 'toggleAll', 'sort']);
 
-const { t } = useI18n();
-const store = useStore();
 const router = useRouter();
 const route = useRoute();
 
-const uiFlags = useMapGetter('contacts/getUIFlags');
-const isUpdating = computed(() => uiFlags.value.isUpdating);
-const expandedCardId = ref(null);
-const hoveredAvatarId = ref(null);
+const labels = useMapGetter('labels/getLabels');
+const contactAttributes = useMapGetter('attributes/getContactAttributes');
+const { viewMode, belezakiAvailable, belezakiEnabled, isFieldVisible } =
+  useContactsView();
 
-const selectedIdsSet = computed(() => new Set(props.selectedContactIds || []));
+const selectedIds = computed(() => new Set(props.selectedContactIds));
+const labelColors = computed(() =>
+  Object.fromEntries(labels.value.map(({ title, color }) => [title, color]))
+);
 
-const updateContact = async updatedData => {
-  try {
-    await store.dispatch('contacts/update', updatedData);
-    useAlert(t('CONTACTS_LAYOUT.CARD.EDIT_DETAILS_FORM.SUCCESS_MESSAGE'));
-  } catch (error) {
-    const i18nPrefix = 'CONTACTS_LAYOUT.CARD.EDIT_DETAILS_FORM.FORM';
-    if (error instanceof DuplicateContactException) {
-      if (error.data.includes('email')) {
-        useAlert(t(`${i18nPrefix}.EMAIL_ADDRESS.DUPLICATE`));
-      } else if (error.data.includes('phone_number')) {
-        useAlert(t(`${i18nPrefix}.PHONE_NUMBER.DUPLICATE`));
-      }
-    } else if (error instanceof ExceptionWithMessage) {
-      useAlert(error.data);
-    } else {
-      useAlert(t(`${i18nPrefix}.ERROR_MESSAGE`));
-    }
-  }
+const contactFields = computed(() => [
+  ...STANDARD_FIELDS,
+  ...customFields(contactAttributes.value),
+]);
+const visibleFields = computed(() =>
+  [...BELEZAKI_FIELDS, ...contactFields.value].filter(isFieldVisible)
+);
+
+const contactIds = computed(() => props.contacts.map(({ id }) => id));
+const { summaries } = useBelezakiSummaries(contactIds, belezakiEnabled);
+
+const previewId = ref(null);
+const previewContact = computed(() =>
+  props.contacts.find(({ id }) => id === previewId.value)
+);
+
+const openPreview = ({ id }) => {
+  previewId.value = id;
 };
 
-const onClickViewDetails = async id => {
+const showDetails = async id => {
   const routeTypes = {
     contacts_dashboard_segments_index: ['contacts_edit_segment', 'segmentId'],
     contacts_dashboard_labels_index: ['contacts_edit_label', 'label'],
@@ -65,47 +71,40 @@ const onClickViewDetails = async id => {
 
   await router.push({ name, params, query: route.query });
 };
-
-const toggleExpanded = id => {
-  expandedCardId.value = expandedCardId.value === id ? null : id;
-};
-
-const isSelected = id => selectedIdsSet.value.has(id);
-
-const shouldShowSelection = id => {
-  return hoveredAvatarId.value === id || isSelected(id);
-};
-
-const handleSelect = (id, value) => {
-  emit('toggleContact', { id, value });
-};
-
-const handleAvatarHover = (id, isHovered) => {
-  hoveredAvatarId.value = isHovered ? id : null;
-};
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <div v-for="contact in contacts" :key="contact.id" class="relative">
-      <ContactsCard
-        :id="contact.id"
-        :name="contact.name"
-        :email="contact.email"
-        :thumbnail="contact.thumbnail"
-        :phone-number="contact.phoneNumber"
-        :additional-attributes="contact.additionalAttributes"
-        :availability-status="contact.availabilityStatus"
-        :is-expanded="expandedCardId === contact.id"
-        :is-updating="isUpdating"
-        :selectable="shouldShowSelection(contact.id)"
-        :is-selected="isSelected(contact.id)"
-        @toggle="toggleExpanded(contact.id)"
-        @update-contact="updateContact"
-        @show-contact="onClickViewDetails"
-        @select="value => handleSelect(contact.id, value)"
-        @avatar-hover="value => handleAvatarHover(contact.id, value)"
-      />
-    </div>
-  </div>
+  <ContactsTable
+    v-if="viewMode === 'list'"
+    :contacts="contacts"
+    :fields="visibleFields"
+    :selected-ids="selectedIds"
+    :label-colors="labelColors"
+    :summaries="summaries"
+    :active-sort="activeSort"
+    :active-ordering="activeOrdering"
+    @open="openPreview"
+    @select="emit('toggleContact', $event)"
+    @select-all="emit('toggleAll', $event)"
+    @sort="emit('sort', $event)"
+  />
+  <ContactsGrid
+    v-else
+    :contacts="contacts"
+    :fields="visibleFields"
+    :selected-ids="selectedIds"
+    :label-colors="labelColors"
+    :summaries="summaries"
+    @open="openPreview"
+    @select="emit('toggleContact', $event)"
+  />
+  <ContactPreviewPanel
+    v-if="previewContact"
+    :contact="previewContact"
+    :fields="contactFields"
+    :label-colors="labelColors"
+    :show-belezaki="belezakiAvailable"
+    @close="previewId = null"
+    @show-details="showDetails"
+  />
 </template>

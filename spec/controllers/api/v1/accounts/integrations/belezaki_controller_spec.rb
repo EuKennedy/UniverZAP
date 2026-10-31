@@ -34,6 +34,20 @@ RSpec.describe 'Belezaki Integration API', type: :request do
     end
   end
 
+  describe 'GET /api/v1/accounts/:account_id/integrations/belezaki/customers' do
+    it 'reads at most one small batch and never contacts of another account' do
+      own = create_list(:contact, 7, account: account)
+      foreign = create(:contact)
+      ids = [foreign.id] + own.map(&:id)
+
+      get "/api/v1/accounts/#{account.id}/integrations/belezaki/customers",
+          params: { contact_ids: ids }, headers: agent.create_new_auth_token
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['customers'].keys.map(&:to_i)).to match_array(own.first(4).map(&:id))
+    end
+  end
+
   describe 'GET /api/v1/accounts/:account_id/integrations/belezaki/catalog' do
     it 'serves the salon catalogue to any agent of the account' do
       catalog = { status: 'ok', services: [{ 'name' => 'Corte' }], professionals: [] }

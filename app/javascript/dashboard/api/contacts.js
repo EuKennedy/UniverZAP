@@ -73,9 +73,14 @@ class ContactAPI extends ApiClient {
   }
 
   // eslint-disable-next-line default-param-last
-  filter(page = 1, sortAttr = 'name', queryPayload) {
-    let requestURL = `${this.url}/filter?${buildContactParams(page, sortAttr)}`;
-    return axios.post(requestURL, queryPayload);
+  filter(page = 1, sortAttr = 'name', queryPayload, q = '') {
+    const search = q ? encodeURIComponent(q) : '';
+    const params = buildContactParams(page, sortAttr, '', search);
+    return axios.post(`${this.url}/filter?${params}`, queryPayload);
+  }
+
+  getStats() {
+    return axios.get(`${this.url}/stats`);
   }
 
   importContacts(file) {

@@ -1,15 +1,18 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { useMapGetter } from 'dashboard/composables/store';
 
 import ContactListHeaderWrapper from 'dashboard/components-next/Contacts/ContactsHeader/ContactListHeaderWrapper.vue';
 import ContactsActiveFiltersPreview from 'dashboard/components-next/Contacts/ContactsHeader/components/ContactsActiveFiltersPreview.vue';
 import PaginationFooter from 'dashboard/components-next/pagination/PaginationFooter.vue';
 import ContactsLoadMore from 'dashboard/components-next/Contacts/ContactsLoadMore.vue';
+import { allConditionsHaveChips } from 'dashboard/components-next/Contacts/helper/quickFilters';
 
 const props = defineProps({
   searchValue: { type: String, default: '' },
   headerTitle: { type: String, default: '' },
+  subtitle: { type: String, default: '' },
   showPaginationFooter: { type: Boolean, default: true },
   currentPage: { type: Number, default: 1 },
   totalItems: { type: Number, default: 100 },
@@ -37,6 +40,7 @@ const emit = defineEmits([
 const route = useRoute();
 
 const contactListHeaderWrapper = ref(null);
+const appliedFilters = useMapGetter('contacts/getAppliedContactFilters');
 
 const isNotSegmentView = computed(() => {
   return route.name !== 'contacts_dashboard_segments_index';
@@ -52,6 +56,7 @@ const isLabelView = computed(
 
 const showActiveFiltersPreview = computed(() => {
   return (
+    !(isNotSegmentView.value && allConditionsHaveChips(appliedFilters.value)) &&
     (props.hasAppliedFilters || !isNotSegmentView.value) &&
     !props.isFetchingList &&
     !isLabelView.value &&
@@ -77,10 +82,8 @@ const showPagination = computed(() => {
 </script>
 
 <template>
-  <section
-    class="flex w-full h-full gap-4 overflow-hidden justify-evenly bg-n-surface-1"
-  >
-    <div class="flex flex-col w-full h-full transition-all duration-300">
+  <section class="flex flex-col w-full h-full overflow-hidden bg-n-surface-1">
+    <main class="flex-1 overflow-y-auto">
       <ContactListHeaderWrapper
         ref="contactListHeaderWrapper"
         :show-search="isNotSegmentView && !isActiveView"
@@ -88,6 +91,7 @@ const showPagination = computed(() => {
         :active-sort="activeSort"
         :active-ordering="activeOrdering"
         :header-title="headerTitle"
+        :subtitle="subtitle"
         :active-segment="activeSegment"
         :segments-id="segmentsId"
         :has-applied-filters="hasAppliedFilters"
@@ -97,34 +101,36 @@ const showPagination = computed(() => {
         @search="emit('search', $event)"
         @apply-filter="emit('applyFilter', $event)"
         @clear-filters="emit('clearFilters')"
-      />
-      <main class="flex-1 overflow-y-auto px-6">
-        <div class="w-full mx-auto max-w-5xl">
-          <ContactsActiveFiltersPreview
-            v-if="showActiveFiltersPreview"
-            :active-segment="activeSegment"
-            class="mb-1"
-            @clear-filters="emit('clearFilters')"
-            @open-filter="openFilter"
-          />
-          <slot name="default" />
-          <ContactsLoadMore
-            v-if="showLoadMore"
-            :is-loading="isLoadingMore"
-            @load-more="emit('loadMore')"
-          />
-        </div>
-      </main>
-      <footer v-if="showPagination" class="sticky bottom-0 z-0">
-        <PaginationFooter
-          current-page-info="CONTACTS_LAYOUT.PAGINATION_FOOTER.SHOWING"
-          :current-page="currentPage"
-          :total-items="totalItems"
-          class="max-w-[67rem]"
-          :items-per-page="itemsPerPage"
-          @update:current-page="updateCurrentPage"
+      >
+        <template #stats><slot name="stats" /></template>
+        <template #quickFilters><slot name="quickFilters" /></template>
+        <template #viewControls><slot name="viewControls" /></template>
+      </ContactListHeaderWrapper>
+      <div class="px-6">
+        <ContactsActiveFiltersPreview
+          v-if="showActiveFiltersPreview"
+          :active-segment="activeSegment"
+          class="mb-3"
+          @clear-filters="emit('clearFilters')"
+          @open-filter="openFilter"
         />
-      </footer>
-    </div>
+        <slot name="default" />
+        <ContactsLoadMore
+          v-if="showLoadMore"
+          :is-loading="isLoadingMore"
+          @load-more="emit('loadMore')"
+        />
+      </div>
+    </main>
+    <footer v-if="showPagination" class="sticky bottom-0 z-0">
+      <PaginationFooter
+        current-page-info="CONTACTS_LAYOUT.PAGINATION_FOOTER.SHOWING"
+        :current-page="currentPage"
+        :total-items="totalItems"
+        class="!max-w-none"
+        :items-per-page="itemsPerPage"
+        @update:current-page="updateCurrentPage"
+      />
+    </footer>
   </section>
 </template>

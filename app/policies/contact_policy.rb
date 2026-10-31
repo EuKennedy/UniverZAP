@@ -7,6 +7,10 @@ class ContactPolicy < ApplicationPolicy
     true
   end
 
+  def stats?
+    true
+  end
+
   def import?
     @account_user.administrator?
   end

@@ -404,7 +404,9 @@
             "ERROR_MESSAGE": "Unable to delete filter. Please try again later."
           }
         }
-      }
+      },
+      "SUBTITLE": "{count} contact | {count} contacts",
+      "ADVANCED_FILTERS": "Filters"
     },
     "PAGINATION_FOOTER": {
       "SHOWING": "Showing {startItem} - {endItem} of {totalItems} contact | Showing {startItem} - {endItem} of {totalItems} contacts"
@@ -609,7 +611,68 @@
       "LIST_EMPTY_STATE_TITLE": "No contacts available in this view 📋",
       "ACTIVE_EMPTY_STATE_TITLE": "No contacts are active at the moment 🌙"
     },
-    "LOAD_MORE": "Load more"
+    "LOAD_MORE": "Load more",
+    "STATS": {
+      "TOTAL": "Contacts",
+      "RECENT": "Added in 30 days",
+      "RECURRING": "Recurring",
+      "WITHOUTPHONE": "Without phone"
+    },
+    "QUICK_FILTERS": {
+      "LABELS": "Label",
+      "ORIGIN": "Origin",
+      "TYPE": "Type",
+      "PERIOD": "Added",
+      "PHONE": "Phone",
+      "WITH_PHONE": "With phone",
+      "WITHOUT_PHONE": "Without phone",
+      "LAST_DAYS": "Last {days} days"
+    },
+    "VIEW": {
+      "MODE": "View mode",
+      "LIST": "List",
+      "CARDS": "Cards",
+      "FIELDS": "Fields",
+      "SHOW_ALL": "Show all fields",
+      "BELEZAKI": "Belezaki",
+      "BELEZAKI_HINT": "Show the salon's data for the contacts on this page",
+      "GROUPS": {
+        "STANDARD": "Contact",
+        "CUSTOM": "Custom attributes",
+        "BELEZAKI": "Belezaki"
+      }
+    },
+    "FIELDS": {
+      "NAME": "Name",
+      "PHONE": "Phone",
+      "EMAIL": "Email",
+      "LABELS": "Labels",
+      "TYPE": "Type",
+      "ORIGIN": "Origin",
+      "COMPANY": "Company",
+      "LOCATION": "City / country",
+      "IDENTIFIER": "Identifier",
+      "CREATED_AT": "Created at",
+      "LAST_ACTIVITY": "Last activity",
+      "BELEZAKI_NEXT": "Next appointment",
+      "BELEZAKI_SERVICES": "Latest services",
+      "BELEZAKI_PROFESSIONAL": "Professional",
+      "BELEZAKI_SPENT": "Total spent",
+      "BELEZAKI_VISITS": "Visits",
+      "BELEZAKI_UNKNOWN": "Not registered",
+      "TYPE_NEW": "New",
+      "TYPE_RECURRING": "Recurring",
+      "ORIGIN_AD": "Ad",
+      "ORIGIN_ORGANIC": "Organic",
+      "WITHOUT_NUMBER": "Contact without number",
+      "YES": "Yes",
+      "NO": "No"
+    },
+    "PREVIEW": {
+      "CLOSE": "Close",
+      "OPEN_DETAILS": "Open full record",
+      "SEND_MESSAGE": "Send message"
+    }
   },
   "CONTACTS_BULK_ACTIONS": {
     "ASSIGN_LABELS": "Assign Labels",

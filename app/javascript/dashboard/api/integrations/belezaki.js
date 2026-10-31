@@ -13,6 +13,12 @@ class BelezakiAPI extends ApiClient {
     });
   }
 
+  getCustomers(contactIds) {
+    return axios.get(`${this.url}/customers`, {
+      params: { contact_ids: contactIds },
+    });
+  }
+
   getCatalog() {
     return axios.get(`${this.url}/catalog`);
   }

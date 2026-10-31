@@ -32,6 +32,7 @@ const props = defineProps({
   activeSort: { type: String, default: 'last_activity_at' },
   activeOrdering: { type: String, default: '' },
   headerTitle: { type: String, default: '' },
+  subtitle: { type: String, default: '' },
   segmentsId: { type: [String, Number], default: 0 },
   activeSegment: { type: Object, default: null },
   hasAppliedFilters: { type: Boolean, default: false },
@@ -277,6 +278,7 @@ defineExpose({
     :active-sort="activeSort"
     :active-ordering="activeOrdering"
     :header-title="headerTitle"
+    :subtitle="subtitle"
     :is-segments-view="hasActiveSegments"
     :is-label-view="isLabelView"
     :is-active-view="isActiveView"
@@ -291,6 +293,9 @@ defineExpose({
     @create-segment="openCreateSegmentDialog"
     @delete-segment="openDeleteSegmentDialog"
   >
+    <template #stats><slot name="stats" /></template>
+    <template #quickFilters><slot name="quickFilters" /></template>
+    <template #viewControls><slot name="viewControls" /></template>
     <template #filter>
       <div
         class="absolute mt-1 ltr:-right-52 rtl:-left-52 sm:ltr:right-0 sm:rtl:left-0 top-full"
