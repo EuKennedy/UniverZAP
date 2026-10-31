@@ -275,6 +275,20 @@ describe ConversationFinder do
       end
     end
 
+    context 'with a queue view and the status filter on all' do
+      it 'never lists a resolved conversation, even one still flagged as waiting' do
+        resolved = create(:conversation, account: account, inbox: inbox, assignee: user_1, status: :resolved)
+        resolved.update_columns(awaiting_reply: true) # rubocop:disable Rails/SkipsModelValidations
+
+        %w[waiting awaiting_customer in_attendance].each do |state|
+          params = { assignee_type: 'all', status: 'all', attendance_state: state }
+          ids = described_class.new(user_1, params).perform[:conversations].map(&:id)
+
+          expect(ids).not_to include(resolved.id)
+        end
+      end
+    end
+
     context 'with attendance_state' do
       # Whose turn it is: the contact wrote last (ours) or we did (theirs).
       let!(:ours) { create(:conversation, account: account, inbox: inbox, assignee: user_1, awaiting_reply: true) }

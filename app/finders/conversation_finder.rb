@@ -169,22 +169,30 @@ class ConversationFinder
   # UniverZAP: whose turn it is, in the Todos dropdown — Aguardando (ours),
   # Aguardando cliente (theirs); Em atendimento (in_attendance) is both, so it
   # narrows nothing. A param of its own, so it narrows any conversation_type
-  # (mentions, unattended…) instead of replacing it.
+  # (mentions, unattended…) instead of replacing it. These are queues of work
+  # still going on: a resolved conversation never sits in one, whatever status
+  # filter the agent has saved, until a message from the contact reopens it.
   def filter_by_attendance_state
     case params[:attendance_state]
-    when 'waiting'
-      @conversations = @conversations.waiting
-    when 'awaiting_customer'
-      @conversations = @conversations.awaiting_customer
+    when 'waiting' then @conversations = in_queue.waiting
+    when 'awaiting_customer' then @conversations = in_queue.awaiting_customer
+    when 'in_attendance' then @conversations = in_queue
     # UniverZAP: the two halves of the resolved list — Agendadas (customer
     # won, carries the vertical's scheduling status; see
     # Conversations::ScheduleService) and the plain Resolvidas without it.
     # A vertical that doesn't schedule has no such split.
-    when 'scheduled'
-      @conversations = @conversations.tagged_with(schedule_status, on: :labels) if schedule_status
-    when 'resolved'
-      @conversations = @conversations.tagged_with(schedule_status, on: :labels, exclude: true) if schedule_status
+    when 'scheduled', 'resolved' then split_resolved_by_schedule
     end
+  end
+
+  def in_queue
+    @conversations.where.not(status: :resolved)
+  end
+
+  def split_resolved_by_schedule
+    return unless schedule_status
+
+    @conversations = @conversations.tagged_with(schedule_status, on: :labels, exclude: params[:attendance_state] == 'resolved')
   end
 
   def schedule_status

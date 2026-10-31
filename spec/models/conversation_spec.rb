@@ -54,6 +54,14 @@ RSpec.describe Conversation do
       expect(conversation.reload.status).to eq('resolved')
     end
 
+    it 'stops waiting for a reply when it is resolved' do
+      conversation.update!(awaiting_reply: true)
+
+      conversation.resolved!
+
+      expect(conversation.reload).to have_attributes(awaiting_reply: false, waiting_since: nil)
+    end
+
     it 'keeps a reopened conversation open when other labels change' do
       conversation.add_labels(['agendado'])
       conversation.open!

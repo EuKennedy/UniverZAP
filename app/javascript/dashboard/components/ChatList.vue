@@ -419,6 +419,17 @@ const RESOLVED_VIEWS = [
   wootConstants.LIST_VIEW.SCHEDULED,
 ];
 
+// The queues of work still going on. A resolved conversation never shows in
+// one, whatever status filter the agent has saved: only a message from the
+// contact brings it back.
+const QUEUE_VIEWS = [
+  wootConstants.LIST_VIEW.WAITING,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
+  wootConstants.LIST_VIEW.IN_ATTENDANCE,
+  wootConstants.LIST_VIEW.ME,
+  wootConstants.LIST_VIEW.UNASSIGNED,
+];
+
 // Views that travel as `attendance_state` so the backend narrows the list
 // (and the agenda strip) the same way the client does below.
 const ATTENDANCE_VIEWS = [
@@ -449,11 +460,23 @@ function resolveAssigneeType() {
 // Minhas / Fila (sem dono) are assignee_type; Aguardando / Em atendimento
 // travel as `attendance_state`, so they narrow the route's own
 // conversation_type.
+const listStatus = computed(() => {
+  const widensQueue = [
+    wootConstants.STATUS_TYPE.ALL,
+    wootConstants.STATUS_TYPE.RESOLVED,
+  ].includes(activeStatus.value);
+  return !isSegmentTab.value &&
+    widensQueue &&
+    QUEUE_VIEWS.includes(activeListView.value)
+    ? wootConstants.STATUS_TYPE.OPEN
+    : activeStatus.value;
+});
+
 const conversationFilters = computed(() => {
   return {
     inboxId: props.conversationInbox ? props.conversationInbox : undefined,
     assigneeType: resolveAssigneeType(),
-    status: activeStatus.value,
+    status: listStatus.value,
     sortBy: activeSortBy.value,
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
@@ -550,17 +573,20 @@ function filterByListKey(conversations) {
   const nonGroups = conversations.filter(
     c => !c.is_group && !c.is_status_broadcast && !c.is_team
   );
+  const inQueue = nonGroups.filter(c => c.status !== 'resolved');
   switch (activeListView.value) {
     case wootConstants.LIST_VIEW.ME:
-      return nonGroups.filter(
+      return inQueue.filter(
         c => c.meta?.assignee?.id === currentUser.value?.id
       );
     case wootConstants.LIST_VIEW.WAITING:
-      return nonGroups.filter(isOurTurn);
+      return inQueue.filter(isOurTurn);
     case wootConstants.LIST_VIEW.AWAITING_CUSTOMER:
-      return nonGroups.filter(c => !isOurTurn(c));
+      return inQueue.filter(c => !isOurTurn(c));
     case wootConstants.LIST_VIEW.UNASSIGNED:
-      return nonGroups.filter(c => !c.meta?.assignee);
+      return inQueue.filter(c => !c.meta?.assignee);
+    case wootConstants.LIST_VIEW.IN_ATTENDANCE:
+      return inQueue;
     case wootConstants.LIST_VIEW.RESOLVED:
       return nonGroups.filter(c => c.status === 'resolved' && !isScheduled(c));
     case wootConstants.LIST_VIEW.SCHEDULED:
@@ -785,7 +811,7 @@ function setParamsForEditFolderModal() {
 
 function initializeExistingFilterToModal() {
   const statusFilter = initializeStatusAndAssigneeFilterToModal(
-    activeStatus.value,
+    listStatus.value,
     currentUserDetails.value,
     activeAssigneeTab.value
   );
@@ -901,7 +927,7 @@ function setCreatedOn(day) {
 // label of the route — so those travel as conditions of their own.
 function listContextConditions() {
   const conditions = [
-    listFilterCondition('status', 'equal_to', [activeStatus.value]),
+    listFilterCondition('status', 'equal_to', [listStatus.value]),
     listFilterCondition('is_group', 'equal_to', [isGroupsTab.value]),
   ];
   if (isMineView.value) {
@@ -1027,6 +1053,16 @@ function updateView(selectedView) {
 
 function onBasicFilterChange(value, type) {
   if (type === 'status') {
+    // Asking for what a queue never holds means leaving the queue.
+    if (QUEUE_VIEWS.includes(activeListView.value)) {
+      if (value === wootConstants.STATUS_TYPE.RESOLVED) {
+        updateView(wootConstants.LIST_VIEW.RESOLVED);
+        return;
+      }
+      if (value === wootConstants.STATUS_TYPE.ALL) {
+        updateView(wootConstants.LIST_VIEW.ALL);
+      }
+    }
     activeStatus.value = value;
   } else {
     activeSortBy.value = value;
@@ -1246,7 +1282,7 @@ useEmitter('fetch_conversation_stats', () => {
 onMounted(() => {
   store.dispatch('setChatListFilters', conversationFilters.value);
   setFiltersFromUISettings();
-  store.dispatch('setChatStatusFilter', activeStatus.value);
+  store.dispatch('setChatStatusFilter', listStatus.value);
   store.dispatch('setChatSortFilter', activeSortBy.value);
   resetAndFetchData();
   fetchFirstReplyTime();
@@ -1351,7 +1387,7 @@ watch(conversationFilters, (newVal, oldVal) => {
         :page-title="pageTitle"
         :has-applied-filters="hasAppliedFilters"
         :has-active-folders="hasActiveFolders"
-        :active-status="activeStatus"
+        :active-status="listStatus"
         :is-on-expanded-layout="isOnExpandedLayout"
         :conversation-stats="conversationStats"
         :is-list-loading="chatListLoading && !conversationList.length"

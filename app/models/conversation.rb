@@ -431,11 +431,11 @@ class Conversation < ApplicationRecord
   end
 
   def handle_resolved_status_change
-    # When conversation is resolved, clear waiting_since using update_column to avoid callbacks
+    # A resolved conversation waits on nobody. Columns only, to avoid callbacks.
     return unless saved_change_to_status? && status == 'resolved'
 
     # rubocop:disable Rails/SkipsModelValidations
-    update_column(:waiting_since, nil)
+    update_columns(waiting_since: nil, awaiting_reply: false)
     # rubocop:enable Rails/SkipsModelValidations
   end
 
