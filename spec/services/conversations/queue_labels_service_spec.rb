@@ -44,4 +44,31 @@ RSpec.describe Conversations::QueueLabelsService do
 
     expect(conversation.reload.label_list).to include('novo-contato')
   end
+
+  context 'with an appointment' do
+    before { create(:label, account: account, title: 'agendado') }
+
+    it 'does not let an automation add a closing tag to it' do
+      conversation.reload.add_labels(['agendado'])
+
+      ActionService.new(conversation).add_label(['atendimento-encerrado'])
+
+      expect(conversation.reload.label_list).to contain_exactly('agendado', 'vip')
+    end
+
+    it 'adds a closing tag normally without one' do
+      ActionService.new(conversation).add_label(['atendimento-encerrado'])
+
+      expect(conversation.reload.label_list).to include('atendimento-encerrado')
+    end
+  end
+
+  it 'does not lose a label written elsewhere meanwhile' do
+    stale = described_class.new(Conversation.find(conversation.id))
+    Conversation.find(conversation.id).add_labels(['triagem'])
+
+    stale.ended
+
+    expect(conversation.reload.label_list).to contain_exactly('vip')
+  end
 end

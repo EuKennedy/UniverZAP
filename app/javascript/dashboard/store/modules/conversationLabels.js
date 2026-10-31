@@ -19,18 +19,19 @@ export const getters = {
   },
 };
 
-// UniverZAP: labels that conclude a conversation on the server (closing labels
-// and the vertical's scheduling status, Conversation#handle_closing_label_applied).
-const concludingLabels = rootGetters => {
+// UniverZAP: what a label does to the conversation on the server, mirrored here
+// so it moves on the spot (Conversation#handle_closing_label_applied).
+const labelEffects = rootGetters => {
   const closing = (rootGetters?.['labels/getLabels'] || [])
     .filter(label => label.closes_conversation)
     .map(label => label.title);
-  const account = rootGetters?.['accounts/getAccount']?.(
+  const profile = rootGetters?.['accounts/getAccount']?.(
     rootGetters?.getCurrentAccountId
-  );
-  return [...closing, account?.vertical_profile?.schedule_status].filter(
-    Boolean
-  );
+  )?.vertical_profile;
+  return {
+    concluding: [...closing, profile?.schedule_status].filter(Boolean),
+    waitingOnContact: profile?.awaiting_customer_statuses || [],
+  };
 };
 
 export const actions = {
@@ -70,9 +71,25 @@ export const actions = {
         id: conversationId,
         data: response.data.payload,
       });
-      // Out of the queue on the spot, without waiting for the websocket.
-      const concluding = concludingLabels(rootGetters);
-      if (labels.some(l => !current.includes(l) && concluding.includes(l))) {
+      // Moves on the spot, without waiting for the websocket.
+      const { concluding, waitingOnContact } = labelEffects(rootGetters);
+      const applied = labels.filter(label => !current.includes(label));
+      const conversation = rootGetters?.getConversationById?.(conversationId);
+      if (conversation) {
+        const handsTurn = applied.some(l => waitingOnContact.includes(l));
+        commit(types.default.UPDATE_CONVERSATION, {
+          id: conversationId,
+          labels: response.data.payload,
+          ...(handsTurn && {
+            awaiting_reply: false,
+            additional_attributes: {
+              ...conversation.additional_attributes,
+              turn_parked_at: Math.floor(Date.now() / 1000),
+            },
+          }),
+        });
+      }
+      if (applied.some(label => concluding.includes(label))) {
         commit(types.default.CHANGE_CONVERSATION_STATUS, {
           conversationId,
           status: 'resolved',

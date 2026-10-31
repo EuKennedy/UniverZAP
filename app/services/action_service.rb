@@ -35,6 +35,7 @@ class ActionService
   end
 
   def add_label(labels)
+    labels = Conversations::QueueLabelsService.new(@conversation).without_closing_if_scheduled(labels)
     return if labels.empty?
 
     @conversation.reload.add_labels(labels)

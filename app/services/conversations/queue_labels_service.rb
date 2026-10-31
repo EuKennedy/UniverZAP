@@ -4,6 +4,9 @@
 #   - the team replied: novo-contato/triagem become em-atendimento;
 #   - the conversation ended: none of the three stays on it;
 #   - the contact came back: em-atendimento.
+# An appointment is the outcome of a scheduled conversation, so it never also
+# carries a closing label such as atendimento-encerrado. Labels are read fresh:
+# an automation may have just written them from another process.
 class Conversations::QueueLabelsService
   ENTRY_STAGES = %w[novo-contato triagem].freeze
   ACTIVE_STAGE = 'em-atendimento'.freeze
@@ -21,7 +24,8 @@ class Conversations::QueueLabelsService
   def ended
     return unless applicable?
 
-    apply(labels - ENTRY_STAGES - [ACTIVE_STAGE])
+    current = labels - ENTRY_STAGES - [ACTIVE_STAGE]
+    apply(without_closing_if_scheduled(current))
   end
 
   def reopened
@@ -30,10 +34,23 @@ class Conversations::QueueLabelsService
     apply((labels - ENTRY_STAGES) | [ACTIVE_STAGE])
   end
 
+  # The labels that may go on: what an automation asks for, minus a closing
+  # label when the conversation carries an appointment.
+  def without_closing_if_scheduled(titles)
+    return titles unless scheduled?
+
+    titles - @conversation.account.labels.closing.pluck(:title)
+  end
+
   private
 
   def labels
-    @conversation.label_list.to_a
+    @conversation.reload.label_list.to_a
+  end
+
+  def scheduled?
+    schedule_status = VerticalProfile.for(@conversation.account).schedule_status
+    schedule_status.present? && labels.include?(schedule_status)
   end
 
   def applicable?
@@ -45,6 +62,6 @@ class Conversations::QueueLabelsService
   end
 
   def apply(next_labels)
-    @conversation.update_labels(next_labels) if next_labels.sort != labels.sort
+    @conversation.update_labels(next_labels) if next_labels.sort != @conversation.label_list.to_a.sort
   end
 end

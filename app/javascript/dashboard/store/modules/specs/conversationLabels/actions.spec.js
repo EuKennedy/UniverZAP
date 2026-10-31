@@ -37,8 +37,12 @@ describe('#actions', () => {
     const rootGetters = {
       'labels/getLabels': [{ title: 'cancelado', closes_conversation: true }],
       getCurrentAccountId: 1,
+      getConversationById: () => ({ additional_attributes: { a: 1 } }),
       'accounts/getAccount': () => ({
-        vertical_profile: { schedule_status: 'agendado' },
+        vertical_profile: {
+          schedule_status: 'agendado',
+          awaiting_customer_statuses: ['lista-espera'],
+        },
       }),
     };
     const context = labels => ({
@@ -58,6 +62,18 @@ describe('#actions', () => {
       expect(commit).toHaveBeenCalledWith(
         types.default.CHANGE_CONVERSATION_STATUS,
         { conversationId: 1, status: 'resolved' }
+      );
+    });
+
+    it('hands the turn to the contact on a label that waits on them', async () => {
+      axios.post.mockResolvedValue({ data: { payload: ['lista-espera'] } });
+      await actions.update(context([]), {
+        conversationId: 1,
+        labels: ['lista-espera'],
+      });
+      expect(commit).toHaveBeenCalledWith(
+        types.default.UPDATE_CONVERSATION,
+        expect.objectContaining({ id: 1, awaiting_reply: false })
       );
     });
 
