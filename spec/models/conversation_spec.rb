@@ -32,6 +32,8 @@ RSpec.describe Conversation do
     before do
       create(:label, account: account, title: 'cancelado', closes_conversation: true)
       create(:label, account: account, title: 'agendado')
+      create(:label, account: account, title: 'triagem')
+      create(:label, account: account, title: 'lista-espera')
     end
 
     it 'resolves the conversation when a closing label is applied' do
@@ -41,9 +43,32 @@ RSpec.describe Conversation do
     end
 
     it 'keeps the conversation open when an ordinary label is applied' do
-      conversation.add_labels(['agendado'])
+      conversation.add_labels(['triagem'])
 
       expect(conversation.reload.status).to eq('open')
+    end
+
+    it 'concludes the conversation when the scheduling status is applied' do
+      conversation.add_labels(['agendado'])
+
+      expect(conversation.reload.status).to eq('resolved')
+    end
+
+    it 'keeps a reopened conversation open when other labels change' do
+      conversation.add_labels(['agendado'])
+      conversation.open!
+      conversation.reload.add_labels(['triagem'])
+
+      expect(conversation.reload.status).to eq('open')
+    end
+
+    it 'hands the turn to the contact when a status that waits on them is applied' do
+      conversation.update!(awaiting_reply: true, waiting_since: 1.hour.ago)
+
+      conversation.add_labels(['lista-espera'])
+
+      expect(conversation.reload).to have_attributes(status: 'open', awaiting_reply: false, waiting_since: nil)
+      expect(conversation.additional_attributes['turn_parked_at']).to be_present
     end
 
     it 'drops the closing label, and only it, when the conversation is reopened' do

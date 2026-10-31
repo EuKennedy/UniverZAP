@@ -24,6 +24,8 @@
       "COMPACT": "first reply {time} · {pending} unanswered"
     },
     "QUICK_NAV": {
+      "SEARCH": "Go to…",
+      "NO_RESULT": "Nothing found",
       "LABEL": "Conversation shortcuts",
       "TITLE": "Navigate",
       "QUEUES": "Queues",

@@ -38,4 +38,16 @@ describe('isOurTurn', () => {
     ];
     expect(isOurTurn({ awaiting_reply: true, messages })).toBe(false);
   });
+
+  it('disregards messages up to the moment the turn was parked', () => {
+    const conversation = {
+      awaiting_reply: false,
+      additional_attributes: { turn_parked_at: 100 },
+      messages: [{ message_type: 0, created_at: 90 }],
+    };
+
+    expect(isOurTurn(conversation)).toBe(false);
+    conversation.messages.push({ message_type: 0, created_at: 110 });
+    expect(isOurTurn(conversation)).toBe(true);
+  });
 });

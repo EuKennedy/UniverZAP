@@ -19,6 +19,20 @@ export const getters = {
   },
 };
 
+// UniverZAP: labels that conclude a conversation on the server (closing labels
+// and the vertical's scheduling status, Conversation#handle_closing_label_applied).
+const concludingLabels = rootGetters => {
+  const closing = (rootGetters?.['labels/getLabels'] || [])
+    .filter(label => label.closes_conversation)
+    .map(label => label.title);
+  const account = rootGetters?.['accounts/getAccount']?.(
+    rootGetters?.getCurrentAccountId
+  );
+  return [...closing, account?.vertical_profile?.schedule_status].filter(
+    Boolean
+  );
+};
+
 export const actions = {
   get: async ({ commit }, conversationId) => {
     commit(types.default.SET_CONVERSATION_LABELS_UI_FLAG, {
@@ -39,11 +53,15 @@ export const actions = {
       });
     }
   },
-  update: async ({ commit }, { conversationId, labels }) => {
+  update: async (
+    { commit, getters: localGetters, rootGetters },
+    { conversationId, labels }
+  ) => {
     commit(types.default.SET_CONVERSATION_LABELS_UI_FLAG, {
       isUpdating: true,
     });
     try {
+      const current = localGetters?.getConversationLabels(conversationId) || [];
       const response = await ConversationAPI.updateLabels(
         conversationId,
         labels
@@ -52,6 +70,14 @@ export const actions = {
         id: conversationId,
         data: response.data.payload,
       });
+      // Out of the queue on the spot, without waiting for the websocket.
+      const concluding = concludingLabels(rootGetters);
+      if (labels.some(l => !current.includes(l) && concluding.includes(l))) {
+        commit(types.default.CHANGE_CONVERSATION_STATUS, {
+          conversationId,
+          status: 'resolved',
+        });
+      }
       commit(types.default.SET_CONVERSATION_LABELS_UI_FLAG, {
         isUpdating: false,
         isError: false,

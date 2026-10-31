@@ -33,6 +33,47 @@ describe('#actions', () => {
     });
   });
 
+  describe('#update, when the label concludes the conversation', () => {
+    const rootGetters = {
+      'labels/getLabels': [{ title: 'cancelado', closes_conversation: true }],
+      getCurrentAccountId: 1,
+      'accounts/getAccount': () => ({
+        vertical_profile: { schedule_status: 'agendado' },
+      }),
+    };
+    const context = labels => ({
+      commit,
+      rootGetters,
+      getters: { getConversationLabels: () => labels },
+    });
+
+    beforeEach(() => commit.mockClear());
+
+    it('takes it out of the queue on the spot', async () => {
+      axios.post.mockResolvedValue({ data: { payload: ['agendado'] } });
+      await actions.update(context([]), {
+        conversationId: 1,
+        labels: ['agendado'],
+      });
+      expect(commit).toHaveBeenCalledWith(
+        types.default.CHANGE_CONVERSATION_STATUS,
+        { conversationId: 1, status: 'resolved' }
+      );
+    });
+
+    it('leaves it alone when the label was already there', async () => {
+      axios.post.mockResolvedValue({ data: { payload: ['agendado', 'vip'] } });
+      await actions.update(context(['agendado']), {
+        conversationId: 1,
+        labels: ['agendado', 'vip'],
+      });
+      expect(commit).not.toHaveBeenCalledWith(
+        types.default.CHANGE_CONVERSATION_STATUS,
+        expect.anything()
+      );
+    });
+  });
+
   describe('#update', () => {
     it('updates correct actions if API is success', async () => {
       axios.post.mockResolvedValue({

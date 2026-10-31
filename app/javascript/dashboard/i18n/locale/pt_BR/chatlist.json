@@ -24,6 +24,8 @@
       "COMPACT": "1ª resposta {time} · {pending} sem resposta"
     },
     "QUICK_NAV": {
+      "SEARCH": "Ir para…",
+      "NO_RESULT": "Nada encontrado",
       "LABEL": "Atalhos das conversas",
       "TITLE": "Navegar",
       "QUEUES": "Filas",

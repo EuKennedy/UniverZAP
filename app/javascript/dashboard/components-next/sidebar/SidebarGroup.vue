@@ -38,6 +38,7 @@ const {
   isAllowed,
   isCollapsed,
   isResizing,
+  complementVisible,
 } = useSidebarContext();
 
 const {
@@ -100,7 +101,8 @@ const closePopover = () => {
 };
 
 const handleMouseEnter = () => {
-  if (!hasChildren.value || isResizing.value) return;
+  if (!hasChildren.value || isResizing.value || complementVisible?.value)
+    return;
   cancelClose();
   openPopover();
 };
@@ -263,17 +265,21 @@ watch(
           :target="href ? '_blank' : undefined"
           :rel="href ? 'noopener noreferrer' : undefined"
           type="button"
-          class="flex items-center justify-center size-10 rounded-lg"
+          class="flex flex-col items-center justify-center w-[3.75rem] gap-1 px-0.5 py-1.5 transition-all rounded-xl motion-safe:active:scale-95"
           :class="{
-            'text-n-slate-12 bg-brand-gradient-soft':
+            'text-n-teal-11 bg-brand-gradient-soft outline outline-1 outline-n-teal-7 shadow-[0_0_18px_-6px_rgba(20,230,127,0.65)]':
               isActive || hasActiveChild,
-            'text-n-slate-11 hover:bg-n-alpha-2': !isActive && !hasActiveChild,
+            'text-n-slate-11 hover:bg-n-alpha-2 hover:text-n-slate-12':
+              !isActive && !hasActiveChild,
           }"
           :title="label"
           :data-onboarding="dataOnboarding || undefined"
           @click="hasChildren ? handleCollapsedClick() : undefined"
         >
-          <Icon v-if="icon" :icon="icon" class="size-4" />
+          <Icon v-if="icon" :icon="icon" class="size-5" />
+          <span class="max-w-full text-[0.625rem] leading-none truncate">
+            {{ label }}
+          </span>
         </component>
         <SidebarCollapsedPopover
           v-if="hasChildren && isPopoverOpen"

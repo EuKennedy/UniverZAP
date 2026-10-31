@@ -366,20 +366,42 @@ class Conversation < ApplicationRecord
     notify_conversation_updation
   end
 
-  # When a label flagged as "closes_conversation" (an account's custom closing
-  # status, e.g. atendimento-encerrado, cancelado) gets applied, the
-  # conversation is archived by resolving it. Message#reopen_conversation
-  # already reopens resolved conversations on the contact's next message, so
-  # that's also how an archived conversation comes back.
+  # A status applied to a conversation moves it, so nothing sits in Aguardando
+  # or Em atendimento after the team is done with it:
+  #   - a label flagged "closes_conversation" (atendimento-encerrado, cancelado)
+  #     or the vertical's scheduling status (agendado) concludes it: resolved,
+  #     which lands in Resolvidas or Agendadas. Message#reopen_conversation
+  #     already reopens it on the contact's next message;
+  #   - a status that waits on the contact (lista-espera, aguardando-pagamento)
+  #     hands the turn to them: Aguardando cliente.
+  # Only a status just applied counts, so editing other labels on a reopened
+  # conversation that still carries one doesn't move it again.
   def handle_closing_label_applied
     return unless saved_change_to_label_list?
     return if resolved?
 
-    _, current_labels = previous_changes[:label_list]
+    previous_labels, current_labels = previous_changes[:label_list]
     return unless current_labels.is_a?(Array)
 
-    closing_titles = account.labels.closing.pluck(:title)
-    resolved! if current_labels.intersect?(closing_titles)
+    applied = current_labels - Array(previous_labels)
+    profile = VerticalProfile.for(account)
+    if applied.intersect?(account.labels.closing.pluck(:title) | [profile.schedule_status].compact)
+      resolved!
+    elsif applied.intersect?(profile.awaiting_customer_statuses)
+      hand_turn_to_contact
+    end
+  end
+
+  # `turn_parked_at` tells the list to disregard messages up to now when working
+  # out whose turn it is (see helper/conversationTurn.js).
+  def hand_turn_to_contact
+    # rubocop:disable Rails/SkipsModelValidations
+    update_columns(
+      awaiting_reply: false,
+      waiting_since: nil,
+      additional_attributes: (additional_attributes || {}).merge('turn_parked_at' => Time.current.to_i)
+    )
+    # rubocop:enable Rails/SkipsModelValidations
   end
 
   # A closing label describes the cycle that ended. When the conversation comes

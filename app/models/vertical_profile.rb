@@ -17,6 +17,7 @@ class VerticalProfile
     conversion_status: 'agendado',
     recurring_label: 'cliente-recorrente',
     schedule_status: 'agendado',
+    awaiting_customer_statuses: %w[lista-espera lembrete-enviado lembrete-recompra],
     sheet_fields: nil,
     agent_templates: %w[salao nails],
     belezaki: true
@@ -28,6 +29,7 @@ class VerticalProfile
       conversion_status: 'agendado',
       recurring_label: nil,
       schedule_status: 'agendado',
+      awaiting_customer_statuses: %w[lista-espera lembrete-enviado lembrete-retorno],
       sheet_fields: nil,
       agent_templates: %w[clinica],
       belezaki: false
@@ -36,6 +38,7 @@ class VerticalProfile
       conversion_status: 'pedido-confirmado',
       recurring_label: 'comprou-novamente',
       schedule_status: nil,
+      awaiting_customer_statuses: %w[aguardando-pagamento],
       sheet_fields: %w[numero_pedido valor_pedido codigo_rastreio motivo_contato],
       agent_templates: %w[varejo],
       belezaki: false,
@@ -79,6 +82,9 @@ class VerticalProfile
   def schedule_status = @profile[:schedule_status]
   def schedules? = schedule_status.present?
 
+  # Statuses that mean the next move is the contact's: Aguardando cliente.
+  def awaiting_customer_statuses = @profile.fetch(:awaiting_customer_statuses, [])
+
   # nil keeps the salon's appointment rows; a list replaces them.
   def sheet_fields = @profile[:sheet_fields]
 
@@ -96,6 +102,7 @@ class VerticalProfile
       conversion_status: conversion_status,
       recurring_label: recurring_label,
       schedule_status: schedule_status,
+      awaiting_customer_statuses: awaiting_customer_statuses,
       sheet_fields: sheet_fields,
       agent_templates: agent_templates,
       belezaki: belezaki?,

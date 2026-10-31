@@ -7,7 +7,8 @@
 // that, the newest message that counts decides: the contact's (incoming) means
 // our move, ours (outgoing, or the note WAHA writes for a reply typed in the
 // phone) means theirs. Activities, templates and other private notes don't
-// change whose turn it is.
+// change whose turn it is. A status that waits on the contact parks the turn:
+// messages up to `turn_parked_at` no longer count (Conversation#hand_turn_to_contact).
 const INCOMING = 0;
 const OUTGOING = 1;
 const PHONE_REPLY_NOTE = /^\s*\*?📱 (?:Enviado do|Sent from) WhatsApp\*?/;
@@ -18,8 +19,9 @@ const countsForTurn = message =>
     : [INCOMING, OUTGOING].includes(message.message_type);
 
 export const isOurTurn = conversation => {
+  const parkedAt = conversation.additional_attributes?.turn_parked_at || 0;
   const latest = (conversation.messages || [])
-    .filter(countsForTurn)
+    .filter(message => message.created_at > parkedAt && countsForTurn(message))
     .reduce(
       (newest, message) =>
         !newest || message.created_at >= newest.created_at ? message : newest,

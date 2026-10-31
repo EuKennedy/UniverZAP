@@ -6,7 +6,7 @@ import { useUISettings } from 'dashboard/composables/useUISettings';
 const SidebarControl = Symbol('SidebarControl');
 
 const DEFAULT_WIDTH = 200;
-const MIN_WIDTH = 56;
+const MIN_WIDTH = 76;
 const COLLAPSED_THRESHOLD = 160;
 const MAX_WIDTH = 320;
 
@@ -17,7 +17,14 @@ let globalCloseTimeout = null;
 export function useSidebarResize() {
   const { uiSettings, updateUISettings } = useUISettings();
 
-  const sidebarWidth = ref(uiSettings.value.sidebar_width || DEFAULT_WIDTH);
+  // UniverZAP: the rail with its complementary panel is the default; the wide
+  // classic menu is what someone asks for by expanding or dragging the sidebar.
+  const savedWidth = () =>
+    uiSettings.value.sidebar_classic
+      ? uiSettings.value.sidebar_width || DEFAULT_WIDTH
+      : MIN_WIDTH;
+
+  const sidebarWidth = ref(savedWidth());
   const isCollapsed = computed(() => sidebarWidth.value < COLLAPSED_THRESHOLD);
 
   const setSidebarWidth = width => {
@@ -25,17 +32,20 @@ export function useSidebarResize() {
   };
 
   const saveWidth = () => {
-    updateUISettings({ sidebar_width: sidebarWidth.value });
+    updateUISettings({
+      sidebar_width: sidebarWidth.value,
+      sidebar_classic: true,
+    });
   };
 
   const snapToCollapsed = () => {
     sidebarWidth.value = MIN_WIDTH;
-    updateUISettings({ sidebar_width: MIN_WIDTH });
+    updateUISettings({ sidebar_width: MIN_WIDTH, sidebar_classic: false });
   };
 
   const snapToExpanded = () => {
     sidebarWidth.value = DEFAULT_WIDTH;
-    updateUISettings({ sidebar_width: DEFAULT_WIDTH });
+    updateUISettings({ sidebar_width: DEFAULT_WIDTH, sidebar_classic: true });
   };
 
   // UniverZAP: the conversations screen folds the sidebar into its rail to give
@@ -46,7 +56,7 @@ export function useSidebarResize() {
   };
 
   const restoreSaved = () => {
-    sidebarWidth.value = uiSettings.value.sidebar_width || DEFAULT_WIDTH;
+    sidebarWidth.value = savedWidth();
   };
 
   return {

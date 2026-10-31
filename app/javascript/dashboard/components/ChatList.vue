@@ -282,7 +282,7 @@ const quickNavViews = computed(() =>
 
 const quickNavShortcuts = computed(() =>
   [
-    { key: 'panel', route: 'panel_reports', icon: 'i-lucide-gauge' },
+    { key: 'panel', route: 'panel_reports', icon: 'i-lucide-layout-dashboard' },
     { key: 'kanban', route: 'kanban_overview', icon: 'i-lucide-kanban' },
     {
       key: 'contacts',
