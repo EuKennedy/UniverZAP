@@ -69,7 +69,7 @@ useKeyboardEvents(keyboardEvents);
               class="relative flex items-center gap-1 py-2.5 text-sm font-medium select-none after:absolute after:bottom-px after:left-0 after:right-0 after:h-[2px] after:rounded-full after:transition-all after:duration-200 hover:text-n-slate-12"
               :class="
                 item.key === activeTab
-                  ? 'text-n-teal-11 after:bg-brand-gradient after:opacity-100'
+                  ? 'text-n-teal-11 after:bg-brand-gradient after:opacity-100 after:shadow-brand-neon'
                   : 'text-n-slate-11 after:bg-transparent after:opacity-0'
               "
               :aria-expanded="item.options ? isOpen : undefined"

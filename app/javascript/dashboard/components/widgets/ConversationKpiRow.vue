@@ -106,7 +106,7 @@ const compactSummary = computed(() =>
             class="relative flex flex-col items-start w-full gap-1 px-2.5 py-2 overflow-hidden text-start transition-all duration-200 border rounded-xl backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] motion-safe:hover:-translate-y-px motion-safe:active:scale-[0.98]"
             :class="
               item.key === activeKey
-                ? 'bg-brand-gradient-soft border-n-teal-7 text-n-teal-11 shadow-[0_0_22px_-8px_rgba(20,230,127,0.75)]'
+                ? 'bg-brand-gradient-soft border-transparent text-n-teal-11 shadow-brand-neon'
                 : 'bg-n-alpha-1 border-n-alpha-2 text-n-slate-11 hover:bg-n-alpha-2 hover:border-n-alpha-3'
             "
             @click="emit('select', item.key)"
