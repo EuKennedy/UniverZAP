@@ -23,6 +23,21 @@
       "TOGGLE": "Show or fold the day panel",
       "COMPACT": "first reply {time} · {pending} unanswered"
     },
+    "QUICK_NAV": {
+      "LABEL": "Conversation shortcuts",
+      "TITLE": "Navigate",
+      "QUEUES": "Queues",
+      "CHANNELS": "Chats",
+      "SHORTCUTS": "Go to",
+      "COLLAPSE": "Show only icons",
+      "EXPAND": "Show names",
+      "LINKS": {
+        "PANEL": "Dashboard",
+        "KANBAN": "Kanban",
+        "CONTACTS": "Contacts",
+        "CHATFLOW": "Chatflow"
+      }
+    },
     "TEAM": {
       "ADD": "Add",
       "SEARCH": "Search a contact by name or phone",

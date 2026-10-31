@@ -23,6 +23,21 @@
       "TOGGLE": "Mostrar ou recolher o painel do dia",
       "COMPACT": "1ª resposta {time} · {pending} sem resposta"
     },
+    "QUICK_NAV": {
+      "LABEL": "Atalhos das conversas",
+      "TITLE": "Navegar",
+      "QUEUES": "Filas",
+      "CHANNELS": "Conversas",
+      "SHORTCUTS": "Ir para",
+      "COLLAPSE": "Mostrar só os ícones",
+      "EXPAND": "Mostrar os nomes",
+      "LINKS": {
+        "PANEL": "Painel",
+        "KANBAN": "Kanban",
+        "CONTACTS": "Contatos",
+        "CHATFLOW": "Chatflow"
+      }
+    },
     "TEAM": {
       "ADD": "Adicionar",
       "SEARCH": "Buscar contato por nome ou telefone",

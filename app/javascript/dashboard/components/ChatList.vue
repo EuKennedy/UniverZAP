@@ -15,6 +15,7 @@ import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import VerticalStatusChips from './widgets/VerticalStatusChips.vue';
 import ConversationKpiRow from './widgets/ConversationKpiRow.vue';
+import ConversationQuickNav from './widgets/ConversationQuickNav.vue';
 import ConversationDateStrip from './widgets/ConversationDateStrip.vue';
 import TeamMembersBar from './widgets/TeamMembersBar.vue';
 import { isOurTurn } from 'dashboard/helper/conversationTurn';
@@ -87,13 +88,20 @@ const store = useStore();
 const resolveAttributesModalRef = ref(null);
 
 const activeAssigneeTab = ref(wootConstants.ASSIGNEE_TYPE.ALL);
-const activeListView = ref(wootConstants.LIST_VIEW.ALL);
+const activeListView = ref(wootConstants.LIST_VIEW.IN_ATTENDANCE);
 const activeStatus = ref(wootConstants.STATUS_TYPE.OPEN);
 const activeSortBy = ref(wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC);
 const todayCollapsed = ref(false);
 function toggleToday() {
   todayCollapsed.value = !todayCollapsed.value;
-  updateUISettings({ conversation_list_today_collapsed: todayCollapsed.value });
+  updateUISettings({ conversation_list_today_folded: todayCollapsed.value });
+}
+const quickNavCollapsed = ref(false);
+function toggleQuickNav() {
+  quickNavCollapsed.value = !quickNavCollapsed.value;
+  updateUISettings({
+    conversation_quick_nav_collapsed: quickNavCollapsed.value,
+  });
 }
 
 // UniverZAP: the agenda — the day the conversations on screen started on
@@ -224,13 +232,14 @@ const scheduleStatus = computed(
 
 // Shown as KPI cards below the Todos/Grupos tabs, in addition to living in
 // the Todos dropdown — same state, just the day's triage at a glance instead
-// of a click deep. Todos and Minhas stay dropdown-only: the tab already shows
-// Todos' count, and for a reception Minhas is usually the same number.
+// of a click deep. Todos and Minhas stay dropdown-only: Em atendimento is the
+// same set as Todos, and for a reception Minhas is usually the same number.
 const KPI_VIEWS = [
   wootConstants.LIST_VIEW.WAITING,
-  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
+  wootConstants.LIST_VIEW.IN_ATTENDANCE,
   wootConstants.LIST_VIEW.UNASSIGNED,
   wootConstants.LIST_VIEW.RESOLVED,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
   wootConstants.LIST_VIEW.SCHEDULED,
 ];
 
@@ -248,7 +257,45 @@ const viewItems = computed(() =>
 );
 
 const kpiItems = computed(() =>
-  viewItems.value.filter(item => KPI_VIEWS.includes(item.key))
+  KPI_VIEWS.map(key => viewItems.value.find(item => item.key === key)).filter(
+    Boolean
+  )
+);
+
+// The extra sidebar: the queues in triage order, then the kinds of chat that
+// live in tabs of their own. Todos is left out, Em atendimento is the same set.
+const QUICK_NAV_VIEWS = [
+  wootConstants.LIST_VIEW.IN_ATTENDANCE,
+  wootConstants.LIST_VIEW.WAITING,
+  wootConstants.LIST_VIEW.AWAITING_CUSTOMER,
+  wootConstants.LIST_VIEW.ME,
+  wootConstants.LIST_VIEW.UNASSIGNED,
+  wootConstants.LIST_VIEW.SCHEDULED,
+  wootConstants.LIST_VIEW.RESOLVED,
+];
+
+const quickNavViews = computed(() =>
+  QUICK_NAV_VIEWS.map(key =>
+    viewItems.value.find(item => item.key === key)
+  ).filter(Boolean)
+);
+
+const quickNavShortcuts = computed(() =>
+  [
+    { key: 'panel', route: 'panel_reports', icon: 'i-lucide-gauge' },
+    { key: 'kanban', route: 'kanban_overview', icon: 'i-lucide-kanban' },
+    {
+      key: 'contacts',
+      route: 'contacts_dashboard_index',
+      icon: 'i-lucide-contact',
+    },
+    { key: 'chatflow', route: 'chatflow_index', icon: 'i-lucide-workflow' },
+  ].map(({ key, route: name, icon }) => ({
+    key,
+    icon,
+    name: t(`CHAT_LIST.QUICK_NAV.LINKS.${key.toUpperCase()}`),
+    to: { name, params: { accountId: currentAccountId.value } },
+  }))
 );
 
 const assigneeTabItems = computed(() => {
@@ -266,6 +313,12 @@ const assigneeTabItems = computed(() => {
     }),
   }));
 });
+
+const quickNavChannels = computed(() =>
+  assigneeTabItems.value.filter(
+    item => item.key !== wootConstants.ASSIGNEE_TYPE.ALL
+  )
+);
 
 const isGroupsTab = computed(
   () => activeAssigneeTab.value === wootConstants.ASSIGNEE_TYPE.GROUPS
@@ -587,7 +640,8 @@ function setFiltersFromUISettings() {
   const {
     conversations_filter_by: filterBy = {},
     conversation_list_view: view,
-    conversation_list_today_collapsed: todayPref,
+    conversation_list_today_folded: todayPref,
+    conversation_quick_nav_collapsed: quickNavPref,
   } = uiSettings.value;
   // The "Hoje" block opens on a desktop and starts folded on a phone, where
   // every row of the list counts; once the agent toggles it, their choice
@@ -596,11 +650,19 @@ function setFiltersFromUISettings() {
     typeof todayPref === 'boolean'
       ? todayPref
       : window.matchMedia('(max-width: 767px)').matches;
+  // Open where there is room for it, a rail of icons on a smaller screen.
+  quickNavCollapsed.value =
+    typeof quickNavPref === 'boolean'
+      ? quickNavPref
+      : window.matchMedia('(max-width: 1535px)').matches;
   datesExpanded.value = !!uiSettings.value.conversation_list_dates_open;
   const { status, order_by: orderBy } = filterBy;
-  activeListView.value = Object.values(wootConstants.LIST_VIEW).includes(view)
-    ? view
-    : wootConstants.LIST_VIEW.ALL;
+  // Em atendimento is the home of the list; Todos is the same set of chats.
+  activeListView.value =
+    Object.values(wootConstants.LIST_VIEW).includes(view) &&
+    view !== wootConstants.LIST_VIEW.ALL
+      ? view
+      : wootConstants.LIST_VIEW.IN_ATTENDANCE;
   // Resolvidas is backed by status, not by the persisted status filter: a
   // restored Resolvidas view with status "open" would list nothing and spin.
   activeStatus.value = RESOLVED_VIEWS.includes(activeListView.value)
@@ -1267,162 +1329,174 @@ watch(conversationFilters, (newVal, oldVal) => {
 
 <template>
   <div
-    class="flex flex-col flex-shrink-0 conversations-list-wrap bg-n-surface-1 relative"
-    :class="[
-      { hidden: !showConversationList },
-      isOnExpandedLayout ? 'basis-full' : 'w-[340px] 2xl:w-[412px]',
-    ]"
+    class="flex flex-shrink-0 min-w-0"
+    :class="{ hidden: !showConversationList, 'basis-full': isOnExpandedLayout }"
   >
-    <slot />
-    <ChatListHeader
-      :page-title="pageTitle"
-      :has-applied-filters="hasAppliedFilters"
-      :has-active-folders="hasActiveFolders"
-      :active-status="activeStatus"
-      :is-on-expanded-layout="isOnExpandedLayout"
-      :conversation-stats="conversationStats"
-      :is-list-loading="chatListLoading && !conversationList.length"
-      @add-folders="onClickOpenAddFoldersModal"
-      @delete-folders="onClickOpenDeleteFoldersModal"
-      @filters-modal="onToggleAdvanceFiltersModal"
-      @reset-filters="resetAndFetchData"
-      @basic-filter-change="onBasicFilterChange"
-    />
-
-    <TeleportWithDirection
-      v-if="showAddFoldersModal"
-      to="#saveFilterTeleportTarget"
-    >
-      <SaveCustomView
-        v-model="appliedFilter"
-        :custom-views-query="foldersQuery"
-        :open-last-saved-item="openLastSavedItemInFolder"
-        @close="onCloseAddFoldersModal"
-      />
-    </TeleportWithDirection>
-
-    <DeleteCustomViews
-      v-if="showDeleteFoldersModal"
-      v-model:show="showDeleteFoldersModal"
-      :active-custom-view="activeFolder"
-      :custom-views-id="foldersId"
-      :open-last-item-after-delete="openLastItemAfterDeleteInFolder"
-      @close="onCloseDeleteFoldersModal"
-    />
-
-    <ChatTypeTabs
-      v-if="!hasAppliedFiltersOrActiveFolders"
-      :items="assigneeTabItems"
-      :active-tab="activeAssigneeTab"
-      @chat-tab-change="updateAssigneeTab"
-      @option-change="updateView"
-    >
-      <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
-    </ChatTypeTabs>
-    <ConversationKpiRow
-      v-if="!hasAppliedFiltersOrActiveFolders && !isSegmentTab"
-      :items="kpiItems"
-      :active-key="activeListView"
-      :first-reply="firstReply"
-      :collapsed="todayCollapsed"
-      @select="updateView"
-      @toggle="toggleToday"
-    />
-    <VerticalStatusChips
-      v-if="!hasAppliedFiltersOrActiveFolders && !isSegmentTab"
+    <ConversationQuickNav
+      :views="quickNavViews"
+      :channels="quickNavChannels"
+      :shortcuts="quickNavShortcuts"
+      :active-key="isSegmentTab ? activeAssigneeTab : activeListView"
+      :collapsed="quickNavCollapsed"
+      @select-view="updateView"
+      @select-channel="updateAssigneeTab"
+      @toggle="toggleQuickNav"
     />
     <div
-      v-else-if="hasAppliedListFilter"
-      class="flex items-center w-full h-10 gap-2 px-3 -mt-1 border-b border-n-weak"
+      class="flex flex-col flex-shrink-0 conversations-list-wrap bg-n-surface-1 relative"
+      :class="isOnExpandedLayout ? 'flex-1 min-w-0' : 'w-[340px] 2xl:w-[412px]'"
     >
-      <ul
-        class="flex items-center flex-1 min-w-0 gap-1.5 mb-0 overflow-x-auto list-none [scrollbar-width:none]"
-      >
-        <li
-          class="px-2 py-0.5 text-xs rounded-md shrink-0 bg-n-alpha-1 text-n-slate-11"
-        >
-          {{ listFilterScope }}
-        </li>
-        <li
-          v-for="(chip, index) in listFilterChips"
-          :key="index"
-          class="px-2 py-0.5 text-xs rounded-md shrink-0 bg-n-teal-3 text-n-teal-11"
-        >
-          {{ chip }}
-        </li>
-      </ul>
-      <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
-    </div>
-    <TeamMembersBar
-      v-if="isTeamTab && !hasAppliedFiltersOrActiveFolders"
-      @changed="onTeamChanged"
-    />
-    <ConversationDateStrip
-      v-if="!hasAppliedFiltersOrActiveFolders"
-      :model-value="createdOn"
-      :scope="dateScope"
-      :expanded="datesExpanded"
-      @update:model-value="setCreatedOn"
-      @toggle="toggleDates"
-    />
-
-    <p
-      v-if="!chatListLoading && !conversationList.length"
-      class="flex overflow-auto justify-center items-center p-4"
-    >
-      {{ $t('CHAT_LIST.LIST.404') }}
-    </p>
-    <ConversationBulkActions
-      :conversations="selectedConversations"
-      :all-conversations-selected="allConversationsSelected"
-      :selected-inboxes="uniqueInboxes"
-      :show-open-action="allSelectedConversationsStatus('open')"
-      :show-resolved-action="allSelectedConversationsStatus('resolved')"
-      :show-snoozed-action="allSelectedConversationsStatus('snoozed')"
-      :class="isOnExpandedLayout && 'sm:!w-[24rem] !w-full'"
-      @select-all-conversations="toggleSelectAll"
-    />
-    <ConversationList
-      :conversation-list="conversationList"
-      :is-loading="chatListLoading"
-      :show-end-of-list-message="showEndOfListMessage"
-      :label="label"
-      :team-id="teamId"
-      :folders-id="foldersId"
-      :conversation-type="conversationType"
-      :show-assignee="showAssigneeInConversationCard"
-      :is-on-expanded-layout="isOnExpandedLayout"
-      @load-more="loadMoreConversations"
-    />
-    <Dialog
-      ref="deleteConversationDialogRef"
-      type="alert"
-      :title="
-        $t('CONVERSATION.DELETE_CONVERSATION.TITLE', {
-          conversationId: selectedConversationId,
-        })
-      "
-      :description="$t('CONVERSATION.DELETE_CONVERSATION.DESCRIPTION')"
-      :confirm-button-label="$t('CONVERSATION.DELETE_CONVERSATION.CONFIRM')"
-      @confirm="deleteConversation"
-      @close="selectedConversationId = null"
-    />
-    <TeleportWithDirection
-      v-if="showAdvancedFilters"
-      to="#conversationFilterTeleportTarget"
-    >
-      <ConversationFilter
-        v-model="appliedFilter"
-        :folder-name="activeFolderName"
-        :is-folder-view="hasActiveFolders"
-        @apply-filter="onApplyFilter"
-        @update-folder="onUpdateSavedFilter"
-        @close="closeAdvanceFiltersModal"
+      <slot />
+      <ChatListHeader
+        :page-title="pageTitle"
+        :has-applied-filters="hasAppliedFilters"
+        :has-active-folders="hasActiveFolders"
+        :active-status="activeStatus"
+        :is-on-expanded-layout="isOnExpandedLayout"
+        :conversation-stats="conversationStats"
+        :is-list-loading="chatListLoading && !conversationList.length"
+        @add-folders="onClickOpenAddFoldersModal"
+        @delete-folders="onClickOpenDeleteFoldersModal"
+        @filters-modal="onToggleAdvanceFiltersModal"
+        @reset-filters="resetAndFetchData"
+        @basic-filter-change="onBasicFilterChange"
       />
-    </TeleportWithDirection>
-    <ConversationResolveAttributesModal
-      ref="resolveAttributesModalRef"
-      @submit="handleResolveWithAttributes"
-    />
+
+      <TeleportWithDirection
+        v-if="showAddFoldersModal"
+        to="#saveFilterTeleportTarget"
+      >
+        <SaveCustomView
+          v-model="appliedFilter"
+          :custom-views-query="foldersQuery"
+          :open-last-saved-item="openLastSavedItemInFolder"
+          @close="onCloseAddFoldersModal"
+        />
+      </TeleportWithDirection>
+
+      <DeleteCustomViews
+        v-if="showDeleteFoldersModal"
+        v-model:show="showDeleteFoldersModal"
+        :active-custom-view="activeFolder"
+        :custom-views-id="foldersId"
+        :open-last-item-after-delete="openLastItemAfterDeleteInFolder"
+        @close="onCloseDeleteFoldersModal"
+      />
+
+      <ChatTypeTabs
+        v-if="!hasAppliedFiltersOrActiveFolders"
+        :items="assigneeTabItems"
+        :active-tab="activeAssigneeTab"
+        @chat-tab-change="updateAssigneeTab"
+        @option-change="updateView"
+      >
+        <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
+      </ChatTypeTabs>
+      <ConversationKpiRow
+        v-if="!hasAppliedFiltersOrActiveFolders && !isSegmentTab"
+        :items="kpiItems"
+        :active-key="activeListView"
+        :first-reply="firstReply"
+        :collapsed="todayCollapsed"
+        @select="updateView"
+        @toggle="toggleToday"
+      />
+      <VerticalStatusChips
+        v-if="!hasAppliedFiltersOrActiveFolders && !isSegmentTab"
+      />
+      <div
+        v-else-if="hasAppliedListFilter"
+        class="flex items-center w-full h-10 gap-2 px-3 -mt-1 border-b border-n-weak"
+      >
+        <ul
+          class="flex items-center flex-1 min-w-0 gap-1.5 mb-0 overflow-x-auto list-none [scrollbar-width:none]"
+        >
+          <li
+            class="px-2 py-0.5 text-xs rounded-md shrink-0 bg-n-alpha-1 text-n-slate-11"
+          >
+            {{ listFilterScope }}
+          </li>
+          <li
+            v-for="(chip, index) in listFilterChips"
+            :key="index"
+            class="px-2 py-0.5 text-xs rounded-md shrink-0 bg-n-teal-3 text-n-teal-11"
+          >
+            {{ chip }}
+          </li>
+        </ul>
+        <ConversationListFilter :filter="listFilter" @apply="applyListFilter" />
+      </div>
+      <TeamMembersBar
+        v-if="isTeamTab && !hasAppliedFiltersOrActiveFolders"
+        @changed="onTeamChanged"
+      />
+      <ConversationDateStrip
+        v-if="!hasAppliedFiltersOrActiveFolders"
+        :model-value="createdOn"
+        :scope="dateScope"
+        :expanded="datesExpanded"
+        @update:model-value="setCreatedOn"
+        @toggle="toggleDates"
+      />
+
+      <p
+        v-if="!chatListLoading && !conversationList.length"
+        class="flex overflow-auto justify-center items-center p-4"
+      >
+        {{ $t('CHAT_LIST.LIST.404') }}
+      </p>
+      <ConversationBulkActions
+        :conversations="selectedConversations"
+        :all-conversations-selected="allConversationsSelected"
+        :selected-inboxes="uniqueInboxes"
+        :show-open-action="allSelectedConversationsStatus('open')"
+        :show-resolved-action="allSelectedConversationsStatus('resolved')"
+        :show-snoozed-action="allSelectedConversationsStatus('snoozed')"
+        :class="isOnExpandedLayout && 'sm:!w-[24rem] !w-full'"
+        @select-all-conversations="toggleSelectAll"
+      />
+      <ConversationList
+        :conversation-list="conversationList"
+        :is-loading="chatListLoading"
+        :show-end-of-list-message="showEndOfListMessage"
+        :label="label"
+        :team-id="teamId"
+        :folders-id="foldersId"
+        :conversation-type="conversationType"
+        :show-assignee="showAssigneeInConversationCard"
+        :is-on-expanded-layout="isOnExpandedLayout"
+        @load-more="loadMoreConversations"
+      />
+      <Dialog
+        ref="deleteConversationDialogRef"
+        type="alert"
+        :title="
+          $t('CONVERSATION.DELETE_CONVERSATION.TITLE', {
+            conversationId: selectedConversationId,
+          })
+        "
+        :description="$t('CONVERSATION.DELETE_CONVERSATION.DESCRIPTION')"
+        :confirm-button-label="$t('CONVERSATION.DELETE_CONVERSATION.CONFIRM')"
+        @confirm="deleteConversation"
+        @close="selectedConversationId = null"
+      />
+      <TeleportWithDirection
+        v-if="showAdvancedFilters"
+        to="#conversationFilterTeleportTarget"
+      >
+        <ConversationFilter
+          v-model="appliedFilter"
+          :folder-name="activeFolderName"
+          :is-folder-view="hasActiveFolders"
+          @apply-filter="onApplyFilter"
+          @update-folder="onUpdateSavedFilter"
+          @close="closeAdvanceFiltersModal"
+        />
+      </TeleportWithDirection>
+      <ConversationResolveAttributesModal
+        ref="resolveAttributesModalRef"
+        @submit="handleResolveWithAttributes"
+      />
+    </div>
   </div>
 </template>
