@@ -74,6 +74,7 @@ RSpec.describe 'Vertical statuses API', type: :request do
     it 'lists every label with its open count, most used first' do
       tagged = create(:conversation, account: account)
       tagged.update_labels(%w[agendado])
+      tagged.open!
       create(:conversation, account: account, status: :resolved).update_labels(%w[agendado novo-contato])
 
       get "/api/v1/accounts/#{account.id}/vertical_statuses/catalog", headers: agent.create_new_auth_token, as: :json

@@ -27,7 +27,7 @@ RSpec.describe V2::Reports::AdLeadsBuilder do
 
     expect(rows.map { |r| r[:ad_id] }).to eq(%w[100 200])
     first = rows.first
-    expect(first).to include(ad_id: '100', title: 'Progressiva', url: 'https://fb.me/100', leads: 3, replied: 1, resolved: 1, converted: 1)
+    expect(first).to include(ad_id: '100', title: 'Progressiva', url: 'https://fb.me/100', leads: 3, replied: 1, resolved: 2, converted: 1)
     expect(rows.last).to include(ad_id: '200', leads: 1, converted: 0)
   end
 
@@ -64,8 +64,8 @@ RSpec.describe V2::Reports::AdLeadsBuilder do
     rows = described_class.new(account: account, params: params.merge(group_by: 'customer')).build
 
     expect(rows).to eq([
-                         { customer: 'new', leads: 4, replied: 1, resolved: 1, converted: 1 },
-                         { customer: 'recurring', leads: 1, replied: 1, resolved: 0, converted: 1 }
+                         { customer: 'new', leads: 4, replied: 1, resolved: 2, converted: 1 },
+                         { customer: 'recurring', leads: 1, replied: 1, resolved: 1, converted: 1 }
                        ])
   end
 

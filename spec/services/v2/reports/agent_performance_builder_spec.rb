@@ -27,7 +27,7 @@ RSpec.describe V2::Reports::AgentPerformanceBuilder do
     rows = described_class.new(account: account, params: params).build
 
     ana_row = rows.find { |row| row[:agent_id] == ana.id }
-    expect(ana_row).to include(name: 'Ana', assigned: 3, replied: 2, resolved: 1, converted: 1, waiting: 1, at_risk: 1)
+    expect(ana_row).to include(name: 'Ana', assigned: 3, replied: 2, resolved: 2, converted: 1, waiting: 1, at_risk: 1)
     expect(ana_row[:median_first_response_seconds]).to eq(360)
 
     bia_row = rows.find { |row| row[:agent_id] == bia.id }

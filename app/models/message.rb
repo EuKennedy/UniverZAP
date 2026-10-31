@@ -497,6 +497,12 @@ class Message < ApplicationRecord
     # rubocop:disable Rails/SkipsModelValidations
     conversation.update_columns(attributes)
     # rubocop:enable Rails/SkipsModelValidations
+    Conversations::QueueLabelsService.new(conversation).replied if replied_by_team?
+  end
+
+  # A person on the team answered, from the panel or from the phone.
+  def replied_by_team?
+    phone_reply_note? || (outgoing? && !private? && sender_type == 'User')
   end
 
   def reindex_for_search

@@ -358,12 +358,27 @@ class Conversation < ApplicationRecord
   end
 
   def execute_after_update_commit_callbacks
+    status_change = saved_change_to_status
     handle_closing_label_applied
     clear_closing_labels_on_reopen
     handle_resolved_status_change
     notify_status_change
     create_activity
     notify_conversation_updation
+    sync_queue_labels(status_change)
+  end
+
+  # Last on purpose: saving the labels replaces the saved changes that the
+  # callbacks above read.
+  def sync_queue_labels(status_change)
+    return if status_change.blank?
+
+    service = Conversations::QueueLabelsService.new(self)
+    if status_change.last == 'resolved'
+      service.ended
+    elsif status_change.first == 'resolved'
+      service.reopened
+    end
   end
 
   # A status applied to a conversation moves it, so nothing sits in Aguardando
