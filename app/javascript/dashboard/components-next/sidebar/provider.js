@@ -2,6 +2,7 @@ import { inject, provide, ref, computed } from 'vue';
 import { usePolicy } from 'dashboard/composables/usePolicy';
 import { useRouter } from 'vue-router';
 import { useUISettings } from 'dashboard/composables/useUISettings';
+import { useSidebarLayout } from 'dashboard/composables/useSidebarLayout';
 
 const SidebarControl = Symbol('SidebarControl');
 
@@ -17,10 +18,16 @@ let globalCloseTimeout = null;
 export function useSidebarResize() {
   const { uiSettings, updateUISettings } = useUISettings();
 
-  // UniverZAP: the rail with its complementary panel is the default; the wide
-  // classic menu is what someone asks for by expanding or dragging the sidebar.
+  const { layout } = useSidebarLayout();
+
+  // UniverZAP: rail with its complementary panel, or the wide classic menu. The
+  // super admin sets the standard in the organiser; whoever expands, collapses
+  // or drags the sidebar has made a choice of their own, and that one stands.
+  const prefersClassic = () =>
+    uiSettings.value.sidebar_classic ?? layout.value?.sidebarMode === 'classic';
+
   const savedWidth = () =>
-    uiSettings.value.sidebar_classic
+    prefersClassic()
       ? uiSettings.value.sidebar_width || DEFAULT_WIDTH
       : MIN_WIDTH;
 

@@ -959,6 +959,15 @@
     }
   },
   "SIDEBAR_ORGANISER": {
+    "RAIL_NAME": "Rail name",
+    "RAIL_NAME_HINT": "Short name under the icon on the rail. Up to 12 letters.",
+    "HIDE_PAGE": "Show or hide this page",
+    "MODE": "Standard navigation",
+    "MODE_RAIL": "Rail with panel",
+    "MODE_RAIL_HINT": "Icons with names, and the pages of each section in a panel beside them.",
+    "MODE_CLASSIC": "Classic menu",
+    "MODE_CLASSIC_HINT": "Wide menu with the sections open in the sidebar.",
+    "MODE_HINT": "This is what everyone sees. Whoever expands or collapses the sidebar keeps their own choice.",
     "TITLE": "Sidebar organiser",
     "SUBTITLE": "Build the sidebar every customer on the platform will see: drag the items into the order that makes sense, group the ones that belong together, and hide what is not useful. Whatever you save applies to every tenant.",
     "ITEMS": "Menu items",
@@ -976,6 +985,6 @@
     "SAVE_FAILED": "Could not save the menu. Try again.",
     "RESET": "Back to default",
     "DROP_HERE": "Drag items here.",
-    "CARRIES_TABS": "This item brings its tabs along"
+    "CARRIES_TABS": "This item brings its pages along. Click to reorder, hide or move them."
   }
 }

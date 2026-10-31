@@ -13,6 +13,8 @@ import SidebarCollapsedPopover from './SidebarCollapsedPopover.vue';
 const props = defineProps({
   name: { type: String, required: true },
   label: { type: String, required: true },
+  // Shorter name for the rail, where a long label gets cut.
+  railLabel: { type: String, default: '' },
   icon: { type: [String, Object, Function], default: null },
   to: { type: Object, default: null },
   // An address outside the app, for a tab that lives on another product. It
@@ -278,7 +280,7 @@ watch(
         >
           <Icon v-if="icon" :icon="icon" class="size-5" />
           <span class="max-w-full text-[0.625rem] leading-none truncate">
-            {{ label }}
+            {{ railLabel || label }}
           </span>
         </component>
         <SidebarCollapsedPopover

@@ -18,10 +18,12 @@ import {
   applyLayout,
   readLayout,
   LAYOUT_VERSION,
+  pageId,
 } from 'dashboard/components-next/sidebar/helper/applyLayout';
 import SidebarLayoutAPI from 'dashboard/api/sidebarLayout';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import OrganiserItemRow from './OrganiserItemRow.vue';
 
 const { t } = useI18n();
 // The menu comes from the sidebar itself, so the preview runs on exactly what
@@ -30,6 +32,7 @@ const { layout: savedLayout, setLayout, menu } = useSidebarLayout();
 
 const entries = ref([]);
 const homeItem = ref('');
+const sidebarMode = ref('rail');
 const isSaving = ref(false);
 const pickingIconFor = ref('');
 
@@ -53,6 +56,8 @@ const GROUP_ICONS = [
 
 // Generated, never borrowed from an item's `name`, so deleting a group can
 // never take an item down with it.
+const MODES = ['rail', 'classic'];
+
 const newGroupId = () => `g_${Date.now()}_${Math.floor(Math.random() * 1e4)}`;
 
 // The route a menu entry lands on. A native group has none of its own — it is a
@@ -72,6 +77,46 @@ const destinationOf = entry => {
   return { route: to.name, routeParams };
 };
 
+// The pages each entry holds in this layout, in order. Same rule as the
+// sidebar: a page nobody listed stays at the end of the entry that ships it.
+const placePages = plan => {
+  const parents = (menu.value || []).filter(entry =>
+    Array.isArray(entry.children)
+  );
+  const catalog = new Map();
+  parents.forEach(entry =>
+    entry.children.forEach(child => {
+      const id = pageId(entry.name, child.name);
+      catalog.set(id, {
+        id,
+        original: child.label,
+        label: plan.pageRules?.[id]?.label || '',
+        hidden: Boolean(plan.pageRules?.[id]?.hidden),
+      });
+    })
+  );
+
+  const taken = new Set();
+  const placed = new Map();
+  parents.forEach(entry => {
+    const ids = (plan.pages?.[entry.name] || []).filter(
+      id => catalog.has(id) && !taken.has(id)
+    );
+    ids.forEach(id => taken.add(id));
+    placed.set(entry.name, ids);
+  });
+
+  return new Map(
+    parents.map(entry => {
+      const rest = entry.children
+        .map(child => pageId(entry.name, child.name))
+        .filter(id => !taken.has(id));
+      const ids = [...placed.get(entry.name), ...rest];
+      return [entry.name, ids.map(id => catalog.get(id))];
+    })
+  );
+};
+
 const hydrate = () => {
   const plan = readLayout(savedLayout.value) || {
     order: [],
@@ -81,6 +126,7 @@ const hydrate = () => {
   };
   const rules = plan.items;
 
+  const pages = placePages(plan);
   const catalog = new Map();
   (menu.value || []).forEach(entry => {
     catalog.set(entry.name, {
@@ -89,7 +135,9 @@ const hydrate = () => {
       icon: entry.icon,
       original: entry.label,
       label: rules[entry.name]?.label || '',
+      railLabel: rules[entry.name]?.railLabel || '',
       hidden: Boolean(rules[entry.name]?.hidden),
+      pages: pages.get(entry.name),
       // Shown as a badge: this row is a tab that brings its own sub-tabs, and
       // filing it away files all of them.
       childCount: entry.children?.length || 0,
@@ -140,6 +188,7 @@ const hydrate = () => {
 
   entries.value = placed;
   homeItem.value = plan.home?.item || '';
+  sidebarMode.value = plan.sidebarMode || 'rail';
 };
 
 // The sidebar publishes its menu a tick after this mounts, so build from it
@@ -160,6 +209,25 @@ const homeTarget = computed(() => {
 });
 
 const draft = computed(() => {
+  // Same restraint as the items below: only an entry whose pages differ from what the
+  // product ships gets a list, so a page we add later still shows up there.
+  const pages = {};
+  const pageRules = {};
+  const recordPages = item => {
+    if (!item.pages) return;
+    const ids = item.pages.map(page => page.id);
+    const shipped = menu.value
+      .find(entry => entry.name === item.name)
+      .children.map(child => pageId(item.name, child.name));
+    if (ids.join() !== shipped.join()) pages[item.name] = ids;
+    item.pages.forEach(page => {
+      const rule = {};
+      if (page.hidden) rule.hidden = true;
+      if (page.label) rule.label = page.label;
+      if (Object.keys(rule).length) pageRules[page.id] = rule;
+    });
+  };
+
   const items = {};
   // Only what was actually changed is written down. A map with a row per menu
   // item would grow a permanent entry for every tab we ever ship, and the
@@ -168,7 +236,9 @@ const draft = computed(() => {
     const rule = {};
     if (item.hidden) rule.hidden = true;
     if (item.label) rule.label = item.label;
+    if (item.railLabel) rule.railLabel = item.railLabel;
     if (Object.keys(rule).length) items[item.name] = rule;
+    recordPages(item);
   };
 
   const order = [];
@@ -189,7 +259,15 @@ const draft = computed(() => {
     record(entry);
   });
 
-  const layout = { version: LAYOUT_VERSION, order, groups, items };
+  const layout = {
+    version: LAYOUT_VERSION,
+    order,
+    groups,
+    items,
+  };
+  if (Object.keys(pages).length) layout.pages = pages;
+  if (Object.keys(pageRules).length) layout.pageRules = pageRules;
+  if (sidebarMode.value !== 'rail') layout.sidebarMode = sidebarMode.value;
   if (homeTarget.value) layout.home = homeTarget.value;
   return layout;
 });
@@ -254,10 +332,14 @@ const save = async () => {
 
 const resetAll = () => {
   homeItem.value = '';
+  sidebarMode.value = 'rail';
+  const shippedPages = placePages({});
   entries.value = allItems.value.map(item => ({
     ...item,
     hidden: false,
     label: '',
+    railLabel: '',
+    pages: shippedPages.get(item.name),
   }));
   // Back to the order the product ships with, not to the order this screen
   // happened to be showing.
@@ -294,6 +376,37 @@ const resetAll = () => {
         />
       </div>
     </header>
+
+    <section class="flex flex-col gap-2 p-3 rounded-xl border border-n-weak">
+      <h2 class="mb-0 text-sm font-medium text-n-slate-12">
+        {{ t('SIDEBAR_ORGANISER.MODE') }}
+      </h2>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <button
+          v-for="mode in MODES"
+          :key="mode"
+          type="button"
+          class="flex flex-col gap-0.5 p-2.5 text-start rounded-lg border transition-colors"
+          :class="
+            sidebarMode === mode
+              ? 'border-n-teal-7 bg-brand-gradient-soft'
+              : 'border-n-weak hover:bg-n-alpha-1'
+          "
+          :aria-pressed="sidebarMode === mode"
+          @click="sidebarMode = mode"
+        >
+          <span class="text-sm font-medium text-n-slate-12">
+            {{ t(`SIDEBAR_ORGANISER.MODE_${mode.toUpperCase()}`) }}
+          </span>
+          <span class="text-xs text-n-slate-11">
+            {{ t(`SIDEBAR_ORGANISER.MODE_${mode.toUpperCase()}_HINT`) }}
+          </span>
+        </button>
+      </div>
+      <p class="m-0 text-xs text-n-slate-10">
+        {{ t('SIDEBAR_ORGANISER.MODE_HINT') }}
+      </p>
+    </section>
 
     <div class="grid grid-cols-1 xl:grid-cols-[1fr_18rem] gap-6 items-start">
       <section class="flex flex-col gap-3">
@@ -393,52 +506,11 @@ const resetAll = () => {
                 >
                   <template #item="{ element: item }">
                     <li data-kind="item" class="list-none">
-                      <div
-                        class="flex gap-2 items-center py-1.5 px-2 rounded-md bg-n-solid-2"
-                      >
-                        <Icon
-                          icon="i-lucide-grip-vertical"
-                          class="flex-shrink-0 cursor-grab drag-handle size-4 text-n-slate-10"
-                        />
-                        <Icon
-                          :icon="item.icon || 'i-lucide-circle-small'"
-                          class="flex-shrink-0 size-4 text-n-slate-11"
-                        />
-                        <input
-                          v-model="item.label"
-                          :placeholder="item.original"
-                          class="flex-1 min-w-0 px-2 h-7 rounded outline-none text-[13px] bg-transparent text-n-slate-12 hover:bg-n-alpha-1 focus:bg-n-alpha-1"
-                        />
-                        <span
-                          v-if="item.childCount"
-                          class="flex-shrink-0 px-1.5 text-[11px] rounded-full text-n-slate-11 bg-n-alpha-1"
-                          :title="t('SIDEBAR_ORGANISER.CARRIES_TABS')"
-                        >
-                          {{ item.childCount }}
-                        </span>
-                        <Button
-                          v-if="item.route"
-                          size="xs"
-                          variant="ghost"
-                          :color="homeItem === item.name ? 'blue' : 'slate'"
-                          :icon="
-                            homeItem === item.name
-                              ? 'i-lucide-house'
-                              : 'i-lucide-house-plus'
-                          "
-                          :title="t('SIDEBAR_ORGANISER.HOME')"
-                          @click="toggleHome(item)"
-                        />
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          :color="item.hidden ? 'ruby' : 'slate'"
-                          :icon="
-                            item.hidden ? 'i-lucide-eye-off' : 'i-lucide-eye'
-                          "
-                          @click="item.hidden = !item.hidden"
-                        />
-                      </div>
+                      <OrganiserItemRow
+                        :item="item"
+                        :is-home="homeItem === item.name"
+                        @toggle-home="toggleHome"
+                      />
                     </li>
                   </template>
                 </Draggable>
@@ -452,51 +524,12 @@ const resetAll = () => {
               </div>
 
               <!-- A menu item, sitting on its own. -->
-              <div
+              <OrganiserItemRow
                 v-else
-                class="flex gap-2 items-center py-1.5 px-2 rounded-md bg-n-solid-2"
-              >
-                <Icon
-                  icon="i-lucide-grip-vertical"
-                  class="flex-shrink-0 cursor-grab drag-handle size-4 text-n-slate-10"
-                />
-                <Icon
-                  :icon="entry.icon || 'i-lucide-circle-small'"
-                  class="flex-shrink-0 size-4 text-n-slate-11"
-                />
-                <input
-                  v-model="entry.label"
-                  :placeholder="entry.original"
-                  class="flex-1 min-w-0 px-2 h-7 rounded outline-none text-[13px] bg-transparent text-n-slate-12 hover:bg-n-alpha-1 focus:bg-n-alpha-1"
-                />
-                <span
-                  v-if="entry.childCount"
-                  class="flex-shrink-0 px-1.5 text-[11px] rounded-full text-n-slate-11 bg-n-alpha-1"
-                  :title="t('SIDEBAR_ORGANISER.CARRIES_TABS')"
-                >
-                  {{ entry.childCount }}
-                </span>
-                <Button
-                  v-if="entry.route"
-                  size="xs"
-                  variant="ghost"
-                  :color="homeItem === entry.name ? 'blue' : 'slate'"
-                  :icon="
-                    homeItem === entry.name
-                      ? 'i-lucide-house'
-                      : 'i-lucide-house-plus'
-                  "
-                  :title="t('SIDEBAR_ORGANISER.HOME')"
-                  @click="toggleHome(entry)"
-                />
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  :color="entry.hidden ? 'ruby' : 'slate'"
-                  :icon="entry.hidden ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  @click="entry.hidden = !entry.hidden"
-                />
-              </div>
+                :item="entry"
+                :is-home="homeItem === entry.name"
+                @toggle-home="toggleHome"
+              />
             </li>
           </template>
         </Draggable>

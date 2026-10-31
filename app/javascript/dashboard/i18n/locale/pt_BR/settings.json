@@ -959,6 +959,15 @@
     }
   },
   "SIDEBAR_ORGANISER": {
+    "RAIL_NAME": "Nome no rail",
+    "RAIL_NAME_HINT": "Nome curto embaixo do ícone no rail. Até 12 letras.",
+    "HIDE_PAGE": "Mostrar ou ocultar esta página",
+    "MODE": "Navegação padrão",
+    "MODE_RAIL": "Rail com painel",
+    "MODE_RAIL_HINT": "Ícones com nome, e as páginas de cada seção num painel ao lado.",
+    "MODE_CLASSIC": "Menu clássico",
+    "MODE_CLASSIC_HINT": "Menu largo, com as seções abertas na barra lateral.",
+    "MODE_HINT": "É o que todos veem. Quem expandir ou recolher a barra mantém a própria escolha.",
     "TITLE": "Organizador do menu",
     "SUBTITLE": "Monte aqui a barra lateral que todos os clientes da plataforma vão ver, arrastando os itens na ordem que fizer sentido, juntando num grupo o que anda junto e escondendo o que não serve. O que for salvo vale para todos os tenants.",
     "ITEMS": "Itens do menu",
@@ -976,6 +985,6 @@
     "SAVE_FAILED": "Não consegui salvar o menu. Tente de novo.",
     "RESET": "Voltar ao padrão",
     "DROP_HERE": "Arraste itens para cá.",
-    "CARRIES_TABS": "Este item leva as abas dele junto"
+    "CARRIES_TABS": "Este item leva suas páginas junto. Clique para reordenar, ocultar ou mover."
   }
 }
