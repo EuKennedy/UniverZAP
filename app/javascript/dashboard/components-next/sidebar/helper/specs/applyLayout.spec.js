@@ -285,4 +285,77 @@ describe('applyLayout', () => {
       expect(find(result, 'g_atendimento').items[0].label).toBe('Funis');
     });
   });
+
+  describe('pages', () => {
+    const shipped = [
+      {
+        name: 'Conversation',
+        label: 'Conversas',
+        children: [
+          { name: 'All', label: 'Todas', to: { name: 'home' } },
+          { name: 'Mentions', label: 'Menções', to: { name: 'mentions' } },
+        ],
+      },
+      {
+        name: 'Reports',
+        label: 'Relatórios',
+        children: [{ name: 'Sla', label: 'SLA', to: { name: 'sla' } }],
+      },
+    ];
+    const layoutWith = extra => ({
+      version: 2,
+      order: [],
+      groups: [],
+      items: {},
+      ...extra,
+    });
+    const childrenOf = (entries, name) =>
+      entries.find(entry => entry.name === name)?.children.map(c => c.label);
+
+    it('reorders the pages of an entry', () => {
+      const pages = { Conversation: ['Conversation/Mentions'] };
+      const result = applyLayout(shipped, layoutWith({ pages }));
+
+      expect(childrenOf(result, 'Conversation')).toEqual(['Menções', 'Todas']);
+    });
+
+    it('moves a page to another entry, once', () => {
+      const pages = { Reports: ['Conversation/All', 'Reports/Sla'] };
+      const result = applyLayout(shipped, layoutWith({ pages }));
+
+      expect(childrenOf(result, 'Reports')).toEqual(['Todas', 'SLA']);
+      expect(childrenOf(result, 'Conversation')).toEqual(['Menções']);
+    });
+
+    it('hides and renames a page', () => {
+      const pageRules = {
+        'Conversation/All': { hidden: true },
+        'Conversation/Mentions': { label: 'Citadas' },
+      };
+      const result = applyLayout(shipped, layoutWith({ pageRules }));
+
+      expect(childrenOf(result, 'Conversation')).toEqual(['Citadas']);
+    });
+
+    it('drops an entry left with no page', () => {
+      const pageRules = { 'Reports/Sla': { hidden: true } };
+      const result = applyLayout(shipped, layoutWith({ pageRules }));
+
+      expect(result.map(entry => entry.name)).toEqual(['Conversation']);
+    });
+
+    it('ignores a page that no longer exists', () => {
+      const pages = { Reports: ['Reports/Gone', 'Reports/Sla'] };
+      const result = applyLayout(shipped, layoutWith({ pages }));
+
+      expect(childrenOf(result, 'Reports')).toEqual(['SLA']);
+    });
+
+    it('carries the short rail name', () => {
+      const items = { Reports: { railLabel: 'Relat.' } };
+      const result = applyLayout(shipped, layoutWith({ items }));
+
+      expect(result.find(e => e.name === 'Reports').railLabel).toBe('Relat.');
+    });
+  });
 });

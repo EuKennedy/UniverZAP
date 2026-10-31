@@ -107,6 +107,33 @@ describe('SidebarOrganiser', () => {
     expect(badge.text()).toBe('1');
   });
 
+  it('saves nothing about pages or the mode when they were not touched', async () => {
+    const payload = await savePayload(mountScreen());
+
+    expect(payload.pages).toBeUndefined();
+    expect(payload.pageRules).toBeUndefined();
+    expect(payload.sidebarMode).toBeUndefined();
+  });
+
+  it('saves a hidden page and the classic mode', async () => {
+    const wrapper = mountScreen();
+
+    await wrapper
+      .find('[title="SIDEBAR_ORGANISER.CARRIES_TABS"]')
+      .trigger('click');
+    const lastEye = buttonsFor(wrapper, 'i-lucide-eye').at(-1);
+    await lastEye.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find(button => button.text().includes('MODE_CLASSIC'))
+      .trigger('click');
+
+    const payload = await savePayload(wrapper);
+
+    expect(payload.pageRules).toEqual({ 'Conversation/All': { hidden: true } });
+    expect(payload.sidebarMode).toBe('classic');
+  });
+
   it('saves the order the items are shown in', async () => {
     const payload = await savePayload(mountScreen());
 

@@ -38,6 +38,9 @@
 
 const VERSION = 2;
 
+const objectOr = value =>
+  value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+
 /**
  * Version 1, rewritten as version 2 rather than discarded.
  *
@@ -108,10 +111,66 @@ function normalise(layout) {
       })),
     items: layout.items,
     home: layout.home || null,
+    pages: objectOr(layout.pages),
+    pageRules: objectOr(layout.pageRules),
+    sidebarMode: layout.sidebarMode === 'classic' ? 'classic' : 'rail',
   };
 }
 
-export { normalise as readLayout, VERSION as LAYOUT_VERSION };
+// Pages are the entries inside a menu item. Their names only mean something
+// next to their parent (Portais and the settings both have a "Settings"), so a
+// page is known by where the product ships it, and keeps that id after moving.
+const pageId = (parentName, childName) => `${parentName}/${childName}`;
+
+export { normalise as readLayout, VERSION as LAYOUT_VERSION, pageId };
+
+/**
+ * Puts each page where the layout says. `pages` maps a parent to its pages in
+ * order, and may list pages shipped under another parent; `pageRules` hides or
+ * renames them. A page nobody listed stays at the end of its original parent, so
+ * a page we ship later still shows up. An id that no longer exists is skipped.
+ */
+function arrangePages(menu, plan) {
+  const catalog = new Map();
+  menu.forEach(entry =>
+    (entry.children || []).forEach(child =>
+      catalog.set(pageId(entry.name, child.name), child)
+    )
+  );
+
+  const parents = menu.filter(entry => Array.isArray(entry.children));
+  const taken = new Set();
+  const listed = new Map();
+  parents.forEach(entry => {
+    const ids = plan.pages[entry.name];
+    const own = (Array.isArray(ids) ? ids : []).filter(
+      id => catalog.has(id) && !taken.has(id)
+    );
+    own.forEach(id => taken.add(id));
+    listed.set(entry.name, own);
+  });
+
+  const present = id => {
+    const child = catalog.get(id);
+    const label = plan.pageRules[id]?.label;
+    return label ? { ...child, label } : child;
+  };
+
+  return menu.flatMap(entry => {
+    if (!Array.isArray(entry.children)) return [entry];
+
+    const remaining = entry.children
+      .map(child => pageId(entry.name, child.name))
+      .filter(id => !taken.has(id));
+    const children = [...listed.get(entry.name), ...remaining]
+      .filter(id => !plan.pageRules[id]?.hidden)
+      .map(present);
+
+    // Every page hidden or moved away leaves a heading that leads nowhere.
+    if (entry.children.length && !children.length && !entry.to) return [];
+    return [{ ...entry, children }];
+  });
+}
 
 /**
  * @param {Array} menu    the menu as the app built it, top-level entries
@@ -125,17 +184,21 @@ export function applyLayout(menu, layout) {
   const plan = normalise(layout);
   if (!plan) return menu;
 
+  const arranged = arrangePages(menu, plan);
   const rules = plan.items;
   // A hand-written label replaces the translation. Accepted consequence, stated
   // in the design: someone using the panel in English reads it in whatever
   // language the super admin typed.
-  const decorate = entry =>
-    rules[entry.name]?.label
-      ? { ...entry, label: rules[entry.name].label }
-      : entry;
+  const decorate = entry => ({
+    ...entry,
+    ...(rules[entry.name]?.label && { label: rules[entry.name].label }),
+    ...(rules[entry.name]?.railLabel && {
+      railLabel: rules[entry.name].railLabel,
+    }),
+  });
 
   const available = new Map();
-  menu.forEach(entry => {
+  arranged.forEach(entry => {
     if (!rules[entry.name]?.hidden) available.set(entry.name, entry);
   });
 
@@ -183,7 +246,7 @@ export function applyLayout(menu, layout) {
   sections.forEach((section, id) => {
     if (!seen.has(id) && rendered(section)) placed.push(section);
   });
-  menu.forEach(entry => {
+  arranged.forEach(entry => {
     if (seen.has(entry.name) || claimed.has(entry.name)) return;
     if (available.has(entry.name)) placed.push(decorate(entry));
   });
