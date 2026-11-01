@@ -225,7 +225,7 @@ const controlClass =
 </script>
 
 <template>
-  <div class="flex flex-col w-full h-full overflow-auto bg-n-background">
+  <div class="flex flex-col w-full h-full overflow-auto">
     <header
       class="flex flex-wrap items-center justify-between gap-4 px-8 py-6 border-b border-n-weak"
     >
@@ -327,7 +327,7 @@ const controlClass =
 
       <!-- Toolbar -->
       <div
-        class="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl border border-n-weak bg-n-solid-1"
+        class="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl glass-panel"
         data-testid="broadcast-toolbar"
       >
         <label class="relative flex-1 min-w-44 max-w-72">
@@ -583,7 +583,7 @@ const controlClass =
       <!-- Table -->
       <div
         v-else
-        class="overflow-x-auto rounded-xl border border-n-weak bg-n-solid-1"
+        class="overflow-x-auto rounded-xl glass-panel"
         data-testid="broadcast-table"
       >
         <table class="w-full text-[13px]">
@@ -686,7 +686,7 @@ const controlClass =
       <!-- Pagination -->
       <div
         v-if="filtered.length > PAGE_SIZES[0]"
-        class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl border border-n-weak bg-n-solid-1"
+        class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl glass-panel"
         data-testid="broadcast-pagination"
       >
         <span class="text-xs text-n-slate-11">

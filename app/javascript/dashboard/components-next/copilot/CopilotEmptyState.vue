@@ -78,7 +78,7 @@ const handleSuggestion = opt => {
       </p>
       <router-link
         :to="{
-          name: 'captain_assistants_create_index',
+          name: 'athenas_assistants_index',
           params: {
             accountId: route.params.accountId,
           },

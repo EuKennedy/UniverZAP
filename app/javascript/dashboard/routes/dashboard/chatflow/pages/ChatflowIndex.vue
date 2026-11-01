@@ -164,7 +164,7 @@ const triggerLabel = type =>
 </script>
 
 <template>
-  <div class="flex flex-col w-full h-full overflow-auto bg-n-background">
+  <div class="flex flex-col w-full h-full overflow-auto">
     <header
       class="flex flex-wrap items-center justify-between gap-4 px-8 py-6 border-b border-n-weak"
     >
@@ -209,7 +209,7 @@ const triggerLabel = type =>
         <div
           v-for="card in cards"
           :key="card.key"
-          class="flex gap-3 items-center px-4 py-3.5 rounded-xl border border-n-weak bg-n-solid-1"
+          class="flex gap-3 items-center px-4 py-3.5 rounded-xl glass-panel"
           :data-testid="`chatflow-stat-${card.key.toLowerCase()}`"
         >
           <span

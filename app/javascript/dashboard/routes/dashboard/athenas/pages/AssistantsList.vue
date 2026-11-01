@@ -42,7 +42,7 @@ onMounted(fetchAssistants);
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full overflow-y-auto bg-n-background">
+  <div class="flex flex-col h-full w-full overflow-y-auto">
     <header
       class="flex items-center justify-between flex-shrink-0 px-10 py-8 border-b border-n-weak"
     >
@@ -109,7 +109,7 @@ onMounted(fetchAssistants);
           v-for="assistant in assistants"
           :key="assistant.id"
           type="button"
-          class="group relative flex flex-col gap-4 p-5 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak text-left transition-[transform,box-shadow,ring-color] duration-200 ease-out hover:ring-n-brand hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)]"
+          class="group relative flex flex-col gap-4 p-5 rounded-2xl glass-panel text-left transition-[transform,box-shadow,ring-color] duration-200 ease-out hover:ring-n-brand hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)]"
           @click="openAssistant(assistant.id)"
         >
           <div class="flex items-start justify-between gap-3">

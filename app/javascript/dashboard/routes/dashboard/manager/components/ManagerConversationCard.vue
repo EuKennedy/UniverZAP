@@ -69,7 +69,7 @@ const sourceLabel = computed(() =>
 <template>
   <router-link
     :to="route"
-    class="flex flex-col gap-3 p-4 rounded-2xl border border-l-2 transition-colors group bg-n-solid-1 border-n-weak sm:p-5 hover:bg-n-alpha-1"
+    class="flex flex-col gap-3 p-4 rounded-2xl border-l-2 transition-colors group glass-panel sm:p-5 hover:bg-n-alpha-1"
     :class="[style.rail, answered && 'opacity-55']"
     data-testid="moderation-card"
   >

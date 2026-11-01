@@ -130,7 +130,7 @@ onMounted(refresh);
         v-for="row in agents"
         :key="row.user.id"
         type="button"
-        class="flex flex-col gap-3 p-4 rounded-xl bg-n-solid-1 ring-1 ring-n-weak hover:ring-n-slate-7 text-left transition"
+        class="flex flex-col gap-3 p-4 rounded-xl glass-panel hover:ring-n-slate-7 text-left transition"
         :data-test-id="`team-workload-card-${row.user.id}`"
         @click="emit('focusAgent', row.user.id)"
       >

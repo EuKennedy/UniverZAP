@@ -158,7 +158,7 @@ onMounted(fetchAll);
 </script>
 
 <template>
-  <div class="flex overflow-auto flex-col w-full h-full bg-n-background">
+  <div class="flex overflow-auto flex-col w-full h-full">
     <header
       class="flex flex-wrap gap-4 justify-between items-start px-8 py-6 border-b border-n-weak"
     >
@@ -254,7 +254,7 @@ onMounted(fetchAll);
           lê como tela quebrada, e o operador vai procurar o que não existe. -->
         <div
           v-if="!suggestions.length"
-          class="flex flex-col gap-2 items-center py-16 text-center rounded-2xl ring-1 bg-n-solid-1 ring-n-weak"
+          class="flex flex-col gap-2 items-center py-16 text-center rounded-2xl glass-panel"
           data-testid="empty-queue"
         >
           <span

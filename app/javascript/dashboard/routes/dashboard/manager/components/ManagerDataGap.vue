@@ -33,7 +33,7 @@ const ratio = computed(() => {
 
 <template>
   <section
-    class="flex flex-col gap-3 px-5 py-4 rounded-xl border border-n-weak bg-n-solid-1"
+    class="flex flex-col gap-3 px-5 py-4 rounded-xl glass-panel"
     data-testid="data-gap"
   >
     <div class="flex gap-2.5 items-start">

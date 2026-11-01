@@ -14,15 +14,9 @@ import InboxReportsShow from './InboxReportsShow.vue';
 import TeamReportsShow from './TeamReportsShow.vue';
 import LabelReportsShow from './LabelReportsShow.vue';
 
-import AgentReports from './AgentReports.vue';
-import InboxReports from './InboxReports.vue';
-import LabelReports from './LabelReports.vue';
-import TeamReports from './TeamReports.vue';
-
 import CsatResponses from './CsatResponses.vue';
 import AthenasReports from './AthenasReports.vue';
 import LiveReports from './LiveReports.vue';
-import SLAReports from './SLAReports.vue';
 import AdLeadsReports from './AdLeadsReports.vue';
 import PanelReports from './PanelReports.vue';
 
@@ -31,32 +25,18 @@ const meta = {
   permissions: ['administrator', 'report_manage'],
 };
 
+// As telas antigas por entidade viraram as visões atuais: link salvo e atalho
+// continuam funcionando.
 const oldReportRoutes = [
-  {
-    path: 'agent',
-    name: 'agent_reports',
-    meta,
-    component: AgentReports,
-  },
-  {
-    path: 'inboxes',
-    name: 'inbox_reports',
-    meta,
-    component: InboxReports,
-  },
-  {
-    path: 'label',
-    name: 'label_reports',
-    meta,
-    component: LabelReports,
-  },
-  {
-    path: 'teams',
-    name: 'team_reports',
-    meta,
-    component: TeamReports,
-  },
-];
+  { path: 'agent', target: 'agent_reports_index' },
+  { path: 'inboxes', target: 'inbox_reports_index' },
+  { path: 'label', target: 'label_reports_index' },
+  { path: 'teams', target: 'team_reports_index' },
+  { path: 'sla', target: 'account_overview_reports' },
+].map(({ path, target }) => ({
+  path,
+  redirect: to => ({ name: target, params: to.params }),
+}));
 
 const revisedReportRoutes = [
   {
@@ -152,12 +132,6 @@ export default {
         },
         ...oldReportRoutes,
         ...revisedReportRoutes,
-        {
-          path: 'sla',
-          name: 'sla_reports',
-          meta,
-          component: SLAReports,
-        },
         {
           path: 'csat',
           name: 'csat_reports',

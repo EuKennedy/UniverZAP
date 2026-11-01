@@ -17,7 +17,7 @@ class Kanban::Automations::Actions::SendMessage < Kanban::Automations::Actions::
     base = ENV.fetch('FRONTEND_URL', '')
     return '' if base.blank?
 
-    "#{base}/app/accounts/#{task.account_id}/kanban/funnels/#{task.funnel_id}?task=#{task.id}"
+    "#{base}/app/accounts/#{task.account_id}/kanban/#{task.funnel_id}/task/#{task.id}"
   end
 
   private

@@ -495,7 +495,7 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
 </script>
 
 <template>
-  <div class="flex w-full h-full overflow-hidden bg-n-background">
+  <div class="flex w-full h-full overflow-hidden">
     <!-- Options panel — lives on the LEFT -->
     <TriggerConfigDrawer
       v-if="isTriggerOpen && flow"
@@ -746,7 +746,7 @@ const goBack = () => router.push(accountScopedRoute('chatflow_index'));
       @click.self="isTestPopupOpen = false"
     >
       <div
-        class="w-[400px] rounded-2xl bg-n-solid-1 border border-n-weak shadow-2xl p-6 flex flex-col gap-4"
+        class="w-[400px] rounded-2xl glass-panel shadow-2xl p-6 flex flex-col gap-4"
       >
         <div class="flex items-center gap-3">
           <span

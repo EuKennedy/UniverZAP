@@ -93,7 +93,7 @@ const confirm = async () => {
 
     <div
       v-if="isConfirming"
-      class="flex flex-col gap-2.5 p-3.5 w-full rounded-xl ring-1 sm:w-80 bg-n-solid-1 ring-n-weak"
+      class="flex flex-col gap-2.5 p-3.5 w-full rounded-xl sm:w-80 glass-panel"
       data-testid="run-confirm"
     >
       <p

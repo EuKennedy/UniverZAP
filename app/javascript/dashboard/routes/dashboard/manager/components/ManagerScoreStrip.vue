@@ -41,7 +41,7 @@ const agentRows = computed(() =>
       <div
         v-for="tile in tiles"
         :key="tile.key"
-        class="flex flex-col gap-1 px-4 py-3.5 rounded-xl border border-n-weak bg-n-solid-1"
+        class="flex flex-col gap-1 px-4 py-3.5 rounded-xl glass-panel"
         :data-testid="`score-${tile.key}`"
       >
         <span

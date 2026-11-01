@@ -227,7 +227,7 @@ const controlClass =
 </script>
 
 <template>
-  <div class="flex flex-col w-full h-full overflow-auto bg-n-background">
+  <div class="flex flex-col w-full h-full overflow-auto">
     <header
       class="flex flex-col gap-4 px-8 py-6 border-b border-n-weak"
       data-testid="list-header"
@@ -398,7 +398,7 @@ const controlClass =
           v-for="card in cards"
           :key="card.key"
           type="button"
-          class="flex gap-3 items-center px-4 py-3.5 text-start rounded-xl border transition-colors bg-n-solid-1"
+          class="flex gap-3 items-center px-4 py-3.5 text-start rounded-xl transition-colors glass-panel"
           :class="
             filter === card.key.toLowerCase()
               ? 'border-n-brand'
@@ -444,7 +444,7 @@ const controlClass =
       </p>
 
       <div
-        class="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl border border-n-weak bg-n-solid-1"
+        class="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl glass-panel"
         data-testid="list-toolbar"
       >
         <label class="relative flex-1 min-w-44 max-w-72">
@@ -514,7 +514,7 @@ const controlClass =
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-n-weak bg-n-solid-1">
+      <div class="overflow-hidden rounded-xl glass-panel">
         <div
           v-if="!members.length && !isLoading"
           class="flex flex-col items-center gap-2 py-16 text-center"

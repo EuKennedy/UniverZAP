@@ -907,7 +907,7 @@ onBeforeUnmount(stopStatsRefresh);
 </script>
 
 <template>
-  <div class="flex flex-col w-full h-full overflow-hidden bg-n-background">
+  <div class="flex flex-col w-full h-full overflow-hidden">
     <header
       class="flex flex-wrap items-center justify-between gap-4 px-8 py-5 border-b border-n-weak shrink-0"
     >
@@ -1089,7 +1089,7 @@ onBeforeUnmount(stopStatsRefresh);
             <div
               v-for="(block, index) in form.message.messages"
               :key="`msg-${index}`"
-              class="flex flex-col gap-3 p-4 rounded-xl border border-n-weak bg-n-solid-1"
+              class="flex flex-col gap-3 p-4 rounded-xl glass-panel"
             >
               <div class="flex items-center gap-2">
                 <span
@@ -1380,7 +1380,7 @@ onBeforeUnmount(stopStatsRefresh);
           :state-label="stepLabel('audience')"
         >
           <div
-            class="flex flex-col rounded-xl border border-n-weak bg-n-solid-1 divide-y divide-n-weak overflow-hidden"
+            class="flex flex-col rounded-xl glass-panel divide-y divide-n-weak overflow-hidden"
           >
             <!-- Distribution lists -->
             <div class="flex flex-col">

@@ -272,7 +272,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col w-full h-full overflow-auto bg-n-background">
+  <div class="flex flex-col w-full h-full overflow-auto">
     <header
       class="flex items-center justify-between gap-4 px-8 py-6 border-b border-n-weak"
     >
@@ -300,7 +300,7 @@ onMounted(() => {
         <div
           v-for="n in 3"
           :key="n"
-          class="h-44 rounded-2xl bg-n-solid-1 border border-n-weak animate-pulse"
+          class="h-44 rounded-2xl glass-panel animate-pulse"
         />
       </div>
 
@@ -473,7 +473,7 @@ onMounted(() => {
       @click.self="closeModal"
     >
       <div
-        class="flex flex-col w-full max-w-md gap-5 p-6 rounded-2xl bg-n-solid-1 border border-n-weak shadow-2xl"
+        class="flex flex-col w-full max-w-md gap-5 p-6 rounded-2xl glass-panel shadow-2xl"
       >
         <div class="flex items-start justify-between gap-4">
           <h2 class="m-0 text-lg font-semibold text-n-slate-12">
@@ -655,7 +655,7 @@ onMounted(() => {
       @click.self="closeRegister"
     >
       <div
-        class="flex flex-col w-full max-w-sm gap-5 p-6 rounded-2xl bg-n-solid-1 border border-n-weak shadow-2xl"
+        class="flex flex-col w-full max-w-sm gap-5 p-6 rounded-2xl glass-panel shadow-2xl"
       >
         <div class="flex items-start justify-between gap-4">
           <div class="flex flex-col gap-1 min-w-0">

@@ -97,7 +97,7 @@ onMounted(fetchChecks);
 
     <div
       v-else-if="loadError"
-      class="flex flex-col gap-2.5 items-start px-4 py-3.5 rounded-xl border border-n-weak bg-n-solid-1"
+      class="flex flex-col gap-2.5 items-start px-4 py-3.5 rounded-xl glass-panel"
       data-testid="checks-error"
     >
       <p class="m-0 text-[13px] text-n-ruby-11">{{ loadError }}</p>

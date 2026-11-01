@@ -219,7 +219,7 @@ const removeTraining = idx => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full bg-n-background">
+  <div class="flex flex-col h-full w-full">
     <header class="flex items-center gap-3 px-8 py-5 border-b border-n-weak">
       <Button
         icon="i-lucide-arrow-left"

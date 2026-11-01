@@ -1,21 +1,9 @@
-/* eslint arrow-body-style: 0 */
 import { frontendURL } from '../../../helper/URLHelper';
-import SettingsWrapper from '../settings/SettingsWrapper.vue';
-import NotificationsView from './components/NotificationsView.vue';
 
+// A Caixa de Entrada já é a lista de notificações: uma tela só.
 export const routes = [
   {
     path: frontendURL('accounts/:accountId/notifications'),
-    component: SettingsWrapper,
-    children: [
-      {
-        path: '',
-        name: 'notifications_index',
-        component: NotificationsView,
-        meta: {
-          permissions: ['administrator', 'agent', 'custom_role'],
-        },
-      },
-    ],
+    redirect: to => ({ name: 'inbox_view', params: to.params }),
   },
 ];

@@ -442,7 +442,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex h-full w-full bg-n-background">
+  <div class="flex h-full w-full">
     <aside
       class="hidden md:flex flex-col w-56 flex-shrink-0 border-r border-n-weak bg-n-solid-1/40 overflow-y-auto"
     >

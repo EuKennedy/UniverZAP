@@ -65,7 +65,7 @@ const GO_TO_COMMANDS = [
     title: 'COMMAND_BAR.COMMANDS.GO_TO_AGENT_REPORTS',
     featureFlag: FEATURE_FLAGS.REPORTS,
     icon: ICON_AGENT_REPORTS,
-    path: accountId => `accounts/${accountId}/reports/agent`,
+    path: accountId => `accounts/${accountId}/reports/agents_overview`,
     role: ['administrator'],
   },
   {
@@ -74,7 +74,7 @@ const GO_TO_COMMANDS = [
     title: 'COMMAND_BAR.COMMANDS.GO_TO_LABEL_REPORTS',
     featureFlag: FEATURE_FLAGS.REPORTS,
     icon: ICON_LABEL_REPORTS,
-    path: accountId => `accounts/${accountId}/reports/label`,
+    path: accountId => `accounts/${accountId}/reports/labels_overview`,
     role: ['administrator'],
   },
   {
@@ -83,7 +83,7 @@ const GO_TO_COMMANDS = [
     title: 'COMMAND_BAR.COMMANDS.GO_TO_INBOX_REPORTS',
     featureFlag: FEATURE_FLAGS.REPORTS,
     icon: ICON_INBOX_REPORTS,
-    path: accountId => `accounts/${accountId}/reports/inboxes`,
+    path: accountId => `accounts/${accountId}/reports/inboxes_overview`,
     role: ['administrator'],
   },
   {
@@ -92,7 +92,7 @@ const GO_TO_COMMANDS = [
     title: 'COMMAND_BAR.COMMANDS.GO_TO_TEAM_REPORTS',
     featureFlag: FEATURE_FLAGS.REPORTS,
     icon: ICON_TEAM_REPORTS,
-    path: accountId => `accounts/${accountId}/reports/teams`,
+    path: accountId => `accounts/${accountId}/reports/teams_overview`,
     role: ['administrator'],
   },
   {
@@ -146,7 +146,7 @@ const GO_TO_COMMANDS = [
     featureFlag: FEATURE_FLAGS.INTEGRATIONS,
     section: 'COMMAND_BAR.SECTIONS.SETTINGS',
     icon: ICON_APPS,
-    path: accountId => `accounts/${accountId}/settings/applications`,
+    path: accountId => `accounts/${accountId}/settings/integrations`,
     role: ['administrator'],
   },
   {
@@ -170,7 +170,7 @@ const GO_TO_COMMANDS = [
     title: 'COMMAND_BAR.COMMANDS.GO_TO_NOTIFICATIONS',
     section: 'COMMAND_BAR.SECTIONS.SETTINGS',
     icon: ICON_NOTIFICATION,
-    path: accountId => `accounts/${accountId}/notifications`,
+    path: accountId => `accounts/${accountId}/inbox-view`,
     role: ['administrator', 'agent'],
   },
 ];

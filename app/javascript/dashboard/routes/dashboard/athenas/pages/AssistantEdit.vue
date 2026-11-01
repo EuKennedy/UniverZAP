@@ -431,7 +431,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full bg-n-background">
+  <div class="flex flex-col h-full w-full">
     <header
       class="flex items-center justify-between gap-4 px-8 py-5 border-b border-n-weak flex-shrink-0"
     >
@@ -541,9 +541,7 @@ onMounted(() => {
 
         <!-- TAB: GENERAL -->
         <template v-if="currentTab === 'general'">
-          <article
-            class="flex flex-col gap-5 p-6 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak"
-          >
+          <article class="flex flex-col gap-5 p-6 rounded-2xl glass-panel">
             <header class="flex flex-col gap-1">
               <h2
                 class="text-base font-semibold text-n-slate-12 tracking-tight"
@@ -591,9 +589,7 @@ onMounted(() => {
             />
           </article>
 
-          <article
-            class="flex flex-col gap-5 p-6 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak"
-          >
+          <article class="flex flex-col gap-5 p-6 rounded-2xl glass-panel">
             <header class="flex flex-col gap-1">
               <h2
                 class="text-base font-semibold text-n-slate-12 tracking-tight"
@@ -740,9 +736,7 @@ onMounted(() => {
             </template>
           </article>
 
-          <article
-            class="flex flex-col gap-5 p-6 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak"
-          >
+          <article class="flex flex-col gap-5 p-6 rounded-2xl glass-panel">
             <header class="flex flex-col gap-1">
               <h2
                 class="text-base font-semibold text-n-slate-12 tracking-tight"
@@ -906,7 +900,7 @@ onMounted(() => {
 
             <article
               v-if="editorOpen"
-              class="flex flex-col gap-3 p-5 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak"
+              class="flex flex-col gap-3 p-5 rounded-2xl glass-panel"
             >
               <div class="flex flex-col gap-1.5">
                 <label class="text-sm font-medium text-n-slate-12">
@@ -969,7 +963,7 @@ onMounted(() => {
 
             <article
               v-else-if="!trainings.length && !editorOpen"
-              class="flex flex-col gap-3 p-10 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak items-center text-center"
+              class="flex flex-col gap-3 p-10 rounded-2xl glass-panel items-center text-center"
             >
               <span
                 class="size-16 rounded-2xl bg-gradient-to-br from-n-brand/20 to-n-brand/[0.04] ring-1 ring-n-weak grid place-content-center"
@@ -985,7 +979,7 @@ onMounted(() => {
               <article
                 v-for="tr in trainings"
                 :key="tr.id"
-                class="flex items-center gap-3 p-4 rounded-xl bg-n-solid-1 ring-1 ring-n-weak"
+                class="flex items-center gap-3 p-4 rounded-xl glass-panel"
               >
                 <span
                   class="size-9 rounded-lg bg-n-alpha-2 grid place-content-center flex-shrink-0"

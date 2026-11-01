@@ -119,7 +119,7 @@ const stageDistribution = funnel => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full overflow-y-auto bg-n-background">
+  <div class="flex flex-col h-full w-full overflow-y-auto">
     <!-- HERO HEADER with stats -->
     <header
       class="flex-shrink-0 px-10 pt-9 pb-7 border-b border-n-weak relative overflow-hidden"
@@ -162,9 +162,7 @@ const stageDistribution = funnel => {
 
       <!-- Stats row -->
       <div class="relative grid grid-cols-3 gap-4 max-w-3xl">
-        <div
-          class="flex flex-col gap-1.5 px-5 py-4 rounded-2xl bg-n-solid-1/80 backdrop-blur-md ring-1 ring-n-weak"
-        >
+        <div class="flex flex-col gap-1.5 px-5 py-4 rounded-2xl glass-panel">
           <span
             class="text-[10px] uppercase tracking-[0.12em] text-n-slate-10 font-medium"
           >
@@ -179,9 +177,7 @@ const stageDistribution = funnel => {
             <span class="i-lucide-folder-kanban size-4 text-n-iris-11" />
           </div>
         </div>
-        <div
-          class="flex flex-col gap-1.5 px-5 py-4 rounded-2xl bg-n-solid-1/80 backdrop-blur-md ring-1 ring-n-weak"
-        >
+        <div class="flex flex-col gap-1.5 px-5 py-4 rounded-2xl glass-panel">
           <span
             class="text-[10px] uppercase tracking-[0.12em] text-n-slate-10 font-medium"
           >
@@ -196,9 +192,7 @@ const stageDistribution = funnel => {
             <span class="i-lucide-layers size-4 text-n-blue-11" />
           </div>
         </div>
-        <div
-          class="flex flex-col gap-1.5 px-5 py-4 rounded-2xl bg-n-solid-1/80 backdrop-blur-md ring-1 ring-n-weak"
-        >
+        <div class="flex flex-col gap-1.5 px-5 py-4 rounded-2xl glass-panel">
           <span
             class="text-[10px] uppercase tracking-[0.12em] text-n-slate-10 font-medium"
           >
@@ -293,7 +287,7 @@ const stageDistribution = funnel => {
           v-for="funnel in filteredFunnels"
           :key="funnel.id"
           type="button"
-          class="funnel-card group relative flex flex-col gap-4 p-5 rounded-2xl bg-n-solid-1 ring-1 ring-n-weak text-left overflow-hidden transition-all duration-200 ease-out hover:ring-n-slate-7 hover:-translate-y-1 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.35)]"
+          class="funnel-card group relative flex flex-col gap-4 p-5 rounded-2xl glass-panel text-left overflow-hidden transition-all duration-200 ease-out hover:ring-n-slate-7 hover:-translate-y-1 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.35)]"
           @click="goToBoard(funnel)"
         >
           <!-- Top gradient accent -->

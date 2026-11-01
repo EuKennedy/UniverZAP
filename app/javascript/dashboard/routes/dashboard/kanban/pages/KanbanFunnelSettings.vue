@@ -484,9 +484,7 @@ const STATUS_BADGE = {
       v-show="activeTab === 'general'"
       class="flex flex-col gap-6 max-w-3xl px-6 py-6"
     >
-      <article
-        class="flex flex-col gap-4 p-5 rounded-xl bg-n-solid-1 border border-n-weak"
-      >
+      <article class="flex flex-col gap-4 p-5 rounded-xl glass-panel">
         <header class="flex items-start justify-between gap-3">
           <div class="flex flex-col gap-1 min-w-0">
             <h2 class="text-sm font-medium text-n-slate-12">
@@ -557,9 +555,7 @@ const STATUS_BADGE = {
       v-show="activeTab === 'stages'"
       class="flex flex-col gap-6 max-w-3xl px-6 py-6"
     >
-      <article
-        class="flex flex-col gap-4 p-5 rounded-xl bg-n-solid-1 border border-n-weak"
-      >
+      <article class="flex flex-col gap-4 p-5 rounded-xl glass-panel">
         <header class="flex items-start justify-between gap-3">
           <div class="flex flex-col gap-1 min-w-0">
             <h2 class="text-sm font-medium text-n-slate-12">
@@ -639,9 +635,7 @@ const STATUS_BADGE = {
       v-show="activeTab === 'custom_fields'"
       class="flex flex-col gap-6 max-w-3xl px-6 py-6"
     >
-      <article
-        class="flex flex-col gap-4 p-5 rounded-xl bg-n-solid-1 border border-n-weak"
-      >
+      <article class="flex flex-col gap-4 p-5 rounded-xl glass-panel">
         <header class="flex items-start justify-between gap-3">
           <div class="flex flex-col gap-1 min-w-0">
             <h2 class="text-sm font-medium text-n-slate-12">
@@ -723,9 +717,7 @@ const STATUS_BADGE = {
       v-show="activeTab === 'automations'"
       class="flex flex-col gap-6 max-w-3xl px-6 py-6"
     >
-      <article
-        class="flex flex-col gap-4 p-5 rounded-xl bg-n-solid-1 border border-n-weak"
-      >
+      <article class="flex flex-col gap-4 p-5 rounded-xl glass-panel">
         <header class="flex items-start justify-between gap-3">
           <div class="flex flex-col gap-1 min-w-0">
             <h2 class="text-sm font-medium text-n-slate-12">

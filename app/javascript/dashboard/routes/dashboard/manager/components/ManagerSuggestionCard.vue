@@ -115,7 +115,7 @@ const confirmDismiss = () => {
 
 <template>
   <article
-    class="flex flex-col gap-4 p-5 rounded-2xl border bg-n-solid-1"
+    class="flex flex-col gap-4 p-5 rounded-2xl glass-panel"
     :class="
       isCritical
         ? 'border-n-weak border-l-2 border-l-n-ruby-9'

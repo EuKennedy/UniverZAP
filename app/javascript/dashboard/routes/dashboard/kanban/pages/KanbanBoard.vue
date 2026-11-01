@@ -643,7 +643,7 @@ const goToSettings = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full bg-n-background">
+  <div class="flex flex-col h-full w-full">
     <!-- HERO HEADER: breadcrumb + name + inline stats + actions -->
     <header
       class="flex-shrink-0 px-7 pt-5 pb-4 border-b border-n-weak relative overflow-hidden"

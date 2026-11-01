@@ -52,7 +52,7 @@ const mockRoutes = [
     featureFlag: MOCK_FEATURE_FLAGS.CANNED_RESPONSES,
   },
   {
-    path: 'accounts/:accountId/settings/applications',
+    path: 'accounts/:accountId/settings/integrations',
     name: 'applications',
     featureFlag: MOCK_FEATURE_FLAGS.INTEGRATIONS,
   },

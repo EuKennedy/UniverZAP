@@ -205,7 +205,7 @@ const controlClass =
 </script>
 
 <template>
-  <div class="flex flex-col w-full h-full overflow-auto bg-n-background">
+  <div class="flex flex-col w-full h-full overflow-auto">
     <header
       class="flex flex-wrap items-center justify-between gap-4 px-8 py-6 border-b border-n-weak"
     >
@@ -268,7 +268,7 @@ const controlClass =
         <div
           v-for="card in statCards"
           :key="card.key"
-          class="flex gap-3 items-center px-4 py-3.5 rounded-xl border border-n-weak bg-n-solid-1"
+          class="flex gap-3 items-center px-4 py-3.5 rounded-xl glass-panel"
         >
           <span
             class="flex justify-center items-center rounded-lg size-9 shrink-0"
@@ -293,7 +293,7 @@ const controlClass =
       </div>
 
       <div
-        class="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl border border-n-weak bg-n-solid-1"
+        class="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl glass-panel"
         data-testid="lists-toolbar"
       >
         <label class="relative flex-1 min-w-44 max-w-72">
@@ -487,10 +487,7 @@ const controlClass =
         </article>
       </div>
 
-      <div
-        v-else
-        class="overflow-hidden rounded-xl border border-n-weak bg-n-solid-1"
-      >
+      <div v-else class="overflow-hidden rounded-xl glass-panel">
         <table class="w-full text-[13px]" data-testid="lists-table">
           <thead>
             <tr class="border-b border-n-weak text-n-slate-11">

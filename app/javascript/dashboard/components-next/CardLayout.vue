@@ -18,9 +18,7 @@ const handleClick = () => {
 </script>
 
 <template>
-  <div
-    class="flex flex-col w-full outline-1 outline outline-n-container -outline-offset-1 group/cardLayout rounded-xl bg-n-solid-2"
-  >
+  <div class="flex flex-col w-full group/cardLayout rounded-xl glass-panel">
     <div
       class="flex w-full gap-3 py-5"
       :class="[
