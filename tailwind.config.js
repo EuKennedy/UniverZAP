@@ -1,3 +1,4 @@
+const plugin = require('tailwindcss/plugin');
 const { slateDark } = require('@radix-ui/colors');
 import { colors } from './theme/colors';
 import { icons } from './theme/icons';
@@ -268,6 +269,23 @@ const tailwindConfig = {
     },
   },
   plugins: [
+    // UniverZAP: the card of the glass look. It needs something behind it, which
+    // is the ambient light in Dashboard.vue. The blur makes each card a layer of
+    // its own, so the one in use rises: its dropdowns open over the next card.
+    plugin(({ addComponents }) => {
+      addComponents({
+        '.glass-panel': {
+          position: 'relative',
+          backgroundColor: 'rgb(var(--solid-2) / 0.62)',
+          border: '1px solid rgba(var(--alpha-2))',
+          boxShadow:
+            'inset 0 1px 0 0 rgba(var(--alpha-2)), 0 10px 30px -18px rgb(0 0 0 / 0.55)',
+          backdropFilter: 'blur(18px) saturate(150%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(150%)',
+        },
+        '.glass-panel:hover, .glass-panel:focus-within': { zIndex: '10' },
+      });
+    }),
     // eslint-disable-next-line
     require('@tailwindcss/typography'),
     iconsPlugin({

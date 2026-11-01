@@ -57,10 +57,10 @@ const canClick = card => props.interactive && card.clickable;
       :is="canClick(card) ? 'button' : 'div'"
       v-for="card in cards"
       :key="card.key"
-      class="flex items-center gap-3 p-3 text-start transition rounded-xl outline outline-1 -outline-offset-1 bg-n-solid-2"
+      class="flex items-center gap-3 p-3 text-start transition rounded-xl outline outline-1 -outline-offset-1 glass-panel"
       :class="[
         active === card.key
-          ? 'outline-n-teal-7 shadow-[0_0_20px_-8px_rgba(20,230,127,0.65)]'
+          ? 'outline-transparent shadow-brand-neon'
           : 'outline-n-weak',
         canClick(card) ? 'hover:outline-n-strong' : '',
       ]"

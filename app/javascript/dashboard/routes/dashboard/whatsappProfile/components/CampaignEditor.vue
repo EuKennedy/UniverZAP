@@ -335,9 +335,7 @@ watch(() => props.campaignId, load, { immediate: true });
       {{ formError }}
     </p>
 
-    <section
-      class="grid gap-4 p-5 rounded-xl border border-n-weak bg-n-solid-1 md:grid-cols-2"
-    >
+    <section class="grid gap-4 p-5 rounded-xl md:grid-cols-2 glass-panel">
       <Input
         v-model="campaign.name"
         :label="label('NAME')"
@@ -435,9 +433,7 @@ watch(() => props.campaignId, load, { immediate: true });
       </label>
     </section>
 
-    <section
-      class="flex flex-col gap-4 p-5 rounded-xl border border-n-weak bg-n-solid-1"
-    >
+    <section class="flex flex-col gap-4 p-5 rounded-xl glass-panel">
       <div class="flex flex-wrap gap-3 justify-between items-center">
         <div class="flex flex-col gap-0.5">
           <h3 class="m-0 text-sm font-semibold text-n-slate-12">
@@ -575,7 +571,7 @@ watch(() => props.campaignId, load, { immediate: true });
 
     <section
       v-if="campaign.id"
-      class="flex flex-col gap-3 p-5 rounded-xl border border-n-weak bg-n-solid-1"
+      class="flex flex-col gap-3 p-5 rounded-xl glass-panel"
       data-testid="campaign-preview"
     >
       <h3 class="m-0 text-sm font-semibold text-n-slate-12">

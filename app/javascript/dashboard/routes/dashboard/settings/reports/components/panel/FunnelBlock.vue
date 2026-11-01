@@ -152,7 +152,7 @@ const pct = (part, total) => (total ? `(${rate(part, total)})` : '');
       />
     </div>
 
-    <div class="overflow-x-auto rounded-xl border border-n-weak bg-n-solid-1">
+    <div class="overflow-x-auto rounded-xl glass-panel">
       <table class="w-full text-sm">
         <thead class="bg-n-solid-2 border-b border-n-container text-n-slate-11">
           <tr>

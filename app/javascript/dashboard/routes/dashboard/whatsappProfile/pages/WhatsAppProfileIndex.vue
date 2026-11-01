@@ -146,7 +146,7 @@ onMounted(fetchInboxes);
 </script>
 
 <template>
-  <div class="flex overflow-auto flex-col w-full h-full bg-n-background">
+  <div class="flex overflow-auto flex-col w-full h-full">
     <header
       class="flex flex-wrap gap-4 justify-between items-end px-8 py-6 border-b border-n-weak"
     >

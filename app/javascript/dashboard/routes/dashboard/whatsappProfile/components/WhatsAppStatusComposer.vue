@@ -303,7 +303,7 @@ watch(
   <!-- ⌘/Ctrl+Enter publica (ou agenda) de qualquer campo: abre a mesma
     confirmação do botão, então o atalho nunca pula a pergunta. -->
   <section
-    class="flex flex-col gap-6 p-6 rounded-xl border border-n-weak bg-n-solid-1"
+    class="flex flex-col gap-6 p-6 rounded-xl glass-panel"
     @keydown.meta.enter.prevent="requestSubmit"
     @keydown.ctrl.enter.prevent="requestSubmit"
   >

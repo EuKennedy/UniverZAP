@@ -94,7 +94,7 @@ onMounted(fetchStats);
     <div
       v-for="card in cards"
       :key="card.key"
-      class="flex gap-3 items-center px-4 py-3.5 rounded-xl border border-n-weak bg-n-solid-1"
+      class="flex gap-3 items-center px-4 py-3.5 rounded-xl glass-panel"
       :data-testid="`stat-${card.key.toLowerCase()}`"
     >
       <span

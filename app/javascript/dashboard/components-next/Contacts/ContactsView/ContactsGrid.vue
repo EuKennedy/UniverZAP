@@ -42,7 +42,7 @@ const showPhone = computed(() =>
     <article
       v-for="contact in contacts"
       :key="contact.id"
-      class="relative flex flex-col gap-3 p-4 transition cursor-pointer group rounded-xl outline outline-1 -outline-offset-1 bg-n-solid-2"
+      class="relative flex flex-col gap-3 p-4 transition cursor-pointer group rounded-xl outline outline-1 -outline-offset-1 glass-panel"
       :class="
         selectedIds.has(contact.id)
           ? 'outline-n-teal-7'

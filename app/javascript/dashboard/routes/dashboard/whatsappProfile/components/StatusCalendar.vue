@@ -187,7 +187,7 @@ onMounted(() => {
 
 <template>
   <section
-    class="flex flex-col gap-4 p-5 rounded-xl border border-n-weak bg-n-solid-1"
+    class="flex flex-col gap-4 p-5 rounded-xl glass-panel"
     data-testid="status-calendar"
   >
     <div class="flex flex-wrap gap-3 items-center">

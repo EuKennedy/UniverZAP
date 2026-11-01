@@ -43,9 +43,7 @@ const sortBy = sort => emit('sort', { sort, order: nextOrder(sort) });
 </script>
 
 <template>
-  <div
-    class="overflow-x-auto rounded-xl outline outline-1 -outline-offset-1 outline-n-weak bg-n-solid-2"
-  >
+  <div class="overflow-x-auto rounded-xl glass-panel">
     <table class="w-full text-sm border-separate border-spacing-0">
       <thead>
         <tr class="text-xs text-n-slate-11">

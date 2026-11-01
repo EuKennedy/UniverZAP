@@ -125,9 +125,7 @@ watch(() => props.inboxId, fetchProfile, { immediate: true });
 </script>
 
 <template>
-  <section
-    class="flex flex-col gap-6 p-6 rounded-xl border border-n-weak bg-n-solid-1"
-  >
+  <section class="flex flex-col gap-6 p-6 rounded-xl glass-panel">
     <div class="flex flex-col gap-1">
       <h2 class="m-0 text-base font-medium text-n-slate-12">
         {{ label('TITLE') }}

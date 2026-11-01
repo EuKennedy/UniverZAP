@@ -75,10 +75,7 @@ const riskTone = computed(() => (props.queue.at_risk ? 'danger' : 'good'));
       />
     </div>
 
-    <div
-      v-if="atRisk.length"
-      class="overflow-x-auto rounded-xl border border-n-weak bg-n-solid-1"
-    >
+    <div v-if="atRisk.length" class="overflow-x-auto rounded-xl glass-panel">
       <table class="w-full text-sm">
         <thead class="bg-n-solid-2 border-b border-n-container text-n-slate-11">
           <tr>

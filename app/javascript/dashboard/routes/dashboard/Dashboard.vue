@@ -167,8 +167,19 @@ export default {
     />
 
     <main
-      class="flex flex-1 h-full w-full min-h-0 px-0 overflow-hidden bg-n-surface-1"
+      class="relative isolate flex flex-1 h-full w-full min-h-0 px-0 overflow-hidden bg-n-surface-1"
     >
+      <div
+        class="absolute inset-0 overflow-hidden pointer-events-none -z-10"
+        aria-hidden="true"
+      >
+        <span
+          class="absolute rounded-full -top-40 end-[-6rem] size-[34rem] bg-brand-gradient opacity-[0.07] blur-3xl"
+        />
+        <span
+          class="absolute rounded-full -bottom-52 start-1/4 size-[30rem] bg-brand-gradient opacity-[0.05] blur-3xl"
+        />
+      </div>
       <UpgradePage
         v-show="showUpgradePage"
         ref="upgradePageRef"

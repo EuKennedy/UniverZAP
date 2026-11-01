@@ -116,7 +116,7 @@ const hourSeries = computed(() =>
 
 <template>
   <div
-    class="flex flex-col m-0.5 px-6 py-5 rounded-xl gap-5 text-n-slate-12 shadow outline-1 outline outline-n-container bg-n-solid-2"
+    class="flex flex-col m-0.5 px-6 py-5 rounded-xl gap-5 text-n-slate-12 glass-panel"
   >
     <header class="flex flex-wrap gap-4 justify-between items-start">
       <div class="flex flex-col gap-1">

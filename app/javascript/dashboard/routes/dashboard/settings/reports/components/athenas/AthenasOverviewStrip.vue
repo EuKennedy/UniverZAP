@@ -107,7 +107,7 @@ const metrics = computed(() => {
 <template>
   <div
     v-if="isLoading || hasAgents"
-    class="flex flex-col m-0.5 px-6 py-5 rounded-xl gap-5 text-n-slate-12 shadow outline-1 outline outline-n-container bg-n-solid-2"
+    class="flex flex-col m-0.5 px-6 py-5 rounded-xl gap-5 text-n-slate-12 glass-panel"
   >
     <div class="flex flex-wrap gap-3 justify-between items-center">
       <div class="flex flex-wrap gap-2 items-baseline">

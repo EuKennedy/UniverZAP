@@ -108,9 +108,7 @@ onMounted(fetchCampaigns);
     class="grid gap-6 items-start lg:grid-cols-[14rem_minmax(0,1fr)]"
     data-testid="campaigns-panel"
   >
-    <aside
-      class="p-3 rounded-xl border border-n-weak bg-n-solid-1 lg:sticky lg:top-4"
-    >
+    <aside class="p-3 rounded-xl lg:sticky lg:top-4 glass-panel">
       <CampaignFolders
         v-model="folderId"
         :refresh-key="foldersKey"
@@ -130,10 +128,7 @@ onMounted(fetchCampaigns);
       @saved="onSaved"
     />
 
-    <section
-      v-else
-      class="flex flex-col gap-4 p-5 rounded-xl border border-n-weak bg-n-solid-1"
-    >
+    <section v-else class="flex flex-col gap-4 p-5 rounded-xl glass-panel">
       <div class="flex flex-wrap gap-3 justify-between items-center">
         <div class="flex flex-col gap-0.5">
           <h2 class="m-0 text-base font-medium text-n-slate-12">
@@ -210,7 +205,7 @@ onMounted(fetchCampaigns);
           v-for="campaign in campaigns"
           :key="campaign.id"
           type="button"
-          class="flex overflow-hidden flex-col text-start rounded-xl border transition-colors border-n-weak hover:border-n-slate-7 bg-n-solid-2"
+          class="flex overflow-hidden flex-col text-start rounded-xl transition-colors hover:border-n-slate-7 glass-panel"
           data-testid="campaign-card"
           @click="editing = campaign.id"
         >

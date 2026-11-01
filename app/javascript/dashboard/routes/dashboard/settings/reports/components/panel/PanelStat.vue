@@ -26,7 +26,7 @@ const valueClass = computed(
 
 <template>
   <div
-    class="flex flex-col gap-1 rounded-xl border border-n-weak bg-n-solid-1 px-4 py-3 min-w-36 flex-1"
+    class="flex flex-col gap-1 rounded-xl px-4 py-3 min-w-36 flex-1 glass-panel"
   >
     <span class="text-xs font-medium text-n-slate-11">{{ label }}</span>
     <span class="text-2xl font-semibold tabular-nums" :class="valueClass">
