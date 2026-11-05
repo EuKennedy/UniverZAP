@@ -29,7 +29,7 @@ class Public::Api::V1::Inboxes::ContactsController < Public::Api::V1::InboxesCon
 
   def process_hmac
     return if params[:identifier_hash].blank? && !@inbox_channel.hmac_mandatory
-    raise StandardError, 'HMAC failed: Invalid Identifier Hash Provided' unless valid_hmac?
+    return render json: { error: 'HMAC failed: Invalid Identifier Hash Provided' }, status: :unauthorized unless valid_hmac?
 
     @contact_inbox.update(hmac_verified: true) if @contact_inbox.present?
   end

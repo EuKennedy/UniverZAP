@@ -43,6 +43,7 @@ class Message < ApplicationRecord
 
   include MessageFilterHelpers
   include Liquidable
+  include WahaDelayedDelivery
   NUMBER_OF_PERMITTED_ATTACHMENTS = 15
 
   TEMPLATE_PARAMS_SCHEMA = {
@@ -360,6 +361,8 @@ class Message < ApplicationRecord
     # Activity first: reopening broadcasts the conversation, and that payload
     # must already carry who has the last word.
     set_conversation_activity
+    return record_historical_delivery if historical_delivery?
+
     reopen_conversation
     mark_pending_conversation_as_open_for_human_response
     dispatch_create_events
@@ -484,6 +487,8 @@ class Message < ApplicationRecord
   end
 
   def set_conversation_activity
+    return backdate_conversation if superseded_delivery? || activity_after_delayed_delivery?
+
     attributes = { last_activity_at: created_at, updated_at: Time.current }
     # Any outgoing message answers — agent, AI, broadcast, API. Private notes,
     # activities and templates (out-of-office, greeting, CSAT) don't change
@@ -497,6 +502,7 @@ class Message < ApplicationRecord
     # rubocop:disable Rails/SkipsModelValidations
     conversation.update_columns(attributes)
     # rubocop:enable Rails/SkipsModelValidations
+    backdate_conversation
     Conversations::QueueLabelsService.new(conversation).replied if replied_by_team?
   end
 
