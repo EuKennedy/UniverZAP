@@ -72,7 +72,20 @@ class Broadcasts::DispatchJob < ApplicationJob
     return finish_or_wait || true unless @broadcast.broadcast_recipients.ready.exists?
     return wake_at(window.next_open + jitter) || true unless window.open?
 
+    blocked = outreach_blocked_until
+    return wake_at(blocked + jitter) || true if blocked
+
     capped?
+  end
+
+  # O WhatsApp está recusando contato novo neste número (463 timelock / 475
+  # capping, Whatsapp::WahaOutreachGuard). Mandar agora só queimaria o lote e
+  # pioraria a fama do número: a corrente dorme até o horário que o WhatsApp
+  # deu e segue sozinha, sem prender a fila nem esperar alguém retomar.
+  def outreach_blocked_until
+    return if @broadcast.mode == 'official' || @broadcast.inbox.nil?
+
+    Whatsapp::WahaOutreachGuard.new(@broadcast.inbox).blocked_until
   end
 
   # A scheduled broadcast turns live once its time comes. A job enqueued for an
