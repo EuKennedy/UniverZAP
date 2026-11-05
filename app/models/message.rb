@@ -43,6 +43,7 @@ class Message < ApplicationRecord
 
   include MessageFilterHelpers
   include Liquidable
+  include WahaDelayedDelivery
   NUMBER_OF_PERMITTED_ATTACHMENTS = 15
 
   TEMPLATE_PARAMS_SCHEMA = {
@@ -359,7 +360,9 @@ class Message < ApplicationRecord
     # rails issue with order of active record callbacks being executed https://github.com/rails/rails/issues/20911
     # Activity first: reopening broadcasts the conversation, and that payload
     # must already carry who has the last word.
-    set_conversation_activity
+    update_conversation_activity
+    return record_historical_delivery if historical_delivery?
+
     reopen_conversation
     mark_pending_conversation_as_open_for_human_response
     dispatch_create_events
