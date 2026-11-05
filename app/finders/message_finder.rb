@@ -36,8 +36,21 @@ class MessageFinder
     messages.reorder('created_at asc').where('id > ?', after_id).limit(100)
   end
 
+  # A data decide o que vem antes, não o id: mensagem que entra atrasada (WAHA
+  # reprocessada, importação) nasce com id alto e data antiga, e o corte por id
+  # a escondia para sempre da conversa.
   def messages_before(before_id)
-    messages.reorder('created_at desc').where('id < ?', before_id).limit(20).reverse
+    messages_older_than(before_id).reorder('messages.created_at desc, messages.id desc').limit(20).reverse
+  end
+
+  def messages_older_than(before_id)
+    anchor = @conversation.messages.find_by(id: before_id)
+    return messages.where('messages.id < ?', before_id) if anchor.blank?
+
+    messages.where(
+      'messages.created_at < :created_at OR (messages.created_at = :created_at AND messages.id < :id)',
+      created_at: anchor.created_at, id: anchor.id
+    )
   end
 
   def messages_between(after_id, before_id)
