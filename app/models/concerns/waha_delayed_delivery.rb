@@ -64,6 +64,11 @@ module WahaDelayedDelivery
     activity? && conversation.messages.non_activity_messages.first&.delayed_delivery?
   end
 
+  def update_conversation_activity
+    set_conversation_activity unless superseded_delivery? || activity_after_delayed_delivery?
+    backdate_conversation
+  end
+
   def backdate_conversation
     return unless delayed_delivery? && created_at < conversation.created_at
 

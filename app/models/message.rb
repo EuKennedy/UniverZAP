@@ -360,7 +360,7 @@ class Message < ApplicationRecord
     # rails issue with order of active record callbacks being executed https://github.com/rails/rails/issues/20911
     # Activity first: reopening broadcasts the conversation, and that payload
     # must already carry who has the last word.
-    set_conversation_activity
+    update_conversation_activity
     return record_historical_delivery if historical_delivery?
 
     reopen_conversation
@@ -487,8 +487,6 @@ class Message < ApplicationRecord
   end
 
   def set_conversation_activity
-    return backdate_conversation if superseded_delivery? || activity_after_delayed_delivery?
-
     attributes = { last_activity_at: created_at, updated_at: Time.current }
     # Any outgoing message answers — agent, AI, broadcast, API. Private notes,
     # activities and templates (out-of-office, greeting, CSAT) don't change
@@ -502,7 +500,6 @@ class Message < ApplicationRecord
     # rubocop:disable Rails/SkipsModelValidations
     conversation.update_columns(attributes)
     # rubocop:enable Rails/SkipsModelValidations
-    backdate_conversation
     Conversations::QueueLabelsService.new(conversation).replied if replied_by_team?
   end
 

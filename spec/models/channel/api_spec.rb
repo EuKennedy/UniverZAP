@@ -30,7 +30,7 @@ RSpec.describe Channel::Api do
     end
 
     it 'stays available on other API inboxes' do
-      expect(build(:channel_api, hmac_mandatory: true)).to be_valid
+      expect(build(:channel_api, account: create(:account), hmac_mandatory: true)).to be_valid
     end
   end
 end
