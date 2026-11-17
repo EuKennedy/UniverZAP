@@ -26,6 +26,9 @@ permissions:
   contents: read
   packages: write
 
+# Runner fixo em ubuntu-24.04: o ubuntu-latest virou 26.04, que só tem a
+# última versão de cada série do Ruby, e o setup-ruby falha com o 3.4.4 do
+# .ruby-version ("Unavailable version 3.4.4 for ruby on ubuntu-26.04").
 jobs:
   # Num PR roda só o que o PR mexeu: os specs dos arquivos alterados, os
   # testes de front que dependem deles e o lint só desses arquivos (regras em
@@ -38,7 +41,7 @@ jobs:
   # PR nenhum — e no botão manual com "full".
   plan:
     name: Plano de testes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       full: ${{ steps.plan.outputs.full }}
@@ -72,7 +75,7 @@ jobs:
 
   lint-ruby:
     name: Lint Ruby (RuboCop)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     needs: [plan]
     if: needs.plan.outputs.rubocop != ''
@@ -93,7 +96,7 @@ jobs:
 
   lint-frontend:
     name: Lint Frontend (ESLint)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     needs: [plan]
     if: needs.plan.outputs.eslint != ''
@@ -117,7 +120,7 @@ jobs:
 
   frontend-tests:
     name: Frontend tests (Vitest)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     needs: [plan]
     if: needs.plan.outputs.vitest != ''
@@ -150,7 +153,7 @@ jobs:
 
   backend-tests:
     name: Backend specs (rspec)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: [plan]
     if: needs.plan.outputs.rspec != ''
@@ -287,7 +290,7 @@ jobs:
   # desce por decisão de outra gente.
   coverage-gate:
     name: Coverage gate (código UniverZAP)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     needs: [plan, backend-tests]
     # Cobertura só faz sentido sobre a suíte inteira.
@@ -319,7 +322,7 @@ jobs:
   # name regardless of how many matrix shards backend-tests fans into.
   ci-pass:
     name: CI pass
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     needs: [plan, lint-ruby, lint-frontend, frontend-tests, backend-tests]
     if: always()
@@ -358,7 +361,7 @@ jobs:
 
   build-and-push:
     name: Build & publish Docker image to GHCR
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     # Only push to the registry on real branch pushes — not PRs from forks
     # — and only after the lint + test gate passes. PRs from forks build
