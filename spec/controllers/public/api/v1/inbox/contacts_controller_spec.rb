@@ -6,6 +6,14 @@ RSpec.describe 'Public Inbox Contacts API', type: :request do
   let!(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: api_channel.inbox) }
 
   describe 'POST /public/api/v1/inboxes/{identifier}/contact' do
+    it 'answers unauthorized, not a server error, when the mandatory hash is missing' do
+      api_channel.update!(hmac_mandatory: true)
+
+      post "/public/api/v1/inboxes/#{api_channel.identifier}/contacts"
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
     it 'creates a contact and return the source id' do
       post "/public/api/v1/inboxes/#{api_channel.identifier}/contacts"
 

@@ -30,12 +30,23 @@ class Channel::Api < ApplicationRecord
   include WebhookSecretable
   validate :ensure_valid_agent_reply_time_window
   validates :webhook_url, length: { maximum: Limits::URL_LENGTH_LIMIT }
+  validate :waha_bridge_without_mandatory_hmac
 
   def name
     'API'
   end
 
+  def waha_bridge?
+    additional_attributes.to_h['source'] == 'waha'
+  end
+
   private
+
+  # A ponte WAHA não assina os contatos que cria. Com a validação obrigatória,
+  # todo contato novo era recusado e a mensagem dele não entrava na caixa.
+  def waha_bridge_without_mandatory_hmac
+    errors.add(:hmac_mandatory, I18n.t('errors.channel_api.waha_hmac_mandatory')) if hmac_mandatory && waha_bridge?
+  end
 
   def ensure_valid_agent_reply_time_window
     return if additional_attributes['agent_reply_time_window'].blank?

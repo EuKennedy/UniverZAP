@@ -20,4 +20,17 @@ RSpec.describe Channel::Api do
       end
     end
   end
+
+  describe 'mandatory hmac on the WAHA bridge' do
+    it 'cannot be enabled, or every new customer would be rejected' do
+      channel = build(:channel_api, hmac_mandatory: true, additional_attributes: { source: 'waha' })
+
+      expect(channel).not_to be_valid
+      expect(channel.errors[:hmac_mandatory]).to be_present
+    end
+
+    it 'stays available on other API inboxes' do
+      expect(build(:channel_api, account: create(:account), hmac_mandatory: true)).to be_valid
+    end
+  end
 end

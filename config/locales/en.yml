@@ -163,6 +163,8 @@ en:
     inbox_deletetion_response: Your inbox deletion request will be processed in some time.
 
   errors:
+    channel_api:
+      waha_hmac_mandatory: cannot be enabled on a WhatsApp QR inbox because the bridge does not sign contacts, so new customers would be rejected
     ai:
       playground_busy: The agent is still answering your last message. Wait for the reply before sending another.
       playground_rate_limited: Too many test messages in a row. Wait a minute before sending another.
