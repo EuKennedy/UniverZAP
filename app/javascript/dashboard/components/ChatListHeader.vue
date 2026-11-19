@@ -1,10 +1,12 @@
 <script setup>
 import { computed } from 'vue';
 import { useUISettings } from 'dashboard/composables/useUISettings';
+import { useMapGetter } from 'dashboard/composables/store.js';
 import { formatNumber } from '@chatwoot/utils';
 import wootConstants from 'dashboard/constants/globals';
 
 import ConversationBasicFilter from './widgets/conversation/ConversationBasicFilter.vue';
+import ConversationInboxPicker from './widgets/conversation/ConversationInboxPicker.vue';
 import SwitchLayout from 'dashboard/routes/dashboard/conversation/search/SwitchLayout.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
@@ -27,6 +29,7 @@ const emit = defineEmits([
 ]);
 
 const { uiSettings, updateUISettings } = useUISettings();
+const inboxes = useMapGetter('inboxes/getInboxes');
 
 const onBasicFilterChange = (value, type) => {
   emit('basicFilterChange', value, type);
@@ -57,7 +60,7 @@ const toggleConversationLayout = () => {
 
 <template>
   <div
-    class="flex items-center justify-between gap-2 px-3 h-[3.25rem]"
+    class="relative flex items-center justify-between gap-2 px-3 h-[3.25rem]"
     :class="{
       'border-b border-n-strong': hasAppliedFiltersOrActiveFolders,
     }"
@@ -138,6 +141,9 @@ const toggleConversationLayout = () => {
           @click="emit('deleteFolders')"
         />
       </template>
+      <ConversationInboxPicker
+        v-if="!hasAppliedFiltersOrActiveFolders && inboxes.length > 1"
+      />
       <ConversationBasicFilter
         v-if="!hasAppliedFiltersOrActiveFolders"
         :is-on-expanded-layout="isOnExpandedLayout"

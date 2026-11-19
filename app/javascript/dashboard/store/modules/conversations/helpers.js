@@ -10,8 +10,9 @@ export const findPendingMessageIndex = (chat, message) => {
 export const filterByStatus = (chatStatus, filterStatus) =>
   filterStatus === 'all' ? true : chatStatus === filterStatus;
 
+// inboxId is one inbox (the route) or the list the agent picked to view.
 export const filterByInbox = (shouldFilter, inboxId, chatInboxId) => {
-  const isOnInbox = Number(inboxId) === chatInboxId;
+  const isOnInbox = [].concat(inboxId).map(Number).includes(chatInboxId);
   return inboxId ? isOnInbox && shouldFilter : shouldFilter;
 };
 

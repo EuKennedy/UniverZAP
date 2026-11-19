@@ -209,6 +209,19 @@
     "SHOW_QUOTED_TEXT": "Show Quoted Text",
     "MESSAGE_READ": "Read",
     "SENDING": "Sending",
-    "UNREAD_COUNT_OVERFLOW": "9+"
+    "UNREAD_COUNT_OVERFLOW": "9+",
+    "INBOX_PICKER": {
+      "TOOLTIP": "Choose which inboxes show in your list",
+      "BUTTON": "View inboxes",
+      "BUTTON_SHORT": "Inboxes",
+      "BUTTON_ONE": "1 inbox",
+      "BUTTON_MANY": "{count} inboxes",
+      "TITLE": "Inboxes in your list",
+      "DESCRIPTION": "Conversations from the checked inboxes show together in one list, in the order you work them.",
+      "ALL": "All inboxes",
+      "SELECTED": "{selected} of {total}",
+      "CANCEL": "Cancel",
+      "APPLY": "Apply"
+    }
   }
 }

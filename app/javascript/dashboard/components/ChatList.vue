@@ -472,9 +472,21 @@ const listStatus = computed(() => {
     : activeStatus.value;
 });
 
+// UniverZAP: the inboxes the agent picked in "Visualizar canais" (ui_settings),
+// minus any they lost access to. An inbox route always wins over the pick.
+const pickedInboxIds = computed(() => {
+  const ids = uiSettings.value.conversation_inbox_ids || [];
+  return ids.filter(id => inboxesList.value.some(item => item.id === id));
+});
+
+const listInboxId = computed(() => {
+  if (props.conversationInbox) return props.conversationInbox;
+  return pickedInboxIds.value.length ? pickedInboxIds.value : undefined;
+});
+
 const conversationFilters = computed(() => {
   return {
-    inboxId: props.conversationInbox ? props.conversationInbox : undefined,
+    inboxId: listInboxId.value,
     assigneeType: resolveAssigneeType(),
     status: listStatus.value,
     sortBy: activeSortBy.value,
@@ -508,6 +520,11 @@ const pageTitle = computed(() => {
   }
   if (inbox.value.name) {
     return inbox.value.name;
+  }
+  if (!props.conversationInbox && pickedInboxIds.value.length === 1) {
+    const [pickedId] = pickedInboxIds.value;
+    const picked = inboxesList.value.find(item => item.id === pickedId);
+    if (picked) return picked.name;
   }
   if (activeTeam.value.name) {
     return activeTeam.value.name;
@@ -942,11 +959,13 @@ function listContextConditions() {
       ])
     );
   }
-  if (props.conversationInbox) {
+  if (listInboxId.value) {
     conditions.push(
-      listFilterCondition('inbox_id', 'equal_to', [
-        Number(props.conversationInbox),
-      ])
+      listFilterCondition(
+        'inbox_id',
+        'equal_to',
+        [].concat(listInboxId.value).map(Number)
+      )
     );
   }
   if (props.teamId) {
@@ -1335,6 +1354,13 @@ watch(activeSortBy, sortBy => store.dispatch('setChatSortFilter', sortBy));
 watch(
   computed(() => props.conversationInbox),
   () => resetAndFetchData()
+);
+// A new pick is a new list (its badges come back with the first page).
+watch(
+  computed(() => pickedInboxIds.value.join(',')),
+  () => {
+    if (!props.conversationInbox) resetAndFetchData();
+  }
 );
 watch(
   computed(() => props.label),
