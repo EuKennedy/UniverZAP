@@ -99,9 +99,19 @@ class Whatsapp::Providers::WhatsappWahaService < Whatsapp::Providers::BaseServic
 
   def handle_waha_error(error, message)
     Rails.logger.error("[WAHA] send failed: #{error.message}")
+    trip_outreach_guard(error)
     return if message.blank?
 
     message.update!(status: :failed, external_error: error.message.truncate(500))
     nil
+  end
+
+  # 463/475: o WhatsApp travou contato novo neste número. Os disparos da inbox
+  # passam a esperar a trava acabar (Broadcasts::DispatchJob).
+  def trip_outreach_guard(error)
+    code = Whatsapp::WahaOutreachGuard.code_in(error.message)
+    Whatsapp::WahaOutreachGuard.new(whatsapp_channel.inbox).trip!(code) if code
+  rescue StandardError => e
+    Rails.logger.error("[WAHA outreach] could not arm the guard: #{e.message}")
   end
 end
