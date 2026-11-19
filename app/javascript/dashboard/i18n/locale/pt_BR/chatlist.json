@@ -208,6 +208,19 @@
     "HIDE_QUOTED_TEXT": "Ocultar Texto Citado",
     "SHOW_QUOTED_TEXT": "Mostrar Texto Citado",
     "MESSAGE_READ": "Lida",
-    "SENDING": "Enviando"
+    "SENDING": "Enviando",
+    "INBOX_PICKER": {
+      "TOOLTIP": "Escolha quais canais aparecem na sua lista",
+      "BUTTON": "Visualizar canais",
+      "BUTTON_SHORT": "Canais",
+      "BUTTON_ONE": "1 canal",
+      "BUTTON_MANY": "{count} canais",
+      "TITLE": "Canais na sua lista",
+      "DESCRIPTION": "As conversas dos canais marcados aparecem juntas numa lista só, na ordem de atendimento.",
+      "ALL": "Todos os canais",
+      "SELECTED": "{selected} de {total}",
+      "CANCEL": "Cancelar",
+      "APPLY": "Aplicar"
+    }
   }
 }
