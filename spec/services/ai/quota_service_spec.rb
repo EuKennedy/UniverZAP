@@ -84,8 +84,8 @@ RSpec.describe Ai::QuotaService do
 
     context 'when the BRL ledger is empty but grace has not been used yet' do
       before do
-        account.update!(token_credit_balance_cents_brl: 0, token_credit_grace_used: false)
-        create(:ai_credit_ledger_entry, account: account, kind: 'grant', amount_cents_brl: 10_000)
+        account.update!(token_credit_balance_cents_brl: 0, token_credit_grace_used: false, token_credit_lifetime_purchased_cents_brl: 10_000)
+        create(:ai_credit_ledger_entry, account: account, kind: 'purchase', amount_cents_brl: 10_000)
       end
 
       it 'grants the one-shot grace top-up and lets the call through' do

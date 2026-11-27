@@ -634,7 +634,7 @@
       "DISMISS": "Dismiss",
       "WARN_80": {
         "TITLE": "AI credits running low",
-        "BODY": "You have R$ {balance} left ({percent}% of your starter pack). Top up to keep autopilot answering."
+        "BODY": "You have R$ {balance} left ({percent}% of your credits). Top up to keep autopilot answering."
       },
       "WARN_95": {
         "TITLE": "AI credits almost gone",
