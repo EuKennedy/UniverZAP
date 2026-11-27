@@ -53,8 +53,14 @@ RSpec.describe Ai::CreditLedger do
   end
 
   describe '#grant_grace!' do
-    it 'is single-shot and bumps balance by at least 250 cents' do
+    it 'gives nothing to an account that never bought credits' do
       account.update!(token_credit_balance_cents_brl: 0)
+      expect(ledger.grant_grace!).to be false
+      expect(account.reload.token_credit_balance_cents_brl).to eq(0)
+    end
+
+    it 'is single-shot and bumps balance by at least 250 cents' do
+      account.update!(token_credit_balance_cents_brl: 0, token_credit_lifetime_purchased_cents_brl: 5_000)
       expect(ledger.grant_grace!).to be true
       expect(account.reload.token_credit_balance_cents_brl).to be >= 250
       expect(account.token_credit_grace_used).to be true

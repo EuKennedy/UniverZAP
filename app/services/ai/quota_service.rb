@@ -6,9 +6,10 @@ class Ai::QuotaService
   #    we have to absorb. The cap is checked AGAINST the actual `cost_usd`
   #    column on `ai_invocations` so it tracks what Anthropic billed us,
   #    not the BRL retail price.
-  # 2. BRL credit ledger — the operator's remaining starter / purchased
-  #    balance. The first time it hits zero we grant a one-shot 10%
-  #    grace top-up so an in-flight conversation never gets decapitated;
+  # 2. BRL credit ledger — the operator's purchased balance. The first
+  #    time it hits zero on an account that has bought credits we grant a
+  #    one-shot 10% grace top-up so an in-flight conversation never gets
+  #    decapitated;
   #    subsequent exhaustions throw `QuotaExhaustedError` and the
   #    controller layer translates that into HTTP 402 for the dashboard
   #    paywall modal.

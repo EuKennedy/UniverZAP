@@ -634,7 +634,7 @@
       "DISMISS": "Dispensar",
       "WARN_80": {
         "TITLE": "Créditos de IA baixos",
-        "BODY": "Restam R$ {balance} ({percent}% do seu pacote inicial). Recarregue para manter o autopiloto respondendo."
+        "BODY": "Restam R$ {balance} ({percent}% dos seus créditos). Recarregue para manter o autopiloto respondendo."
       },
       "WARN_95": {
         "TITLE": "Créditos de IA quase acabando",

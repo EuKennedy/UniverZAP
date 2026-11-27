@@ -5,9 +5,10 @@ class Ai::CreditLedger
   THRESHOLD_WARN_80 = 0.20
   THRESHOLD_WARN_95 = 0.05
 
-  # +10% grace credit. Granted the first time an account would otherwise
-  # be blocked mid-conversation, then the flag flips so future
-  # exhaustions hard-stop the flow.
+  # +10% grace credit. Granted the first time an account that has bought
+  # credits would otherwise be blocked mid-conversation, then the flag flips
+  # so future exhaustions hard-stop the flow. Accounts that never bought get
+  # no free credit at all.
   GRACE_MULTIPLIER = 0.10
 
   class QuotaExhaustedError < StandardError
@@ -122,7 +123,7 @@ class Ai::CreditLedger
   end
 
   def grant_grace!
-    return false if account.token_credit_grace_used?
+    return false if account.token_credit_grace_used? || lifetime_purchased_cents.zero?
 
     grace_amount = [(lifetime_granted_cents * GRACE_MULTIPLIER).round, 250].max
 
